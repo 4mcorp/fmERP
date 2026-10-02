@@ -113,14 +113,17 @@
 | [2026-10-03-windows-npx-mcp-enoent.md](ts/2026-10-03-windows-npx-mcp-enoent.md) | windows, mcp, npx, claude-code | Windows MCP 설정에서 `npx`는 `cmd /c`로 감싼다. 원격 HTTP 방식을 우선한다. 추가 후 `initialize` 응답을 확인한다 |
 | [2026-10-03-pnpm11-config-location.md](ts/2026-10-03-pnpm11-config-location.md) | pnpm, deps, config | pnpm 설정은 `pnpm-workspace.yaml`에 둔다. 적용 값은 `pnpm config get`으로 확인한다 |
 | [2026-10-03-skill-dependency-and-session-load.md](ts/2026-10-03-skill-dependency-and-session-load.md) | skills, claude-code | 스킬 설치 후 참조하는 스킬이 빠졌는지 확인한다. 설치 직후 인식되지 않으면 SKILL.md 절차를 직접 따른다 |
+| [2026-10-03-windows-pnpm-not-on-path.md](ts/2026-10-03-windows-pnpm-not-on-path.md) | windows, pnpm, corepack, deps, build | pnpm이 PATH에 없으면 `corepack pnpm@11.28.3`을 쓴다. 사용자 PATH는 바꾸지 않고 README 1회 설정을 안내한다. 대화형 CLI는 `< /dev/null` + timeout |
+| [2026-10-03-docker-desktop-stale-socket.md](ts/2026-10-03-docker-desktop-stale-socket.md) | docker, windows, infra, test | **(open)** Docker 엔진 무응답 시 backend 로그에서 `backend crashed` 확인. 오래된 `Dockerun` 소켓 정리는 사용자 확인 후 |
+| [2026-10-03-biome-windows-spawn.md](ts/2026-10-03-biome-windows-spawn.md) | windows, biome, claude-code, hooks, lint | Biome에는 상대 경로(`/`)를 넘기고 `stdio: "ignore"`를 쓰지 않는다. hook은 실제 결과로 검증한다 |
 
 ---
 
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
-| [2026-10-03-mvp-roadmap.md](plan/2026-10-03-mvp-roadmap.md) | draft | MVP 마일스톤 M0~M8, P0 요구사항 118개 배정, 선행 작업·위험 |
-| [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | draft | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
+| [2026-10-03-mvp-roadmap.md](plan/2026-10-03-mvp-roadmap.md) | accepted | MVP 마일스톤 M0~M8, P0 요구사항 118개 배정, 선행 작업·위험 |
+| [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | in-progress | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
 
 ---
 
@@ -135,11 +138,29 @@
 ## 8. 설계 결정 (`docs/adr/`)
 | 파일 | 요약 |
 |---|---|
-| (없음 — 골격 생성 시 PK 타입, 금액 타입, 에러 형식, 테스트 DB 방식을 결정 예정: rules/architecture.md 4장) | |
+| [0001-uuid-v7-primary-keys.md](adr/0001-uuid-v7-primary-keys.md) | 기본 키는 PostgreSQL 18 내장 `uuidv7()` |
+| [0002-money-as-bigint-won.md](adr/0002-money-as-bigint-won.md) | 금액은 DB `bigint`(원), 앱 `number` + `toWon()` 검증 |
+| [0003-rfc9457-problem-details.md](adr/0003-rfc9457-problem-details.md) | API 에러는 RFC 9457 Problem Details + `code` |
+| [0004-integration-test-db.md](adr/0004-integration-test-db.md) | 통합 테스트는 Compose의 전용 PostgreSQL·SeaweedFS |
 
 ---
 
 ## 9. 코드 위치
 | 대상 | 경로 |
 |---|---|
-| (프로젝트 골격 생성 후 작성) | |
+| 웹 화면 (App Router) | `apps/web/app/` |
+| shadcn 컴포넌트 / 유틸 | `apps/web/components/ui/`, `apps/web/lib/utils.ts` |
+| API (Hono, `/api/*`) | `apps/web/server/create-app.ts`(라우트), `server/app.ts`(의존성 연결), Next 마운트 `app/api/[[...route]]/route.ts` |
+| API 에러 형식 (RFC 9457) | `apps/web/server/problem.ts` |
+| 환경 변수 검증 | `apps/web/server/env.ts`, `apps/worker/src/env.ts` |
+| worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
+| 도메인 규칙 (결재 엔진 예정) | `packages/core/src/` (금액: `money.ts`) |
+| DB 스키마·클라이언트 | `packages/db/src/schema/`, `src/client.ts` |
+| 마이그레이션 SQL / 실행 | `packages/db/migrations/`, `src/migrate.ts` |
+| S3 어댑터 (write-once 포함) | `packages/storage/src/object-storage.ts` |
+| 인증 (M1 예정) | `packages/auth/src/` |
+| 로컬 개발·테스트 서비스 | `docker-compose.dev.yml`, DB 계정 생성 `docker/postgres/initdb/01-roles.sh` |
+| 테스트 설정 | `vitest.config.ts`(unit·integration 프로젝트), `packages/*/test/global-setup.ts`, `apps/web/playwright.config.ts`, `apps/web/e2e/` |
+| 린트·Git hook·커밋 규칙 | `biome.json`(core import 제한 포함), `lefthook.yml`, `commitlint.config.mjs` |
+| CI | `.github/workflows/ci.yml` |
+| Claude hook·권한 | `.claude/settings.json`, `.claude/hooks/format-file.mjs` |

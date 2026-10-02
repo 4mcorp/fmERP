@@ -33,5 +33,7 @@ Node 24 LTS · pnpm 11 · TypeScript ~6.0 · Next 16.3 + Hono 4.13(`/api`) · Po
 ### 커밋
 `<type>(<scope>): <한국어 설명>` 형식을 쓴다. 커밋·푸시는 사용자가 요청할 때만 한다. 세부 사항: [docs/rules/git.md](docs/rules/git.md)
 
-## 명령어 (프로젝트 골격 생성 후 갱신)
-설치 `pnpm install` · 개발 `pnpm dev` · 테스트 `pnpm test` · 타입 `pnpm typecheck` · 린트 `pnpm lint`
+## 명령어
+린트 `pnpm lint` · 타입 `pnpm typecheck` · 단위 `pnpm test:unit` · 통합 `pnpm test:int`(먼저 `pnpm env:up`) · E2E `pnpm test:e2e` · 마이그레이션 `pnpm db:generate`/`pnpm db:migrate` · 개발 `pnpm dev`
+- `pnpm`이 PATH에 없으면 `corepack pnpm@11.28.3 <명령>`을 쓴다 ([ts](docs/ts/2026-10-03-windows-pnpm-not-on-path.md)).
+- 테스트 파일: 단위 `*.test.ts`, 통합 `*.int.test.ts`(실제 DB·S3), E2E `apps/web/e2e/*.spec.ts`.

@@ -1,7 +1,7 @@
 ---
 title: MVP(Phase 0~1) 구현 로드맵
 date: 2026-10-03
-status: draft
+status: accepted
 tags: [roadmap, mvp]
 related: [docs/PRD.md, docs/TECH_SPEC.md, docs/DEPLOYMENT_PLAN.md]
 ---
@@ -57,3 +57,4 @@ PRD의 **P0 요구사항 118개 전부**를 구현해 파일럿 고객 1곳이 �
 ## 결정·변경 기록
 - 2026-10-03: 초안 작성
 - 2026-10-03: 배포 방식을 VPS에서 로컬 서버 + Cloudflare Tunnel로 변경해 선행 작업·위험 갱신
+- 2026-10-03: R1(제안 순서, M3는 M1과 병행)·R2(마일스톤마다 상세 plan → 검토 → 구현) 승인

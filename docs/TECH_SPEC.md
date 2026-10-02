@@ -72,6 +72,10 @@
 | 테스트 | vitest | ~4.1.11 |
 | | @playwright/test | ~1.63.0 (PDF 생성에도 같은 버전 사용) |
 | 린트·포맷 | @biomejs/biome | ~2.5.15 |
+| Git hook·커밋 규칙 | lefthook / @commitlint/cli·config-conventional | ~2.1.16 / ~21.2.3 |
+| TS 실행 (worker·스크립트) | tsx | ~4.23.15 |
+| UI 보조 (shadcn 설치) | shadcn, class-variance-authority, cn, tw-animate-css | ~4.21.1, ~0.7.1, ~0.4.0, ~1.4.0 |
+| 로컬 개발 서비스 (Docker) | `postgres:18-bookworm`, `chrislusf/seaweedfs:4.47`(로컬 S3, MinIO 대체), `axllent/mailpit:v1.31`(개발 메일함) | docker-compose.dev.yml |
 | 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |
 
 **구현 단계에서 추가할 예정인 패키지** (해당 기능을 만들 때 같은 방식으로 검증): `@headless-tree/react`(부서 트리), `@xyflow/react`(조직도), `@dnd-kit/*`(양식 빌더), `serwist`·`web-push`(P1 PWA), `age-encryption`(덤프 암호화. 또는 worker 이미지에 age 바이너리 포함).
@@ -97,7 +101,7 @@
 │  ├─ core/                   # 결재 엔진·도메인 규칙 (프레임워크 비의존, 순수 TS, 단위 테스트 중심)
 │  ├─ db/                     # Drizzle 스키마, 마이그레이션, RLS 정책, 시드
 │  ├─ auth/                   # Better Auth 설정 (Google·Naver·passkey), 결재 PIN
-│  └─ storage/                # S3 호환 어댑터 (R2·S3·NCP·MinIO)
+│  └─ storage/                # S3 호환 어댑터 (R2·S3·NCP·로컬 SeaweedFS)
 ├─ docs/                      # 기준 문서(루트), INDEX.md, rules/, plan/, ts/, idea/, adr/
 ├─ GLOSSARY.md                # 도메인 용어집 (domain-modeling 스킬이 관리)
 ├─ CLAUDE.md                  # 에이전트 작업 규칙
@@ -115,7 +119,7 @@
 | 파일 | 내용 |
 |---|---|
 | `package.json` (루트) | `engines.node: ">=24 <25"`, `packageManager: "pnpm@11.28.3"` |
-| `pnpm-workspace.yaml` | `packages: [apps/*, packages/*]`, **`strictPeerDependencies: true`**, `autoInstallPeers: false`, `allowBuilds: { esbuild: true }` (검증 시 빌드 스크립트가 필요한 패키지는 esbuild뿐이었음) — pnpm 11은 이 설정을 `.npmrc`가 아니라 이 파일에서 읽습니다 |
+| `pnpm-workspace.yaml` | `packages: [apps/*, packages/*]`, **`strictPeerDependencies: true`**, `autoInstallPeers: false`, `allowBuilds: { esbuild: true, lefthook: true }` (빌드 스크립트가 필요한 패키지만 허용) — pnpm 11은 이 설정을 `.npmrc`가 아니라 이 파일에서 읽습니다 |
 | `tsconfig.base.json` | `strict`, `noUncheckedIndexedAccess`, `moduleResolution: "bundler"`, `target: ES2024` |
 | `biome.json` | 포맷과 린트 통합, import 정렬, `noExplicitAny: error` |
 | `renovate.json` | 메이저 업데이트는 수동 승인. 출시 후 14일 대기. 그룹: `better-auth*`, `@tanstack/*`, `@aws-sdk/*`, `@tiptap/*`, Playwright npm 패키지와 Docker 이미지 동시 업데이트 |
@@ -138,7 +142,7 @@
 | `web-design-guidelines` | vercel-labs/agent-skills | UI 접근성·UX 점검 (KWCAG 대응) |
 | `supabase-postgres-best-practices` | supabase/agent-skills | 스키마·마이그레이션·RLS·인덱스·쿼리 작업 (Supabase와 무관하게 Postgres 일반 규칙) |
 | `better-auth-best-practices`, `better-auth-security-best-practices` | better-auth/skills (공식) | 인증 설정·보안 강화 |
-| `playwright-cli` | microsoft/playwright-cli | 브라우저로 화면 확인, E2E 테스트 작성 (CLI는 구현 단계에서 devDependency로 설치) |
+| `playwright-cli` | microsoft/playwright-cli | 브라우저로 화면 확인, E2E 테스트 작성. CLI(`@playwright/cli`)는 Playwright **알파** 버전에 의존하므로 저장소에 고정하지 않고 필요할 때 `npx @playwright/cli`로 실행 |
 | `differential-review`, `semgrep`, `supply-chain-risk-auditor` | trailofbits/skills | 보안 관점의 변경 리뷰, 정적 분석, 의존성 공급망 위험 점검 |
 | `find-skills` | vercel-labs/skills | 새 스킬 검색 |
 | `git-commit` | github/awesome-copilot (MIT) | 변경 내용(diff)을 분석해 Conventional Commits 형식으로 커밋. 프로젝트 규칙(type·scope·한국어 설명)은 CLAUDE.md "커밋 규칙"을 따름 |
