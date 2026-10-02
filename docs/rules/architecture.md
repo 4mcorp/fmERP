@@ -1,6 +1,6 @@
 # 아키텍처 규칙
 
-기준: [TECH_SPEC 4장](../TECH_SPEC.md) · [DEPLOYMENT_PLAN 4·6장](../DEPLOYMENT_PLAN.md)
+기준: [TECH_SPEC 4장](../TECH_SPEC.md) · [DEPLOYMENT_PLAN 3·6장](../DEPLOYMENT_PLAN.md)
 
 ## 1. 저장소와 의존 방향
 ```

@@ -16,7 +16,7 @@
 | [docs/HARNESS_CANDIDATES.md](docs/HARNESS_CANDIDATES.md) | Claude 부가 도구 비교 (검토 중) |
 
 ## 스택
-Node.js 24 LTS · pnpm 11 · TypeScript 6 · Next.js 16 + Hono · PostgreSQL 18 · Drizzle · Better Auth · shadcn/ui · Docker Compose (서울 VPS)
+Node.js 24 LTS · pnpm 11 · TypeScript 6 · Next.js 16 + Hono · PostgreSQL 18 · Drizzle · Better Auth · shadcn/ui · Docker Compose (사내 로컬 서버 + Cloudflare Tunnel)
 
 ## AI 에이전트 작업
 에이전트 작업 절차·공통 규칙은 [CLAUDE.md](CLAUDE.md), 작업 산출물은 `docs/plan`·`docs/ts`(트러블슈팅)·`docs/idea`, 프로젝트 스킬은 `.claude/skills/`(출처·해시: `skills-lock.json`)에 있습니다.

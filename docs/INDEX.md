@@ -20,7 +20,7 @@
 | 패키지 추가·버전 변경 | [rules/dependencies.md](rules/dependencies.md) | `supply-chain-risk-auditor` | TECH_SPEC 2·3·5장 | `deps`, `pnpm` |
 | 커밋, 브랜치 | [rules/git.md](rules/git.md) | `git-commit` | – | `git` |
 | 보안 리뷰, 정적 분석 | [rules/security.md](rules/security.md) 5장 | `differential-review`, `semgrep` | PRD 6.3 | `security` |
-| 배포, 서버, Docker, CI/CD | – | – | DEPLOYMENT_PLAN 4·6·8·9장 | `infra` |
+| 배포, 로컬 서버, Docker, Cloudflare Tunnel, CI/CD | – | – | DEPLOYMENT_PLAN 3·4·6·7·9장 | `infra`, `cloudflare` |
 | 요구사항·설계 검증, 용어 정리 | [rules/docs.md](rules/docs.md) | `grill-me`, `domain-modeling` | PRD 전체 | – |
 | 문서·산출물 작성 | [rules/docs.md](rules/docs.md) | – | – | – |
 | Claude 설정 (스킬, MCP, hooks) | [rules/dependencies.md](rules/dependencies.md) | `find-skills` | TECH_SPEC 6·7장, HARNESS_CANDIDATES | `claude-code`, `skills`, `mcp` |
@@ -59,10 +59,13 @@
 | 수용 기준 시나리오 S1~S7 | PRD 9장 |
 | 가정·오픈 이슈 | PRD 10.1~10.2 |
 | S3 버킷 구조 | DEPLOYMENT_PLAN 2.1 |
-| 서버 구성도·비용 | DEPLOYMENT_PLAN 4·5장 |
-| Docker Compose 서비스 | DEPLOYMENT_PLAN 6.1 |
-| DB 덤프·복구 절차·이관 절차 | DEPLOYMENT_PLAN 7장 |
-| 서버 보안·모니터링·CI/CD | DEPLOYMENT_PLAN 8장 |
+| 서버 구성도·요청 흐름 | DEPLOYMENT_PLAN 3장 |
+| 서버 하드웨어·OS 사양 | DEPLOYMENT_PLAN 4장 |
+| 비용 (장비 1회 + 월) | DEPLOYMENT_PLAN 5장 |
+| Docker Compose 서비스·네트워크·환경(스테이징) | DEPLOYMENT_PLAN 6장 |
+| Cloudflare Tunnel·Access·무료 플랜 제약(100MB·100초) | DEPLOYMENT_PLAN 7장 |
+| DB 덤프·복구 절차·이관 절차·로컬 사본 | DEPLOYMENT_PLAN 8장 |
+| 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
 | 런타임·라이브러리 버전 | TECH_SPEC 2·3장 |
 | 저장소 구조·의존 방향 | TECH_SPEC 4장, rules/architecture.md |
@@ -116,7 +119,8 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
-| (없음) | | |
+| [2026-10-03-mvp-roadmap.md](plan/2026-10-03-mvp-roadmap.md) | draft | MVP 마일스톤 M0~M8, P0 요구사항 118개 배정, 선행 작업·위험 |
+| [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | draft | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
 
 ---
 

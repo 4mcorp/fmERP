@@ -35,7 +35,8 @@
 | pnpm | **11.x** (검증 시점 11.28.3) | `packageManager: "pnpm@11.28.3"` |
 | TypeScript | **~6.0.3** | 7.0은 typescript-eslint 등 생태계 지원을 기다린 뒤 검토 |
 | PostgreSQL | **18.x** (Docker `postgres:18-bookworm`) | 지원 종료 2030-11. 확장: `ltree`, `pg_trgm` |
-| Docker 이미지 | `node:24-bookworm-slim`, `mcr.microsoft.com/playwright:v1.63.0-noble`(worker), `caddy:2`, `cloudflare/cloudflared` | Playwright 이미지 버전은 npm 버전과 반드시 일치 |
+| 서버 OS | **Ubuntu Server 26.04 LTS** + Docker Engine (Desktop 아님) | 지원 종료 2031-05. 로컬 서버 + Cloudflare Tunnel 구성 (DEPLOYMENT_PLAN 3·4장) |
+| Docker 이미지 | `node:24-bookworm-slim`, `mcr.microsoft.com/playwright:v1.63.0-noble`(worker), `postgres:18-bookworm`, `cloudflare/cloudflared:2026.9.3` | Playwright 이미지 버전은 npm 버전과 반드시 일치. 리버스 프록시(Caddy)는 사용하지 않음 |
 
 ---
 

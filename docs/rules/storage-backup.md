@@ -1,6 +1,6 @@
 # 파일 저장·백업·이관 규칙
 
-기준: [PRD 5.6 BAK · 5.10 FILE](../PRD.md) · [DEPLOYMENT_PLAN 2장(버킷 구조) · 7장(덤프·복구·이관)](../DEPLOYMENT_PLAN.md)
+기준: [PRD 5.6 BAK · 5.10 FILE](../PRD.md) · [DEPLOYMENT_PLAN 2장(버킷 구조) · 8장(덤프·복구·이관)](../DEPLOYMENT_PLAN.md)
 
 ## 1. S3 사용
 - S3 접근은 `packages/storage` 어댑터로만 한다.

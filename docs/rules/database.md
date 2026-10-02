@@ -25,7 +25,7 @@
 - `drizzle-kit generate`로 만든 SQL을 커밋한다. **이미 적용된 마이그레이션 파일은 수정하지 않는다.**
 - 하위 호환 원칙(expand → migrate → contract)을 따른다. 컬럼 삭제·이름 변경은 두 번의 배포로 나눈다.
 - RLS 정책, 권한(GRANT), 트리거도 마이그레이션에 포함한다.
-- 운영 배포 직전에는 수동 덤프가 자동으로 실행된다 (DEPLOYMENT_PLAN 8.3).
+- 운영 배포 직전에는 수동 덤프가 자동으로 실행된다 (DEPLOYMENT_PLAN 9.4).
 
 ## 4. DB 연결
 - 드라이버는 `pg`(node-postgres) 하나로 통일한다. Drizzle, pg-boss, Better Auth가 같은 풀 설정을 쓴다.
