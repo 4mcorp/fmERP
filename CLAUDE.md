@@ -31,5 +31,12 @@ Node 24 LTS · pnpm 11 · TypeScript ~6.0 · Next 16.3 + Hono 4.13(`/api`) · Po
 ## 명령어 (프로젝트 골격 생성 후 갱신)
 - 설치: `pnpm install` / 개발: `pnpm dev` / 테스트: `pnpm test` / 타입: `pnpm typecheck` / 린트: `pnpm lint`
 
+## 커밋 규칙 (`git-commit` 스킬과 함께 적용)
+- 형식: `<type>(<scope>): <한국어 설명>` — 예: `feat(approval): 병렬 합의 완료 조건 추가`
+- type: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+- scope: approval, org, auth, audit, storage, backup, notify, admin, db, ui, worker, infra, deps, claude (해당 없으면 생략)
+- 하나의 논리적 변경 = 하나의 커밋. 본문에는 "왜"를 쓰고, 관련 PRD ID(예: APV-061)가 있으면 적는다.
+- 사용자가 요청할 때만 커밋·푸시한다. `--no-verify`, force push, `git add -p`(대화형)는 쓰지 않는다.
+
 ## 스킬
 `.claude/skills/`에 설치됨 (목록과 용도는 TECH_SPEC 6장). 스킬 추가·업데이트는 SKILL.md를 리뷰한 뒤 `skills-lock.json`과 함께 커밋한다.

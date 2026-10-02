@@ -124,7 +124,7 @@
 
 ## 6. Claude 스킬 (설치 완료)
 
-설치 위치: `.claude/skills/` (프로젝트 범위, 파일 복사 방식으로 git 공유). 출처와 해시는 `skills-lock.json`에 기록됩니다.
+설치 위치: `.claude/skills/` (20개, 프로젝트 범위, 파일 복사 방식으로 git 공유). 출처와 해시는 `skills-lock.json`에 기록됩니다.
 
 | 스킬 | 출처 | 언제 쓰나 |
 |---|---|---|
@@ -140,6 +140,7 @@
 | `playwright-cli` | microsoft/playwright-cli | 브라우저로 화면 확인, E2E 테스트 작성 (CLI는 구현 단계에서 devDependency로 설치) |
 | `differential-review`, `semgrep`, `supply-chain-risk-auditor` | trailofbits/skills | 보안 관점의 변경 리뷰, 정적 분석, 의존성 공급망 위험 점검 |
 | `find-skills` | vercel-labs/skills | 새 스킬 검색 |
+| `git-commit` | github/awesome-copilot (MIT) | 변경 내용(diff)을 분석해 Conventional Commits 형식으로 커밋. 프로젝트 규칙(type·scope·한국어 설명)은 CLAUDE.md "커밋 규칙"을 따름 |
 
 **설치 시 점검한 내용**
 - 원격 실행(`curl | sh`), 자격 증명 접근, 지시 무시 유도 문구 같은 위험 패턴은 없었습니다.

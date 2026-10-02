@@ -43,6 +43,12 @@
       "skillPath": "skills/find-skills/SKILL.md",
       "computedHash": "d6cb30212b3b19f531378574784af1da09928b2e5078f299eaeaedd50191a4af"
     },
+    "git-commit": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/git-commit/SKILL.md",
+      "computedHash": "2607fc60629b82b257136dd2a7a373f0a4466c0b49df7746d845d59313c99b21"
+    },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
