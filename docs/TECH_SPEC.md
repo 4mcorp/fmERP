@@ -97,7 +97,7 @@
 │  ├─ db/                     # Drizzle 스키마, 마이그레이션, RLS 정책, 시드
 │  ├─ auth/                   # Better Auth 설정 (Google·Naver·passkey), 결재 PIN
 │  └─ storage/                # S3 호환 어댑터 (R2·S3·NCP·MinIO)
-├─ docs/                      # PRD, 스펙, 배포 계획, ADR(docs/adr/)
+├─ docs/                      # 기준 문서(루트), INDEX.md, rules/, plan/, ts/, idea/, adr/
 ├─ GLOSSARY.md                # 도메인 용어집 (domain-modeling 스킬이 관리)
 ├─ CLAUDE.md                  # 에이전트 작업 규칙
 ├─ .claude/skills/            # 프로젝트 스킬 (git으로 공유)
@@ -158,10 +158,20 @@ npx skills update -p
 
 ---
 
-## 7. MCP 서버
+## 7. MCP 서버 (`.mcp.json`, 프로젝트 공유)
 
-| 서버 | 설정 | 용도 |
-|---|---|---|
-| shadcn | `.mcp.json` → `npx shadcn@4 mcp` | 컴포넌트 레지스트리(shadcn 기본, tablecn 등)를 검색하고 설치 |
+| 서버 | 방식 | 설정 | 용도 |
+|---|---|---|---|
+| shadcn | 로컬 프로세스 (stdio) | `cmd /c npx -y shadcn@4 mcp` | 컴포넌트 레지스트리(shadcn 기본, tablecn 등) 검색·설치 |
+| context7 | 원격 (HTTP) | `https://mcp.context7.com/mcp` | 버전별 최신 라이브러리 문서 조회 (Next 16, Better Auth 1.7, Drizzle 0.45 등) |
 
-토큰 절감·품질 향상을 위한 추가 도구(Context7, LSP 등)는 [HARNESS_CANDIDATES.md](./HARNESS_CANDIDATES.md)에서 검토한 뒤 결정합니다.
+**운영 메모**
+- **Windows 실행 방식:** Windows에서는 `npx`를 셸 없이 실행하면 실패(ENOENT)하므로 shadcn은 `cmd /c`로 감쌉니다. macOS·Linux 개발자는 같은 이름(`shadcn`)으로 **local 범위**에 `npx -y shadcn@4 mcp`를 등록해 덮어씁니다(local 범위가 project 범위보다 우선).
+- **Context7 원격 방식:**
+  - 프로세스를 띄우지 않아 운영체제와 무관하게 동작합니다.
+  - 서버 버전은 Upstash가 관리하므로 고정할 수 없습니다(검증 시점 4.1.1).
+  - 조회 질의(라이브러리 이름, 질문)가 Upstash로 전송되므로 **고객 데이터나 비밀정보를 질의에 넣지 않습니다.**
+- **Context7 API 키:** 키 없이 기본 사용량 한도로 씁니다. 한도에 걸리면 [context7.com/dashboard](https://context7.com/dashboard)에서 키를 발급받아, 같은 이름(`context7`)으로 local 범위에 `Authorization: Bearer <키>` 헤더를 넣어 등록합니다. 키는 저장소에 커밋하지 않습니다.
+- 두 서버는 처음 사용할 때 Claude Code가 프로젝트 MCP 승인을 요청합니다.
+
+그 밖의 부가 도구 검토 결과는 [HARNESS_CANDIDATES.md](./HARNESS_CANDIDATES.md)를 참조하세요.

@@ -1,8 +1,12 @@
 {
   "mcpServers": {
     "shadcn": {
-      "command": "npx",
-      "args": ["shadcn@4", "mcp"]
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "shadcn@4", "mcp"]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
     }
   }
 }

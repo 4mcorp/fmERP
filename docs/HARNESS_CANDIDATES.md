@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 |---|---|
 | 작성일 | 2026-10-03 |
-| 상태 | **검토 요청** |
+| 상태 | **일부 적용** — Context7 적용 완료(2026-10-03). typescript-lsp·hooks는 프로젝트 골격 생성 후 적용 |
 | 조사 방법 | GitHub 스타 수(API), npm 라이선스, Anthropic 공식 플러그인 마켓 목록, 독립 벤치마크(JetBrains 등) |
 
 ---
@@ -79,7 +79,7 @@
 | 시점 | 적용 |
 |---|---|
 | **지금** | CLAUDE.md(작성 완료, karpathy 원칙 반영), shadcn MCP(설정 완료), **ccusage**(필요할 때 `npx ccusage`) |
-| **승인 시 바로** | **Context7** — 공식 플러그인 또는 `.mcp.json`에 추가 |
+| **적용 완료** | **Context7** — `.mcp.json`에 원격(HTTP) 방식으로 추가 (TECH_SPEC 7장) |
 | **프로젝트 골격 생성 후** | **typescript-lsp 플러그인**, **hooks**(Biome 포맷, tsc·vitest 검사), 권한 허용 목록 |
 | **조건부 재검토** | Serena(코드 5만 줄 이상), context-mode(로그 분석 증가), hookify(반복 실수 발생) |
 | **사용 안 함** | caveman, rtk, claude-mem, claude-context, 워크플로 프레임워크 전부 |
