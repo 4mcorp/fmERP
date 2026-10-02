@@ -7,6 +7,8 @@
 ## 문서
 | 문서 | 내용 |
 |---|---|
+| [docs/INDEX.md](docs/INDEX.md) | **색인** — 규칙·문서·스킬·산출물 위치 |
+| [docs/rules/](docs/rules/) | 구현 세부 규칙 |
 | [docs/PRD.md](docs/PRD.md) | 제품 요구사항 정의서 |
 | [docs/TECH_SPEC.md](docs/TECH_SPEC.md) | 확정 기술 스택·버전·저장소 구조·스킬 |
 | [docs/DEPLOYMENT_PLAN.md](docs/DEPLOYMENT_PLAN.md) | 배포·백업·이관 계획 |
@@ -17,4 +19,4 @@
 Node.js 24 LTS · pnpm 11 · TypeScript 6 · Next.js 16 + Hono · PostgreSQL 18 · Drizzle · Better Auth · shadcn/ui · Docker Compose (서울 VPS)
 
 ## AI 에이전트 작업
-에이전트 작업 규칙은 [CLAUDE.md](CLAUDE.md), 프로젝트 스킬은 `.claude/skills/`(출처·해시: `skills-lock.json`)에 있습니다.
+에이전트 작업 절차·공통 규칙은 [CLAUDE.md](CLAUDE.md), 작업 산출물은 `docs/plan`·`docs/ts`(트러블슈팅)·`docs/idea`, 프로젝트 스킬은 `.claude/skills/`(출처·해시: `skills-lock.json`)에 있습니다.

@@ -1,42 +1,37 @@
 # 4mERP
 
-전자결재 중심 ERP (사용자 100명 이하, 서울 VPS 1대 + 외부 S3). 사용자와 문서는 한국어로 소통한다.
+전자결재 중심 ERP (사용자 100명 이하, 서울 VPS 1대 + 외부 S3). 사용자와의 대화와 문서는 한국어로 작성한다.
 
-## 기준 문서 (작업 전 해당 부분만 읽기)
-- 요구사항: `docs/PRD.md` — 요구사항 ID(APV-030 등)로 참조
-- 기술 스택·버전·구조: `docs/TECH_SPEC.md`
-- 배포·백업: `docs/DEPLOYMENT_PLAN.md`
-- 도메인 용어: `GLOSSARY.md`, 설계 결정: `docs/adr/`
+## 작업 절차 (모든 요청에 적용)
+1. **공통 규칙 확인:** 이 파일의 규칙을 따른다.
+2. **색인 조회:** [docs/INDEX.md](docs/INDEX.md)에서 요청과 관련된 세부 규칙, 기준 문서 섹션, 스킬을 찾는다.
+3. **세부 규칙 읽기:** 찾은 `docs/rules/*.md`와 기준 문서의 **해당 섹션만** 읽는다. 문서 전체를 읽지 않는다.
+4. **트러블슈팅 확인:** INDEX의 트러블슈팅 목록에서 요청 영역과 태그가 겹치는 `docs/ts/` 항목을 읽고, 각 항목의 "재발 방지 규칙"을 이번 작업에 적용한다.
+5. **수행·검증:** 작업한 뒤 완료 기준(타입 검사, 린트, 관련 테스트, 화면 확인)을 확인하고 나서 완료라고 보고한다.
+6. **산출물 정리:** 작업 중 생긴 계획은 `docs/plan/`, 문제 해결 기록은 `docs/ts/`, 아이디어·보류안은 `docs/idea/`에 남기고, **INDEX.md를 갱신한다** (규칙: [docs/rules/docs.md](docs/rules/docs.md)).
 
-## 스택 (버전 변경 금지 — 바꾸려면 TECH_SPEC 갱신 + 사용자 승인)
+## 공통 규칙
+### 스택 고정
 Node 24 LTS · pnpm 11 · TypeScript ~6.0 · Next 16.3 + Hono 4.13(`/api`) · PostgreSQL 18 · Drizzle 0.45 · Better Auth 1.7 · Zod 4 · pg-boss 12 · Tailwind 4 + shadcn(Radix) · Vitest 4.1 · Playwright 1.63 · Biome 2.5
-- 패키지 추가 시 `~` 범위로 고정하고 `pnpm install`에서 peer 충돌이 없어야 한다 (strictPeerDependencies).
-- 라이브러리 API는 학습 데이터보다 최신일 수 있다. 확신이 없으면 공식 문서를 확인한다.
+- 버전 변경과 새 패키지 추가는 [docs/rules/dependencies.md](docs/rules/dependencies.md)를 따르고, 사용자 승인을 받는다.
+- 라이브러리 API는 학습 데이터보다 최신일 수 있다. 라이브러리 코드를 작성하거나 설정할 때는 Context7 MCP로 위 버전의 문서를 확인한다.
 
-## 구조 규칙
-- `packages/core`(결재 엔진·도메인)는 프레임워크·DB를 import하지 않는다.
-- 모든 테이블에 `account_id` + RLS. 테넌트 경계를 넘는 쿼리 금지.
-- 감사 로그(`audit_log`)는 INSERT만 한다. UPDATE·DELETE 코드 금지.
-- 완료 문서 패키지(S3 `final/`)는 한 번만 쓴다. 덮어쓰기 금지.
-- 문서 본문·첨부는 S3, DB에는 색인·상태·S3 키만 둔다.
+### 깨면 안 되는 불변 조건
+- 모든 테넌트 데이터는 `account_id` + RLS로 격리한다. 테넌트 경계를 넘는 쿼리는 금지한다.
+- 감사 로그(`audit_log`)는 INSERT만 한다. UPDATE·DELETE 코드는 금지한다.
+- 완료 문서 패키지(S3 `final/`)는 한 번만 쓴다. 문서 본문·첨부는 S3에, DB에는 색인·상태·S3 키만 둔다.
+- `packages/core`(결재 엔진·도메인)는 프레임워크·DB·네트워크를 import하지 않는다.
+- 비밀정보(키, 토큰, `.env`)와 고객 데이터는 커밋하거나 로그·외부 도구 질의에 넣지 않는다.
 
-## 작업 원칙
+### 작업 원칙
 1. **먼저 생각한다:** 요구사항이 모호하면 가정하지 말고 질문한다. 해석이 여러 개면 제시한다.
 2. **단순하게:** 요청된 것만 만든다. 추측성 추상화·옵션·설정을 추가하지 않는다.
 3. **필요한 부분만 수정:** 관련 없는 코드·주석·포맷은 건드리지 않는다.
-4. **검증으로 끝낸다:** 완료 기준(테스트 통과, 타입 검사, 화면 확인)을 정하고 확인한 뒤 완료라고 말한다.
-- 결재 엔진 등 규칙이 복잡한 로직은 `tdd` 스킬로 테스트부터 작성한다.
+4. **검증으로 끝낸다:** 검증하지 못한 부분은 검증하지 못했다고 보고한다.
 - 여러 파일을 훑는 조사는 서브에이전트(Explore)에 맡기고 결론만 받는다.
 
+### 커밋
+`<type>(<scope>): <한국어 설명>` 형식을 쓴다. 커밋·푸시는 사용자가 요청할 때만 한다. 세부 사항: [docs/rules/git.md](docs/rules/git.md)
+
 ## 명령어 (프로젝트 골격 생성 후 갱신)
-- 설치: `pnpm install` / 개발: `pnpm dev` / 테스트: `pnpm test` / 타입: `pnpm typecheck` / 린트: `pnpm lint`
-
-## 커밋 규칙 (`git-commit` 스킬과 함께 적용)
-- 형식: `<type>(<scope>): <한국어 설명>` — 예: `feat(approval): 병렬 합의 완료 조건 추가`
-- type: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-- scope: approval, org, auth, audit, storage, backup, notify, admin, db, ui, worker, infra, deps, claude (해당 없으면 생략)
-- 하나의 논리적 변경 = 하나의 커밋. 본문에는 "왜"를 쓰고, 관련 PRD ID(예: APV-061)가 있으면 적는다.
-- 사용자가 요청할 때만 커밋·푸시한다. `--no-verify`, force push, `git add -p`(대화형)는 쓰지 않는다.
-
-## 스킬
-`.claude/skills/`에 설치됨 (목록과 용도는 TECH_SPEC 6장). 스킬 추가·업데이트는 SKILL.md를 리뷰한 뒤 `skills-lock.json`과 함께 커밋한다.
+설치 `pnpm install` · 개발 `pnpm dev` · 테스트 `pnpm test` · 타입 `pnpm typecheck` · 린트 `pnpm lint`
