@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 11은 프로젝트 설정을 .npmrc가 아니라 이 파일에서 읽는다 (docs/ts/2026-10-03-pnpm11-config-location.md)
+strictPeerDependencies: true
+autoInstallPeers: false
+allowBuilds:
+  esbuild: true
+  lefthook: true
+minimumReleaseAgeExclude:
+  - '@aws-sdk/client-s3@3.1145.0'
+  - '@aws-sdk/s3-request-presigner@3.1145.0'

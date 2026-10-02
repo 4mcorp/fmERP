@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      # docker-compose.dev.yml의 개발용 계정 (비밀정보 아님)
+      DATABASE_URL: postgres://fmerp_app:fmerp_app_dev@localhost:55432/fmerp
+      MIGRATION_DATABASE_URL: postgres://fmerp_migrator:fmerp_migrator_dev@localhost:55432/fmerp
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6 # package.json의 packageManager(pnpm@11.28.3) 사용
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: 린트 (Biome)
+        run: pnpm exec biome ci .
+
+      - name: 타입 검사
+        run: pnpm typecheck
+
+      - name: 로컬 서비스 기동 (PostgreSQL 18, SeaweedFS)
+        run: docker compose -f docker-compose.dev.yml up -d --wait postgres postgres-test s3
+
+      - name: 단위·통합 테스트
+        run: pnpm test
+
+      - name: E2E 준비 (개발 DB 마이그레이션, 브라우저 설치)
+        run: |
+          pnpm db:migrate
+          pnpm --filter @fmerp/web exec playwright install --with-deps chromium
+
+      - name: E2E 테스트
+        run: pnpm test:e2e
+
+      - name: 실패 시 Playwright 리포트 보관
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: apps/web/test-results
+          retention-days: 7

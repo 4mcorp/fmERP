@@ -1,0 +1,35 @@
+{
+  "name": "fmerp",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.28.3",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @fmerp/web --filter @fmerp/worker dev",
+    "build": "pnpm -r build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:int": "vitest run --project integration",
+    "test:e2e": "pnpm --filter @fmerp/web test:e2e",
+    "db:generate": "pnpm --filter @fmerp/db generate",
+    "db:migrate": "pnpm --filter @fmerp/db migrate",
+    "env:up": "docker compose -f docker-compose.dev.yml up -d --wait",
+    "env:down": "docker compose -f docker-compose.dev.yml down",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "~2.5.15",
+    "@commitlint/cli": "~21.2.3",
+    "@commitlint/config-conventional": "~21.2.3",
+    "@types/node": "~24.19.0",
+    "lefthook": "~2.1.16",
+    "tsx": "~4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "~4.1.11"
+  }
+}

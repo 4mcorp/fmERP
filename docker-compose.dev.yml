@@ -1,0 +1,53 @@
+# 로컬 개발·테스트 환경. 포트는 모두 127.0.0.1에만 바인딩한다.
+# 실행: corepack pnpm env:up / 종료: corepack pnpm env:down
+name: fmerp-dev
+
+x-postgres: &postgres
+  image: postgres:18-bookworm
+  environment:
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_DB: fmerp
+  volumes:
+    - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U postgres -d fmerp"]
+    interval: 3s
+    timeout: 3s
+    retries: 20
+
+services:
+  postgres:
+    <<: *postgres
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql
+
+  # 통합 테스트 전용 DB. 메모리(tmpfs)에 두어 빠르고, 컨테이너를 내리면 사라진다 (ADR 0004)
+  postgres-test:
+    <<: *postgres
+    ports:
+      - "127.0.0.1:55433:5432"
+    tmpfs:
+      - /var/lib/postgresql
+
+  # 로컬 S3 (MinIO 대체, 결정 P2). 운영은 Cloudflare R2 등 외부 버킷
+  s3:
+    image: chrislusf/seaweedfs:4.47
+    command: server -s3 -dir=/data -ip.bind=0.0.0.0
+    ports:
+      - "127.0.0.1:58333:8333"
+    volumes:
+      - s3data:/data
+
+  # 개발용 메일 수신함: http://localhost:58025
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports:
+      - "127.0.0.1:58025:8025"
+      - "127.0.0.1:51025:1025"
+
+volumes:
+  pgdata:
+  s3data:

@@ -1,0 +1,71 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "**",
+      "!**/.claude/skills",
+      "!**/migrations/meta",
+      "!**/next-env.d.ts",
+      "!**/skills-lock.json"
+    ]
+  },
+  "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
+  "linter": {
+    "rules": {
+      "preset": "recommended",
+      "suspicious": { "noExplicitAny": "error" }
+    }
+  },
+  "css": { "parser": { "tailwindDirectives": true } },
+  "overrides": [
+    {
+      "includes": ["packages/core/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@fmerp/db": "core는 DB를 import하지 않는다 (docs/rules/architecture.md)",
+                  "@fmerp/storage": "core는 저장소를 import하지 않는다",
+                  "@fmerp/auth": "core는 인증을 import하지 않는다",
+                  "drizzle-orm": "core는 DB를 import하지 않는다",
+                  "pg": "core는 DB를 import하지 않는다",
+                  "pg-boss": "core는 작업 큐를 import하지 않는다",
+                  "hono": "core는 HTTP 프레임워크를 import하지 않는다",
+                  "next": "core는 프레임워크를 import하지 않는다",
+                  "react": "core는 UI를 import하지 않는다",
+                  "node:fs": "core는 파일 시스템을 쓰지 않는다",
+                  "node:fs/promises": "core는 파일 시스템을 쓰지 않는다",
+                  "node:http": "core는 네트워크를 쓰지 않는다",
+                  "node:net": "core는 네트워크를 쓰지 않는다",
+                  "@aws-sdk/client-s3": "core는 저장소를 import하지 않는다"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/**", "packages/db/**", "packages/auth/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@aws-sdk/client-s3": "S3는 @fmerp/storage 어댑터로만 접근한다 (docs/rules/storage-backup.md)",
+                  "@aws-sdk/s3-request-presigner": "S3는 @fmerp/storage 어댑터로만 접근한다"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

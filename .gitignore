@@ -42,3 +42,6 @@ Thumbs.db
 
 # Claude Code personal settings
 .claude/settings.local.json
+
+# Next.js 자동 생성 파일
+next-env.d.ts

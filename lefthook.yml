@@ -1,0 +1,12 @@
+# Git hook (결정 P3). 설치는 pnpm install 시 prepare 스크립트가 처리한다.
+pre-commit:
+  commands:
+    biome:
+      glob: "*.{js,mjs,cjs,ts,tsx,jsx,json,jsonc,css}"
+      run: node_modules/.bin/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    commitlint:
+      run: node_modules/.bin/commitlint --edit {1}
