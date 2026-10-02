@@ -1,0 +1,166 @@
+# 4mERP 기술 스펙
+
+| 항목 | 내용 |
+|---|---|
+| 문서 버전 | v1.0 |
+| 작성일 | 2026-10-03 |
+| 상태 | **확정** (후보 비교: [TECH_CANDIDATES.md](./TECH_CANDIDATES.md)) |
+| 관련 문서 | [PRD](./PRD.md) · [배포 계획서](./DEPLOYMENT_PLAN.md) · [Claude 부가 도구 비교](./HARNESS_CANDIDATES.md) |
+
+---
+
+## 1. 결정 사항
+
+| # | 항목 | 결정 |
+|---|---|---|
+| D1 | UI 컴포넌트 | **shadcn/ui** (공식 MCP + 공식 스킬) + **tablecn** 데이터 그리드. 테마는 tweakcn |
+| D2 | shadcn 기반 라이브러리 | **Radix UI** |
+| D3 | 개발 방법론 스킬 | **mattpocock/skills** (grill-me, tdd, domain-modeling, diagnosing-bugs) |
+| D4 | 브라우저 테스트 스킬 | **microsoft/playwright-cli** |
+| D5 | 린트·포맷 | **Biome** |
+| D6 | 앱 구성 | **Next.js 안에 Hono 탑재** (`apps/web`) + `apps/worker` |
+| D7 | DB | **PostgreSQL 18** |
+| D8 | 양식 빌더 MVP | **필드 나열 + 표 + 리치 텍스트** (자유 배치 레이아웃 제외) |
+| D9 | HWP 미리보기 | **제외** |
+
+---
+
+## 2. 런타임 · 도구 버전
+
+> **버전 고정 정책:** `package.json`에는 `~`(패치 업데이트만 허용)로 적고, lockfile로 정확한 버전을 고정합니다. 메이저·마이너 업데이트는 Renovate PR을 거쳐 수동으로 승인합니다.
+
+| 구분 | 버전 | 비고 |
+|---|---|---|
+| Node.js | **24.x LTS** (검증 시점 24.21) | `.nvmrc` = `24`, `engines.node` = `>=24 <25`. 지원 종료 2028-04-30 |
+| pnpm | **11.x** (검증 시점 11.28.3) | `packageManager: "pnpm@11.28.3"` |
+| TypeScript | **~6.0.3** | 7.0은 typescript-eslint 등 생태계 지원을 기다린 뒤 검토 |
+| PostgreSQL | **18.x** (Docker `postgres:18-bookworm`) | 지원 종료 2030-11. 확장: `ltree`, `pg_trgm` |
+| Docker 이미지 | `node:24-bookworm-slim`, `mcr.microsoft.com/playwright:v1.63.0-noble`(worker), `caddy:2`, `cloudflare/cloudflared` | Playwright 이미지 버전은 npm 버전과 반드시 일치 |
+
+---
+
+## 3. 라이브러리 버전 (검증 완료)
+
+| 영역 | 패키지 | 버전 |
+|---|---|---|
+| 웹 프레임워크 | next | ~16.3.8 |
+| | react, react-dom | ~19.3.0 |
+| API | hono | ~4.13.12 |
+| | @hono/zod-openapi | ~1.6.3 |
+| | @hono/node-server | ~2.1.3 (worker의 헬스체크 서버용) |
+| 검증 | zod | ~4.6.5 |
+| 인증 | better-auth, @better-auth/passkey | ~1.7.7 (두 패키지 버전을 항상 같게 유지) |
+| 비밀번호·PIN 해시 | @node-rs/argon2 | ~2.2.1 |
+| ORM | drizzle-orm / drizzle-kit | ~0.45.3 / ~0.31.11 |
+| DB 드라이버 | pg | ~8.23.1 (Drizzle·pg-boss·Better Auth 공용) |
+| 작업 큐 | pg-boss | ~12.35.1 |
+| UI 기반 | tailwindcss, @tailwindcss/postcss | ~4.3.3 |
+| | radix-ui | ~1.6.7 |
+| | lucide-react | ~1.50.0 |
+| | shadcn (CLI) | 4.x — 컴포넌트는 코드로 복사되므로 런타임 의존성 아님 |
+| 서버 상태 | @tanstack/react-query | ~5.104.1 |
+| 표 | @tanstack/react-table | ~9.2.4 (tablecn 기준) |
+| 폼 | react-hook-form / @hookform/resolvers | ~7.89.0 / ~5.9.1 |
+| 에디터 | @tiptap/react, @tiptap/pm, @tiptap/starter-kit | ~3.31.4 |
+| 클라이언트 저장 | dexie | ~4.4.6 |
+| 스토리지·메일 | @aws-sdk/client-s3, @aws-sdk/s3-request-presigner, @aws-sdk/client-sesv2 | ~3.1145.0 |
+| 파일 처리 | archiver | ~8.0.0 |
+| | write-excel-file | ~4.1.1 (**exceljs 대체**: exceljs는 2024-12 이후 업데이트가 없고 deprecated 하위 의존성 6개 포함) |
+| 변경 비교 | microdiff | ~1.6.0 |
+| 날짜 | date-fns | ~4.4.0 |
+| 테스트 | vitest | ~4.1.11 |
+| | @playwright/test | ~1.63.0 (PDF 생성에도 같은 버전 사용) |
+| 린트·포맷 | @biomejs/biome | ~2.5.15 |
+| 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |
+
+**구현 단계에서 추가할 예정인 패키지** (해당 기능을 만들 때 같은 방식으로 검증): `@headless-tree/react`(부서 트리), `@xyflow/react`(조직도), `@dnd-kit/*`(양식 빌더), `serwist`·`web-push`(P1 PWA), `age-encryption`(덤프 암호화. 또는 worker 이미지에 age 바이너리 포함).
+
+### 3.1 호환성 검증 결과 (2026-10-03)
+- 위 조합으로 `strictPeerDependencies: true`를 켠 상태에서 `pnpm install`이 **성공했고, peer 충돌은 0건**입니다(626개 패키지 해석).
+- 남은 경고: drizzle-kit(개발 전용)의 deprecated 하위 의존성 `@esbuild-kit/*` 2개. 운영 번들에는 들어가지 않으며, drizzle-kit 1.0 정식판에서 해소될 예정입니다.
+- 자동 조정한 항목은 [TECH_CANDIDATES.md 2.2절](./TECH_CANDIDATES.md)을 참조하세요(TypeScript 7→6, Vitest 5→4.1, Drizzle 1.0 RC→0.45, exceljs→write-excel-file).
+
+---
+
+## 4. 저장소 구조
+
+```
+4mERP/
+├─ apps/
+│  ├─ web/                    # Next.js 16 (UI + /api/* = Hono)
+│  │  ├─ app/api/[[...route]]/route.ts   # Hono 앱 마운트
+│  │  ├─ components/ui/       # shadcn 컴포넌트 (코드 소유)
+│  │  └─ server/              # Hono 라우트, 미들웨어(인증·테넌트·감사 로그)
+│  └─ worker/                 # pg-boss 작업: PDF·완료 패키지, 내보내기, 일일 DB 덤프, 알림, 예약 작업
+├─ packages/
+│  ├─ core/                   # 결재 엔진·도메인 규칙 (프레임워크 비의존, 순수 TS, 단위 테스트 중심)
+│  ├─ db/                     # Drizzle 스키마, 마이그레이션, RLS 정책, 시드
+│  ├─ auth/                   # Better Auth 설정 (Google·Naver·passkey), 결재 PIN
+│  └─ storage/                # S3 호환 어댑터 (R2·S3·NCP·MinIO)
+├─ docs/                      # PRD, 스펙, 배포 계획, ADR(docs/adr/)
+├─ GLOSSARY.md                # 도메인 용어집 (domain-modeling 스킬이 관리)
+├─ CLAUDE.md                  # 에이전트 작업 규칙
+├─ .claude/skills/            # 프로젝트 스킬 (git으로 공유)
+├─ skills-lock.json           # 스킬 출처·해시 고정
+└─ .mcp.json                  # shadcn MCP
+```
+
+**의존 방향:** `apps/*` → `packages/auth`, `packages/storage` → `packages/db` → `packages/core`. `core`는 다른 패키지를 import하지 않습니다(결재 엔진을 프레임워크와 분리).
+
+---
+
+## 5. 공통 설정 기준
+
+| 파일 | 내용 |
+|---|---|
+| `package.json` (루트) | `engines.node: ">=24 <25"`, `packageManager: "pnpm@11.28.3"` |
+| `pnpm-workspace.yaml` | `packages: [apps/*, packages/*]`, **`strictPeerDependencies: true`**, `autoInstallPeers: false`, `allowBuilds: { esbuild: true }` (검증 시 빌드 스크립트가 필요한 패키지는 esbuild뿐이었음) — pnpm 11은 이 설정을 `.npmrc`가 아니라 이 파일에서 읽습니다 |
+| `tsconfig.base.json` | `strict`, `noUncheckedIndexedAccess`, `moduleResolution: "bundler"`, `target: ES2024` |
+| `biome.json` | 포맷과 린트 통합, import 정렬, `noExplicitAny: error` |
+| `renovate.json` | 메이저 업데이트는 수동 승인. 출시 후 14일 대기. 그룹: `better-auth*`, `@tanstack/*`, `@aws-sdk/*`, `@tiptap/*`, Playwright npm 패키지와 Docker 이미지 동시 업데이트 |
+| `.nvmrc` | `24` |
+
+---
+
+## 6. Claude 스킬 (설치 완료)
+
+설치 위치: `.claude/skills/` (프로젝트 범위, 파일 복사 방식으로 git 공유). 출처와 해시는 `skills-lock.json`에 기록됩니다.
+
+| 스킬 | 출처 | 언제 쓰나 |
+|---|---|---|
+| `grill-me` → `grilling` | mattpocock/skills | 기능을 만들기 전에 요구사항·설계를 질문으로 검증할 때 (`/grill-me`). grill-me는 grilling을 호출하는 진입점입니다 |
+| `tdd` (+ 참조용 `codebase-design`) | mattpocock/skills | 결재 엔진처럼 규칙이 복잡한 로직을 테스트부터 작성할 때 |
+| `domain-modeling` | mattpocock/skills | 용어를 정의하거나 ADR(설계 결정 기록)을 남길 때. `GLOSSARY.md`와 `docs/adr/`를 관리 |
+| `diagnosing-bugs` | mattpocock/skills | 원인이 불분명한 버그나 성능 저하를 진단할 때 |
+| `shadcn` | shadcn-ui/ui (공식) | UI 컴포넌트 추가·수정·스타일링 |
+| `vercel-react-best-practices` | vercel-labs/agent-skills | React·Next 코드 작성·리뷰 |
+| `web-design-guidelines` | vercel-labs/agent-skills | UI 접근성·UX 점검 (KWCAG 대응) |
+| `supabase-postgres-best-practices` | supabase/agent-skills | 스키마·마이그레이션·RLS·인덱스·쿼리 작업 (Supabase와 무관하게 Postgres 일반 규칙) |
+| `better-auth-best-practices`, `better-auth-security-best-practices` | better-auth/skills (공식) | 인증 설정·보안 강화 |
+| `playwright-cli` | microsoft/playwright-cli | 브라우저로 화면 확인, E2E 테스트 작성 (CLI는 구현 단계에서 devDependency로 설치) |
+| `differential-review`, `semgrep`, `supply-chain-risk-auditor` | trailofbits/skills | 보안 관점의 변경 리뷰, 정적 분석, 의존성 공급망 위험 점검 |
+| `find-skills` | vercel-labs/skills | 새 스킬 검색 |
+
+**설치 시 점검한 내용**
+- 원격 실행(`curl | sh`), 자격 증명 접근, 지시 무시 유도 문구 같은 위험 패턴은 없었습니다.
+- 포함된 스크립트(semgrep, supply-chain-risk-auditor)는 GitHub·npm·OSV·deps.dev·OpenSSF Scorecard 같은 공개 API만 호출합니다.
+- 주의: `web-design-guidelines`는 실행할 때마다 `vercel-labs/web-interface-guidelines` 저장소에서 최신 규칙을 받아 옵니다(원격 내용에 의존). 문제가 생기면 규칙 파일을 저장소에 고정 복사하는 방식으로 바꿉니다.
+
+**관리 명령**
+```bash
+npx skills list
+```
+```bash
+npx skills update -p
+```
+업데이트 후에는 변경된 SKILL.md를 리뷰한 뒤 `skills-lock.json`과 함께 커밋합니다.
+
+---
+
+## 7. MCP 서버
+
+| 서버 | 설정 | 용도 |
+|---|---|---|
+| shadcn | `.mcp.json` → `npx shadcn@4 mcp` | 컴포넌트 레지스트리(shadcn 기본, tablecn 등)를 검색하고 설치 |
+
+토큰 절감·품질 향상을 위한 추가 도구(Context7, LSP 등)는 [HARNESS_CANDIDATES.md](./HARNESS_CANDIDATES.md)에서 검토한 뒤 결정합니다.
