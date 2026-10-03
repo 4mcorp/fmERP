@@ -8,5 +8,6 @@ export function adminEntry(caps: Record<string, boolean> | undefined): string | 
     return "/admin/members";
   }
   if (caps["position.manage"]) return "/admin/positions";
+  if (caps["form.manage"]) return "/admin/forms";
   return null;
 }

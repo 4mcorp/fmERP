@@ -672,6 +672,9 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
         "assignment.manage",
         "position.manage",
         "audit.read",
+        "form.manage",
+        "approval.manage",
+        "delegation.manage",
       ];
       const result = await withTenant(deps().appDb, tenant.accountId, async (tx) => {
         const { actor } = await loadActor(tx, tenant, c.get("session").userId);
