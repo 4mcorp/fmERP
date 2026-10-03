@@ -99,8 +99,8 @@ describe("파일 이름", () => {
     expect(safeFileName("../../etc/passwd")).toBe("passwd");
     expect(safeFileName("보고서 최종.pdf")).toBe("보고서 최종.pdf");
     expect(safeFileName("a\u0000b\nc.txt")).toBe("abc.txt");
-    expect(safeFileName("a".repeat(300) + ".pdf").length).toBeLessThanOrEqual(120);
-    expect(safeFileName("a".repeat(300) + ".pdf").endsWith(".pdf")).toBe(true);
+    expect(safeFileName(`${"a".repeat(300)}.pdf`).length).toBeLessThanOrEqual(120);
+    expect(safeFileName(`${"a".repeat(300)}.pdf`).endsWith(".pdf")).toBe(true);
     expect(safeFileName("   ")).toBe("file");
   });
 
