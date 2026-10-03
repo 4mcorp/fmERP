@@ -14,7 +14,7 @@
 | 화면, 컴포넌트, 폼, 표 | [rules/frontend.md](rules/frontend.md) | `shadcn`, `vercel-react-best-practices`, `web-design-guidelines` | PRD 8장·6.5 | `ui` |
 | 로그인(테스트 계정·소셜), 세션, 결재 PIN, 계정·초대, 개인정보 | [rules/security.md](rules/security.md) | `better-auth-best-practices`, `better-auth-security-best-practices`, `organization-best-practices` | PRD 5.1·6.3·6.4, ADR 0005 | `auth`, `better-auth`, `security` |
 | 조직(사업자·부서·직위·소속)·역할 권한, 관리 콘솔 | [rules/database.md](rules/database.md) 2장, [rules/api.md](rules/api.md) 3장 | `supabase-postgres-best-practices`, `shadcn` | PRD 5.2·5.3, ADR 0006 | `db`, `api`, `auth`, `ui` |
-| 결재 엔진 (기안·결재선·처리·위임·채번) | [rules/architecture.md](rules/architecture.md) 3장, [rules/database.md](rules/database.md) 2장, [rules/testing.md](rules/testing.md) | `tdd`, `domain-modeling` | PRD 5.4 | `approval` |
+| 결재 엔진 (기안·결재선·처리·위임·채번) | [rules/architecture.md](rules/architecture.md) 3장, [rules/database.md](rules/database.md) 2장, [rules/testing.md](rules/testing.md), ADR 0007, GLOSSARY | `tdd`, `domain-modeling` | PRD 5.4 | `approval` |
 | 감사 기능, 감사 로그 | [rules/security.md](rules/security.md), [rules/database.md](rules/database.md) | – | PRD 5.5 (Must·Should만 구현, 10.3 제외 목록) | `audit` |
 | 파일 업로드, S3, 완료 패키지, 덤프, 이관 | [rules/storage-backup.md](rules/storage-backup.md) | – | PRD 5.6·5.10, DEPLOYMENT_PLAN 2·7장 | `storage`, `backup` |
 | 테스트 작성, 버그 수정 | [rules/testing.md](rules/testing.md) | `tdd`, `diagnosing-bugs`, `playwright-cli` | PRD 9장 | `test` |
@@ -71,6 +71,7 @@
 | 개발용 테스트 계정 목록·비밀번호 | `packages/auth/src/test-accounts.ts` (시드: `pnpm db:seed`) |
 | 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
 | M1 보안 리뷰 결과·후속 과제 | plan/2026-10-03-m1-security-review.md |
+| 결재 엔진 규칙(그룹·정족수·반려·후결·대결), 보안 리뷰·후속 과제 | ADR 0007, GLOSSARY.md, plan/2026-10-03-m3-approval-engine.md, plan/2026-10-03-m3-security-review.md |
 | M2 조직·권한 설계, 보안 리뷰·후속 과제 | plan/2026-10-03-m2-org-permission.md, plan/2026-10-03-m2-security-review.md, ADR 0006 |
 | 런타임·라이브러리 버전 | TECH_SPEC 2·3장 |
 | 저장소 구조·의존 방향 | TECH_SPEC 4장, rules/architecture.md |
@@ -143,7 +144,8 @@
 | [2026-10-03-m1-auth-account-audit.md](plan/2026-10-03-m1-auth-account-audit.md) | done | M1 계정·테넌트·감사 로그 기반: 시드 테스트 계정 로그인, Better Auth organization, RLS·`fmerp_auth`, 감사 로그, PIN (소셜 로그인은 M9) |
 | [2026-10-03-m2-org-permission.md](plan/2026-10-03-m2-org-permission.md) | done | M2 조직·권한: 사업자·부서 트리(뎁스 규칙)·직위·소속·`role_grant`·`can()` 권한 판정, 관리 콘솔·조직도 |
 | [2026-10-03-m2-security-review.md](plan/2026-10-03-m2-security-review.md) | done | M2 보안 리뷰: 권한 상승·테넌트 격리 점검, 후속 FU-6~10 |
-| [2026-10-03-m3-approval-engine.md](plan/2026-10-03-m3-approval-engine.md) | accepted | M3 결재 엔진: 상태 머신·결재선·병렬 합의·대결·동시성·채번·완료 후 불변 |
+| [2026-10-03-m3-approval-engine.md](plan/2026-10-03-m3-approval-engine.md) | done | M3 결재 엔진: 상태 머신·결재선·병렬 합의·대결·동시성·채번·완료 후 불변 |
+| [2026-10-03-m3-security-review.md](plan/2026-10-03-m3-security-review.md) | done | M3 보안 리뷰: 처리 권한·불변성·기안자 권한 상승, 후속 FU-11~15 |
 
 ---
 
@@ -182,6 +184,9 @@
 | 환경 변수 검증 | `apps/web/server/env.ts`, `apps/worker/src/env.ts` |
 | worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
 | 도메인 규칙 (결재 엔진 예정) | `packages/core/src/` — 금액 `money.ts`, 사업자번호 `business-number.ts`, 부서 트리 `department-tree.ts`·`department-csv.ts`, 권한 `permissions.ts`(`can()`), 소속 `assignment.ts` |
+| 결재 엔진 (순수 함수) | `packages/core/src/approval-*.ts`(상태·엔진·결재선 해석·검증), `delegation.ts`, `doc-number.ts` |
+| 결재 서비스·API | `apps/web/server/approval/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `delegation.ts`, `org-snapshot.ts`), `server/routes/approvals.ts` |
+| 결재 스키마·트리거 | `packages/db/src/schema/approval.ts`, `migrations/0005_approval_engine.sql`, `0006_approval_rls_triggers.sql` |
 | 조직·권한 API | `apps/web/server/routes/org.ts`(설정·사업자·직위·직책), `departments.ts`(부서·조직도·CSV), `members.ts`(구성원·소속·발령·역할), `account.ts`(초대·프리셋), 권한 헬퍼 `server/org-access.ts`, 진행 중 결재 검사 지점 `server/in-flight.ts` |
 | 조직 화면 | `apps/web/app/(app)/org`(조직도), `admin/`(settings·businesses·org·members·positions), `components/org/` |
 | 조직 스키마·트리거 | `packages/db/src/schema/org.ts`, `migrations/0003_org_permission.sql`, `0004_org_rls_triggers.sql`, 시드 `packages/auth/src/seed-org.ts` |

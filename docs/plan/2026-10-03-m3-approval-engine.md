@@ -1,7 +1,7 @@
 ---
 title: M3 결재 엔진 (core, TDD)
 date: 2026-10-03
-status: accepted
+status: done
 tags: [approval, db, api, test]
 related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/rules/architecture.md, docs/rules/database.md, docs/rules/testing.md, docs/adr/0006-org-permission-model.md]
 ---
@@ -68,17 +68,17 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/rules/architecture.md, docs/
 
 ## 단계
 - [x] 1. 규칙 확정: 결정 Q1~Q9 승인(제안대로), 규칙을 GLOSSARY.md·ADR 0007에 기록
-- [ ] 2. `packages/core` (TDD, `tdd` 스킬): 상태 전이 → 결재선·그룹 → 엔진 → 해석·검증 → 대결 → 채번. 단위 테스트를 먼저 작성
-- [ ] 3. DB: 스키마·마이그레이션(RLS·권한·불변 트리거·추가 전용), 시드(기본 결재 시나리오용 조직은 M2 시드 재사용)
-- [ ] 4. 서비스(`apps/web/server/approval/`): 상신·처리·회수·보류·채번 저장, 낙관적 잠금·멱등 키, 이벤트 outbox, 감사 로그
-- [ ] 5. API: 결재 요청 생성(APV-090), 부재 설정·조회(APV-050·052 서버 측)
-- [ ] 6. 통합 테스트: 수용 기준 S3·S4와 동시성·불변 (아래 완료 기준)
-- [ ] 7. 보안 리뷰: 처리 권한 우회, 다른 사람 단계 처리, 대결 악용, 완료 후 변조
-- [ ] 8. 문서: TECH_SPEC·INDEX·rules(architecture·database·testing) 갱신, ts(발생 시)
+- [x] 2. `packages/core` (TDD, `tdd` 스킬): 상태 전이 → 결재선·그룹 → 엔진 → 해석·검증 → 대결 → 채번. 단위 테스트를 먼저 작성
+- [x] 3. DB: 스키마·마이그레이션(RLS·권한·불변 트리거·추가 전용), 시드(기본 결재 시나리오용 조직은 M2 시드 재사용)
+- [x] 4. 서비스(`apps/web/server/approval/`): 상신·처리·회수·보류·채번 저장, 낙관적 잠금·멱등 키, 이벤트 outbox, 감사 로그
+- [x] 5. API: 결재 요청 생성(APV-090), 부재 설정·조회(APV-050·052 서버 측)
+- [x] 6. 통합 테스트: 수용 기준 S3·S4와 동시성·불변 (아래 완료 기준)
+- [x] 7. 보안 리뷰: 처리 권한 우회, 다른 사람 단계 처리, 대결 악용, 완료 후 변조
+- [x] 8. 문서: TECH_SPEC·INDEX·rules(architecture·database·testing) 갱신, ts(발생 시)
 
 ## 완료 기준
-- [ ] 단위(순수 함수): 상태 전이표 전수(허용·거부), 그룹 활성화·전원/N명 완료·SKIPPED, 반려(기안자·직전 단계)·보류·전결·후결, 부동의 두 정책, 동적 대상 해석(부서장·상위 N단계·직책·사업자 대표이사)과 해석 실패, 결재선 검증 각 규칙, 대결 결정(기간·범위·연쇄 금지·대결자 부재), 문서번호 토큰·초기화 주기
-- [ ] 통합:
+- [x] 단위(순수 함수): 상태 전이표 전수(허용·거부), 그룹 활성화·전원/N명 완료·SKIPPED, 반려(기안자·직전 단계)·보류·전결·후결, 부동의 두 정책, 동적 대상 해석(부서장·상위 N단계·직책·사업자 대표이사)과 해석 실패, 결재선 검증 각 규칙, 대결 결정(기간·범위·연쇄 금지·대결자 부재), 문서번호 토큰·초기화 주기
+- [x] 통합:
   - **S3:** 기안자 → 팀장(결재) → 재무팀(합의, 병렬 2명 전원) → 본부장 → 감사팀(감사) → 대표이사 순서 처리 후 문서번호 채번·COMPLETED, 모든 처리가 `approval_action`·감사 로그에 기록
   - **S4:** 본부장 반려(사유 필수) → REJECTED, 재기안은 새 초안으로 원문과 연결(데이터 수준)
   - **동시성(APV-045):** 같은 단계를 두 요청이 동시에 처리하면 한쪽만 반영, 같은 멱등 키 재요청은 같은 결과, 대결자·원 결재자 동시 처리는 먼저 온 쪽만 반영
@@ -87,7 +87,7 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/rules/architecture.md, docs/
   - **권한:** 활성 단계의 처리자(또는 대결자)가 아니면 처리 거부, 타 계정 문서 접근 불가, 비활성 사용자 포함 결재선 상신 거부
   - **대결(APV-050·051·053):** 부재 중 대결 처리와 표시, 연쇄 위임 금지, 부재 설정 관리자 대행(APV-052 서버)
   - **테넌트 격리:** 신규 테이블 전부
-- [ ] lint · typecheck · 전체 테스트 · `next build`
+- [x] lint · typecheck · 전체 테스트 · `next build`
 
 ## 결정 필요
 | # | 항목 | 제안 |
@@ -105,3 +105,4 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/rules/architecture.md, docs/
 ## 결정·변경 기록
 - 2026-10-03: 초안 작성 (사용자 검토 대기)
 - 2026-10-03: Q1~Q9 제안안대로 승인. 규칙 검증은 사용자 승인된 제안과 PRD 5.4를 대조해 진행(대화형 grill 없이), GLOSSARY.md·ADR 0007 작성
+- 2026-10-03: 완료. 단위 155건·통합 133건, lint·typecheck·`next build` 통과. 보안 리뷰([m3-security-review](./2026-10-03-m3-security-review.md))에서 기안자의 권한 상승(전결·정책·번호 지정)을 막고, 부재 설정 시 진행 중 단계의 대결자 재계산을 추가. 후속 FU-11~15 기록. 처리 API·화면·재인증은 M4. 결재선 해석의 "직책 = X"는 기안자 사업자 안의 보유자, 부서 대상 any는 부서원 중 1명이다
