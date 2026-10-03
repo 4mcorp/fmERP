@@ -77,7 +77,7 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m4-forms-dra
 - [x] A1. 패키지 검증(설치는 쓰는 단계에서), ADR 0009(완료 패키지 형식·`post-approvals/`·`document_package` 상태·검색 색인), 패키지 형식을 `storage-backup.md`에 반영
 - [x] A2. core(TDD): `canViewDocument`, 수신 접수·배부 규칙, 이관 규칙
 - [x] A3. DB: `document_package`, `document_recipient`, `document_search`, 금액 열, 인덱스, 트리거 예외, 권한 GRANT, RLS
-- [ ] A4. 서버: 열람 판정 통합, 수신·공람·참조 API, 문서함 API(커서), 검색 API, 이관·미처리 목록 API, `in-flight` 실제 쿼리, 감사 로그
+- [x] A4. 서버: 열람 판정 통합, 수신·공람·참조 API, 문서함 API(커서), 검색 API, 이관·미처리 목록 API, `in-flight` 실제 쿼리, 감사 로그
 - [ ] A5. 통합 테스트·보안 점검
 
 **M5-B worker·PDF·패키지**
@@ -129,3 +129,4 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m4-forms-dra
 ## 결정·변경 기록
 - 2026-10-04: 초안 작성 (사용자 검토 대기). 현황은 HEAD `8df0277` 기준 조사 결과이며, `in-flight.ts` 스텁 여부·`approval_step_guard`의 ACTIVE 단계 처리자 교체 제한은 코드 확인이 필요한 항목(A3·A4 착수 때 먼저 확인)
 - 2026-10-04: 사용자 승인 — Q2~Q14 제안안대로 승인(Q14 패키지는 설치 전 검증 결과를 보고한 뒤 버전 확정). Q1은 S3 서울로 확정. 로컬 저장은 검토했으나 월 $0.5 미만의 비용 이득뿐이고 서버 밖 보관 원칙(DEPLOYMENT_PLAN 2장)·삭제 불가 보존(BAK-004)을 약하게 만들어 채택하지 않음. 기준 문서(PRD 오픈 이슈 Q4, DEPLOYMENT_PLAN 2.3·선행 작업)의 반영은 별도 승인 후 수정
+- 2026-10-04: M5-A4 완료 (서버). 열람 판정 통합(`approval/access.ts`), 참조·수신·공람·접수·배부 API, 문서함 10종(`/api/mailbox/{box}`, 커서), 검색(`/api/search`, 상신 시 본문 색인·금액), 진행 중 결재 검사 실제 구현, 결재자 일괄 이관(`/api/approval-admin/transfer`, 재인증·사유·감사 로그)과 장기 미처리 목록. 구현 중 결정은 ADR 0009에 추가. **확인 필요(사용자 결정):** 부서 문서함을 "부서원 전체가 보는 함"으로 열려면 PERM-003의 열람 범위를 넓혀야 하므로 지금은 열람 가능한 문서만 보이게 했다. 또한 기존 M1 PIN 잠금 시험이 파일 실행 순서에 따라 다른 시험을 깨뜨릴 수 있어 사용 계정을 분리했다

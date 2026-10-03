@@ -14,6 +14,7 @@ import { schema, type Tx, withTenant } from "@fmerp/db";
 import { createRoute, z } from "@hono/zod-openapi";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { ApiError, type AppRouter, type DepsProvider } from "../http";
+import { countInFlightForMember } from "../in-flight";
 import {
   ACCOUNT_TARGET,
   authorize,
@@ -218,6 +219,17 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
             !owners.some((o) => o.userId !== userId && o.status === "active")
           ) {
             throw new ApiError(409, "last_owner", "마지막 소유자는 비활성화할 수 없습니다");
+          }
+          // 퇴사·휴직 전에 처리 전 결재를 대체 결재자에게 이관해야 한다 (ORG-036, ADM-005)
+          if (patch.status !== "active" && target.status === "active") {
+            const pending = await countInFlightForMember(tx, target.id);
+            if (pending > 0) {
+              throw new ApiError(
+                409,
+                "in_flight",
+                `처리 전 결재 ${pending}건이 있습니다. 대체 결재자에게 먼저 이관하세요`,
+              );
+            }
           }
         }
         if (patch.employeeNo !== undefined) {

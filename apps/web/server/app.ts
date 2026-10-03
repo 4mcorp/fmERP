@@ -6,6 +6,7 @@ import { requireSameOrigin } from "./http";
 import { problem } from "./problem";
 import { registerAccountRoutes } from "./routes/account";
 import { registerAccountsRoutes } from "./routes/accounts";
+import { registerApprovalAdminRoutes } from "./routes/approval-admin";
 import { registerApprovalRoutes } from "./routes/approvals";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerDepartmentRoutes } from "./routes/departments";
@@ -16,6 +17,7 @@ import { registerMeRoutes } from "./routes/me";
 import { registerMemberRoutes } from "./routes/members";
 import { registerOrgRoutes } from "./routes/org";
 import { registerRecipientRoutes } from "./routes/recipients";
+import { registerSearchRoutes } from "./routes/search";
 
 /** API 요청 본문 최대 크기. 파일은 서명 URL로 저장소에 직접 올리므로 API 본문은 작다 (보안 리뷰 SR-3) */
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -47,5 +49,7 @@ export const app = createApp({
     registerDocumentRoutes(router, getServerDeps);
     registerRecipientRoutes(router, getServerDeps);
     registerMailboxRoutes(router, getServerDeps);
+    registerSearchRoutes(router, getServerDeps);
+    registerApprovalAdminRoutes(router, getServerDeps);
   },
 });

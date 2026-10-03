@@ -15,7 +15,8 @@ export type ApprovalErrorCode =
   /** 다른 저장과 겹쳤다 (본문 리비전 번호 불일치) */
   | "revision_conflict"
   | "attachment_invalid"
-  | "form_invalid";
+  | "form_invalid"
+  | "invalid_transfer";
 
 /** 결재 서비스의 업무 오류. 라우트가 RFC 9457 응답으로 바꾼다 (http.ts) */
 export class ApprovalError extends Error {
@@ -52,4 +53,5 @@ export const APPROVAL_ERROR_STATUS: Record<ApprovalErrorCode, 400 | 403 | 404 | 
   revision_conflict: 409,
   attachment_invalid: 400,
   form_invalid: 400,
+  invalid_transfer: 400,
 };

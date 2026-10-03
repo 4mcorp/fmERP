@@ -1,5 +1,4 @@
-import { hasApprovalPin } from "@fmerp/auth";
-import { type ApprovalAction, can, isPinReauthFresh } from "@fmerp/core";
+import { type ApprovalAction, can } from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
 import { createRoute, z } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
@@ -26,16 +25,11 @@ import {
   submitDocument,
   withdrawDocument,
 } from "../approval/service";
-import {
-  ApiError,
-  type AppRouter,
-  type DepsProvider,
-  requireSession,
-  requireTenant,
-} from "../http";
+import { type AppRouter, type DepsProvider, requireSession, requireTenant } from "../http";
 import { businessTarget, loadActor } from "../org-access";
 import { LineItem } from "./approvals";
 import { errorResponses, json, OkSchema } from "./common";
+import { createRequireReauth } from "./reauth";
 import { serviceContext } from "./service-context";
 
 const Comment = z.string().trim().max(2000);
@@ -61,26 +55,7 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
   app.use("/inbox", requireSession(deps), requireTenant(deps));
   app.use("/inbox/*", requireSession(deps), requireTenant(deps));
 
-  /**
-   * 결재 처리 재인증 (AUTH-009, APV-043): 세션의 PIN 확인 시각이 30분 안이어야 한다.
-   * 계정 정책 `pinRequired=false`이면 생략한다. PIN이 없으면 먼저 설정하도록 안내한다.
-   */
-  async function requireReauth(
-    accountId: string,
-    session: { userId: string; pinVerifiedAt: Date | null },
-  ) {
-    const d = deps();
-    const [account] = await withTenant(d.appDb, accountId, (tx) =>
-      tx.select({ policy: schema.account.securityPolicy }).from(schema.account),
-    );
-    if (account?.policy.pinRequired === false) return;
-    if (!(await hasApprovalPin(d.authDb, session.userId))) {
-      throw new ApiError(428, "pin_not_set", "결재 PIN을 먼저 설정하세요");
-    }
-    if (!isPinReauthFresh(session.pinVerifiedAt, d.now())) {
-      throw new ApiError(428, "reauth_required", "결재 PIN을 입력하세요");
-    }
-  }
+  const requireReauth = createRequireReauth(deps);
 
   app.openapi(
     createRoute({

@@ -17,3 +17,10 @@ status: accepted
 - 패키지 형식이 M7의 색인 재구성 스크립트(BAK-010)의 입력이므로 [storage-backup.md](../rules/storage-backup.md)를 같은 커밋에서 갱신한다.
 
 **Considered Options:** 패키지 상태를 `document` 열로 두기(완료 후 불변 트리거 예외가 늘어남), 첨부를 `final/`로 복사(저장 2배, 불변 의미 없음), 후결을 `approval.json`에 이어쓰기(`final/` 한 번만 쓰기 위반), PDF를 재시도 때마다 재생성해 해시 비교(Chromium PDF는 결정적이지 않음), 본문 검색을 S3 스캔으로 처리(10만 건 1초 불가), 완료 시 outbox만 폴링(소비 상태·권한 열이 없고 RLS 때문에 worker가 계정별로 읽기 어려움).
+
+**구현 중 결정 (M5-A4):**
+- 참조자가 보기 시작하는 시점은 양식 버전의 `recipients.ccVisibleFrom`(`submit`·`complete`, 기본 `submit`)에 둔다. 새 열을 만들지 않는다.
+- 금액 검색 기준은 양식의 금액(`money`) 필드 하나에 `searchAmount: true`로 지정한다(여러 개 지정은 양식 검증에서 거부). 양식 API의 zod 스키마도 이 속성을 통과시킨다.
+- 감사인의 `document.read_all`은 사업자 범위 외에 **부서 범위**도 있다. 문서가 속한 사업자와 기안자의 소속 부서(상위 포함)를 각각 판정 대상으로 삼는다.
+- 문서함에 보이는 문서는 `canViewDocument`의 열람 범위를 넘지 않는다. **부서 문서함**은 "내 부서에서 기안한 완료 문서 중 내가 열 수 있는 것"과 "내 부서가 접수한 수신 문서"이며, 같은 부서원 전체에게 문서를 여는 것(PERM-004, P1)은 만들지 않았다.
+- 퇴사·휴직 검사와 이관은 **처리자**(`assignee_ids`)만 대상으로 한다. 대결자는 원 결재자가 계속 처리할 수 있어 세지 않는다. 이관 함수(`transfer_step_assignees`)는 처리 전 단계의 처리자만 바꾸고 단계 `version`을 올린다.

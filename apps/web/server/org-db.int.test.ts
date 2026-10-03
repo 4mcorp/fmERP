@@ -139,7 +139,7 @@ describe("부서 뎁스 트리거 (S2, ORG-010~013)", () => {
       const fin = rows.find((r) => r.code === "FIN");
       const cash = rows.find((r) => r.code === "CASH");
       expect([fin?.depth, cash?.depth]).toEqual([2, 3]);
-      expect(cash?.path.startsWith(`${dept("SALES").id}/${dept("FIN").id}/`)).toBe(true);
+      expect(cash?.path).toBe(`${dept("SALES").id}/${dept("FIN").id}/${dept("CASH").id}`);
       await tx
         .update(schema.department)
         .set({ parentId: dept("MGT").id })

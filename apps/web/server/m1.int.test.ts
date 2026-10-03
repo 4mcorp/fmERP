@@ -1,5 +1,5 @@
 import { createDatabase, schema, withTenant } from "@fmerp/db";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { app } from "./app";
 import { json, loginAs, type TestClient } from "./test-client";
@@ -318,6 +318,37 @@ describe("구성원 비활성화 (AUTH-015)", () => {
     const me = await json<Me>(await member2.request("/api/me"));
     expect((await member2.request("/api/account")).status).toBe(200);
 
+    // 처리 전 결재가 남아 있으면 퇴사 처리가 거부된다(ORG-036). 다른 테스트가 남긴 진행 중 문서를 먼저 이관한다
+    const accountId = await accountIdOf("fourm-test");
+    await withTenant(appDb.db, accountId, async (tx) => {
+      const rows = await tx
+        .select({ membershipId: schema.membership.id })
+        .from(schema.membership)
+        .where(eq(schema.membership.userId, me.id));
+      const from = rows[0]?.membershipId ?? "";
+      const [heir] = await tx
+        .select({ id: schema.membership.id })
+        .from(schema.membership)
+        .innerJoin(schema.user, eq(schema.user.id, schema.membership.userId))
+        .where(eq(schema.user.email, "bizadmin@example.com"));
+      const open = await tx
+        .select({ step: schema.approvalStep })
+        .from(schema.approvalStep)
+        .innerJoin(schema.document, eq(schema.document.id, schema.approvalStep.documentId))
+        .where(sql`${schema.document.status} in ('IN_PROGRESS', 'ON_HOLD')`);
+      for (const { step } of open) {
+        if (!["PENDING", "ACTIVE", "HELD"].includes(step.status)) continue;
+        if (!step.assigneeIds.includes(from)) continue;
+        const next = [...new Set(step.assigneeIds.map((x) => (x === from ? (heir?.id ?? x) : x)))];
+        await tx.execute(
+          sql`select transfer_step_assignees(${step.id}::uuid, array[${sql.join(
+            next.map((x) => sql`${x}::uuid`),
+            sql`, `,
+          )}], '[]'::jsonb)`,
+        );
+      }
+    });
+
     const off = await admin.request(`/api/account/members/${me.id}`, {
       method: "PATCH",
       body: { status: "left" },
@@ -377,21 +408,22 @@ describe("결재 PIN (AUTH-009)", () => {
   });
 
   it("5회 틀리면 잠기고(423), 잠긴 동안에는 맞는 PIN도 거부된다", async () => {
-    const admin = await loginAs("admin@example.com");
-    await admin.request("/api/me/pin", { method: "PUT", body: { pin: "111111" } });
+    // 다른 파일(approval-m4 등)이 쓰지 않는 계정으로 시험한다: 15분 잠금과 PIN이 파일 실행 순서에 영향을 주면 안 된다
+    const locked = await loginAs("auditor@example.com");
+    await locked.request("/api/me/pin", { method: "PUT", body: { pin: "111111" } });
     for (let i = 0; i < 4; i++) {
-      const res = await admin.request("/api/me/pin/verify", {
+      const res = await locked.request("/api/me/pin/verify", {
         method: "POST",
         body: { pin: "999999" },
       });
       expect(res.status).toBe(400);
     }
-    const fifth = await admin.request("/api/me/pin/verify", {
+    const fifth = await locked.request("/api/me/pin/verify", {
       method: "POST",
       body: { pin: "999999" },
     });
     expect(fifth.status).toBe(423);
-    const correct = await admin.request("/api/me/pin/verify", {
+    const correct = await locked.request("/api/me/pin/verify", {
       method: "POST",
       body: { pin: "111111" },
     });
