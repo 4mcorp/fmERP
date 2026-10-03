@@ -146,7 +146,7 @@
 | [2026-10-03-m2-security-review.md](plan/2026-10-03-m2-security-review.md) | done | M2 보안 리뷰: 권한 상승·테넌트 격리 점검, 후속 FU-6~10 |
 | [2026-10-03-m3-approval-engine.md](plan/2026-10-03-m3-approval-engine.md) | done | M3 결재 엔진: 상태 머신·결재선·병렬 합의·대결·동시성·채번·완료 후 불변 |
 | [2026-10-03-m3-security-review.md](plan/2026-10-03-m3-security-review.md) | done | M3 보안 리뷰: 처리 권한·불변성·기안자 권한 상승, 후속 FU-11~15 |
-| [2026-10-03-m4-forms-drafting-approval-ui.md](plan/2026-10-03-m4-forms-drafting-approval-ui.md) | draft | M4 양식·기안·결재 화면: 양식 빌더·버전, 본문 S3 리비전, 첨부(staging 검증), 처리 API·재인증, 모바일 결재. 결정 Q1~Q10 검토 대기 |
+| [2026-10-03-m4-forms-drafting-approval-ui.md](plan/2026-10-03-m4-forms-drafting-approval-ui.md) | accepted | M4 양식·기안·결재 화면: 양식 빌더·버전, 본문 S3 리비전, 첨부(staging 검증), 처리 API·재인증, 모바일 결재 |
 
 ---
 
@@ -166,6 +166,7 @@
 | [0003-rfc9457-problem-details.md](adr/0003-rfc9457-problem-details.md) | API 에러는 RFC 9457 Problem Details + `code` |
 | [0004-integration-test-db.md](adr/0004-integration-test-db.md) | 통합 테스트는 Compose의 전용 PostgreSQL·SeaweedFS |
 | [0005-better-auth-organization-as-tenant.md](adr/0005-better-auth-organization-as-tenant.md) | Better Auth organization = 계정(테넌트), `fmerp_auth` 역할, 자체 초대 |
+| [0008-document-body-revisions-and-attachments.md](adr/0008-document-body-revisions-and-attachments.md) | 본문 S3 리비전·상신 내용 해시, 첨부 staging 검증 후 복사, 양식 불변 버전, 결재선·재인증 규칙, dnd-kit 미사용 |
 | [0007-approval-engine-rules.md](adr/0007-approval-engine-rules.md) | 결재 엔진은 core 순수 함수, 낙관적 잠금·추가 전용·outbox 저장, 그룹·정족수·반려·후결·대결 규칙 |
 | [0006-org-permission-model.md](adr/0006-org-permission-model.md) | 부서 트리는 구체화 경로+트리거, 역할은 `membership.role` + 범위 있는 `role_grant`, `can()` 한 곳 판정 |
 

@@ -1,7 +1,7 @@
 ---
 title: M4 양식·기안·결재 화면
 date: 2026-10-03
-status: draft
+status: accepted
 tags: [approval, db, api, ui, storage, test, security]
 related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m3-approval-engine.md, docs/plan/2026-10-03-m3-security-review.md, docs/plan/2026-10-03-m1-security-review.md, docs/rules/storage-backup.md, docs/rules/frontend.md, docs/rules/dependencies.md]
 ---
@@ -86,7 +86,7 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m3-approval-
 
 ## 단계 (3개 하위 단계, 각 단계마다 태스크별 커밋·푸시)
 **M4-A 서버·규칙**
-- [ ] A1. 패키지 승인·검증·설치, ADR 0008(본문 S3 리비전·첨부 staging·양식 버전·내용 해시)
+- [x] A1. 패키지 검증(설치는 쓰는 단계 B에서), ADR 0008(본문 S3 리비전·첨부 staging·양식 버전·내용 해시)
 - [ ] A2. core(TDD): 양식 스키마·입력값 검증(표 합계 포함), 기본 양식 7종 데이터, `editLine`
 - [ ] A3. DB: form·form_version(불변)·결재선 템플릿·즐겨찾기, document 확장(양식 버전·보안 등급·긴급·희망일·리비전), `document_revision`, `attachment`, `approval_comment`, `document_link`, 트리거 조정(FU-13), 기본 양식 시드
 - [ ] A4. `packages/storage` 확장(복사·범위 읽기·크기 고정 서명), 버킷 수명 주기 규칙(로컬 compose 초기화·DEPLOYMENT_PLAN 갱신)
@@ -133,3 +133,4 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m3-approval-
 
 ## 결정·변경 기록
 - 2026-10-03: 초안 작성 (사용자 검토 대기)
+- 2026-10-03: Q1~Q10 제안안대로 승인. 패키지 점검: react-hook-form 7.89.0(MIT, 2026-09)·@hookform/resolvers 5.9.1(MIT)·@tiptap/* 3.31.4(MIT, 2026-09)·dexie 4.4.6(Apache-2.0, 2026-09)은 통과. **@dnd-kit/core 6.3.1(마지막 배포 2024-12)·sortable·utilities는 "최근 12개월 배포" 기준을 충족하지 못해 쓰지 않고**, M2와 같은 기본 끌어놓기 + 위·아래 버튼으로 구현한다(ADR 0008). 패키지는 실제로 쓰는 B단계에서 설치
