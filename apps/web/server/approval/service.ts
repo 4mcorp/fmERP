@@ -1,6 +1,7 @@
 // 결재 서비스: core 엔진을 호출하고 결과를 한 트랜잭션에서 저장한다 (ADR 0007).
 // 호출자는 withTenant 트랜잭션 안에서 부른다. 권한(누가 이 문서를 볼 수 있나)은 호출 쪽 라우트가 확인한다.
-import { type AuditRequestContext, recordAudit } from "@fmerp/audit";
+import { randomUUID } from "node:crypto";
+import { recordAudit } from "@fmerp/audit";
 import {
   type ApprovalAction,
   type ApprovalActor,
@@ -28,17 +29,22 @@ import {
 } from "@fmerp/core";
 import { schema, type Tx } from "@fmerp/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
+import type { ServiceContext } from "./context";
+import { attachmentKey } from "./document-storage";
+import {
+  computeContentHash,
+  documentPrefix,
+  loadBody,
+  validateBody,
+  verifyIntegrity,
+  writeRevision,
+} from "./drafts";
 import { ApprovalError } from "./errors";
+import { formUsableBy, getForm, latestVersion, versionToInput } from "./forms";
 import { loadMemberCards, loadOrgSnapshot } from "./org-snapshot";
 import { type LoadedDocument, lockAndLoad, persistResult } from "./store";
 
-export interface ServiceContext {
-  tx: Tx;
-  accountId: string;
-  now: Date;
-  userId: string | null;
-  request: AuditRequestContext;
-}
+export type { ServiceContext };
 
 type Numbering = NonNullable<(typeof schema.document.$inferSelect)["numbering"]>;
 
@@ -49,14 +55,23 @@ export interface CreateApprovalInput {
   drafterDepartmentId?: string;
   title: string;
   body?: Record<string, unknown>;
+  /** 양식이 있으면 양식(최신 버전)이 결재선 규칙·정책·문서번호·보안 등급 기본값을 정한다 (ADR 0008) */
+  formId?: string;
+  /** 양식이 허용할 때 기안자가 지정하는 결재선. 양식이 없으면 필수 (서비스 내부용) */
+  line?: DraftLineItem[];
+  securityLevel?: "normal" | "confidential" | "secret";
+  urgent?: boolean;
+  desiredDueDate?: string;
+  /** 양식 없이 만들 때만 쓴다 (서비스 내부·테스트). 양식이 있으면 양식 값을 쓴다 */
   formCategory?: string;
   policy?: Partial<ApprovalPolicy>;
   numbering?: Numbering;
   sourceType?: string;
   sourceId?: string;
-  line: DraftLineItem[];
   /** 같은 사람이 여러 단계에 있는 것을 허용할지 (APV-038) */
   allowDuplicate?: boolean;
+  /** 관련 문서 (APV-014). 기안자가 볼 수 있는 문서만 연결된다 */
+  relatedDocumentIds?: string[];
 }
 
 /** 스냅샷 객체를 jsonb 열 타입으로 바꾼다 */
@@ -129,7 +144,52 @@ export async function allocateDocNumber(
 }
 
 // ===== 기안 =====
-/** 결재선을 해석·검증해 초안 문서를 만든다 (APV-015·031·038·090) */
+/** 문서 참여자(기안자·결재선 처리자·대결자)인지 */
+export async function isParticipant(
+  ctx: ServiceContext,
+  documentId: string,
+  membershipId: string,
+): Promise<boolean> {
+  const [doc] = await ctx.tx
+    .select({ drafter: schema.document.drafterMembershipId })
+    .from(schema.document)
+    .where(eq(schema.document.id, documentId));
+  if (!doc) return false;
+  if (doc.drafter === membershipId) return true;
+  const steps = await ctx.tx
+    .select({
+      assigneeIds: schema.approvalStep.assigneeIds,
+      delegates: schema.approvalStep.delegates,
+    })
+    .from(schema.approvalStep)
+    .where(eq(schema.approvalStep.documentId, documentId));
+  return steps.some(
+    (st) =>
+      st.assigneeIds.includes(membershipId) || Object.values(st.delegates).includes(membershipId),
+  );
+}
+
+/**
+ * 결재선 규칙 (M3 FU-12): 양식이 수정을 막으면 기본 결재선을 쓰고, 허용하면 기안자 결재선을 쓰되
+ * 전결 권한은 양식(기본 결재선)만 줄 수 있고 후결 단계는 기본 결재선에 있는 만큼만 허용한다.
+ */
+function lineForForm(
+  version: { allowLineEdit: boolean; defaultLine: unknown },
+  requested: DraftLineItem[] | undefined,
+): DraftLineItem[] {
+  const defaults = version.defaultLine as DraftLineItem[];
+  if (!version.allowLineEdit || !requested) return defaults;
+  const allowedPost = defaults.filter((i) => i.type === "post").length;
+  if (requested.filter((i) => i.type === "post").length > allowedPost) {
+    throw new ApprovalError(
+      "line_invalid",
+      "후결 단계는 양식의 기본 결재선에 있는 것만 둘 수 있습니다",
+    );
+  }
+  return requested.map((i) => ({ ...i, canFinalize: false }));
+}
+
+/** 결재선을 해석·검증해 초안 문서를 만든다 (APV-010·012~015·031·038·090) */
 export async function createApproval(ctx: ServiceContext, input: CreateApprovalInput) {
   const { tx } = ctx;
   const org = await loadOrgSnapshot(tx);
@@ -142,8 +202,49 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
   if (!drafterDepartmentId || !departmentIds.includes(drafterDepartmentId)) {
     throw new ApprovalError("line_invalid", "기안자의 소속(부서)을 확인할 수 없습니다");
   }
+  const [drafterDept] = await tx
+    .select({ code: schema.department.code })
+    .from(schema.department)
+    .where(eq(schema.department.id, drafterDepartmentId));
 
-  const resolved = resolveLine(input.line, org, {
+  // 양식이 정하는 값
+  let line = input.line;
+  let policy: ApprovalPolicy = { ...DEFAULT_POLICY, ...input.policy };
+  let numbering: Numbering | undefined = input.numbering;
+  let formCategory = input.formCategory;
+  let formVersionId: string | undefined;
+  let securityLevel = input.securityLevel;
+  if (input.formId) {
+    const form = await getForm(tx, input.formId);
+    const version = await latestVersion(tx, input.formId);
+    const myBusinesses = [
+      ...new Set(
+        org.assignments
+          .filter((a) => a.membershipId === input.drafterMembershipId)
+          .map((a) => a.businessId),
+      ),
+    ];
+    const myDepartments = org.assignments
+      .filter((a) => a.membershipId === input.drafterMembershipId)
+      .map((a) => a.departmentId);
+    if (!formUsableBy(form, { businessIds: myBusinesses, departmentIds: myDepartments })) {
+      throw new ApprovalError("form_invalid", "사용할 수 없는 양식입니다");
+    }
+    const input2 = versionToInput(version);
+    line = lineForForm(version, input.line);
+    policy = input2.policy;
+    numbering = input2.numbering
+      ? { ...input2.numbering, departmentCode: drafterDept?.code ?? "", formCode: form.code }
+      : undefined;
+    formCategory = form.category;
+    formVersionId = version.id;
+    securityLevel = securityLevel ?? version.securityDefault;
+  }
+  if (!line || line.length === 0) {
+    throw new ApprovalError("line_invalid", "결재선이 필요합니다");
+  }
+
+  const resolved = resolveLine(line, org, {
     membershipId: input.drafterMembershipId,
     departmentId: drafterDepartmentId,
   });
@@ -171,8 +272,8 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
       errors: validation.errors,
     });
   }
-  if (input.numbering) {
-    const check = validateDocNumberRule(input.numbering.rule);
+  if (numbering) {
+    const check = validateDocNumberRule(numbering.rule);
     if (!check.ok) throw new ApprovalError("rule_invalid", check.reason);
   }
 
@@ -188,16 +289,32 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
       drafterMembershipId: input.drafterMembershipId,
       drafterSnapshot: asRecord(cards.get(input.drafterMembershipId) ?? {}),
       title: input.title,
-      body: input.body ?? {},
-      policy: { ...DEFAULT_POLICY, ...input.policy },
-      numbering: input.numbering,
-      formCategory: input.formCategory,
+      policy,
+      numbering,
+      formCategory,
+      formVersionId,
+      securityLevel: securityLevel ?? "normal",
+      urgent: input.urgent ?? false,
+      desiredDueDate: input.desiredDueDate,
       sourceType: input.sourceType,
       sourceId: input.sourceId,
     })
-    .returning({ id: schema.document.id });
+    .returning();
   if (!doc) throw new Error("문서 생성 실패");
   await insertSteps(ctx, doc.id, resolved.steps, cards);
+
+  if (input.body) {
+    const normalized = await validateBody(ctx, doc, input.body, "draft");
+    await writeRevision(ctx, doc, normalized, input.drafterMembershipId);
+  }
+  for (const linked of new Set(input.relatedDocumentIds ?? [])) {
+    if (!(await isParticipant(ctx, linked, input.drafterMembershipId))) {
+      throw new ApprovalError("forbidden", "열람 권한이 없는 문서는 연결할 수 없습니다");
+    }
+    await tx
+      .insert(schema.documentLink)
+      .values({ accountId: ctx.accountId, documentId: doc.id, linkedDocumentId: linked });
+  }
 
   await recordAudit(tx, {
     accountId: ctx.accountId,
@@ -241,6 +358,7 @@ async function finish(
     patch?: Partial<typeof schema.document.$inferInsert>;
     auditAction: string;
     comment?: string | null;
+    docHash?: string | null;
   },
 ) {
   const patch: Partial<typeof schema.document.$inferInsert> = { ...opts.patch };
@@ -251,7 +369,15 @@ async function finish(
       patch.docNo = await allocateDocNumber(ctx, row.businessId, row.numbering);
     }
   }
-  await persistResult(ctx.tx, loaded, result, patch, opts.idempotencyKey, ctx.request);
+  await persistResult(
+    ctx.tx,
+    loaded,
+    result,
+    patch,
+    opts.idempotencyKey,
+    ctx.request,
+    opts.docHash ?? null,
+  );
   await recordAudit(ctx.tx, {
     accountId: ctx.accountId,
     actorUserId: ctx.userId,
@@ -273,8 +399,15 @@ export async function submitDocument(
   if (loaded.row.drafterMembershipId !== actorMembershipId) {
     throw new ApprovalError("forbidden", "기안자만 상신할 수 있습니다");
   }
+  // 상신 전 검증 (APV-015): 양식 입력값 전체, 첨부 수
+  const saved = await loadBody(ctx, documentId);
+  await validateBody(ctx, loaded.row, saved?.body ?? {}, "submit");
   const result = unwrap(submit(loaded.doc, await engineContext(ctx, loaded.row.formCategory)));
-  const patch: Partial<typeof schema.document.$inferInsert> = { submittedAt: ctx.now };
+  // 상신 시점의 내용 해시 (APV-016)
+  const patch: Partial<typeof schema.document.$inferInsert> = {
+    submittedAt: ctx.now,
+    contentHash: await computeContentHash(ctx, loaded.row),
+  };
   if (loaded.row.numbering?.at === "submit" && !loaded.row.docNo) {
     patch.docNo = await allocateDocNumber(ctx, loaded.row.businessId, loaded.row.numbering);
   }
@@ -313,6 +446,8 @@ export async function actOnStep(
     // 이미 처리된 요청의 재시도: 현재 상태를 그대로 돌려준다
     return { doc: loaded.doc, events: [], docNo: loaded.row.docNo, replayed: true as const };
   }
+  // 상신 이후 내용이 바뀌지 않았는지 확인한다 (APV-016). 후결 승인도 같은 기준이다
+  await verifyIntegrity(ctx, loaded.row);
   const result = unwrap(
     act(
       loaded.doc,
@@ -327,6 +462,7 @@ export async function actOnStep(
     idempotencyKey: opts.idempotencyKey,
     auditAction: `approval.${action.kind}`,
     comment: result.record?.comment,
+    docHash: loaded.row.contentHash,
   });
   return { ...saved, replayed: false as const };
 }
@@ -382,16 +518,43 @@ export async function redraftDocument(
       drafterMembershipId: row.drafterMembershipId,
       drafterSnapshot: row.drafterSnapshot,
       title: row.title,
-      body: row.body,
       policy: row.policy,
       numbering: row.numbering,
       formCategory: row.formCategory,
+      formVersionId: row.formVersionId,
+      securityLevel: row.securityLevel,
+      urgent: row.urgent,
+      desiredDueDate: row.desiredDueDate,
       sourceType: row.sourceType,
       sourceId: row.sourceId,
       supersedes: row.id,
     })
-    .returning({ id: schema.document.id });
+    .returning();
   if (!copy) throw new Error("재기안 생성 실패");
+  // 본문은 새 문서의 첫 리비전으로, 첨부는 새 문서 경로로 복사한다
+  const previous = await loadBody(ctx, row.id);
+  if (previous) await writeRevision(ctx, copy, previous.body, actorMembershipId);
+  const prefix = await documentPrefix(ctx, copy);
+  const oldAttachments = await ctx.tx
+    .select()
+    .from(schema.attachment)
+    .where(eq(schema.attachment.documentId, row.id));
+  for (const a of oldAttachments) {
+    const id = randomUUID();
+    const key = attachmentKey(prefix, id, a.filename);
+    await ctx.storage.copyIfAbsent(a.storageKey, key);
+    await ctx.tx.insert(schema.attachment).values({
+      id,
+      accountId: ctx.accountId,
+      documentId: copy.id,
+      storageKey: key,
+      filename: a.filename,
+      size: a.size,
+      mime: a.mime,
+      sha256: a.sha256,
+      uploadedByMembershipId: actorMembershipId,
+    });
+  }
   for (const s of loaded.stepRows) {
     await ctx.tx.insert(schema.approvalStep).values({
       accountId: ctx.accountId,

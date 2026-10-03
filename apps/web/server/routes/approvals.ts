@@ -76,6 +76,7 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
     tx: ServiceContext["tx"],
   ): ServiceContext => ({
     tx,
+    storage: deps().storage,
     accountId: c.get("tenant").accountId,
     now: deps().now(),
     userId: c.get("session").userId,

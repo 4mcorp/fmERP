@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   foreignKey,
   index,
   integer,
@@ -51,7 +52,7 @@ export interface DocumentNumbering {
   formCode: string;
 }
 
-/** 결재 문서. 본문·양식 연결은 M4가 채운다 (body는 자리만 둔다) */
+/** 결재 문서. 본문은 S3 리비전에 있고 DB에는 색인만 둔다 (document_revision, ADR 0008) */
 export const document = pgTable(
   "document",
   {
@@ -62,7 +63,6 @@ export const document = pgTable(
     /** 기안 시점의 부서명·직위·직책 스냅샷 (ORG-017) */
     drafterSnapshot: jsonb().$type<Record<string, unknown>>().notNull().default({}),
     title: text().notNull(),
-    body: jsonb().$type<Record<string, unknown>>().notNull().default({}),
     status: text({ enum: DOCUMENT_STATUSES }).notNull().default("DRAFT"),
     policy: jsonb().$type<DocumentPolicy>().notNull(),
     numbering: jsonb().$type<DocumentNumbering>(),
@@ -75,6 +75,15 @@ export const document = pgTable(
     /** 재기안 시 원문 (APV-019) */
     supersedes: uuid(),
     contentHash: text(),
+    /** 작성 당시 양식 버전 (APV-005). 모듈 연동 등 양식 없는 문서는 null */
+    formVersionId: uuid(),
+    securityLevel: text({ enum: ["normal", "confidential", "secret"] })
+      .notNull()
+      .default("normal"),
+    urgent: boolean().notNull().default(false),
+    desiredDueDate: date(),
+    /** 가장 최근 본문 리비전 번호 (0이면 아직 저장된 본문이 없다) */
+    latestRevision: integer().notNull().default(0),
     submittedAt: timestamp({ withTimezone: true }),
     completedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),

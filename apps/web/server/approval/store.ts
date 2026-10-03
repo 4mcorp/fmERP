@@ -62,6 +62,7 @@ export async function persistResult(
   docPatch: Partial<typeof schema.document.$inferInsert>,
   idempotencyKey: string | null,
   request: { ip?: string | null; userAgent?: string | null },
+  docHash: string | null = null,
 ): Promise<void> {
   const { row } = loaded;
   const before = new Map(loaded.doc.steps.map((s) => [s.id, s]));
@@ -103,6 +104,7 @@ export async function persistResult(
       action: result.record.action,
       comment: result.record.comment,
       idempotencyKey,
+      docHash,
       ip: request.ip ?? null,
       userAgent: request.userAgent ?? null,
     });

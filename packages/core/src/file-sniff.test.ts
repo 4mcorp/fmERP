@@ -7,6 +7,8 @@ import {
   sniffFile,
 } from "./file-sniff";
 
+// core의 tsconfig에는 DOM·Node 타입이 없어 테스트에서만 쓰는 TextEncoder를 선언한다
+declare const TextEncoder: new () => { encode(input: string): Uint8Array };
 const bytes = (...values: number[]) => Uint8Array.from(values);
 const text = (s: string) => new TextEncoder().encode(s);
 const PNG = bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0);

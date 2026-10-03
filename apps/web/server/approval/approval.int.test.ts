@@ -1,9 +1,11 @@
 // 결재 엔진 통합 테스트 (실제 DB): 수용 기준 S3·S4, 동시성·멱등·채번·완료 후 불변·대결·테넌트 격리 (M3).
 import type { ApprovalAction, DraftLineItem } from "@fmerp/core";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { ObjectStorage } from "@fmerp/storage";
 import { and, count, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDelegation, revokeDelegation } from "./delegation";
+import { loadBody } from "./drafts";
 import { ApprovalError } from "./errors";
 import {
   actOnStep,
@@ -21,6 +23,15 @@ const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 afterAll(async () => {
   await appDb.pool.end();
   await authDb.pool.end();
+});
+
+const storage = new ObjectStorage({
+  endpoint: process.env.S3_ENDPOINT,
+  region: process.env.S3_REGION ?? "us-east-1",
+  bucket: process.env.S3_BUCKET ?? "",
+  accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
+  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
+  forcePathStyle: true,
 });
 
 const NOW = new Date("2026-10-03T00:00:00Z");
@@ -52,7 +63,14 @@ async function expectApprovalError(promise: Promise<unknown>, code: string) {
 
 const run = <T>(fn: (ctx: ServiceContext) => Promise<T>, now: Date = NOW, forAccount?: string) =>
   withTenant(appDb.db, forAccount ?? accountId, (tx) =>
-    fn({ tx, accountId: forAccount ?? accountId, now, userId: null, request: { ip: "127.0.0.1" } }),
+    fn({
+      tx,
+      storage,
+      accountId: forAccount ?? accountId,
+      now,
+      userId: null,
+      request: { ip: "127.0.0.1" },
+    }),
   );
 
 const user = (email: string): DraftLineItem["target"] => ({
@@ -289,7 +307,11 @@ describe("S4: 반려와 재기안", () => {
     const copy = await docOf(redraft.documentId);
     expect(copy.status).toBe("DRAFT");
     expect(copy.supersedes).toBe(documentId);
-    expect(copy.body).toEqual({ amount: 15_000_000 });
+    // 본문은 새 문서의 첫 리비전(S3)으로 복사된다
+    expect(copy.latestRevision).toBe(1);
+    expect((await run((ctx) => loadBody(ctx, redraft.documentId)))?.body).toEqual({
+      amount: 15_000_000,
+    });
     expect((await stepsOf(redraft.documentId)).every((s) => s.status === "PENDING")).toBe(true);
     // 반려되지 않은 문서는 재기안할 수 없다
     await expectApprovalError(
@@ -514,7 +536,7 @@ describe("완료 후 불변·추가 전용 (APV-046·062)", () => {
       run((ctx) =>
         ctx.tx
           .update(schema.document)
-          .set({ body: { amount: 1 } })
+          .set({ latestRevision: 99 })
           .where(eq(schema.document.id, doneId)),
       ),
       /내용은 바꿀 수 없습니다/,
