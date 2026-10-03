@@ -132,6 +132,7 @@
 | [2026-10-03-biome-windows-spawn.md](ts/2026-10-03-biome-windows-spawn.md) | windows, biome, claude-code, hooks, lint | Biome에는 상대 경로(`/`)를 넘기고 `stdio: "ignore"`를 쓰지 않는다. hook은 실제 결과로 검증한다 |
 | [2026-10-03-drizzle-composite-fk-migration-order.md](ts/2026-10-03-drizzle-composite-fk-migration-order.md) | db, migration, drizzle | 기존 테이블에 UNIQUE를 추가하고 복합 외래 키로 참조하면 생성 SQL 순서를 확인·수정한다. 적용 전 통합 테스트로 확인 |
 | [2026-10-03-playwright-label-region-and-shell-heredoc.md](ts/2026-10-03-playwright-label-region-and-shell-heredoc.md) | test, e2e, playwright, windows, tooling | 폼 컨트롤은 role(combobox)로 찾는다. 행 버튼엔 항목 이름이 든 aria-label. 긴 heredoc·`python -` 대신 파일 도구 |
+| [2026-10-04-e2e-fix-loop-and-controlled-folder-access.md](ts/2026-10-04-e2e-fix-loop-and-controlled-folder-access.md) | windows, e2e, playwright, biome, defender, workflow | E2E 실패는 실패한 테스트만 재실행하고 전체는 단계 끝에 1회. 같은 실패 3회 반복 시 멈추고 보고. EPERM은 재시도 루프 대신 Windows 차단 기록 확인 |
 
 ---
 
