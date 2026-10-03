@@ -125,7 +125,8 @@ export type ApprovalEvent =
   | { type: "rejected"; docId: string; stepId: string; comment: string }
   | { type: "completed"; docId: string }
   | { type: "post_pending"; docId: string; stepId: string; assigneeIds: string[] }
-  | { type: "post_approved"; docId: string; stepId: string };
+  | { type: "post_approved"; docId: string; stepId: string }
+  | { type: "line_changed"; docId: string; added: string[]; removed: string[]; reason: string };
 
 /** 처리 기록(approval_action)에 저장할 내용 (APV-046). IP·기기·멱등 키는 서비스가 붙인다 */
 export interface ActionRecord {

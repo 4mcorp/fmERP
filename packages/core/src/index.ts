@@ -18,6 +18,13 @@ export {
   type ValidationOptions,
   validateLine,
 } from "./approval-line";
+export {
+  editLine,
+  type LineEdit,
+  type LineEditErrorCode,
+  type LineEditResult,
+  type NewStep,
+} from "./approval-line-edit";
 export { allowedTransitions, assertTransition, canTransition } from "./approval-state";
 export {
   type ActionRecord,
@@ -87,6 +94,34 @@ export {
   seriesKey,
   validateDocNumberRule,
 } from "./doc-number";
+export { DEFAULT_FORMS, type DefaultForm } from "./form-defaults";
+export {
+  type AttachmentField,
+  type DateField,
+  FIELD_TYPES,
+  type FieldType,
+  type FormField,
+  type FormSchema,
+  MAX_FIELDS,
+  type MoneyField,
+  type NumberField,
+  type RefField,
+  type RichTextField,
+  type SchemaCheck,
+  type SelectField,
+  type SelectOption,
+  type TableColumn,
+  type TableField,
+  type TextField,
+  validateFormSchema,
+} from "./form-schema";
+export {
+  type FieldError,
+  tableSums,
+  type ValidateOptions,
+  type ValuesResult,
+  validateFormValues,
+} from "./form-values";
 export { toWon, type Won } from "./money";
 export { DEFAULT_POSITIONS } from "./org-defaults";
 export {
