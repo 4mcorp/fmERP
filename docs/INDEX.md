@@ -142,6 +142,7 @@
 | [2026-10-03-m1-auth-account-audit.md](plan/2026-10-03-m1-auth-account-audit.md) | done | M1 계정·테넌트·감사 로그 기반: 시드 테스트 계정 로그인, Better Auth organization, RLS·`fmerp_auth`, 감사 로그, PIN (소셜 로그인은 M9) |
 | [2026-10-03-m2-org-permission.md](plan/2026-10-03-m2-org-permission.md) | done | M2 조직·권한: 사업자·부서 트리(뎁스 규칙)·직위·소속·`role_grant`·`can()` 권한 판정, 관리 콘솔·조직도 |
 | [2026-10-03-m2-security-review.md](plan/2026-10-03-m2-security-review.md) | done | M2 보안 리뷰: 권한 상승·테넌트 격리 점검, 후속 FU-6~10 |
+| [2026-10-03-m3-approval-engine.md](plan/2026-10-03-m3-approval-engine.md) | draft | M3 결재 엔진: 상태 머신·결재선·병렬 합의·대결·동시성·채번·완료 후 불변. 결정 Q1~Q9 검토 대기 |
 
 ---
 
