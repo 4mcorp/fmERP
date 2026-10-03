@@ -85,6 +85,7 @@
 ## 3. 기준 문서
 | 문서 | 내용 |
 |---|---|
+| [GLOSSARY.md](../GLOSSARY.md) | 도메인 용어집 (조직·결재 용어와 규칙 줄임 표현) |
 | [PRD.md](PRD.md) | 제품 요구사항 (요구사항 ID 체계: AUTH, ORG, PERM, APV, AUD, BAK, NTF, DSH, ADM, FILE, API, BIL, NFR) |
 | [TECH_SPEC.md](TECH_SPEC.md) | 확정 기술 스택·버전·구조·스킬·MCP |
 | [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md) | 배포·백업·이관 계획 |
@@ -142,7 +143,7 @@
 | [2026-10-03-m1-auth-account-audit.md](plan/2026-10-03-m1-auth-account-audit.md) | done | M1 계정·테넌트·감사 로그 기반: 시드 테스트 계정 로그인, Better Auth organization, RLS·`fmerp_auth`, 감사 로그, PIN (소셜 로그인은 M9) |
 | [2026-10-03-m2-org-permission.md](plan/2026-10-03-m2-org-permission.md) | done | M2 조직·권한: 사업자·부서 트리(뎁스 규칙)·직위·소속·`role_grant`·`can()` 권한 판정, 관리 콘솔·조직도 |
 | [2026-10-03-m2-security-review.md](plan/2026-10-03-m2-security-review.md) | done | M2 보안 리뷰: 권한 상승·테넌트 격리 점검, 후속 FU-6~10 |
-| [2026-10-03-m3-approval-engine.md](plan/2026-10-03-m3-approval-engine.md) | draft | M3 결재 엔진: 상태 머신·결재선·병렬 합의·대결·동시성·채번·완료 후 불변. 결정 Q1~Q9 검토 대기 |
+| [2026-10-03-m3-approval-engine.md](plan/2026-10-03-m3-approval-engine.md) | accepted | M3 결재 엔진: 상태 머신·결재선·병렬 합의·대결·동시성·채번·완료 후 불변 |
 
 ---
 
@@ -162,6 +163,7 @@
 | [0003-rfc9457-problem-details.md](adr/0003-rfc9457-problem-details.md) | API 에러는 RFC 9457 Problem Details + `code` |
 | [0004-integration-test-db.md](adr/0004-integration-test-db.md) | 통합 테스트는 Compose의 전용 PostgreSQL·SeaweedFS |
 | [0005-better-auth-organization-as-tenant.md](adr/0005-better-auth-organization-as-tenant.md) | Better Auth organization = 계정(테넌트), `fmerp_auth` 역할, 자체 초대 |
+| [0007-approval-engine-rules.md](adr/0007-approval-engine-rules.md) | 결재 엔진은 core 순수 함수, 낙관적 잠금·추가 전용·outbox 저장, 그룹·정족수·반려·후결·대결 규칙 |
 | [0006-org-permission-model.md](adr/0006-org-permission-model.md) | 부서 트리는 구체화 경로+트리거, 역할은 `membership.role` + 범위 있는 `role_grant`, `can()` 한 곳 판정 |
 
 ---

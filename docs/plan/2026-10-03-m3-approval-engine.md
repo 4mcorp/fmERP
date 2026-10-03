@@ -1,7 +1,7 @@
 ---
 title: M3 결재 엔진 (core, TDD)
 date: 2026-10-03
-status: draft
+status: accepted
 tags: [approval, db, api, test]
 related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/rules/architecture.md, docs/rules/database.md, docs/rules/testing.md, docs/adr/0006-org-permission-model.md]
 ---
@@ -67,7 +67,7 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/rules/architecture.md, docs/
 - 전결: 단계에 `전결 가능` 표시가 있는 처리자가 전결하면 이후 결재 단계를 `SKIPPED` 처리하고 문서를 완료한다(위임전결 규정표 연결은 P1)
 
 ## 단계
-- [ ] 1. 규칙 확정: `grill-me`로 위 규칙과 결정 Q1~Q8 검증 → GLOSSARY.md·ADR 0007 작성
+- [x] 1. 규칙 확정: 결정 Q1~Q9 승인(제안대로), 규칙을 GLOSSARY.md·ADR 0007에 기록
 - [ ] 2. `packages/core` (TDD, `tdd` 스킬): 상태 전이 → 결재선·그룹 → 엔진 → 해석·검증 → 대결 → 채번. 단위 테스트를 먼저 작성
 - [ ] 3. DB: 스키마·마이그레이션(RLS·권한·불변 트리거·추가 전용), 시드(기본 결재 시나리오용 조직은 M2 시드 재사용)
 - [ ] 4. 서비스(`apps/web/server/approval/`): 상신·처리·회수·보류·채번 저장, 낙관적 잠금·멱등 키, 이벤트 outbox, 감사 로그
@@ -104,3 +104,4 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/rules/architecture.md, docs/
 
 ## 결정·변경 기록
 - 2026-10-03: 초안 작성 (사용자 검토 대기)
+- 2026-10-03: Q1~Q9 제안안대로 승인. 규칙 검증은 사용자 승인된 제안과 PRD 5.4를 대조해 진행(대화형 grill 없이), GLOSSARY.md·ADR 0007 작성
