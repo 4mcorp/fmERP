@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Building2, ChevronDown, LogOut, Network, Plus, Settings, UserRound } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { adminEntry } from "@/lib/admin-nav";
 import { api, errorMessage } from "@/lib/api";
-import { useCapabilities, useCurrentAccount, useMe } from "@/lib/queries";
+import { clearLocalDrafts } from "@/lib/local-drafts";
+import { useCapabilities, useCurrentAccount, useMe, usePending } from "@/lib/queries";
 import { ROLE_LABEL } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -25,6 +28,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
   const activeAccounts = me?.accounts.filter((a) => a.status === "active") ?? [];
   const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
+  const pathname = usePathname();
+  const { data: pending } = usePending(Boolean(me?.activeAccountId));
   const adminLink = adminEntry(caps);
 
   async function switchAccount(accountId: string) {
@@ -37,6 +42,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
+    // 이 브라우저에 남은 기안 로컬 사본을 지운다 (BAK-001)
+    await clearLocalDrafts();
     await fetch("/api/auth/sign-out", { method: "POST" });
     window.location.href = me?.devTestLogin ? "/dev-login" : "/login";
   }
@@ -120,6 +127,37 @@ export function AppShell({ children }: { children: ReactNode }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {me?.activeAccountId && (
+          <nav
+            aria-label="전자결재"
+            className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 pb-2"
+          >
+            {[
+              { href: "/approval/new", label: "새 결재" },
+              { href: "/approval/pending", label: "결재 대기", count: pending?.length },
+              { href: "/approval/mine", label: "기안함" },
+              { href: "/org", label: "조직도" },
+            ].map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                aria-current={pathname.startsWith(n.href) ? "page" : undefined}
+                className={cn(
+                  "flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm hover:bg-muted",
+                  pathname.startsWith(n.href) && "bg-muted font-medium",
+                )}
+              >
+                {n.label}
+                {n.count ? (
+                  <span className="rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
+                    {n.count}
+                    <span className="sr-only">건</span>
+                  </span>
+                ) : null}
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
       <main className="mx-auto max-w-5xl p-4 sm:p-6">{children}</main>
     </div>

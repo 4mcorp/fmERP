@@ -99,10 +99,11 @@ export const useComments = (id: string | undefined) =>
     enabled: Boolean(id),
   });
 
-export const usePending = () =>
+export const usePending = (enabled = true) =>
   useQuery({
     queryKey: ["inbox-pending"],
     queryFn: () => api<PendingItem[]>("/api/inbox/pending"),
+    enabled,
   });
 
 export const useMine = () =>
