@@ -95,6 +95,16 @@ export {
   validateDocNumberRule,
 } from "./doc-number";
 export {
+  canDistribute,
+  canReceive,
+  canViewDocument,
+  type DocumentViewFacts,
+  type Recipient,
+  type RecipientKind,
+  type RecipientTarget,
+  type SecurityLevel,
+} from "./document-access";
+export {
   type AttachmentCheck,
   checkAttachment,
   DEFAULT_ALLOWED_EXTENSIONS,
@@ -165,3 +175,4 @@ export {
   type SessionState,
   shouldTouchSession,
 } from "./session-policy";
+export { planTransfer, type TransferErrorCode, type TransferPlan } from "./step-transfer";
