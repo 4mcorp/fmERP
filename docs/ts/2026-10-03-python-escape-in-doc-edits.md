@@ -19,7 +19,8 @@ raw 문자열(`r"..."`)로 해당 줄을 다시 썼다. 문서 전체에서 제�
 - Windows 경로나 백슬래시가 들어간 텍스트는 스크립트 대신 **Edit/Write 도구**로 고친다. 스크립트를 써야 하면 raw 문자열을 쓴다.
 - 문서를 스크립트로 일괄 수정한 뒤에는 제어 문자를 검사한다.
   ```bash
-  grep -rlP '[\x00-\x08\x0b-\x0c\x0e-\x1f]' docs CLAUDE.md README.md
+  python -c "import pathlib,re; print([str(p) for p in pathlib.Path('.').glob('**/*.md') if 'node_modules' not in p.parts and '.claude' not in p.parts and re.search(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', p.read_text(encoding='utf-8'))] or 'none')"
   ```
 
 ## 재발 기록
+- 2026-10-03: 처음 적었던 `grep -rlP` 검사는 이 PC(Git Bash 로케일)에서 `-P supports only unibyte and UTF-8 locales`로 실행되지 않았는데, `|| echo`로 이어 붙여 "문제 없음"으로 잘못 보였다. Python 검사로 바꿨다. 검사 명령은 실패를 숨기지 않게 쓴다.

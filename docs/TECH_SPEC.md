@@ -50,7 +50,7 @@
 | | @hono/zod-openapi | ~1.6.3 |
 | | @hono/node-server | ~2.1.3 (worker의 헬스체크 서버용) |
 | 검증 | zod | ~4.6.5 |
-| 인증 | better-auth, @better-auth/passkey | ~1.7.7 (두 패키지 버전을 항상 같게 유지) |
+| 인증 | better-auth | ~1.7.7 (organization 플러그인 = 계정·테넌트, ADR 0005). `@better-auth/passkey`는 P1에서 같은 버전으로 추가 |
 | 비밀번호·PIN 해시 | @node-rs/argon2 | ~2.2.1 |
 | ORM | drizzle-orm / drizzle-kit | ~0.45.3 / ~0.31.11 |
 | DB 드라이버 | pg | ~8.23.1 (Drizzle·pg-boss·Better Auth 공용) |
@@ -74,7 +74,7 @@
 | 린트·포맷 | @biomejs/biome | ~2.5.15 |
 | Git hook·커밋 규칙 | lefthook / @commitlint/cli·config-conventional | ~2.1.16 / ~21.2.3 |
 | TS 실행 (worker·스크립트) | tsx | ~4.23.15 |
-| UI 보조 (shadcn 설치) | shadcn, class-variance-authority, cn, tw-animate-css | ~4.21.1, ~0.7.1, ~0.4.0, ~1.4.0 |
+| UI 보조 (shadcn 설치) | shadcn, class-variance-authority, cn, tw-animate-css, sonner(알림), next-themes | ~4.21.1, ~0.7.1, ~0.4.0, ~1.4.0, ~2.0.8, ~0.4.6 |
 | 로컬 개발 서비스 (Docker) | `postgres:18-bookworm`, `chrislusf/seaweedfs:4.47`(로컬 S3, MinIO 대체), `axllent/mailpit:v1.31`(개발 메일함) | docker-compose.dev.yml |
 | 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |
 
@@ -99,8 +99,9 @@
 │  └─ worker/                 # pg-boss 작업: PDF·완료 패키지, 내보내기, 일일 DB 덤프, 알림, 예약 작업
 ├─ packages/
 │  ├─ core/                   # 결재 엔진·도메인 규칙 (프레임워크 비의존, 순수 TS, 단위 테스트 중심)
-│  ├─ db/                     # Drizzle 스키마, 마이그레이션, RLS 정책, 시드
-│  ├─ auth/                   # Better Auth 설정 (Google·Naver·passkey), 결재 PIN
+│  ├─ db/                     # Drizzle 스키마, 마이그레이션(권한·RLS 포함), withTenant
+│  ├─ audit/                  # 감사 로그 기록(recordAudit)·변경 비교(마스킹)
+│  ├─ auth/                   # Better Auth 설정, 테스트 계정 로그인·시드, 세션 정책, 계정·초대, 결재 PIN
 │  └─ storage/                # S3 호환 어댑터 (R2·S3·NCP·로컬 SeaweedFS)
 ├─ docs/                      # 기준 문서(루트), INDEX.md, rules/, plan/, ts/, idea/, adr/
 ├─ GLOSSARY.md                # 도메인 용어집 (domain-modeling 스킬이 관리)
@@ -110,7 +111,7 @@
 └─ .mcp.json                  # shadcn MCP
 ```
 
-**의존 방향:** `apps/*` → `packages/auth`, `packages/storage` → `packages/db` → `packages/core`. `core`는 다른 패키지를 import하지 않습니다(결재 엔진을 프레임워크와 분리).
+**의존 방향:** `apps/*` → `packages/auth` → `packages/audit` → `packages/db`, `packages/auth` → `packages/core`, `apps/*` → `packages/storage`. `core`는 다른 패키지를 import하지 않습니다(결재 엔진을 프레임워크와 분리).
 
 ---
 

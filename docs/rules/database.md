@@ -5,8 +5,10 @@
 
 ## 1. 스키마
 - 테이블과 컬럼 이름은 영문 소문자 snake_case를 쓴다.
-- 테넌트 데이터 테이블은 `account_id NOT NULL`을 갖고 **RLS 정책**을 적용한다. 요청 처리 트랜잭션 안에서 `SET LOCAL app.account_id`로 테넌트를 지정한다.
-- 새 테넌트 테이블을 만들면 **테넌트 격리 테스트**(다른 계정 데이터가 조회되지 않음)를 함께 작성한다.
+- 기본 키는 `primaryId()`(uuidv7, ADR 0001), 생성·수정 시각은 `createdAt()`·`updatedAt()`을 쓴다 (`packages/db/src/schema/columns.ts`).
+- 테넌트 데이터 테이블은 `account_id NOT NULL`을 갖고 **RLS 정책**을 적용한다. 정책 형식은 마이그레이션 0002를 따른다: `TO fmerp_app USING (account_id = app_current_account()) WITH CHECK (같음)`.
+- 테넌트 데이터는 반드시 `withTenant(appDb, accountId, tx => …)` 안에서 조회·변경한다. 테넌트를 지정하지 않으면 RLS 때문에 0행이 나온다(안전한 기본값).
+- 새 테넌트 테이블을 만들면 **테넌트 격리 테스트**(다른 계정 데이터가 조회되지 않음, 다른 계정으로 쓰기 거부)를 함께 작성한다.
 - 외래 키에는 인덱스를 둔다.
 - 결재 문서에는 기안·결재 시점의 부서명·직위·직책을 **스냅샷 컬럼(jsonb)** 으로 저장한다 (PRD ORG-017).
 
@@ -24,12 +26,14 @@
 ## 3. 마이그레이션
 - `drizzle-kit generate`로 만든 SQL을 커밋한다. **이미 적용된 마이그레이션 파일은 수정하지 않는다.**
 - 하위 호환 원칙(expand → migrate → contract)을 따른다. 컬럼 삭제·이름 변경은 두 번의 배포로 나눈다.
-- RLS 정책, 권한(GRANT), 트리거도 마이그레이션에 포함한다.
+- RLS 정책, 권한(GRANT), 트리거도 마이그레이션에 포함한다. 확장·권한·RLS처럼 drizzle-kit이 만들지 않는 SQL은 `drizzle-kit generate --custom --name=<이름>`으로 빈 마이그레이션을 만든 뒤 작성한다.
+- **테이블 권한은 기본 권한(default privileges)에 기대지 않고 테이블마다 명시적으로 부여한다.** 새 테이블을 만들면 `fmerp_app`·`fmerp_auth` 중 누가 어떤 권한(SELECT·INSERT·UPDATE·DELETE, 필요하면 열 단위)을 가져야 하는지 정해 같은 마이그레이션에 넣는다.
 - 운영 배포 직전에는 수동 덤프가 자동으로 실행된다 (DEPLOYMENT_PLAN 9.4).
 
 ## 4. DB 연결
 - 드라이버는 `pg`(node-postgres) 하나로 통일한다. Drizzle, pg-boss, Better Auth가 같은 풀 설정을 쓴다.
-- 앱 계정과 마이그레이션 계정을 분리한다 (`docker/postgres/initdb/01-roles.sh`, 운영 DB도 같은 스크립트).
+- DB 역할은 셋으로 나눈다 (`docker/postgres/initdb/01-roles.sh`, 운영 DB도 같은 스크립트, ADR 0005).
   - `fmerp_migrator`: DB·`public` 스키마 소유자, 마이그레이션(DDL) 전용 — `MIGRATION_DATABASE_URL`
-  - `fmerp_app`: `public` 테이블 DML만 가능. pg-boss용 `pgboss` 스키마 소유자이며, pg-boss 설치 때문에 DB CREATE 권한을 가진다 ([ts](../ts/2026-10-03-pgboss-schema-permission.md)) — `DATABASE_URL`
+  - `fmerp_app`: 업무 데이터. 마이그레이션에서 부여한 권한만 가지며 **RLS가 적용**된다. pg-boss용 `pgboss` 스키마 소유자이며, pg-boss 설치 때문에 DB CREATE 권한을 가진다 ([ts](../ts/2026-10-03-pgboss-schema-permission.md)) — `DATABASE_URL`
+  - `fmerp_auth`: Better Auth 전용(BYPASSRLS). 인증·테넌트 테이블과 감사 로그 기록·본인 이력 조회만 — `AUTH_DATABASE_URL`. **업무 데이터 코드에서 이 연결을 쓰지 않는다.**
 - 마이그레이션 실행 코드는 `@fmerp/db/migrate`로만 import한다. 패키지 진입점에 넣지 않는다 ([ts](../ts/2026-10-03-next-monorepo-env-and-bundling.md)).

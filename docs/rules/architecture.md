@@ -4,11 +4,15 @@
 
 ## 1. 저장소와 의존 방향
 ```
-apps/web (Next 16 + Hono /api) ─┐
-apps/worker (pg-boss 작업)      ─┼─> packages/auth, packages/storage ─> packages/db ─> packages/core
+apps/web (Next 16 + Hono /api) ─┐                 ┌─> packages/audit ─> packages/db
+apps/worker (pg-boss 작업)      ─┼─> packages/auth ─┤
+                                 │                 └─> packages/core
+                                 └─> packages/storage
 ```
 - `packages/core`: 결재 엔진과 도메인 규칙. **순수 TypeScript**이며 DB, HTTP, 파일, 현재 시각, 난수를 직접 쓰지 않는다. 시각·ID는 인자로 주입받는다.
-- `packages/db`: Drizzle 스키마, 마이그레이션, RLS, 저장소(repository) 함수.
+- `packages/db`: Drizzle 스키마, 마이그레이션(권한·RLS 포함), `withTenant`.
+- `packages/audit`: 감사 로그 기록(`recordAudit`)과 변경 비교(`computeAuditDiff`, 민감 값 마스킹). 감사 로그는 이 패키지로만 쓴다.
+- `packages/auth`: Better Auth 설정과 `fmerp_auth` 연결로 동작하는 인증·계정 서비스(세션 정책, 계정·초대, PIN, 테스트 로그인·시드).
 - `packages/storage`: S3 호환 어댑터. **S3 SDK는 이 패키지 밖에서 import하지 않는다.**
 - `packages/auth`: Better Auth 설정, 결재 PIN.
 - 역방향 import(예: core → db)와 apps 간 import는 금지한다.

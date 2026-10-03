@@ -2,7 +2,7 @@
 
 전자결재 중심 ERP. 소셜 로그인(Google·Naver), 계정 → 사업자 → 부서(최대 5단계) → 사용자 조직 구조, 기안·결재·감사, S3 문서 원본 보관과 이관을 지원합니다.
 
-> 현재 단계: M0 프로젝트 골격 완료, M1(인증·계정) 착수 전
+> 현재 단계: M1(계정·테넌트·감사 로그 기반, 테스트 로그인) 완료, M2(조직·권한) 착수 전
 
 ## 문서
 | 문서 | 내용 |
@@ -29,8 +29,9 @@
    pnpm install
    pnpm env:up
    pnpm db:migrate
+   pnpm db:seed
    ```
-4. **실행:** `pnpm dev` → 웹 http://localhost:3000 (API 문서 `/api/doc`), worker 헬스체크 http://localhost:3001/health, 개발 메일함 http://localhost:58025
+4. **실행:** `pnpm dev` → 웹 http://localhost:3000 → **테스트 로그인 화면(`/dev-login`)에서 시드 계정을 골라 로그인** (API 문서 `/api/doc`), worker 헬스체크 http://localhost:3001/health, 개발 메일함 http://localhost:58025
 
 | 명령 | 내용 |
 |---|---|
@@ -42,6 +43,7 @@
 | `pnpm test` | 단위 + 통합 |
 | `pnpm test:e2e` | E2E (Playwright, 최초 1회 `pnpm --filter @fmerp/web exec playwright install chromium`) |
 | `pnpm db:generate` / `pnpm db:migrate` | 마이그레이션 생성 / 적용 |
+| `pnpm db:seed` | 개발용 테스트 계정·회사 생성 (계정 목록: `packages/auth/src/test-accounts.ts`). 소셜 로그인은 마지막 단계(M9)에서 연결 |
 | `pnpm env:up` / `pnpm env:down` | 로컬 PostgreSQL·SeaweedFS·Mailpit 기동 / 종료 |
 
 커밋하면 lefthook이 변경 파일을 Biome로 검사하고, 커밋 메시지를 commitlint로 검사합니다 ([docs/rules/git.md](docs/rules/git.md)).

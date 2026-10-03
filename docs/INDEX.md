@@ -12,7 +12,7 @@
 | DB 스키마, 마이그레이션, RLS, 쿼리 | [rules/database.md](rules/database.md) | `supabase-postgres-best-practices` | PRD 7장 | `db`, `migration` |
 | API 라우트, 미들웨어, 권한 확인 | [rules/api.md](rules/api.md) | – | PRD 3.2·5.3·5.12 | `api`, `auth` |
 | 화면, 컴포넌트, 폼, 표 | [rules/frontend.md](rules/frontend.md) | `shadcn`, `vercel-react-best-practices`, `web-design-guidelines` | PRD 8장·6.5 | `ui` |
-| 로그인, 세션, 결재 PIN, 개인정보 | [rules/security.md](rules/security.md) | `better-auth-best-practices`, `better-auth-security-best-practices` | PRD 5.1·6.3·6.4 | `auth`, `security` |
+| 로그인(테스트 계정·소셜), 세션, 결재 PIN, 계정·초대, 개인정보 | [rules/security.md](rules/security.md) | `better-auth-best-practices`, `better-auth-security-best-practices`, `organization-best-practices` | PRD 5.1·6.3·6.4, ADR 0005 | `auth`, `better-auth`, `security` |
 | 결재 엔진 (기안·결재선·처리·위임·채번) | [rules/architecture.md](rules/architecture.md) 3장, [rules/database.md](rules/database.md) 2장, [rules/testing.md](rules/testing.md) | `tdd`, `domain-modeling` | PRD 5.4 | `approval` |
 | 감사 기능, 감사 로그 | [rules/security.md](rules/security.md), [rules/database.md](rules/database.md) | – | PRD 5.5 (Must·Should만 구현, 10.3 제외 목록) | `audit` |
 | 파일 업로드, S3, 완료 패키지, 덤프, 이관 | [rules/storage-backup.md](rules/storage-backup.md) | – | PRD 5.6·5.10, DEPLOYMENT_PLAN 2·7장 | `storage`, `backup` |
@@ -67,6 +67,9 @@
 | DB 덤프·복구 절차·이관 절차·로컬 사본 | DEPLOYMENT_PLAN 8장 |
 | 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
+| 개발용 테스트 계정 목록·비밀번호 | `packages/auth/src/test-accounts.ts` (시드: `pnpm db:seed`) |
+| 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
+| M1 보안 리뷰 결과·후속 과제 | plan/2026-10-03-m1-security-review.md |
 | 런타임·라이브러리 버전 | TECH_SPEC 2·3장 |
 | 저장소 구조·의존 방향 | TECH_SPEC 4장, rules/architecture.md |
 | pnpm·tsconfig·biome 설정 기준 | TECH_SPEC 5장 |
@@ -119,6 +122,8 @@
 | [2026-10-03-next-monorepo-env-and-bundling.md](ts/2026-10-03-next-monorepo-env-and-bundling.md) | next, build, env, monorepo, db | 공유 패키지 진입점에 Node 파일 경로 코드 금지(`exports` 분리). 루트 `.env`는 `loadEnvConfig(..., true)` |
 | [2026-10-03-vitest-globalsetup-env.md](ts/2026-10-03-vitest-globalsetup-env.md) | test, vitest, config | globalSetup은 `project.config.env`를 읽는다. `No test files found`면 위의 설정 오류부터 확인 |
 | [2026-10-03-python-escape-in-doc-edits.md](ts/2026-10-03-python-escape-in-doc-edits.md) | docs, windows, tooling | 백슬래시가 있는 문서는 Edit 도구로 고친다. 스크립트 수정 후 제어 문자 검사 |
+| [2026-10-03-better-auth-integration.md](ts/2026-10-03-better-auth-integration.md) | auth, better-auth, db, security | 플러그인 추가 시 우회 HTTP 경로를 `disabledPaths`로 막는다. 어댑터 schema 키는 모델 이름. 설정 변경 후 m1 통합 테스트 실행 |
+| [2026-10-03-e2e-dev-server.md](ts/2026-10-03-e2e-dev-server.md) | test, e2e, playwright, next | 페이지 이동은 `toHaveURL`로 먼저 확인. E2E는 테스트 DB만, 상태 변경 흐름은 `@stateful` |
 | [2026-10-03-pgboss-schema-permission.md](ts/2026-10-03-pgboss-schema-permission.md) | db, worker, pg-boss, permission | 앱 계정은 pg-boss 설치용 DB CREATE 권한 필요. initdb 변경은 기존 볼륨에 수동 반영 |
 | [2026-10-03-biome-windows-spawn.md](ts/2026-10-03-biome-windows-spawn.md) | windows, biome, claude-code, hooks, lint | Biome에는 상대 경로(`/`)를 넘기고 `stdio: "ignore"`를 쓰지 않는다. hook은 실제 결과로 검증한다 |
 
@@ -129,6 +134,8 @@
 |---|---|---|
 | [2026-10-03-mvp-roadmap.md](plan/2026-10-03-mvp-roadmap.md) | accepted | MVP 마일스톤 M0~M8, P0 요구사항 118개 배정, 선행 작업·위험 |
 | [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | done | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
+| [2026-10-03-m1-security-review.md](plan/2026-10-03-m1-security-review.md) | done | M1 보안 리뷰: 지적 SR-1~5 조치, 후속 FU-1~5 (업로드 크기·형식 검증은 M4) |
+| [2026-10-03-m1-auth-account-audit.md](plan/2026-10-03-m1-auth-account-audit.md) | done | M1 계정·테넌트·감사 로그 기반: 시드 테스트 계정 로그인, Better Auth organization, RLS·`fmerp_auth`, 감사 로그, PIN (소셜 로그인은 M9) |
 
 ---
 
@@ -147,15 +154,20 @@
 | [0002-money-as-bigint-won.md](adr/0002-money-as-bigint-won.md) | 금액은 DB `bigint`(원), 앱 `number` + `toWon()` 검증 |
 | [0003-rfc9457-problem-details.md](adr/0003-rfc9457-problem-details.md) | API 에러는 RFC 9457 Problem Details + `code` |
 | [0004-integration-test-db.md](adr/0004-integration-test-db.md) | 통합 테스트는 Compose의 전용 PostgreSQL·SeaweedFS |
+| [0005-better-auth-organization-as-tenant.md](adr/0005-better-auth-organization-as-tenant.md) | Better Auth organization = 계정(테넌트), `fmerp_auth` 역할, 자체 초대 |
 
 ---
 
 ## 9. 코드 위치
 | 대상 | 경로 |
 |---|---|
-| 웹 화면 (App Router) | `apps/web/app/` |
+| 웹 화면 (App Router) | `apps/web/app/` — 로그인 필요 영역 `app/(app)/`(홈, `me`, `admin/members`, `onboarding`, `invite/[token]`), 테스트 로그인 `app/dev-login` |
+| 앱 공통 레이아웃·계정 전환 메뉴 | `apps/web/components/app-shell.tsx` |
+| 화면 쪽 API 호출·타입 | `apps/web/lib/api.ts`, `lib/types.ts`, `lib/queries.ts` |
 | shadcn 컴포넌트 / 유틸 | `apps/web/components/ui/`, `apps/web/lib/utils.ts` |
-| API (Hono, `/api/*`) | `apps/web/server/create-app.ts`(라우트), `server/app.ts`(의존성 연결), Next 마운트 `app/api/[[...route]]/route.ts` |
+| API (Hono, `/api/*`) | `apps/web/server/create-app.ts`(기본·헬스), `server/app.ts`(라우트 등록), `server/routes/*.ts`(auth·dev, me, accounts·invitations, account), Next 마운트 `app/api/[[...route]]/route.ts` |
+| API 미들웨어 (세션·테넌트·역할·Origin·IP) | `apps/web/server/http.ts` |
+| 서버 의존성(DB 연결 2개·Better Auth·저장소) | `apps/web/server/deps.ts` |
 | API 에러 형식 (RFC 9457) | `apps/web/server/problem.ts` |
 | 환경 변수 검증 | `apps/web/server/env.ts`, `apps/worker/src/env.ts` |
 | worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
@@ -163,9 +175,14 @@
 | DB 스키마·클라이언트 | `packages/db/src/schema/`, `src/client.ts` |
 | 마이그레이션 SQL / 실행 | `packages/db/migrations/`, `src/migrate.ts`(import 경로 `@fmerp/db/migrate`) |
 | S3 어댑터 (write-once 포함) | `packages/storage/src/object-storage.ts` |
-| 인증 (M1 예정) | `packages/auth/src/` |
+| 인증·계정 | `packages/auth/src/` — `auth.ts`(Better Auth 설정), `session-guard.ts`, `accounts.ts`(계정·초대), `pin.ts`, `me.ts`, `test-accounts.ts`·`seed.ts` |
+| 감사 로그 | `packages/audit/src/` (`recordAudit`, `computeAuditDiff`) |
+| 세션·PIN 정책 (순수 함수) | `packages/core/src/session-policy.ts`, `pin-policy.ts` |
+| 스키마 | `packages/db/src/schema/` (`auth.ts`, `tenant.ts`, `audit.ts`, `columns.ts`) |
+| DB 권한·RLS | `packages/db/migrations/0002_grants_rls.sql` |
 | 로컬 개발·테스트 서비스 | `docker-compose.dev.yml`, DB 계정 생성 `docker/postgres/initdb/01-roles.sh` |
-| 테스트 설정 | `vitest.config.ts`(unit·integration 프로젝트), `packages/*/test/global-setup.ts`, `apps/web/playwright.config.ts`, `apps/web/e2e/` |
+| 테스트 설정 | `vitest.config.ts`(unit·integration 프로젝트), `packages/*/test/global-setup.ts`, 테스트 DB 초기화 `packages/db/test/reset-test-db.ts`, `apps/web/playwright.config.ts`, `apps/web/e2e/`(`test-env.ts`, `global-setup.ts`) |
+| 통합 테스트 로그인 헬퍼 / M1 통합 테스트 | `apps/web/server/test-client.ts` / `apps/web/server/m1.int.test.ts` |
 | 린트·Git hook·커밋 규칙 | `biome.json`(core import 제한 포함), `lefthook.yml`, `commitlint.config.mjs` |
 | CI | `.github/workflows/ci.yml` |
 | Claude hook·권한 | `.claude/settings.json`, `.claude/hooks/format-file.mjs` |
