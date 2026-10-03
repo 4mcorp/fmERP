@@ -13,6 +13,7 @@
 | API 라우트, 미들웨어, 권한 확인 | [rules/api.md](rules/api.md) | – | PRD 3.2·5.3·5.12 | `api`, `auth` |
 | 화면, 컴포넌트, 폼, 표 | [rules/frontend.md](rules/frontend.md) | `shadcn`, `vercel-react-best-practices`, `web-design-guidelines` | PRD 8장·6.5 | `ui` |
 | 로그인(테스트 계정·소셜), 세션, 결재 PIN, 계정·초대, 개인정보 | [rules/security.md](rules/security.md) | `better-auth-best-practices`, `better-auth-security-best-practices`, `organization-best-practices` | PRD 5.1·6.3·6.4, ADR 0005 | `auth`, `better-auth`, `security` |
+| 조직(사업자·부서·직위·소속)·역할 권한, 관리 콘솔 | [rules/database.md](rules/database.md) 2장, [rules/api.md](rules/api.md) 3장 | `supabase-postgres-best-practices`, `shadcn` | PRD 5.2·5.3, ADR 0006 | `db`, `api`, `auth`, `ui` |
 | 결재 엔진 (기안·결재선·처리·위임·채번) | [rules/architecture.md](rules/architecture.md) 3장, [rules/database.md](rules/database.md) 2장, [rules/testing.md](rules/testing.md) | `tdd`, `domain-modeling` | PRD 5.4 | `approval` |
 | 감사 기능, 감사 로그 | [rules/security.md](rules/security.md), [rules/database.md](rules/database.md) | – | PRD 5.5 (Must·Should만 구현, 10.3 제외 목록) | `audit` |
 | 파일 업로드, S3, 완료 패키지, 덤프, 이관 | [rules/storage-backup.md](rules/storage-backup.md) | – | PRD 5.6·5.10, DEPLOYMENT_PLAN 2·7장 | `storage`, `backup` |
@@ -70,6 +71,7 @@
 | 개발용 테스트 계정 목록·비밀번호 | `packages/auth/src/test-accounts.ts` (시드: `pnpm db:seed`) |
 | 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
 | M1 보안 리뷰 결과·후속 과제 | plan/2026-10-03-m1-security-review.md |
+| M2 조직·권한 설계, 보안 리뷰·후속 과제 | plan/2026-10-03-m2-org-permission.md, plan/2026-10-03-m2-security-review.md, ADR 0006 |
 | 런타임·라이브러리 버전 | TECH_SPEC 2·3장 |
 | 저장소 구조·의존 방향 | TECH_SPEC 4장, rules/architecture.md |
 | pnpm·tsconfig·biome 설정 기준 | TECH_SPEC 5장 |
@@ -126,6 +128,8 @@
 | [2026-10-03-e2e-dev-server.md](ts/2026-10-03-e2e-dev-server.md) | test, e2e, playwright, next | 페이지 이동은 `toHaveURL`로 먼저 확인. E2E는 테스트 DB만, 상태 변경 흐름은 `@stateful` |
 | [2026-10-03-pgboss-schema-permission.md](ts/2026-10-03-pgboss-schema-permission.md) | db, worker, pg-boss, permission | 앱 계정은 pg-boss 설치용 DB CREATE 권한 필요. initdb 변경은 기존 볼륨에 수동 반영 |
 | [2026-10-03-biome-windows-spawn.md](ts/2026-10-03-biome-windows-spawn.md) | windows, biome, claude-code, hooks, lint | Biome에는 상대 경로(`/`)를 넘기고 `stdio: "ignore"`를 쓰지 않는다. hook은 실제 결과로 검증한다 |
+| [2026-10-03-drizzle-composite-fk-migration-order.md](ts/2026-10-03-drizzle-composite-fk-migration-order.md) | db, migration, drizzle | 기존 테이블에 UNIQUE를 추가하고 복합 외래 키로 참조하면 생성 SQL 순서를 확인·수정한다. 적용 전 통합 테스트로 확인 |
+| [2026-10-03-playwright-label-region-and-shell-heredoc.md](ts/2026-10-03-playwright-label-region-and-shell-heredoc.md) | test, e2e, playwright, windows, tooling | 폼 컨트롤은 role(combobox)로 찾는다. 행 버튼엔 항목 이름이 든 aria-label. 긴 heredoc·`python -` 대신 파일 도구 |
 
 ---
 
@@ -136,6 +140,8 @@
 | [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | done | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
 | [2026-10-03-m1-security-review.md](plan/2026-10-03-m1-security-review.md) | done | M1 보안 리뷰: 지적 SR-1~5 조치, 후속 FU-1~5 (업로드 크기·형식 검증은 M4) |
 | [2026-10-03-m1-auth-account-audit.md](plan/2026-10-03-m1-auth-account-audit.md) | done | M1 계정·테넌트·감사 로그 기반: 시드 테스트 계정 로그인, Better Auth organization, RLS·`fmerp_auth`, 감사 로그, PIN (소셜 로그인은 M9) |
+| [2026-10-03-m2-org-permission.md](plan/2026-10-03-m2-org-permission.md) | done | M2 조직·권한: 사업자·부서 트리(뎁스 규칙)·직위·소속·`role_grant`·`can()` 권한 판정, 관리 콘솔·조직도 |
+| [2026-10-03-m2-security-review.md](plan/2026-10-03-m2-security-review.md) | done | M2 보안 리뷰: 권한 상승·테넌트 격리 점검, 후속 FU-6~10 |
 
 ---
 
@@ -155,6 +161,7 @@
 | [0003-rfc9457-problem-details.md](adr/0003-rfc9457-problem-details.md) | API 에러는 RFC 9457 Problem Details + `code` |
 | [0004-integration-test-db.md](adr/0004-integration-test-db.md) | 통합 테스트는 Compose의 전용 PostgreSQL·SeaweedFS |
 | [0005-better-auth-organization-as-tenant.md](adr/0005-better-auth-organization-as-tenant.md) | Better Auth organization = 계정(테넌트), `fmerp_auth` 역할, 자체 초대 |
+| [0006-org-permission-model.md](adr/0006-org-permission-model.md) | 부서 트리는 구체화 경로+트리거, 역할은 `membership.role` + 범위 있는 `role_grant`, `can()` 한 곳 판정 |
 
 ---
 
@@ -171,7 +178,10 @@
 | API 에러 형식 (RFC 9457) | `apps/web/server/problem.ts` |
 | 환경 변수 검증 | `apps/web/server/env.ts`, `apps/worker/src/env.ts` |
 | worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
-| 도메인 규칙 (결재 엔진 예정) | `packages/core/src/` (금액: `money.ts`) |
+| 도메인 규칙 (결재 엔진 예정) | `packages/core/src/` — 금액 `money.ts`, 사업자번호 `business-number.ts`, 부서 트리 `department-tree.ts`·`department-csv.ts`, 권한 `permissions.ts`(`can()`), 소속 `assignment.ts` |
+| 조직·권한 API | `apps/web/server/routes/org.ts`(설정·사업자·직위·직책), `departments.ts`(부서·조직도·CSV), `members.ts`(구성원·소속·발령·역할), `account.ts`(초대·프리셋), 권한 헬퍼 `server/org-access.ts`, 진행 중 결재 검사 지점 `server/in-flight.ts` |
+| 조직 화면 | `apps/web/app/(app)/org`(조직도), `admin/`(settings·businesses·org·members·positions), `components/org/` |
+| 조직 스키마·트리거 | `packages/db/src/schema/org.ts`, `migrations/0003_org_permission.sql`, `0004_org_rls_triggers.sql`, 시드 `packages/auth/src/seed-org.ts` |
 | DB 스키마·클라이언트 | `packages/db/src/schema/`, `src/client.ts` |
 | 마이그레이션 SQL / 실행 | `packages/db/migrations/`, `src/migrate.ts`(import 경로 `@fmerp/db/migrate`) |
 | S3 어댑터 (write-once 포함) | `packages/storage/src/object-storage.ts` |
