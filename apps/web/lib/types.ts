@@ -289,6 +289,7 @@ export interface ApprovalStepView {
   type: StepType;
   status: string;
   version: number;
+  canFinalize: boolean;
   assignees: StepAssignee[];
 }
 

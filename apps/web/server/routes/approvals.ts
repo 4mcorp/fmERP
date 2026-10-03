@@ -156,6 +156,7 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
                 type: z.string(),
                 status: z.string(),
                 version: z.number().int(),
+                canFinalize: z.boolean(),
                 assignees: z.array(z.record(z.string(), z.unknown())),
               }),
             ),
@@ -208,6 +209,7 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
             type: s.type,
             status: s.status,
             version: s.version,
+            canFinalize: s.canFinalize,
             assignees: s.assigneeSnapshot,
           })),
         };
