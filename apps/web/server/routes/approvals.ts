@@ -4,6 +4,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import { asc, eq } from "drizzle-orm";
 import { createDelegation, listDelegations, revokeDelegation } from "../approval/delegation";
 import { ApprovalError } from "../approval/errors";
+import { touchFormPref } from "../approval/forms";
 import { createApproval, submitDocument } from "../approval/service";
 import { type AppRouter, type DepsProvider, requireSession, requireTenant } from "../http";
 import { ACCOUNT_TARGET, loadActor } from "../org-access";
@@ -109,6 +110,7 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
         const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         const ctx = serviceCtx(c, tx);
         const created = await createApproval(ctx, { ...input, drafterMembershipId: membershipId });
+        await touchFormPref(ctx, membershipId, input.formId, { used: true });
         let status = "DRAFT";
         let docNo: string | null = null;
         if (submitNow) {

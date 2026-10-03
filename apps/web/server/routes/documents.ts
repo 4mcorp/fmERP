@@ -13,6 +13,7 @@ import {
 import { addComment, listComments } from "../approval/comments";
 import { loadBody, saveDraft } from "../approval/drafts";
 import { ApprovalError } from "../approval/errors";
+import { getForm, getFormVersion, versionToInput } from "../approval/forms";
 import { listMyDocuments, listPending } from "../approval/inbox";
 import { changeLine } from "../approval/line-change";
 import {
@@ -79,6 +80,55 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
       throw new ApiError(428, "reauth_required", "결재 PIN을 입력하세요");
     }
   }
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/approvals/{id}/form",
+      tags: ["approval"],
+      summary: "문서가 작성된 양식 버전(작성 당시 스키마·결재선 규칙). 기안자·결재선 참여자",
+      request: { params: idParam },
+      responses: {
+        200: json(
+          z.object({
+            formId: z.string(),
+            code: z.string(),
+            name: z.string(),
+            version: z.number().int(),
+            definition: z.record(z.string(), z.unknown()),
+          }),
+        ),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const d = deps();
+      const tenant = c.get("tenant");
+      const { id } = c.req.valid("param");
+      const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
+        const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        const ctx = serviceContext(c, d, tx);
+        if (!(await isParticipant(ctx, id, membershipId))) {
+          throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+        }
+        const [doc] = await tx
+          .select({ formVersionId: schema.document.formVersionId })
+          .from(schema.document)
+          .where(eq(schema.document.id, id));
+        if (!doc?.formVersionId) throw new ApprovalError("not_found", "양식 없이 만든 문서입니다");
+        const v = await getFormVersion(tx, doc.formVersionId);
+        const form = await getForm(tx, v.formId);
+        return {
+          formId: form.id,
+          code: form.code,
+          name: form.name,
+          version: v.version,
+          definition: versionToInput(v) as unknown as Record<string, unknown>,
+        };
+      });
+      return c.json(result, 200);
+    },
+  );
 
   // ===== 임시저장·본문 =====
   app.openapi(
