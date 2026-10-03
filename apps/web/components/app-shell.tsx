@@ -1,7 +1,16 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, ChevronDown, LogOut, Network, Plus, Settings, UserRound } from "lucide-react";
+import {
+  Building2,
+  CalendarOff,
+  ChevronDown,
+  LogOut,
+  Network,
+  Plus,
+  Settings,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -103,6 +112,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               <DropdownMenuItem asChild>
                 <Link href="/me">
                   <UserRound className="size-4" aria-hidden />내 정보
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/me/absence">
+                  <CalendarOff className="size-4" aria-hidden />
+                  부재 설정
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
