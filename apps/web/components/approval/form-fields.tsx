@@ -549,6 +549,7 @@ function FieldBody({
             ) : (
               <RichTextEditor
                 id={id}
+                labelledBy={`${id}-label`}
                 value={f.value as never}
                 onChange={f.onChange}
                 invalid={invalid}
@@ -586,6 +587,7 @@ export function FormFields({
         const error = errors[field.key];
         const isGroup =
           field.type === "multiselect" ||
+          field.type === "richtext" ||
           field.type === "daterange" ||
           (field.type === "user" && field.multiple) ||
           (field.type === "dept" && field.multiple);

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "cn";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useId, useRef } from "react";
 
 /**
  * 브라우저 기본 `<dialog>` 기반 모달 (포커스 가두기·Esc 닫기는 브라우저가 처리한다).
@@ -23,6 +23,7 @@ export function Modal({
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     const el = ref.current;
@@ -40,7 +41,7 @@ export function Modal({
         // 바깥(배경) 클릭으로 닫기
         if (e.target === ref.current) onClose();
       }}
-      aria-labelledby="modal-title"
+      aria-labelledby={titleId}
       className={cn(
         "m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border bg-background p-0 text-foreground shadow-lg backdrop:bg-black/40",
         className,
@@ -49,7 +50,7 @@ export function Modal({
       {open && (
         <div className="space-y-4 p-5">
           <div className="space-y-1">
-            <h2 id="modal-title" className="text-lg font-semibold">
+            <h2 id={titleId} className="text-lg font-semibold">
               {title}
             </h2>
             {description && <p className="text-sm text-muted-foreground">{description}</p>}

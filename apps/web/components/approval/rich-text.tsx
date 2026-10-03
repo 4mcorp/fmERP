@@ -4,6 +4,7 @@ import type { JSONContent } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Heading2, Italic, List, ListOrdered, Redo2, Undo2 } from "lucide-react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 const EMPTY: JSONContent = { type: "doc", content: [] };
@@ -23,7 +24,7 @@ function Toolbar({ editor }: { editor: NonNullable<ReturnType<typeof useEditor>>
       active: editor.isActive("italic"),
     },
     {
-      label: "제목",
+      label: "소제목",
       icon: Heading2,
       run: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
       active: editor.isActive("heading", { level: 2 }),
@@ -79,12 +80,15 @@ export function RichTextEditor({
   onChange,
   invalid,
   describedBy,
+  labelledBy,
 }: {
   id: string;
   value: JSONContent | undefined;
   onChange: (value: JSONContent) => void;
   invalid?: boolean;
   describedBy?: string;
+  /** 편집 영역을 이름 붙이는 라벨 요소의 id (div는 label for로 연결되지 않는다) */
+  labelledBy?: string;
 }) {
   const editor = useEditor({
     extensions: [StarterKit],
@@ -93,6 +97,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         id,
+        ...(labelledBy ? { "aria-labelledby": labelledBy } : {}),
         role: "textbox",
         "aria-multiline": "true",
         "aria-invalid": invalid ? "true" : "false",
@@ -103,6 +108,15 @@ export function RichTextEditor({
     },
     onUpdate: ({ editor: e }) => onChange(e.getJSON()),
   });
+  // 폼 값이 밖에서 바뀌면(서버 본문 불러오기, 로컬 사본 복구) 편집기 내용도 맞춘다. 입력 중에는 건드리지 않는다
+  useEffect(() => {
+    if (!editor || editor.isFocused) return;
+    const next = value ?? EMPTY;
+    if (JSON.stringify(editor.getJSON()) !== JSON.stringify(next)) {
+      editor.commands.setContent(next, { emitUpdate: false });
+    }
+  }, [editor, value]);
+
   if (!editor) return <div className="min-h-40 rounded-lg border" aria-busy="true" />;
   return (
     <div className="rounded-lg border focus-within:ring-3 focus-within:ring-ring/50">

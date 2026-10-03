@@ -53,6 +53,12 @@ const OTHER_BUSINESSES: BusinessDef[] = [
   },
 ];
 
+/** 부서 코드 → 부서장 이메일 (본사). 기본 양식의 기본 결재선(기안자의 부서장)이 해석되도록 한다 */
+const DEPARTMENT_HEADS: Record<string, string> = {
+  FIN: "member2@example.com",
+  MGT: "bizadmin@example.com",
+};
+
 const DUTIES = ["대표이사", "본부장", "팀장", "파트장"];
 
 interface SeedAssignment {
@@ -243,5 +249,15 @@ export async function seedTestOrganization(db: Db): Promise<void> {
         })
         .onConflictDoNothing();
     }
+  }
+
+  for (const [code, email] of Object.entries(DEPARTMENT_HEADS)) {
+    const departmentId = mainOrg.departmentIds.get(code);
+    const head = members.find((m) => m.accountId === mainId && m.email === email);
+    if (!departmentId || !head) continue;
+    await db
+      .update(schema.department)
+      .set({ headMembershipId: head.membershipId })
+      .where(eq(schema.department.id, departmentId));
   }
 }
