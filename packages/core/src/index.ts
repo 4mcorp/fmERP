@@ -1,4 +1,34 @@
 export {
+  act,
+  type RedraftSeed,
+  redraftSeed,
+  reopenDraft,
+  submit,
+  transitionDocument,
+  withdraw,
+} from "./approval-engine";
+export { allowedTransitions, assertTransition, canTransition } from "./approval-state";
+export {
+  type ActionRecord,
+  type ApprovalAction,
+  type ApprovalActor,
+  type ApprovalDoc,
+  type ApprovalEvent,
+  type ApprovalPolicy,
+  type ApprovalStep,
+  DEFAULT_POLICY,
+  type DelegateDecision,
+  DOC_STATUSES,
+  type DocStatus,
+  type EngineContext,
+  type EngineErrorCode,
+  type EngineResult,
+  STEP_STATUSES,
+  STEP_TYPES,
+  type StepStatus,
+  type StepType,
+} from "./approval-types";
+export {
   type AssignmentInput,
   type AssignmentSnapshot,
   type AssignmentsCheck,
