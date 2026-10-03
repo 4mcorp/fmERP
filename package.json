@@ -20,7 +20,8 @@
     "db:migrate": "pnpm --filter @fmerp/db migrate",
     "env:up": "docker compose -f docker-compose.dev.yml up -d --wait",
     "env:down": "docker compose -f docker-compose.dev.yml down",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "db:seed": "pnpm --filter @fmerp/auth seed"
   },
   "devDependencies": {
     "@biomejs/biome": "~2.5.15",

@@ -4,9 +4,19 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./seed": "./src/seed.ts"
   },
   "scripts": {
+    "seed": "tsx --env-file-if-exists=../../.env src/seed-cli.ts",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fmerp/audit": "workspace:*",
+    "@fmerp/core": "workspace:*",
+    "@fmerp/db": "workspace:*",
+    "@node-rs/argon2": "~2.2.1",
+    "better-auth": "~1.7.7",
+    "drizzle-orm": "~0.45.3"
   }
 }

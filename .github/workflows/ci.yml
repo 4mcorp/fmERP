@@ -13,10 +13,6 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    env:
-      # docker-compose.dev.yml의 개발용 계정 (비밀정보 아님)
-      DATABASE_URL: postgres://fmerp_app:fmerp_app_dev@localhost:55432/fmerp
-      MIGRATION_DATABASE_URL: postgres://fmerp_migrator:fmerp_migrator_dev@localhost:55432/fmerp
     steps:
       - uses: actions/checkout@v7
 
@@ -35,16 +31,15 @@ jobs:
       - name: 타입 검사
         run: pnpm typecheck
 
-      - name: 로컬 서비스 기동 (PostgreSQL 18, SeaweedFS)
-        run: docker compose -f docker-compose.dev.yml up -d --wait postgres postgres-test s3
+      # 통합·E2E 테스트는 테스트 DB(55433)를 매번 초기화·시드해서 쓴다 (vitest.config.ts, apps/web/e2e/test-env.ts)
+      - name: 테스트 서비스 기동 (PostgreSQL 18 테스트 DB, SeaweedFS)
+        run: docker compose -f docker-compose.dev.yml up -d --wait postgres-test s3
 
       - name: 단위·통합 테스트
         run: pnpm test
 
-      - name: E2E 준비 (개발 DB 마이그레이션, 브라우저 설치)
-        run: |
-          pnpm db:migrate
-          pnpm --filter @fmerp/web exec playwright install --with-deps chromium
+      - name: E2E 준비 (브라우저 설치)
+        run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
 
       - name: E2E 테스트
         run: pnpm test:e2e
