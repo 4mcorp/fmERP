@@ -116,10 +116,9 @@ describe("결재 요청 생성 (APV-090)", () => {
     expect((await member2.request(`/api/approvals/${created.documentId}`)).status).toBe(200);
     // 동적 대상(사업자 대표이사)으로 해석된 소유자는 참여자라서 볼 수 있다
     expect((await owner.request(`/api/approvals/${created.documentId}`)).status).toBe(200);
-    // 관여하지 않은 감사인·관리자는 열람 불가 (PERM-003은 M5)
-    for (const c of [auditor, admin]) {
-      expect((await c.request(`/api/approvals/${created.documentId}`)).status).toBe(404);
-    }
+    // 관여하지 않은 관리자는 열람 불가. 감사인은 범위 안의 문서를 열람한다 (PERM-003, 상세는 approval-m5-access)
+    expect((await admin.request(`/api/approvals/${created.documentId}`)).status).toBe(404);
+    expect((await auditor.request(`/api/approvals/${created.documentId}`)).status).toBe(200);
   });
 
   it("초안으로 만들 수 있다 (submit 생략)", async () => {

@@ -2,6 +2,7 @@
 import { recordAudit } from "@fmerp/audit";
 import { schema } from "@fmerp/db";
 import { asc, eq } from "drizzle-orm";
+import { requireView, type Viewer } from "./access";
 import type { ServiceContext } from "./context";
 import { ApprovalError } from "./errors";
 import { isParticipant } from "./service";
@@ -58,18 +59,14 @@ export async function addComment(
 }
 
 /** 보는 사람에게 공개된 의견만: 기안자는 모두, 그 밖의 참여자는 전체 공개 의견과 본인이 쓴 의견 */
-export async function listComments(
-  ctx: ServiceContext,
-  documentId: string,
-  viewerMembershipId: string,
-) {
+export async function listComments(ctx: ServiceContext, documentId: string, viewer: Viewer) {
+  const viewerMembershipId = viewer.membershipId;
   const [doc] = await ctx.tx
     .select({ drafter: schema.document.drafterMembershipId })
     .from(schema.document)
     .where(eq(schema.document.id, documentId));
-  if (!doc || !(await isParticipant(ctx, documentId, viewerMembershipId))) {
-    throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
-  }
+  if (!doc) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+  await requireView(ctx, documentId, viewer);
   const rows = await ctx.tx
     .select({
       id: schema.approvalComment.id,

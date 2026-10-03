@@ -3,6 +3,7 @@ import { type ApprovalAction, can, isPinReauthFresh } from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
 import { createRoute, z } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
+import { requireView } from "../approval/access";
 import {
   attachmentUrl,
   listAttachments,
@@ -106,11 +107,9 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
       const tenant = c.get("tenant");
       const { id } = c.req.valid("param");
       const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
-        const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         const ctx = serviceContext(c, d, tx);
-        if (!(await isParticipant(ctx, id, membershipId))) {
-          throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
-        }
+        await requireView(ctx, id, { membershipId, actor });
         const [doc] = await tx
           .select({ formVersionId: schema.document.formVersionId })
           .from(schema.document)
@@ -196,11 +195,9 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
       const { id } = c.req.valid("param");
       const { n } = c.req.valid("query");
       const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
-        const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         const ctx = serviceContext(c, d, tx);
-        if (!(await isParticipant(ctx, id, membershipId))) {
-          throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
-        }
+        await requireView(ctx, id, { membershipId, actor });
         return (await loadBody(ctx, id, n)) ?? { revision: 0, body: {} };
       });
       return c.json(result, 200);
@@ -433,8 +430,8 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
       const tenant = c.get("tenant");
       const { id } = c.req.valid("param");
       const rows = await withTenant(d.appDb, tenant.accountId, async (tx) => {
-        const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
-        return listComments(serviceContext(c, d, tx), id, membershipId);
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        return listComments(serviceContext(c, d, tx), id, { membershipId, actor });
       });
       return c.json(
         rows.map((r) => ({
@@ -640,11 +637,9 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
       const tenant = c.get("tenant");
       const { id } = c.req.valid("param");
       const rows = await withTenant(d.appDb, tenant.accountId, async (tx) => {
-        const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         const ctx = serviceContext(c, d, tx);
-        if (!(await isParticipant(ctx, id, membershipId))) {
-          throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
-        }
+        await requireView(ctx, id, { membershipId, actor });
         return listAttachments(ctx, id);
       });
       return c.json(rows, 200);
@@ -697,11 +692,11 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
       const { id, attachmentId } = c.req.valid("param");
       const { preview } = c.req.valid("query");
       const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
-        const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         return attachmentUrl(serviceContext(c, d, tx), {
           documentId: id,
           attachmentId,
-          membershipId,
+          viewer: { membershipId, actor },
           preview: preview === "true",
         });
       });

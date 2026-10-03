@@ -14,6 +14,7 @@ import { registerFormRoutes } from "./routes/forms";
 import { registerMeRoutes } from "./routes/me";
 import { registerMemberRoutes } from "./routes/members";
 import { registerOrgRoutes } from "./routes/org";
+import { registerRecipientRoutes } from "./routes/recipients";
 
 /** API 요청 본문 최대 크기. 파일은 서명 URL로 저장소에 직접 올리므로 API 본문은 작다 (보안 리뷰 SR-3) */
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -43,5 +44,6 @@ export const app = createApp({
     registerApprovalRoutes(router, getServerDeps);
     registerFormRoutes(router, getServerDeps);
     registerDocumentRoutes(router, getServerDeps);
+    registerRecipientRoutes(router, getServerDeps);
   },
 });

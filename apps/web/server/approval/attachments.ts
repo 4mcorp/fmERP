@@ -9,11 +9,11 @@ import {
 } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { eq } from "drizzle-orm";
+import { requireView, type Viewer } from "./access";
 import type { ServiceContext } from "./context";
 import { attachmentKey, stagingKey, stagingPrefix } from "./document-storage";
 import { documentPrefix } from "./drafts";
 import { ApprovalError } from "./errors";
-import { isParticipant } from "./service";
 
 const MB = 1024 * 1024;
 const DEFAULT_FILE_MB = 50;
@@ -225,11 +225,9 @@ const PREVIEWABLE = /^(image\/(png|jpeg|gif|webp)|application\/pdf)$/;
  */
 export async function attachmentUrl(
   ctx: ServiceContext,
-  input: { documentId: string; attachmentId: string; membershipId: string; preview: boolean },
+  input: { documentId: string; attachmentId: string; viewer: Viewer; preview: boolean },
 ) {
-  if (!(await isParticipant(ctx, input.documentId, input.membershipId))) {
-    throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
-  }
+  await requireView(ctx, input.documentId, input.viewer);
   const [row] = await ctx.tx
     .select()
     .from(schema.attachment)

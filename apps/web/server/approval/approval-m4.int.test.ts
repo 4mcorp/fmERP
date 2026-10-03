@@ -713,11 +713,11 @@ describe("의견 (APV-042)", () => {
       await bizadmin.request(`/api/approvals/${doc.documentId}/comments`),
     );
     expect(names(other)).toEqual(["전체 공개 의견"]);
-    // 참여자가 아니면 쓰기·읽기 모두 거부
+    // 열람 권한이 없으면 읽기 거부, 참여자가 아니면 쓰기 거부 (감사인은 열람만 가능, PERM-003)
     expect(
       (await post(auditor, `/api/approvals/${doc.documentId}/comments`, { body: "x" })).status,
     ).toBe(404);
-    expect((await auditor.request(`/api/approvals/${doc.documentId}/comments`)).status).toBe(404);
+    expect((await admin.request(`/api/approvals/${doc.documentId}/comments`)).status).toBe(404);
     expect(
       (await post(member1, `/api/approvals/${doc.documentId}/comments`, { body: "   " })).status,
     ).toBe(400);
@@ -882,11 +882,9 @@ describe("첨부 (APV-013, FILE-002·004·005, M1 FU-1·2)", () => {
     );
     expect((await fetch(preview.url)).headers.get("content-disposition")).toBe("inline");
     expect(
-      (await auditor.request(`/api/approvals/${doc.documentId}/attachments/${att.id}/url`)).status,
+      (await admin.request(`/api/approvals/${doc.documentId}/attachments/${att.id}/url`)).status,
     ).toBe(404);
-    expect((await auditor.request(`/api/approvals/${doc.documentId}/attachments`)).status).toBe(
-      404,
-    );
+    expect((await admin.request(`/api/approvals/${doc.documentId}/attachments`)).status).toBe(404);
     const list = await json<unknown[]>(
       await member2.request(`/api/approvals/${doc.documentId}/attachments`),
     );

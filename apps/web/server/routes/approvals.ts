@@ -2,9 +2,11 @@ import { can } from "@fmerp/core";
 import { schema, type Tx, withTenant } from "@fmerp/db";
 import { createRoute, z } from "@hono/zod-openapi";
 import { asc, eq } from "drizzle-orm";
+import { requireView } from "../approval/access";
 import { createDelegation, listDelegations, revokeDelegation } from "../approval/delegation";
 import { ApprovalError } from "../approval/errors";
 import { touchFormPref } from "../approval/forms";
+import { markRead } from "../approval/recipients";
 import { createApproval, submitDocument } from "../approval/service";
 import { type AppRouter, type DepsProvider, requireSession, requireTenant } from "../http";
 import { ACCOUNT_TARGET, loadActor } from "../org-access";
@@ -170,23 +172,19 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
       const tenant = c.get("tenant");
       const { id } = c.req.valid("param");
       const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
-        const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         const [doc] = await tx.select().from(schema.document).where(eq(schema.document.id, id));
         if (!doc) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+        // 결재선 참여자 외에 참조·공람·수신·감사인(read_all)도 열람할 수 있다 (PERM-003)
+        const viewCtx = serviceContext(c, d, tx);
+        await requireView(viewCtx, id, { membershipId, actor });
+        // 참조·공람 대상이 열면 열람 일시를 남긴다 (APV-072·073)
+        await markRead(viewCtx, id, { membershipId, actor });
         const steps = await tx
           .select()
           .from(schema.approvalStep)
           .where(eq(schema.approvalStep.documentId, id))
           .orderBy(asc(schema.approvalStep.seq), asc(schema.approvalStep.id));
-        const participant =
-          doc.drafterMembershipId === membershipId ||
-          steps.some(
-            (s) =>
-              s.assigneeIds.includes(membershipId) ||
-              Object.values(s.delegates).includes(membershipId),
-          );
-        // 관리자라고 문서를 볼 수 있는 것은 아니다 (PRD 3.3 각주 1). 감사인·공람 등은 M5(PERM-003)에서 추가한다
-        if (!participant) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
         return {
           id: doc.id,
           title: doc.title,
