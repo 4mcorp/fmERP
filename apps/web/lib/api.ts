@@ -5,6 +5,8 @@ export class ApiProblem extends Error {
     readonly code: string,
     title: string,
     readonly detail?: string,
+    /** 업무 오류의 부가 정보 (예: 뎁스를 넘는 부서 목록, CSV 오류 줄) */
+    readonly extensions?: Record<string, unknown>,
   ) {
     super(title);
   }
@@ -23,12 +25,19 @@ export async function api<T>(path: string, init?: { method?: string; body?: unkn
       code?: string;
       title?: string;
       detail?: string;
+      extensions?: Record<string, unknown>;
     };
     const code = body.code ?? "error";
     if (res.status === 401 && LOGIN_REQUIRED.has(code) && typeof window !== "undefined") {
       window.location.href = `/dev-login?next=${encodeURIComponent(window.location.pathname)}`;
     }
-    throw new ApiProblem(res.status, code, body.title ?? "요청을 처리하지 못했습니다", body.detail);
+    throw new ApiProblem(
+      res.status,
+      code,
+      body.title ?? "요청을 처리하지 못했습니다",
+      body.detail,
+      body.extensions,
+    );
   }
   return (await res.json()) as T;
 }

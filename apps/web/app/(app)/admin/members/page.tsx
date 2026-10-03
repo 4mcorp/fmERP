@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { MemberDetail } from "@/components/org/member-detail";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,14 +27,24 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, errorMessage } from "@/lib/api";
-import { useCurrentAccount, useMe } from "@/lib/queries";
 import {
+  useBusinesses,
+  useCapabilities,
+  useDepartments,
+  useMe,
+  useMembers,
+  usePositions,
+} from "@/lib/queries";
+import {
+  type Capabilities,
   formatDateTime,
+  GRANT_ROLE_LABEL,
   type Invitation,
-  type Member,
   ROLE_LABEL,
   STATUS_LABEL,
 } from "@/lib/types";
+
+const NONE = "__none";
 
 const INVITATION_STATUS: Record<Invitation["status"], string> = {
   pending: "대기",
@@ -42,76 +53,91 @@ const INVITATION_STATUS: Record<Invitation["status"], string> = {
   revoked: "취소",
 };
 
-/** 구성원 비활성화·복귀 (AUTH-015) */
-function MembersTab({ myId }: { myId: string }) {
-  const queryClient = useQueryClient();
-  const { data: members } = useQuery({
-    queryKey: ["members"],
-    queryFn: () => api<Member[]>("/api/account/members"),
-  });
-
-  async function setStatus(member: Member, status: "active" | "left") {
-    try {
-      await api(`/api/account/members/${member.userId}`, { method: "PATCH", body: { status } });
-      await queryClient.invalidateQueries({ queryKey: ["members"] });
-      toast.success(
-        status === "left"
-          ? `${member.name}님을 비활성화했습니다`
-          : `${member.name}님을 복귀시켰습니다`,
-      );
-    } catch (error) {
-      toast.error(errorMessage(error));
-    }
-  }
+/** 구성원 목록과 상세 편집: 상태·사번, 소속·발령, 역할 (AUTH-015, ORG-032~035, PERM-001) */
+function MembersTab({ caps }: { caps: Capabilities }) {
+  const { data: members } = useMembers();
+  const [selected, setSelected] = useState<string | null>(null);
+  const current = members?.find((m) => m.userId === selected);
 
   return (
-    <Card>
-      <CardContent className="overflow-x-auto pt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>이름</TableHead>
-              <TableHead>이메일</TableHead>
-              <TableHead>역할</TableHead>
-              <TableHead>상태</TableHead>
-              <TableHead className="text-right">작업</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members?.map((m) => (
-              <TableRow key={m.userId}>
-                <TableCell>{m.name}</TableCell>
-                <TableCell>{m.email}</TableCell>
-                <TableCell>{ROLE_LABEL[m.role]}</TableCell>
-                <TableCell>
-                  <Badge variant={m.status === "active" ? "secondary" : "outline"}>
-                    {STATUS_LABEL[m.status]}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {m.userId !== myId &&
-                    (m.status === "left" ? (
-                      <Button size="sm" variant="outline" onClick={() => setStatus(m, "active")}>
-                        복귀
-                      </Button>
-                    ) : (
-                      <Button size="sm" variant="destructive" onClick={() => setStatus(m, "left")}>
-                        비활성화
-                      </Button>
-                    ))}
-                </TableCell>
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="overflow-x-auto pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>이름</TableHead>
+                <TableHead>소속</TableHead>
+                <TableHead>역할</TableHead>
+                <TableHead>상태</TableHead>
+                <TableHead className="text-right">작업</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {members?.map((m) => {
+                const primary = m.assignments.find((a) => a.isPrimary);
+                const extra = m.assignments.length - (primary ? 1 : 0);
+                return (
+                  <TableRow key={m.userId}>
+                    <TableCell>
+                      <div>{m.name}</div>
+                      <div className="text-xs text-muted-foreground">{m.email}</div>
+                    </TableCell>
+                    <TableCell>
+                      {primary ? (
+                        <>
+                          {primary.departmentName}
+                          {primary.positionName ? ` · ${primary.positionName}` : ""}
+                          {extra > 0 && <Badge variant="outline">겸직 {extra}</Badge>}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">소속 없음</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="space-x-1">
+                      <span>{ROLE_LABEL[m.role]}</span>
+                      {m.grants.map((g) => (
+                        <Badge key={g.id} variant="secondary">
+                          {GRANT_ROLE_LABEL[g.role]}
+                        </Badge>
+                      ))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={m.status === "active" ? "secondary" : "outline"}>
+                        {STATUS_LABEL[m.status]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        aria-label={`${m.name} 관리`}
+                        onClick={() => setSelected(m.userId === selected ? null : m.userId)}
+                      >
+                        관리
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      {current && <MemberDetail member={current} caps={caps} onClose={() => setSelected(null)} />}
+    </div>
   );
 }
 
 /** 초대 링크 만들기·목록·취소 (AUTH-006). 링크는 만들 때 한 번만 보여 준다 */
-function InvitationsTab() {
+function InvitationsTab({ caps }: { caps: Capabilities }) {
   const queryClient = useQueryClient();
+  const { data: businesses } = useBusinesses();
+  const { data: departments } = useDepartments();
+  const { data: positions } = usePositions();
+  const [businessId, setBusinessId] = useState(NONE);
+  const [departmentId, setDepartmentId] = useState(NONE);
+  const [positionId, setPositionId] = useState(NONE);
   const [role, setRole] = useState<"member" | "admin">("member");
   const [email, setEmail] = useState("");
   const [link, setLink] = useState<string | null>(null);
@@ -125,7 +151,18 @@ function InvitationsTab() {
     try {
       const created = await api<{ token: string }>("/api/account/invitations", {
         method: "POST",
-        body: { role, email: email || undefined },
+        body: {
+          role,
+          email: email || undefined,
+          preset:
+            businessId !== NONE && departmentId !== NONE
+              ? {
+                  businessId,
+                  departmentId,
+                  positionId: positionId === NONE ? null : positionId,
+                }
+              : undefined,
+        },
       });
       setLink(`${window.location.origin}/invite/${created.token}`);
       setEmail("");
@@ -167,7 +204,7 @@ function InvitationsTab() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="member">구성원</SelectItem>
-                  <SelectItem value="admin">관리자</SelectItem>
+                  {caps["role.grant"] && <SelectItem value="admin">관리자</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -181,6 +218,80 @@ function InvitationsTab() {
               />
             </div>
             <Button type="submit">링크 만들기</Button>
+            <fieldset className="grid gap-3 sm:col-span-3 sm:grid-cols-3">
+              <legend className="mb-1 text-sm text-muted-foreground">
+                합류할 소속 미리 지정 (선택)
+              </legend>
+              <div className="space-y-2">
+                <Label htmlFor="invite-business">사업자</Label>
+                <Select
+                  value={businessId}
+                  onValueChange={(v) => {
+                    setBusinessId(v);
+                    setDepartmentId(NONE);
+                  }}
+                >
+                  <SelectTrigger id="invite-business" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>(지정 안 함)</SelectItem>
+                    {businesses
+                      ?.filter((b) => b.active)
+                      .map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invite-dept">부서</Label>
+                <Select
+                  value={departmentId}
+                  onValueChange={setDepartmentId}
+                  disabled={businessId === NONE}
+                >
+                  <SelectTrigger id="invite-dept" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>(선택)</SelectItem>
+                    {departments
+                      ?.filter((d) => d.businessId === businessId && d.active)
+                      .map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {"　".repeat(d.depth - 1)}
+                          {d.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invite-position">직위</Label>
+                <Select
+                  value={positionId}
+                  onValueChange={setPositionId}
+                  disabled={businessId === NONE}
+                >
+                  <SelectTrigger id="invite-position" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>(없음)</SelectItem>
+                    {positions
+                      ?.filter((p) => p.active)
+                      .map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </fieldset>
           </form>
           {link && (
             <Alert>
@@ -203,6 +314,7 @@ function InvitationsTab() {
               <TableRow>
                 <TableHead>역할</TableHead>
                 <TableHead>이메일</TableHead>
+                <TableHead>지정 소속</TableHead>
                 <TableHead>상태</TableHead>
                 <TableHead>만료</TableHead>
                 <TableHead className="text-right">작업</TableHead>
@@ -213,6 +325,9 @@ function InvitationsTab() {
                 <TableRow key={inv.id}>
                   <TableCell>{ROLE_LABEL[inv.role]}</TableCell>
                   <TableCell>{inv.email ?? "-"}</TableCell>
+                  <TableCell>
+                    {departments?.find((d) => d.id === inv.preset.departmentId)?.name ?? "-"}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{INVITATION_STATUS[inv.status]}</Badge>
                   </TableCell>
@@ -236,26 +351,32 @@ function InvitationsTab() {
 
 export default function MembersPage() {
   const { data: me } = useMe();
-  const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
-  if (!me || !account) return null;
-  if (account.myRole === "member") {
-    return <p className="text-muted-foreground">소유자·관리자만 구성원을 관리할 수 있습니다.</p>;
+  const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
+  if (!me || !caps) return null;
+  const canMembers = caps["assignment.manage"] || caps["member.deactivate"] || caps["role.grant"];
+  const canInvite = caps["member.invite"];
+  if (!canMembers && !canInvite) {
+    return <p className="text-muted-foreground">구성원을 관리할 권한이 없습니다.</p>;
   }
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">구성원 관리</h1>
-      <Tabs defaultValue="members">
+      <Tabs defaultValue={canMembers ? "members" : "invitations"}>
         <TabsList>
-          <TabsTrigger value="members">구성원</TabsTrigger>
-          <TabsTrigger value="invitations">초대</TabsTrigger>
+          {canMembers && <TabsTrigger value="members">구성원</TabsTrigger>}
+          {canInvite && <TabsTrigger value="invitations">초대</TabsTrigger>}
         </TabsList>
-        <TabsContent value="members">
-          <MembersTab myId={me.id} />
-        </TabsContent>
-        <TabsContent value="invitations">
-          <InvitationsTab />
-        </TabsContent>
+        {canMembers && (
+          <TabsContent value="members">
+            <MembersTab caps={caps} />
+          </TabsContent>
+        )}
+        {canInvite && (
+          <TabsContent value="invitations">
+            <InvitationsTab caps={caps} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

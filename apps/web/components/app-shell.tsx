@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, ChevronDown, LogOut, Plus, UserRound, Users } from "lucide-react";
+import { Building2, ChevronDown, LogOut, Network, Plus, Settings, UserRound } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
@@ -14,8 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { adminEntry } from "@/lib/admin-nav";
 import { api, errorMessage } from "@/lib/api";
-import { useCurrentAccount, useMe } from "@/lib/queries";
+import { useCapabilities, useCurrentAccount, useMe } from "@/lib/queries";
 import { ROLE_LABEL } from "@/lib/types";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -23,7 +24,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: me } = useMe();
   const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
   const activeAccounts = me?.accounts.filter((a) => a.status === "active") ?? [];
-  const canManage = account?.myRole === "owner" || account?.myRole === "admin";
+  const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
+  const adminLink = adminEntry(caps);
 
   async function switchAccount(accountId: string) {
     try {
@@ -96,11 +98,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <UserRound className="size-4" aria-hidden />내 정보
                 </Link>
               </DropdownMenuItem>
-              {canManage && (
+              <DropdownMenuItem asChild>
+                <Link href="/org">
+                  <Network className="size-4" aria-hidden />
+                  조직도
+                </Link>
+              </DropdownMenuItem>
+              {adminLink && (
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/members">
-                    <Users className="size-4" aria-hidden />
-                    구성원 관리
+                  <Link href={adminLink}>
+                    <Settings className="size-4" aria-hidden />
+                    관리 콘솔
                   </Link>
                 </DropdownMenuItem>
               )}

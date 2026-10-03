@@ -4,13 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCurrentAccount, useMe } from "@/lib/queries";
+import { adminEntry } from "@/lib/admin-nav";
+import { useCapabilities, useCurrentAccount, useMe } from "@/lib/queries";
 import { ROLE_LABEL } from "@/lib/types";
 
 export default function HomePage() {
   const router = useRouter();
   const { data: me } = useMe();
   const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
+  const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
 
   // 소속 회사가 없으면 회사 만들기·초대 합류 화면으로 보낸다 (AUTH-005)
   useEffect(() => {
@@ -36,12 +38,20 @@ export default function HomePage() {
             </CardHeader>
           </Card>
         </Link>
-        {(account.myRole === "owner" || account.myRole === "admin") && (
-          <Link href="/admin/members">
+        <Link href="/org">
+          <Card className="h-full transition-colors hover:bg-muted/50">
+            <CardHeader>
+              <CardTitle className="text-base">조직도</CardTitle>
+              <CardDescription>부서 트리와 구성원 수, 부서 검색</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+        {adminEntry(caps) && (
+          <Link href={adminEntry(caps) ?? "/"}>
             <Card className="h-full transition-colors hover:bg-muted/50">
               <CardHeader>
-                <CardTitle className="text-base">구성원 관리</CardTitle>
-                <CardDescription>초대 링크, 구성원 비활성화</CardDescription>
+                <CardTitle className="text-base">관리 콘솔</CardTitle>
+                <CardDescription>계정 설정, 사업자·조직, 구성원·역할, 직위·직책</CardDescription>
               </CardHeader>
             </Card>
           </Link>

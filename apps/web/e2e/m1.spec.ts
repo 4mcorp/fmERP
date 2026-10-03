@@ -36,7 +36,11 @@ test.describe("관리자 초대 → 신규 사용자 합류 → 계정 전환·P
     // 1) 관리자가 초대 링크를 만든다
     await loginAs(page, "이관리");
     await page.getByRole("button", { name: "사용자 메뉴" }).click();
-    await page.getByRole("menuitem", { name: "구성원 관리" }).click();
+    await page.getByRole("menuitem", { name: "관리 콘솔" }).click();
+    await page
+      .getByRole("navigation", { name: "관리 콘솔" })
+      .getByRole("link", { name: "구성원" })
+      .click();
     await page.getByRole("tab", { name: "초대" }).click();
     await page.getByRole("button", { name: "링크 만들기" }).click();
     const link = await page.locator("code").filter({ hasText: "/invite/" }).textContent();

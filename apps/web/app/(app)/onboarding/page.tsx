@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { BusinessForm } from "@/components/org/business-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ export default function OnboardingPage() {
   const [name, setName] = useState("");
   const [invite, setInvite] = useState("");
   const [saving, setSaving] = useState(false);
+  const [created, setCreated] = useState(false);
 
   async function createCompany(e: FormEvent) {
     e.preventDefault();
@@ -31,8 +33,8 @@ export default function OnboardingPage() {
     try {
       await api("/api/accounts", { method: "POST", body: { name } });
       await queryClient.invalidateQueries();
-      toast.success("회사를 만들었습니다. 사업자 등록은 조직 관리에서 이어서 진행합니다");
-      router.push("/");
+      toast.success("회사를 만들었습니다. 첫 사업자를 등록하세요");
+      setCreated(true);
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -44,6 +46,26 @@ export default function OnboardingPage() {
     e.preventDefault();
     const token = extractToken(invite);
     if (token) router.push(`/invite/${token}`);
+  }
+
+  // 회사를 만든 직후 첫 사업자 등록을 안내한다 (PRD ORG-002). 건너뛰고 나중에 관리 콘솔에서 등록할 수 있다
+  if (created) {
+    return (
+      <Card className="mx-auto max-w-2xl">
+        <CardHeader>
+          <CardTitle>첫 사업자 등록</CardTitle>
+          <CardDescription>
+            회사 아래에 사업자를 1개 이상 등록합니다. 사업자등록번호는 체크섬을 검증합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <BusinessForm submitLabel="등록하고 시작" onDone={() => router.push("/")} />
+          <Button type="button" variant="ghost" onClick={() => router.push("/")}>
+            나중에 하기
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
