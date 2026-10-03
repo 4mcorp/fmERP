@@ -114,7 +114,12 @@
 | [2026-10-03-pnpm11-config-location.md](ts/2026-10-03-pnpm11-config-location.md) | pnpm, deps, config | pnpm 설정은 `pnpm-workspace.yaml`에 둔다. 적용 값은 `pnpm config get`으로 확인한다 |
 | [2026-10-03-skill-dependency-and-session-load.md](ts/2026-10-03-skill-dependency-and-session-load.md) | skills, claude-code | 스킬 설치 후 참조하는 스킬이 빠졌는지 확인한다. 설치 직후 인식되지 않으면 SKILL.md 절차를 직접 따른다 |
 | [2026-10-03-windows-pnpm-not-on-path.md](ts/2026-10-03-windows-pnpm-not-on-path.md) | windows, pnpm, corepack, deps, build | pnpm이 PATH에 없으면 `corepack pnpm@11.28.3`을 쓴다. 사용자 PATH는 바꾸지 않고 README 1회 설정을 안내한다. 대화형 CLI는 `< /dev/null` + timeout |
-| [2026-10-03-docker-desktop-stale-socket.md](ts/2026-10-03-docker-desktop-stale-socket.md) | docker, windows, infra, test | **(open)** Docker 엔진 무응답 시 backend 로그에서 `backend crashed` 확인. 오래된 `Dockerun` 소켓 정리는 사용자 확인 후 |
+| [2026-10-03-docker-desktop-stale-socket.md](ts/2026-10-03-docker-desktop-stale-socket.md) | docker, windows, infra, test | Docker 엔진 무응답 시 backend 로그에서 `backend crashed` 확인. 오래된 `Docker/run` 소켓 정리는 사용자 확인 후 |
+| [2026-10-03-s3-presigned-checksum.md](ts/2026-10-03-s3-presigned-checksum.md) | storage, s3, aws-sdk, upload | S3 클라이언트 체크섬은 `WHEN_REQUIRED`. 서명 URL은 실제 fetch 업로드로 검증 |
+| [2026-10-03-next-monorepo-env-and-bundling.md](ts/2026-10-03-next-monorepo-env-and-bundling.md) | next, build, env, monorepo, db | 공유 패키지 진입점에 Node 파일 경로 코드 금지(`exports` 분리). 루트 `.env`는 `loadEnvConfig(..., true)` |
+| [2026-10-03-vitest-globalsetup-env.md](ts/2026-10-03-vitest-globalsetup-env.md) | test, vitest, config | globalSetup은 `project.config.env`를 읽는다. `No test files found`면 위의 설정 오류부터 확인 |
+| [2026-10-03-python-escape-in-doc-edits.md](ts/2026-10-03-python-escape-in-doc-edits.md) | docs, windows, tooling | 백슬래시가 있는 문서는 Edit 도구로 고친다. 스크립트 수정 후 제어 문자 검사 |
+| [2026-10-03-pgboss-schema-permission.md](ts/2026-10-03-pgboss-schema-permission.md) | db, worker, pg-boss, permission | 앱 계정은 pg-boss 설치용 DB CREATE 권한 필요. initdb 변경은 기존 볼륨에 수동 반영 |
 | [2026-10-03-biome-windows-spawn.md](ts/2026-10-03-biome-windows-spawn.md) | windows, biome, claude-code, hooks, lint | Biome에는 상대 경로(`/`)를 넘기고 `stdio: "ignore"`를 쓰지 않는다. hook은 실제 결과로 검증한다 |
 
 ---
@@ -123,7 +128,7 @@
 | 파일 | 상태 | 요약 |
 |---|---|---|
 | [2026-10-03-mvp-roadmap.md](plan/2026-10-03-mvp-roadmap.md) | accepted | MVP 마일스톤 M0~M8, P0 요구사항 118개 배정, 선행 작업·위험 |
-| [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | in-progress | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
+| [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | done | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
 
 ---
 
@@ -156,7 +161,7 @@
 | worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
 | 도메인 규칙 (결재 엔진 예정) | `packages/core/src/` (금액: `money.ts`) |
 | DB 스키마·클라이언트 | `packages/db/src/schema/`, `src/client.ts` |
-| 마이그레이션 SQL / 실행 | `packages/db/migrations/`, `src/migrate.ts` |
+| 마이그레이션 SQL / 실행 | `packages/db/migrations/`, `src/migrate.ts`(import 경로 `@fmerp/db/migrate`) |
 | S3 어댑터 (write-once 포함) | `packages/storage/src/object-storage.ts` |
 | 인증 (M1 예정) | `packages/auth/src/` |
 | 로컬 개발·테스트 서비스 | `docker-compose.dev.yml`, DB 계정 생성 `docker/postgres/initdb/01-roles.sh` |

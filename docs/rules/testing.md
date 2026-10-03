@@ -12,7 +12,8 @@
 
 ## 2. 규칙
 - 결재 엔진과 같은 도메인 규칙은 `tdd` 스킬로 **테스트를 먼저** 작성한다.
-- DB 관련 테스트는 목(mock) 대신 실제 PostgreSQL로 실행한다.
+- DB 관련 테스트는 목(mock) 대신 실제 PostgreSQL로 실행한다. 테스트 파일 이름은 단위 `*.test.ts`, 통합 `*.int.test.ts`(Vitest `integration` 프로젝트, 먼저 `pnpm env:up`), E2E `apps/web/e2e/*.spec.ts`.
+- globalSetup에서는 `process.env`가 아니라 `project.config.env`를 읽는다 ([ts](../ts/2026-10-03-vitest-globalsetup-env.md)).
 - 버그를 고칠 때는 재현 테스트를 먼저 추가한다.
 - 테스트를 통과시키려고 테스트를 약하게 바꾸지 않는다. 기대값을 바꿔야 하면 이유를 보고한다.
 

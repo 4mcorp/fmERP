@@ -29,4 +29,7 @@
 
 ## 4. DB 연결
 - 드라이버는 `pg`(node-postgres) 하나로 통일한다. Drizzle, pg-boss, Better Auth가 같은 풀 설정을 쓴다.
-- 앱 계정과 마이그레이션 계정을 분리한다.
+- 앱 계정과 마이그레이션 계정을 분리한다 (`docker/postgres/initdb/01-roles.sh`, 운영 DB도 같은 스크립트).
+  - `fmerp_migrator`: DB·`public` 스키마 소유자, 마이그레이션(DDL) 전용 — `MIGRATION_DATABASE_URL`
+  - `fmerp_app`: `public` 테이블 DML만 가능. pg-boss용 `pgboss` 스키마 소유자이며, pg-boss 설치 때문에 DB CREATE 권한을 가진다 ([ts](../ts/2026-10-03-pgboss-schema-permission.md)) — `DATABASE_URL`
+- 마이그레이션 실행 코드는 `@fmerp/db/migrate`로만 import한다. 패키지 진입점에 넣지 않는다 ([ts](../ts/2026-10-03-next-monorepo-env-and-bundling.md)).

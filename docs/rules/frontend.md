@@ -3,6 +3,9 @@
 기준: [PRD 8장 화면 구성 · 6.5 사용성](../PRD.md) · [TECH_SPEC 1장 D1·D2](../TECH_SPEC.md)
 스킬: **`shadcn`**, **`vercel-react-best-practices`**, **`web-design-guidelines`**(UI 점검)
 
+## 0. Next.js 16 문서
+Next 16은 학습 데이터와 API가 다를 수 있다. 코드를 쓰기 전에 `apps/web/AGENTS.md`의 안내대로 `apps/web/node_modules/next/dist/docs/`의 해당 문서를 읽거나 Context7로 확인한다. (`AGENTS.md`·`CLAUDE.md`는 `next dev`가 자동 생성하는 파일이므로 지우지 않는다.)
+
 ## 1. 컴포넌트
 - UI는 shadcn/ui(Radix 기반) + Tailwind 4로 만든다. 컴포넌트는 shadcn MCP·CLI로 `apps/web/components/ui/`에 추가한다.
 - 생성된 기본 컴포넌트를 크게 고치지 말고, 감싸는 컴포넌트를 따로 만든다.

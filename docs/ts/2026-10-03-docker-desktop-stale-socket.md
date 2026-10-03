@@ -1,7 +1,7 @@
 ---
 title: Docker Desktop 엔진이 시작되지 않음 (오래된 dockerInference 소켓 파일)
 date: 2026-10-03
-status: open
+status: resolved
 tags: [docker, windows, infra, test]
 related: [docker-compose.dev.yml, docs/adr/0004-integration-test-db.md]
 ---
@@ -21,7 +21,9 @@ remove .../Docker/run/dockerInference: The file cannot be accessed by the system
 ## 원인
 이전 실행(2026-07)에서 남은 Unix 소켓 파일(재분석 지점, 0바이트)을 Docker Desktop이 지우지 못해, Model Runner(Inference) 서비스가 시작에 실패하고 백엔드 전체가 멈춘다.
 
-## 해결 (미적용 — 사용자 결정으로 보류)
+## 해결
+사용자가 Docker Desktop을 직접 복구했다(2026-10-03). 같은 증상이 다시 생기면 아래 순서로 조치한다.
+
 1. Docker Desktop을 완전히 종료한다 (트레이 아이콘 → Quit).
 2. `%LOCALAPPDATA%\Docker\run\`의 `dockerInference`, `dockerEthernetVfkit`, `userAnalyticsOtlpHttp.sock`을 삭제한다. 시작할 때 다시 만들어진다.
 3. Docker Desktop을 다시 시작한다. 계속 실패하면 설정에서 Docker Model Runner를 끈다. 이 프로젝트는 Model Runner를 쓰지 않는다.

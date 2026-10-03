@@ -8,6 +8,7 @@
 - 작성 중 본문은 저장할 때마다 `revisions/{n}.json`을 **새 키로** 쓴다. 기존 키를 덮어쓰지 않는다.
 - 결재가 완료되면 `final/`에 `document.pdf`, `document.json`, `approval.json`, `manifest.json`을 **한 번만** 쓴다. 이미 있으면 실패로 처리한다 (PRD BAK-003).
 - 앱용 S3 키에는 삭제 권한이 없다. 정리는 버킷 수명 주기 규칙으로 한다.
+- S3 클라이언트의 체크섬 옵션(`requestChecksumCalculation`·`responseChecksumValidation` = `WHEN_REQUIRED`)을 유지한다. 바꾸면 브라우저 서명 URL 업로드가 깨진다 ([ts](../ts/2026-10-03-s3-presigned-checksum.md)).
 
 ## 2. 완료 패키지 내용
 - `approval.json`: 결재선, 단계별 처리자·대결 여부·일시·IP·의견, 문서번호, 파일별 SHA-256
