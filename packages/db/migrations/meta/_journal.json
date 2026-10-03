@@ -8,6 +8,20 @@
       "when": 1790967417456,
       "tag": "0000_init_extensions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790996447024,
+      "tag": "0001_auth_tenant_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790996461057,
+      "tag": "0002_grants_rls",
+      "breakpoints": true
     }
   ]
 }
