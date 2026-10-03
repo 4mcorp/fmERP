@@ -492,8 +492,9 @@ describe("소속·겸직·발령 (ORG-032~035)", () => {
     const history = await json<{ action: string; reason: string | null }[]>(
       await hr.request(`/api/account/members/${m?.userId}/assignment-history`),
     );
-    expect(history.map((h) => h.action).sort()).toEqual(["create", "create", "end"]);
-    expect(history.every((h) => h.reason === "정기 인사")).toBe(true);
+    // 다른 테스트가 같은 구성원에게 이력을 남길 수 있어 이번 발령(사유로 구분)만 본다
+    const mine = history.filter((h) => h.reason === "정기 인사");
+    expect(mine.map((h) => h.action).sort()).toEqual(["create", "create", "end"]);
     // 본인은 자기 이력을 볼 수 있고, 타인의 이력은 권한자만 본다
     expect(
       (await member1.request(`/api/account/members/${m?.userId}/assignment-history`)).status,

@@ -35,8 +35,13 @@ async function accountIdOf(slug: string) {
 async function ctx() {
   const accountId = await accountIdOf("fourm-test");
   const otherId = await accountIdOf("other-company");
-  const rows = await withTenant(appDb.db, accountId, (tx) => tx.select().from(schema.department));
+  const allRows = await withTenant(appDb.db, accountId, (tx) =>
+    tx.select().from(schema.department),
+  );
   const biz = await withTenant(appDb.db, accountId, (tx) => tx.select().from(schema.business));
+  // 다른 테스트(CSV 가져오기)가 포엠물류에 같은 코드의 부서를 복제할 수 있어 본사(FM) 부서만 본다
+  const fmId = biz.find((b) => b.code === "FM")?.id;
+  const rows = allRows.filter((r) => r.businessId === fmId);
   const dept = (code: string) => {
     const d = rows.find((r) => r.code === code);
     if (!d) throw new Error(`no dept ${code}`);
