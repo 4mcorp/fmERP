@@ -1,13 +1,14 @@
 import { can } from "@fmerp/core";
-import { schema, withTenant } from "@fmerp/db";
+import { schema, type Tx, withTenant } from "@fmerp/db";
 import { createRoute, z } from "@hono/zod-openapi";
 import { asc, eq } from "drizzle-orm";
 import { createDelegation, listDelegations, revokeDelegation } from "../approval/delegation";
 import { ApprovalError } from "../approval/errors";
-import { createApproval, type ServiceContext, submitDocument } from "../approval/service";
+import { createApproval, submitDocument } from "../approval/service";
 import { type AppRouter, type DepsProvider, requireSession, requireTenant } from "../http";
 import { ACCOUNT_TARGET, loadActor } from "../org-access";
 import { errorResponses, json, OkSchema } from "./common";
+import { serviceContext } from "./service-context";
 
 const LineTarget = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("user"), membershipId: z.uuid() }),
@@ -25,7 +26,7 @@ const LineTarget = z.discriminatedUnion("kind", [
   }),
 ]);
 
-const LineItem = z.object({
+export const LineItem = z.object({
   type: z.enum(["approve", "agree", "cooperate", "audit", "post"]),
   seq: z.number().int().min(1).max(100),
   target: LineTarget,
@@ -38,11 +39,17 @@ const CreateInput = z.object({
   businessId: z.uuid(),
   drafterDepartmentId: z.uuid().optional(),
   title: z.string().trim().min(1).max(200),
+  /** 기안은 양식으로 한다. 결재선 규칙·정책·문서번호·보안 등급 기본값은 양식(최신 버전)이 정한다 */
+  formId: z.uuid(),
   body: z.record(z.string(), z.unknown()).optional(),
-  formCategory: z.string().trim().max(50).optional(),
+  securityLevel: z.enum(["normal", "confidential", "secret"]).optional(),
+  urgent: z.boolean().optional(),
+  desiredDueDate: z.iso.date().optional(),
   sourceType: z.string().trim().max(50).optional(),
   sourceId: z.string().trim().max(100).optional(),
-  line: z.array(LineItem).min(1).max(30),
+  /** 양식이 결재선 수정을 허용할 때만 쓰인다. 생략하면 양식의 기본 결재선 */
+  line: z.array(LineItem).min(1).max(30).optional(),
+  relatedDocumentIds: z.array(z.uuid()).max(20).optional(),
   allowDuplicate: z.boolean().optional(),
   /** true이면 만든 뒤 바로 상신한다 */
   submit: z.boolean().optional(),
@@ -71,17 +78,8 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
     app.use(`${prefix}/*`, requireSession(deps), requireTenant(deps));
   }
 
-  const serviceCtx = (
-    c: Parameters<Parameters<typeof app.openapi>[1]>[0],
-    tx: ServiceContext["tx"],
-  ): ServiceContext => ({
-    tx,
-    storage: deps().storage,
-    accountId: c.get("tenant").accountId,
-    now: deps().now(),
-    userId: c.get("session").userId,
-    request: c.get("request"),
-  });
+  const serviceCtx = (c: Parameters<typeof serviceContext>[0], tx: Tx) =>
+    serviceContext(c, deps(), tx);
 
   app.openapi(
     createRoute({
@@ -138,6 +136,17 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
             title: z.string(),
             status: z.string(),
             docNo: z.string().nullable(),
+            businessId: z.string(),
+            drafterMembershipId: z.string(),
+            drafterSnapshot: z.record(z.string(), z.unknown()),
+            formVersionId: z.string().nullable(),
+            securityLevel: z.string(),
+            urgent: z.boolean(),
+            desiredDueDate: z.string().nullable(),
+            latestRevision: z.number().int(),
+            supersedes: z.string().nullable(),
+            submittedAt: z.string().nullable(),
+            completedAt: z.string().nullable(),
             steps: z.array(
               z.object({
                 id: z.string(),
@@ -180,6 +189,17 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
           title: doc.title,
           status: doc.status,
           docNo: doc.docNo,
+          businessId: doc.businessId,
+          drafterMembershipId: doc.drafterMembershipId,
+          drafterSnapshot: doc.drafterSnapshot,
+          formVersionId: doc.formVersionId,
+          securityLevel: doc.securityLevel,
+          urgent: doc.urgent,
+          desiredDueDate: doc.desiredDueDate,
+          latestRevision: doc.latestRevision,
+          supersedes: doc.supersedes,
+          submittedAt: doc.submittedAt?.toISOString() ?? null,
+          completedAt: doc.completedAt?.toISOString() ?? null,
           steps: steps.map((s) => ({
             id: s.id,
             seq: s.seq,

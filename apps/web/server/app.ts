@@ -9,6 +9,8 @@ import { registerAccountsRoutes } from "./routes/accounts";
 import { registerApprovalRoutes } from "./routes/approvals";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerDepartmentRoutes } from "./routes/departments";
+import { registerDocumentRoutes } from "./routes/documents";
+import { registerFormRoutes } from "./routes/forms";
 import { registerMeRoutes } from "./routes/me";
 import { registerMemberRoutes } from "./routes/members";
 import { registerOrgRoutes } from "./routes/org";
@@ -39,5 +41,7 @@ export const app = createApp({
     registerOrgRoutes(router, getServerDeps);
     registerDepartmentRoutes(router, getServerDeps);
     registerApprovalRoutes(router, getServerDeps);
+    registerFormRoutes(router, getServerDeps);
+    registerDocumentRoutes(router, getServerDeps);
   },
 });

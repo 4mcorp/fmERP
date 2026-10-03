@@ -28,7 +28,7 @@ export type DepsProvider = () => ServerDeps;
 /** 업무 규칙 위반 등 API 계층에서 바로 응답할 오류 */
 export class ApiError extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404 | 409 | 423,
+    readonly status: 400 | 401 | 403 | 404 | 409 | 423 | 428,
     readonly code: string,
     message: string,
     /** 응답 본문(`extensions`)에 실을 부가 정보 (예: 뎁스를 넘는 부서 목록) */

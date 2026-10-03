@@ -1,6 +1,7 @@
 import {
   acceptInvitation,
   createAccount,
+  installDefaultForms,
   previewInvitation,
   switchActiveAccount,
 } from "@fmerp/auth";
@@ -49,11 +50,13 @@ export function registerAccountsRoutes(app: AppRouter, deps: DepsProvider) {
         },
       );
       // 직위 마스터 기본값 (ORG-030). 첫 사업자 등록은 온보딩 화면이 안내한다 (ORG-002)
-      await withTenant(d.appDb, created.accountId, (tx) =>
-        tx
+      await withTenant(d.appDb, created.accountId, async (tx) => {
+        await tx
           .insert(schema.position)
-          .values(DEFAULT_POSITIONS.map((p) => ({ accountId: created.accountId, ...p }))),
-      );
+          .values(DEFAULT_POSITIONS.map((p) => ({ accountId: created.accountId, ...p })));
+        // 기본 양식 7종 (APV-003)
+        await installDefaultForms(tx, created.accountId);
+      });
       return c.json(created, 201);
     },
   );
