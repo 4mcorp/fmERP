@@ -53,7 +53,8 @@ export type Action =
   | "audit.read"
   | "document.read_all"
   | "org.read"
-  | "approval.act";
+  | "approval.act"
+  | "delegation.manage";
 
 interface Rule {
   owner?: boolean;
@@ -79,6 +80,8 @@ const RULES: Record<Action, Rule> = {
   "document.read_all": { owner: true, grants: ["auditor"] },
   "org.read": { everyone: true },
   "approval.act": { everyone: true },
+  // 다른 사람의 부재·대결 설정 (APV-052). 본인 설정은 누구나 가능하다
+  "delegation.manage": { owner: true, admin: true, grants: ["approval_admin"] },
 };
 
 function grantCovers(grant: Grant, target: Target): boolean {

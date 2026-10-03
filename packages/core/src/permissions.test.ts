@@ -112,6 +112,21 @@ describe("감사인 (범위: 부서+하위)", () => {
   });
 });
 
+describe("부재 설정 대행 (APV-052)", () => {
+  it("소유자·관리자·결재 관리자만 다른 사람의 부재를 설정한다", () => {
+    expect(can(actor("owner"), "delegation.manage", account)).toBe(true);
+    expect(can(actor("admin"), "delegation.manage", account)).toBe(true);
+    expect(
+      can(
+        actor("member", [{ role: "approval_admin", scopeType: "account", scopeId: null }]),
+        "delegation.manage",
+        account,
+      ),
+    ).toBe(true);
+    expect(can(actor("member"), "delegation.manage", account)).toBe(false);
+  });
+});
+
 describe("결재 관리자", () => {
   it("양식 관리는 가능하고 조직 관리는 못 한다", () => {
     const ap = actor("member", [{ role: "approval_admin", scopeType: "account", scopeId: null }]);
