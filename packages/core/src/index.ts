@@ -114,6 +114,7 @@ export {
   sniffFile,
 } from "./file-sniff";
 export { DEFAULT_FORMS, type DefaultForm } from "./form-defaults";
+export { extractSearchIndex, type SearchIndex } from "./form-index";
 export {
   type AttachmentField,
   type DateField,

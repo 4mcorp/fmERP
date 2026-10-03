@@ -42,6 +42,7 @@ import {
 import { ApprovalError } from "./errors";
 import { formUsableBy, getForm, getFormVersion, latestVersion, versionToInput } from "./forms";
 import { loadMemberCards, loadOrgSnapshot } from "./org-snapshot";
+import { indexSubmitted } from "./search-index";
 import { type LoadedDocument, lockAndLoad, persistResult } from "./store";
 
 export type { ServiceContext };
@@ -477,12 +478,14 @@ export async function submitDocument(
   }
   // 상신 전 검증 (APV-015): 양식 입력값 전체, 첨부 수
   const saved = await loadBody(ctx, documentId);
-  await validateBody(ctx, loaded.row, saved?.body ?? {}, "submit");
+  const values = await validateBody(ctx, loaded.row, saved?.body ?? {}, "submit");
+  const amount = await indexSubmitted(ctx, loaded.row, values);
   const result = unwrap(submit(loaded.doc, await engineContext(ctx, loaded.row.formCategory)));
   // 상신 시점의 내용 해시 (APV-016)
   const patch: Partial<typeof schema.document.$inferInsert> = {
     submittedAt: ctx.now,
     contentHash: await computeContentHash(ctx, loaded.row),
+    amount,
   };
   if (loaded.row.numbering?.at === "submit" && !loaded.row.docNo) {
     patch.docNo = await allocateDocNumber(ctx, loaded.row.businessId, loaded.row.numbering);

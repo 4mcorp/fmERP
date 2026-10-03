@@ -44,6 +44,8 @@ export interface MoneyField extends Base {
   min?: number;
   max?: number;
   default?: number;
+  /** 금액 범위 검색의 기준 필드 (APV-082). 양식에 하나만 지정할 수 있다 */
+  searchAmount?: boolean;
 }
 export interface DateField extends Base {
   type: "date" | "daterange";
@@ -137,6 +139,10 @@ export function validateFormSchema(schema: FormSchema): SchemaCheck {
   const errors: string[] = [];
   if (schema.fields.length === 0) errors.push("필드가 하나 이상 필요합니다");
   if (schema.fields.length > MAX_FIELDS) errors.push(`필드는 ${MAX_FIELDS}개까지 둘 수 있습니다`);
+
+  if (schema.fields.filter((f) => f.type === "money" && f.searchAmount).length > 1) {
+    errors.push("금액 검색 기준 필드는 하나만 지정할 수 있습니다");
+  }
 
   const seen = new Set<string>();
   for (const f of schema.fields) {

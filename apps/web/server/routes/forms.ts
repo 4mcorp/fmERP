@@ -59,7 +59,14 @@ const FieldSchema = z.discriminatedUnion("type", [
     integer: z.boolean().optional(),
     default: optNum,
   }),
-  z.object({ ...base, type: z.literal("money"), min: optNum, max: optNum, default: optNum }),
+  z.object({
+    ...base,
+    type: z.literal("money"),
+    min: optNum,
+    max: optNum,
+    default: optNum,
+    searchAmount: z.boolean().optional(),
+  }),
   z.object({ ...base, type: z.enum(["date", "daterange"]) }),
   z.object({
     ...base,

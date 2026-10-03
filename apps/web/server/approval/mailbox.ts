@@ -156,26 +156,13 @@ function decodeCursor(cursor: string): { at: Date; id: string } {
   return { at, id };
 }
 
-/** 문서함 한 쪽. 최근 만든 순(created_at, id)의 키셋 페이지네이션이라 쪽이 깊어져도 느려지지 않는다 (NFR-P03) */
-export async function listMailbox(
+/** 쪽 나누기 조회: 최근 만든 순(created_at, id)의 키셋 페이지네이션이라 쪽이 깊어져도 느려지지 않는다 (NFR-P03) */
+export async function pageDocuments(
   ctx: ServiceContext,
-  box: Mailbox,
-  viewer: Viewer,
+  where: (SQL | undefined)[],
   opts: { limit?: number; cursor?: string } = {},
 ): Promise<MailboxPage> {
   const limit = Math.min(Math.max(opts.limit ?? 30, 1), MAX_LIMIT);
-  let condition: SQL | null;
-  if (box === "audit") {
-    const businesses = await ctx.tx.select({ id: schema.business.id }).from(schema.business);
-    condition = auditCondition(
-      viewer,
-      businesses.map((b) => b.id),
-    );
-    // 감사 범위가 없으면 빈 목록이 아니라 접근 거부로 구분한다
-    if (!condition) throw new ApprovalError("forbidden", "감사 범위가 없습니다");
-  } else {
-    condition = boxCondition(box, viewer.membershipId);
-  }
   const cursor = opts.cursor ? decodeCursor(opts.cursor) : null;
   const rows = await ctx.tx
     .select({
@@ -195,9 +182,7 @@ export async function listMailbox(
     .innerJoin(schema.user, eq(schema.user.id, schema.membership.userId))
     .where(
       and(
-        // 초안은 기안자 본인 외에는 어떤 함에도 나타나지 않는다
-        box === "mine" ? sql`true` : sql`${D.status} <> 'DRAFT'`,
-        condition,
+        ...where,
         cursor
           ? or(
               sql`${D.createdAt} < ${cursor.at.toISOString()}::timestamptz`,
@@ -217,4 +202,49 @@ export async function listMailbox(
     items: page,
     nextCursor: rows.length > limit && last ? encodeCursor(last.createdAt, last.id) : null,
   };
+}
+
+/** 내가 열람할 수 있는 문서 조건 (PERM-003): 기안자·결재선 참여자·참조·수신(접수 후)·공람·감사 범위. 초안은 기안자 본인만 */
+export async function viewableCondition(ctx: ServiceContext, viewer: Viewer): Promise<SQL> {
+  const me = viewer.membershipId;
+  const businesses = await ctx.tx.select({ id: schema.business.id }).from(schema.business);
+  const audit = auditCondition(
+    viewer,
+    businesses.map((b) => b.id),
+  );
+  const parts = [
+    involved(me),
+    boxCondition("cc", me),
+    boxCondition("receive", me),
+    boxCondition("circulate", me),
+    ...(audit ? [audit] : []),
+  ];
+  return sql`(${D.drafterMembershipId} = ${me}::uuid or (${D.status} <> 'DRAFT' and (${sql.join(parts, sql` or `)})))`;
+}
+
+/** 문서함 한 쪽 */
+export async function listMailbox(
+  ctx: ServiceContext,
+  box: Mailbox,
+  viewer: Viewer,
+  opts: { limit?: number; cursor?: string } = {},
+): Promise<MailboxPage> {
+  let condition: SQL | null;
+  if (box === "audit") {
+    const businesses = await ctx.tx.select({ id: schema.business.id }).from(schema.business);
+    condition = auditCondition(
+      viewer,
+      businesses.map((b) => b.id),
+    );
+    // 감사 범위가 없으면 빈 목록이 아니라 접근 거부로 구분한다
+    if (!condition) throw new ApprovalError("forbidden", "감사 범위가 없습니다");
+  } else {
+    condition = boxCondition(box, viewer.membershipId);
+  }
+  // 초안은 기안자 본인 함에만 나타난다
+  return pageDocuments(
+    ctx,
+    [box === "mine" ? undefined : sql`${D.status} <> 'DRAFT'`, condition],
+    opts,
+  );
 }
