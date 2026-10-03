@@ -5,6 +5,7 @@ import { Download, Eye, Paperclip, Trash2 } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, errorMessage } from "@/lib/api";
@@ -100,6 +101,7 @@ export function AttachmentUploader({
   const queryClient = useQueryClient();
   const { data: items } = useAttachments(documentId);
   const [busy, setBusy] = useState<string[]>([]);
+  const [removing, setRemoving] = useState<AttachmentInfo | null>(null);
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["approval-attachments", documentId] });
@@ -143,7 +145,6 @@ export function AttachmentUploader({
   }
 
   async function remove(a: AttachmentInfo) {
-    if (!window.confirm(`${a.filename}을(를) 삭제할까요?`)) return;
     try {
       await api(`/api/approvals/${documentId}/attachments/${a.id}`, { method: "DELETE" });
       await refresh();
@@ -172,7 +173,15 @@ export function AttachmentUploader({
       <p className="text-xs text-muted-foreground">
         파일당 기본 50MB, 문서당 300MB까지 (계정 정책에 따름). 실행 파일은 올릴 수 없습니다.
       </p>
-      <AttachmentList documentId={documentId} items={items ?? []} onRemove={remove} />
+      <AttachmentList documentId={documentId} items={items ?? []} onRemove={setRemoving} />
+      <ConfirmDialog
+        open={removing !== null}
+        title="첨부를 삭제할까요?"
+        description={removing?.filename}
+        confirmLabel="삭제"
+        onConfirm={() => removing && void remove(removing)}
+        onClose={() => setRemoving(null)}
+      />
     </div>
   );
 }

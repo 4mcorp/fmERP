@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Pause, Play, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { type FormEvent, useMemo, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AttachmentList } from "@/components/approval/attachment-uploader";
 import { FormValuesView } from "@/components/approval/form-view";
@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -193,6 +194,7 @@ export default function ApprovalDetailPage() {
   const [pin, setPin] = useState<{ needsSetup: boolean } | null>(null);
   const retry = useRef<(() => Promise<void>) | null>(null);
   const [busy, setBusy] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [commentVisibility, setCommentVisibility] = useState<"all" | "drafter">("all");
   const [lineOpen, setLineOpen] = useState(false);
@@ -279,11 +281,13 @@ export default function ApprovalDetailPage() {
     }
   }
 
-  if (!view || !me) return null;
-  if (view.status === "DRAFT" && view.drafterMembershipId === myMembershipId) {
-    router.replace(`/approval/draft/${id}`);
-    return null;
-  }
+  const redirectToDraft =
+    !!view && view.status === "DRAFT" && view.drafterMembershipId === myMembershipId;
+  useEffect(() => {
+    if (redirectToDraft) router.replace(`/approval/draft/${id}`);
+  }, [redirectToDraft, router, id]);
+
+  if (!view || !me || redirectToDraft) return null;
 
   const isDrafter = view.drafterMembershipId === myMembershipId;
   const flowSteps = view.steps.filter((s) => s.type !== "post");
@@ -413,11 +417,7 @@ export default function ApprovalDetailPage() {
 
       <div className="flex flex-wrap gap-2">
         {isDrafter && view.status === "IN_PROGRESS" && untouched && (
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => simple("withdraw", "회수했습니다")}
-          >
+          <Button variant="outline" disabled={busy} onClick={() => setWithdrawOpen(true)}>
             회수
           </Button>
         )}
@@ -697,6 +697,14 @@ export default function ApprovalDetailPage() {
           retry.current = null;
           if (task) void withReauth(task);
         }}
+      />
+      <ConfirmDialog
+        open={withdrawOpen}
+        title="문서를 회수할까요?"
+        description="회수하면 결재가 중단되고 기안자가 수정할 수 있는 상태가 됩니다."
+        confirmLabel="회수"
+        onConfirm={() => void simple("withdraw", "회수했습니다")}
+        onClose={() => setWithdrawOpen(false)}
       />
     </div>
   );

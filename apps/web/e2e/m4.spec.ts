@@ -190,6 +190,7 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     const docId = await submitDoc(page, "회수 확인 문서", "hr@example.com");
     await page.goto(`/approval/${docId}`);
     await page.getByRole("button", { name: "회수" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "회수" }).click();
     await expect(page.getByText("회수했습니다")).toBeVisible();
     await page.getByRole("button", { name: "수정하기(초안으로)" }).click();
     await expect(page).toHaveURL(/\/approval\/draft\//);
@@ -213,8 +214,8 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     await page.getByRole("button", { name: "부재 설정", exact: true }).click();
     await expect(page.getByText("부재를 설정했습니다")).toBeVisible();
     await expect(page.getByRole("cell", { name: "송인사" })).toBeVisible();
-    page.once("dialog", (d) => d.accept());
     await page.getByRole("button", { name: "취소", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "취소하기" }).click();
     await expect(page.getByRole("cell", { name: "송인사" })).toHaveCount(0);
   });
 

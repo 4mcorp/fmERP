@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -53,6 +54,7 @@ export default function AbsencePage() {
   });
 
   const [absentee, setAbsentee] = useState("");
+  const [revoking, setRevoking] = useState<Delegation | null>(null);
   const [delegate, setDelegate] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -94,7 +96,6 @@ export default function AbsencePage() {
   }
 
   async function revoke(d: Delegation) {
-    if (!window.confirm("이 부재 설정을 취소할까요?")) return;
     try {
       await api(`/api/delegations/${d.id}`, { method: "DELETE" });
       await queryClient.invalidateQueries({ queryKey: ["delegations"] });
@@ -276,7 +277,7 @@ export default function AbsencePage() {
                   </TableCell>
                   <TableCell className="text-right">
                     {(d.membershipId === myId || canProxy) && (
-                      <Button size="sm" variant="outline" onClick={() => revoke(d)}>
+                      <Button size="sm" variant="outline" onClick={() => setRevoking(d)}>
                         취소
                       </Button>
                     )}
@@ -294,6 +295,13 @@ export default function AbsencePage() {
           </Table>
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={revoking !== null}
+        title="부재 설정을 취소할까요?"
+        confirmLabel="취소하기"
+        onConfirm={() => revoking && void revoke(revoking)}
+        onClose={() => setRevoking(null)}
+      />
     </div>
   );
 }

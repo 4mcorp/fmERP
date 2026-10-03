@@ -43,7 +43,7 @@ export function Modal({
       }}
       aria-labelledby={titleId}
       className={cn(
-        "m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border bg-background p-0 text-foreground shadow-lg backdrop:bg-black/40",
+        "m-auto w-[min(32rem,calc(100vw-2rem))] overscroll-contain rounded-xl border bg-background p-0 text-foreground shadow-lg backdrop:bg-black/40",
         className,
       )}
     >
