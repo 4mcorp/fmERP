@@ -169,6 +169,7 @@
 | [0004-integration-test-db.md](adr/0004-integration-test-db.md) | 통합 테스트는 Compose의 전용 PostgreSQL·SeaweedFS |
 | [0005-better-auth-organization-as-tenant.md](adr/0005-better-auth-organization-as-tenant.md) | Better Auth organization = 계정(테넌트), `fmerp_auth` 역할, 자체 초대 |
 | [0008-document-body-revisions-and-attachments.md](adr/0008-document-body-revisions-and-attachments.md) | 본문 S3 리비전·상신 내용 해시, 첨부 staging 검증 후 복사, 양식 불변 버전, 결재선·재인증 규칙, dnd-kit 미사용 |
+| [0009-completion-package-and-document-search.md](adr/0009-completion-package-and-document-search.md) | 완료 패키지는 manifest를 마지막에 쓰는 한 번만 쓰기, 후결은 `post-approvals/`, 상태는 `document_package`, 열람 판정 통합, 검색은 상신 시 본문 텍스트 색인 |
 | [0007-approval-engine-rules.md](adr/0007-approval-engine-rules.md) | 결재 엔진은 core 순수 함수, 낙관적 잠금·추가 전용·outbox 저장, 그룹·정족수·반려·후결·대결 규칙 |
 | [0006-org-permission-model.md](adr/0006-org-permission-model.md) | 부서 트리는 구체화 경로+트리거, 역할은 `membership.role` + 범위 있는 `role_grant`, `can()` 한 곳 판정 |
 

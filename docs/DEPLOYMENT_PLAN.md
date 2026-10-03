@@ -45,11 +45,12 @@ s3://4merp-{env}/
  ├─ docs/{계정ID}/{사업자코드}/{YYYY}/{문서ID}/
  │   ├─ revisions/{n}.json          ← 작성 중 저장본 (덮어쓰지 않고 n 증가)
  │   ├─ attachments/{파일ID}_{원본파일명}
- │   └─ final/                       ← 결재 완료 시 1회만 생성 (write-once)
+ │   ├─ final/                       ← 결재 완료 시 1회만 생성 (write-once)
  │       ├─ document.pdf             ← 결재란이 찍힌 최종본
  │       ├─ document.json            ← 양식 데이터 원본
  │       ├─ approval.json            ← 결재선, 처리자·대결 여부·일시·IP·의견, 파일별 SHA-256
- │       └─ manifest.json            ← 패키지 내 파일 목록 + 해시
+ │       └─ manifest.json            ← 패키지 내 파일 목록 + 해시 (마지막에 쓰며, 있으면 패키지 완성)
+ │   └─ post-approvals/{단계ID}.json ← 완료 이후의 후결 승인 기록 (건별 1회만 생성)
  ├─ _staging/{계정ID}/{업로드ID}     ← 첨부 업로드 직후 검증 전 객체 (등록되지 않으면 1일 후 자동 삭제)
  ├─ exports/{계정ID}/{작업ID}.zip    ← 관리자 내보내기 결과 (7일 후 자동 삭제)
  └─ _system/db-dumps/
