@@ -6,6 +6,7 @@ import { requireSameOrigin } from "./http";
 import { problem } from "./problem";
 import { registerAccountRoutes } from "./routes/account";
 import { registerAccountsRoutes } from "./routes/accounts";
+import { registerApprovalRoutes } from "./routes/approvals";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerDepartmentRoutes } from "./routes/departments";
 import { registerMeRoutes } from "./routes/me";
@@ -37,5 +38,6 @@ export const app = createApp({
     registerMemberRoutes(router, getServerDeps);
     registerOrgRoutes(router, getServerDeps);
     registerDepartmentRoutes(router, getServerDeps);
+    registerApprovalRoutes(router, getServerDeps);
   },
 });
