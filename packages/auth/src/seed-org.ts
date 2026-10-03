@@ -1,6 +1,7 @@
 import { DEFAULT_POSITIONS, makeBusinessNumber } from "@fmerp/core";
 import { type Db, schema } from "@fmerp/db";
 import { and, eq } from "drizzle-orm";
+import { installDefaultForms } from "./forms-install";
 import { TEST_ACCOUNTS } from "./test-accounts";
 
 /**
@@ -111,6 +112,7 @@ async function seedAccountOrg(
   businesses: BusinessDef[],
 ) {
   await db.update(schema.account).set({ maxDeptDepth }).where(eq(schema.account.id, accountId));
+  await installDefaultForms(db, accountId);
 
   const positionIds = new Map<string, string>();
   for (const p of DEFAULT_POSITIONS) {

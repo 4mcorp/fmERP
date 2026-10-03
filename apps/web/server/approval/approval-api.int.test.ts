@@ -25,8 +25,13 @@ let owner: TestClient;
 let businessId: string;
 let ids: Record<string, string>;
 
+let generalFormId = "";
+// 기안은 양식으로 한다: 결재 요청 생성에는 일반 기안 양식을 붙인다
 const post = (c: TestClient, path: string, body: unknown) =>
-  c.request(path, { method: "POST", body });
+  c.request(path, {
+    method: "POST",
+    body: path === "/api/approvals" ? { formId: generalFormId, ...(body as object) } : body,
+  });
 
 beforeAll(async () => {
   [member1, member2, auditor, admin, owner] = await Promise.all([
@@ -58,6 +63,8 @@ beforeAll(async () => {
       .where(eq(schema.business.code, "FM")),
   );
   businessId = biz?.id ?? "";
+  const forms = await json<{ id: string; code: string }[]>(await member1.request("/api/forms"));
+  generalFormId = forms.find((f) => f.code === "GENERAL")?.id ?? "";
 });
 
 const user = (email: string) => ({ kind: "user", membershipId: ids[email] });
@@ -93,6 +100,7 @@ describe("결재 요청 생성 (APV-090)", () => {
         { type: "approve", seq: 1, target: user("member2@example.com") },
         { type: "approve", seq: 2, target: { kind: "business_ceo", businessId } },
       ],
+      body: { body: { type: "doc", content: [] } },
       submit: true,
     });
     expect(res.status).toBe(201);
@@ -152,6 +160,7 @@ describe("결재 요청 생성 (APV-090)", () => {
         departmentCode: "X",
         formCode: "Y",
       },
+      body: { body: { type: "doc", content: [] } },
       submit: true,
     });
     expect(ignored.status).toBe(201);

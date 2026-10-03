@@ -15,6 +15,7 @@ export {
 export { type Auth, type AuthConfig, createAuth } from "./auth";
 export { resolveDevTestLogin } from "./dev-login";
 export { AuthDomainError, type AuthErrorCode } from "./errors";
+export { installDefaultForms } from "./forms-install";
 export {
   getProfile,
   listLoginHistory,
