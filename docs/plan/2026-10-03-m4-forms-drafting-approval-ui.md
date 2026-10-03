@@ -87,11 +87,11 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m3-approval-
 ## 단계 (3개 하위 단계, 각 단계마다 태스크별 커밋·푸시)
 **M4-A 서버·규칙**
 - [x] A1. 패키지 검증(설치는 쓰는 단계 B에서), ADR 0008(본문 S3 리비전·첨부 staging·양식 버전·내용 해시)
-- [ ] A2. core(TDD): 양식 스키마·입력값 검증(표 합계 포함), 기본 양식 7종 데이터, `editLine`
-- [ ] A3. DB: form·form_version(불변)·결재선 템플릿·즐겨찾기, document 확장(양식 버전·보안 등급·긴급·희망일·리비전), `document_revision`, `attachment`, `approval_comment`, `document_link`, 트리거 조정(FU-13), 기본 양식 시드
-- [ ] A4. `packages/storage` 확장(복사·범위 읽기·크기 고정 서명), 버킷 수명 주기 규칙(로컬 compose 초기화·DEPLOYMENT_PLAN 갱신)
-- [ ] A5. 서버: 양식 API, 기안 저장(리비전)·상신(해시)·첨부 등록, 처리 API(세션·재인증), 의견, 결재선 변경, 받은함 API
-- [ ] A6. 통합 테스트·보안 점검(FU-1·2·11~13 해소 확인)
+- [x] A2. core(TDD): 양식 스키마·입력값 검증(표 합계 포함), 기본 양식 7종 데이터, `editLine`
+- [x] A3. DB: form·form_version(불변)·결재선 템플릿·즐겨찾기, document 확장(양식 버전·보안 등급·긴급·희망일·리비전), `document_revision`, `attachment`, `approval_comment`, `document_link`, 트리거 조정(FU-13), 기본 양식 시드
+- [x] A4. `packages/storage` 확장(복사·범위 읽기·크기 고정 서명), 버킷 수명 주기 규칙(로컬 compose 초기화·DEPLOYMENT_PLAN 갱신)
+- [x] A5. 서버: 양식 API, 기안 저장(리비전)·상신(해시)·첨부 등록, 처리 API(세션·재인증), 의견, 결재선 변경, 받은함 API
+- [x] A6. 통합 테스트·보안 점검(FU-1·2·11~13 해소 확인)
 
 **M4-B 기안·양식 화면**
 - [ ] B1. 양식 관리·빌더(`/admin/forms`, 결재선 템플릿)
@@ -134,3 +134,4 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m3-approval-
 ## 결정·변경 기록
 - 2026-10-03: 초안 작성 (사용자 검토 대기)
 - 2026-10-03: Q1~Q10 제안안대로 승인. 패키지 점검: react-hook-form 7.89.0(MIT, 2026-09)·@hookform/resolvers 5.9.1(MIT)·@tiptap/* 3.31.4(MIT, 2026-09)·dexie 4.4.6(Apache-2.0, 2026-09)은 통과. **@dnd-kit/core 6.3.1(마지막 배포 2024-12)·sortable·utilities는 "최근 12개월 배포" 기준을 충족하지 못해 쓰지 않고**, M2와 같은 기본 끌어놓기 + 위·아래 버튼으로 구현한다(ADR 0008). 패키지는 실제로 쓰는 B단계에서 설치
+- 2026-10-04: M4-A 완료 (서버·규칙). 통합 테스트 178건·단위 202건 통과. 구현 중 결정: 양식 버전의 현재 버전은 최대 version(form.current_version_id 없음), `form_version`·`document_revision`·`approval_comment`는 INSERT·SELECT 권한만, 기안 API는 `formId` 필수(양식 없는 생성은 서비스 내부 전용), 결재 관리자 판정은 `approval.manage`(소유자·관리자·결재 관리자), 로컬 SeaweedFS는 서명 크기를 강제하지 않아 서버 재확인으로 검증
