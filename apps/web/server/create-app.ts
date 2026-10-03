@@ -28,7 +28,9 @@ export function createApp(deps: AppDeps) {
   app.openapi(healthRoute, async (c) => {
     try {
       await deps.pingDatabase();
-    } catch {
+    } catch (error) {
+      // 원인은 서버 로그에만 남기고 응답에는 노출하지 않는다 (ADR 0003)
+      console.error("[api] DB 연결 확인 실패", error);
       return c.json(
         problemBody(503, "db_unavailable", "DB에 연결할 수 없습니다"),
         503,

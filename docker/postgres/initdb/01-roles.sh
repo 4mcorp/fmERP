@@ -11,7 +11,9 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 
   ALTER DATABASE "$POSTGRES_DB" OWNER TO fmerp_migrator;
   REVOKE ALL ON DATABASE "$POSTGRES_DB" FROM PUBLIC;
-  GRANT CONNECT, TEMPORARY ON DATABASE "$POSTGRES_DB" TO fmerp_app;
+  -- CREATE: pg-boss가 시작할 때 CREATE SCHEMA IF NOT EXISTS pgboss를 실행하는데, PostgreSQL은 스키마가
+  -- 이미 있어도 DB 수준 CREATE 권한을 먼저 검사한다. public 스키마는 마이그레이션 계정 소유라 앱 계정이 바꿀 수 없다.
+  GRANT CONNECT, TEMPORARY, CREATE ON DATABASE "$POSTGRES_DB" TO fmerp_app;
 
   ALTER SCHEMA public OWNER TO fmerp_migrator;
   GRANT USAGE ON SCHEMA public TO fmerp_app;

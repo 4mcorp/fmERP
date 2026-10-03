@@ -43,6 +43,11 @@ export class ObjectStorage {
       region: config.region,
       forcePathStyle: config.forcePathStyle,
       credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
+      // SDK 기본값(WHEN_SUPPORTED)은 서명 URL에 빈 본문의 CRC32를 넣어, 브라우저 직접 업로드가
+      // BadDigest로 거부된다. R2·SeaweedFS 등 S3 호환 저장소에서는 필요할 때만 계산한다.
+      // (docs/ts/2026-10-03-s3-presigned-checksum.md)
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     });
   }
 
