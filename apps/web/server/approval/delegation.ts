@@ -1,9 +1,10 @@
 import { recordAudit } from "@fmerp/audit";
 import { validateDelegation } from "@fmerp/core";
 import { schema } from "@fmerp/db";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { ApprovalError } from "./errors";
-import { loadDelegationRules, type ServiceContext } from "./service";
+import { engineContext, loadDelegationRules, type ServiceContext } from "./service";
+import { lockAndLoad } from "./store";
 
 export interface CreateDelegationInput {
   membershipId: string;
@@ -61,7 +62,43 @@ export async function createDelegation(ctx: ServiceContext, input: CreateDelegat
     result: "success",
     request: ctx.request,
   });
+  await refreshActiveDelegates(ctx, input.membershipId);
   return { id: row.id };
+}
+
+/**
+ * 부재 설정이 바뀌면, 이미 차례가 와서 대기 중인 단계의 대결자도 다시 정한다 (갑작스러운 부재 대응, APV-052).
+ * 문서 행을 잠근 뒤 단계의 대결자와 version만 바꾼다.
+ */
+async function refreshActiveDelegates(ctx: ServiceContext, membershipId: string) {
+  const affected = await ctx.tx
+    .selectDistinct({ documentId: schema.approvalStep.documentId })
+    .from(schema.approvalStep)
+    .where(
+      and(
+        eq(schema.approvalStep.status, "ACTIVE"),
+        sql`${membershipId} = any(${schema.approvalStep.assigneeIds})`,
+      ),
+    );
+  for (const { documentId } of affected.sort((a, b) => a.documentId.localeCompare(b.documentId))) {
+    const loaded = await lockAndLoad(ctx.tx, documentId);
+    const engine = await engineContext(ctx, loaded.row.formCategory);
+    for (const step of loaded.doc.steps) {
+      if (step.status !== "ACTIVE" || !step.assigneeIds.includes(membershipId)) continue;
+      const delegates: Record<string, string> = {};
+      for (const assignee of step.assigneeIds) {
+        const decision = engine.decideDelegate(assignee);
+        if (decision.kind === "delegate") delegates[assignee] = decision.delegateId;
+      }
+      if (JSON.stringify(delegates) === JSON.stringify(step.delegates)) continue;
+      await ctx.tx
+        .update(schema.approvalStep)
+        .set({ delegates, version: step.version + 1 })
+        .where(
+          and(eq(schema.approvalStep.id, step.id), eq(schema.approvalStep.version, step.version)),
+        );
+    }
+  }
 }
 
 export async function revokeDelegation(ctx: ServiceContext, id: string) {
@@ -69,8 +106,9 @@ export async function revokeDelegation(ctx: ServiceContext, id: string) {
     .update(schema.delegation)
     .set({ revokedAt: ctx.now })
     .where(and(eq(schema.delegation.id, id), isNull(schema.delegation.revokedAt)))
-    .returning({ id: schema.delegation.id });
-  if (rows.length === 0) throw new ApprovalError("not_found", "부재 설정을 찾을 수 없습니다");
+    .returning({ id: schema.delegation.id, membershipId: schema.delegation.membershipId });
+  const revoked = rows[0];
+  if (!revoked) throw new ApprovalError("not_found", "부재 설정을 찾을 수 없습니다");
   await recordAudit(ctx.tx, {
     accountId: ctx.accountId,
     actorUserId: ctx.userId,
@@ -79,6 +117,7 @@ export async function revokeDelegation(ctx: ServiceContext, id: string) {
     result: "success",
     request: ctx.request,
   });
+  await refreshActiveDelegates(ctx, revoked.membershipId);
 }
 
 export function listDelegations(ctx: ServiceContext) {

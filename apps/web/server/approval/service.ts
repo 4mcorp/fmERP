@@ -83,7 +83,10 @@ export async function loadDelegationRules(tx: Tx): Promise<(DelegationRule & { i
   }));
 }
 
-async function engineContext(ctx: ServiceContext, category: string | null): Promise<EngineContext> {
+export async function engineContext(
+  ctx: ServiceContext,
+  category: string | null,
+): Promise<EngineContext> {
   const rules = await loadDelegationRules(ctx.tx);
   return {
     now: ctx.now,

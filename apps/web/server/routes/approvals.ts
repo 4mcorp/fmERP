@@ -30,32 +30,16 @@ const LineItem = z.object({
   seq: z.number().int().min(1).max(100),
   target: LineTarget,
   quorum: z.union([z.literal("all"), z.number().int().min(1).max(50)]).optional(),
-  canFinalize: z.boolean().optional(),
 });
 
+// 전결 권한(canFinalize)·정책(policy)·문서번호 규칙(numbering)은 양식(M4)과 위임전결 규정(P1)이 정하므로
+// 기안자가 API로 지정할 수 없다 (권한 상승·번호 시리즈 오염 방지)
 const CreateInput = z.object({
   businessId: z.uuid(),
   drafterDepartmentId: z.uuid().optional(),
   title: z.string().trim().min(1).max(200),
   body: z.record(z.string(), z.unknown()).optional(),
   formCategory: z.string().trim().max(50).optional(),
-  policy: z
-    .object({
-      disagree: z.enum(["reject", "comment"]),
-      rejectTo: z.enum(["drafter", "previous"]),
-      auditCanReject: z.boolean(),
-    })
-    .partial()
-    .optional(),
-  numbering: z
-    .object({
-      rule: z.string().min(1).max(100),
-      cycle: z.enum(["year", "month", "none"]),
-      at: z.enum(["submit", "complete"]),
-      departmentCode: z.string().max(20),
-      formCode: z.string().max(20),
-    })
-    .optional(),
   sourceType: z.string().trim().max(50).optional(),
   sourceId: z.string().trim().max(100).optional(),
   line: z.array(LineItem).min(1).max(30),

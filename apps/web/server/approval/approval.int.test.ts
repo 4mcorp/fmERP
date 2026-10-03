@@ -3,7 +3,7 @@ import type { ApprovalAction, DraftLineItem } from "@fmerp/core";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
 import { and, count, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDelegation } from "./delegation";
+import { createDelegation, revokeDelegation } from "./delegation";
 import { ApprovalError } from "./errors";
 import {
   actOnStep,
@@ -838,6 +838,48 @@ describe("대결 (APV-050·051·053)", () => {
       );
     const results = await Promise.all([go("approver@example.com"), go("hr@example.com")]);
     expect(results.filter((r) => r !== "fail")).toHaveLength(1);
+  });
+});
+
+describe("진행 중 단계의 대결자 갱신 (APV-052)", () => {
+  it("이미 차례가 온 뒤에 부재가 설정·취소되어도 대결자가 즉시 반영된다", async () => {
+    const { documentId } = await newDoc([approve(1, "auditor@example.com")]);
+    await run((ctx) => submitDocument(ctx, documentId, m["member1@example.com"] as string));
+    const [before] = await stepsOf(documentId);
+    expect(before?.delegates).toEqual({});
+
+    const from = new Date("2026-10-02T00:00:00Z");
+    const to = new Date("2026-10-04T00:00:00Z");
+    const { id } = await run((ctx) =>
+      createDelegation(ctx, {
+        membershipId: m["auditor@example.com"] as string,
+        delegateMembershipId: m["hr@example.com"] as string,
+        from,
+        to,
+        scope: { kind: "all" },
+      }),
+    );
+    const [after] = await stepsOf(documentId);
+    expect(after?.delegates).toEqual({ [m["auditor@example.com"] as string]: m["hr@example.com"] });
+    expect(after?.version).toBe((before?.version ?? 0) + 1);
+
+    // 취소하면 대결자가 사라지고, 대결자는 더 이상 처리할 수 없다
+    await run((ctx) => revokeDelegation(ctx, id));
+    const [revoked] = await stepsOf(documentId);
+    expect(revoked?.delegates).toEqual({});
+    await expectApprovalError(
+      run((ctx) =>
+        actOnStep(
+          ctx,
+          documentId,
+          revoked?.id ?? "",
+          { kind: "approve" },
+          { membershipId: m["hr@example.com"] as string },
+          { idempotencyKey: key() },
+        ),
+      ),
+      "not_assignee",
+    );
   });
 });
 

@@ -123,7 +123,7 @@ describe("결재 요청 생성 (APV-090)", () => {
     expect((await json<{ status: string }>(res)).status).toBe("DRAFT");
   });
 
-  it("결재선 오류는 사유와 함께 400, 문서번호 규칙 오류는 400", async () => {
+  it("결재선 오류는 400, 전결·정책·문서번호 지정은 무시된다", async () => {
     const bad = await post(member1, "/api/approvals", {
       businessId,
       title: "퇴사자 포함",
@@ -139,20 +139,24 @@ describe("결재 요청 생성 (APV-090)", () => {
     });
     expect(selfOnly.status).toBe(400);
 
-    const rule = await post(member1, "/api/approvals", {
+    // 기안자가 전결 권한·정책·문서번호 규칙을 직접 지정하려 해도 입력에서 무시된다 (양식·전결 규정이 정한다)
+    const ignored = await post(member1, "/api/approvals", {
       businessId,
-      title: "규칙 오류",
-      line: [{ type: "approve", seq: 1, target: user("member2@example.com") }],
+      title: "권한 상승 시도",
+      line: [{ type: "approve", seq: 1, target: user("member2@example.com"), canFinalize: true }],
+      policy: { auditCanReject: false },
       numbering: {
-        rule: "{없는토큰}",
+        rule: "{SEQ:4}",
         cycle: "year",
         at: "submit",
         departmentCode: "X",
         formCode: "Y",
       },
+      submit: true,
     });
-    expect(rule.status).toBe(400);
-    expect((await json<Problem>(rule)).code).toBe("rule_invalid");
+    expect(ignored.status).toBe(201);
+    const view = await json<{ id: string; docNo: string | null }>(ignored);
+    expect(view.docNo).toBeNull();
   });
 
   it("소속이 없는 사용자는 기안할 수 없다", async () => {
