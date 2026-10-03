@@ -7,6 +7,17 @@ export {
   transitionDocument,
   withdraw,
 } from "./approval-engine";
+export {
+  type DraftLineItem,
+  type LineTarget,
+  type LineValidation,
+  type OrgSnapshot,
+  type ResolvedLineItem,
+  type ResolveResult,
+  resolveLine,
+  type ValidationOptions,
+  validateLine,
+} from "./approval-line";
 export { allowedTransitions, assertTransition, canTransition } from "./approval-state";
 export {
   type ActionRecord,
@@ -44,6 +55,12 @@ export {
   normalizeBusinessNumber,
 } from "./business-number";
 export {
+  type DelegationCheck,
+  type DelegationRule,
+  decideDelegate,
+  validateDelegation,
+} from "./delegation";
+export {
   type DepartmentCsvRow,
   departmentsToCsv,
   type ImportPlan,
@@ -62,6 +79,14 @@ export {
   type MaxDepthCheck,
   type MoveCheck,
 } from "./department-tree";
+export {
+  type DocNumberContext,
+  type ResetCycle,
+  type RuleCheck,
+  renderDocNumber,
+  seriesKey,
+  validateDocNumberRule,
+} from "./doc-number";
 export { toWon, type Won } from "./money";
 export { DEFAULT_POSITIONS } from "./org-defaults";
 export {

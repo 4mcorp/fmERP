@@ -20,6 +20,15 @@ import type {
 
 const FLOW_DONE: readonly StepStatus[] = ["APPROVED", "DELEGATED"];
 
+function cloneStep(s: ApprovalStep): ApprovalStep {
+  return { ...s, assigneeIds: [...s.assigneeIds], delegates: { ...s.delegates } };
+}
+
+/** 입력 문서를 건드리지 않도록 복사한다 (문서는 평범한 값으로만 이루어져 있다) */
+function cloneDoc(doc: ApprovalDoc): ApprovalDoc {
+  return { ...doc, policy: { ...doc.policy }, steps: doc.steps.map(cloneStep) };
+}
+
 const fail = (code: EngineErrorCode, message: string): EngineResult => ({
   ok: false,
   code,
@@ -36,7 +45,7 @@ class Draft {
     source: ApprovalDoc,
     private readonly ctx: EngineContext,
   ) {
-    this.doc = structuredClone(source);
+    this.doc = cloneDoc(source);
   }
 
   step(id: string): ApprovalStep | undefined {
@@ -384,7 +393,7 @@ export function transitionDocument(doc: ApprovalDoc, to: DocStatus): EngineResul
   }
   return {
     ok: true,
-    doc: { ...structuredClone(doc), status: to },
+    doc: { ...cloneDoc(doc), status: to },
     events: [],
     record: null,
     changedStepIds: [],
@@ -401,10 +410,10 @@ export function redraftSeed(doc: ApprovalDoc, newStepId: (oldId: string) => stri
     return { ok: false, code: "invalid_state", message: "반려된 문서만 재기안할 수 있습니다" };
   }
   const draft: ApprovalDoc = {
-    ...structuredClone(doc),
+    ...cloneDoc(doc),
     status: "DRAFT",
     steps: doc.steps.map((s) => ({
-      ...structuredClone(s),
+      ...cloneStep(s),
       id: newStepId(s.id),
       status: "PENDING",
       version: 0,
