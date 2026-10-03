@@ -1,4 +1,7 @@
+import { createHash } from "node:crypto";
+import type { Readable } from "node:stream";
 import {
+  CopyObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   NotFound,
@@ -95,11 +98,84 @@ export class ObjectStorage {
     }
   }
 
+  /** 객체 앞부분(start~end, 끝 포함)만 읽는다. 파일 형식(매직 바이트) 검사에 쓴다 (PRD FILE-002) */
+  async getRange(key: string, start: number, endInclusive: number): Promise<Uint8Array> {
+    const result = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Range: `bytes=${start}-${endInclusive}`,
+      }),
+    );
+    if (!result.Body) throw new Error(`객체 본문이 비어 있습니다: ${key}`);
+    return result.Body.transformToByteArray();
+  }
+
+  /** 객체 전체를 스트리밍으로 읽어 SHA-256(16진수)과 실제 크기를 계산한다 (PRD FILE-002) */
+  async hashObject(key: string): Promise<{ sha256: string; size: number }> {
+    const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    if (!result.Body) throw new Error(`객체 본문이 비어 있습니다: ${key}`);
+    const hash = createHash("sha256");
+    let size = 0;
+    for await (const chunk of result.Body as Readable) {
+      hash.update(chunk as Uint8Array);
+      size += (chunk as Uint8Array).length;
+    }
+    return { sha256: hash.digest("hex"), size };
+  }
+
+  /** 서버 안에서 객체를 복사한다. 도착 키가 이미 있으면 쓰지 않는다 (staging → 최종 키). */
+  async copyIfAbsent(sourceKey: string, destinationKey: string): Promise<void> {
+    if (await this.head(destinationKey)) throw new ObjectAlreadyExistsError(destinationKey);
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucket,
+        CopySource: `${this.bucket}/${sourceKey}`,
+        Key: destinationKey,
+      }),
+    );
+  }
+
   /** 다운로드용 서명 URL. 권한 확인 후에만 발급한다 (PRD FILE-004). */
-  presignGet(key: string, expiresInSeconds = 300): Promise<string> {
-    return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
-      expiresIn: expiresInSeconds,
-    });
+  presignGet(
+    key: string,
+    expiresInSeconds = 300,
+    options: { downloadName?: string; contentType?: string } = {},
+  ): Promise<string> {
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        ResponseContentType: options.contentType,
+        ResponseContentDisposition: options.downloadName
+          ? `attachment; filename*=UTF-8''${encodeURIComponent(options.downloadName)}`
+          : undefined,
+      }),
+      { expiresIn: expiresInSeconds },
+    );
+  }
+
+  /**
+   * 크기를 서명에 고정한 업로드용 서명 URL. 선언한 크기와 다른 본문은 서명 검증에서 거부된다 (M1 FU-1).
+   * 호출한 쪽은 업로드 뒤에도 실제 크기를 `head`로 다시 확인한다.
+   */
+  presignPutFixedSize(
+    key: string,
+    contentType: string,
+    size: number,
+    expiresInSeconds = 300,
+  ): Promise<string> {
+    return getSignedUrl(
+      this.client,
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        ContentType: contentType,
+        ContentLength: size,
+      }),
+      { expiresIn: expiresInSeconds, signableHeaders: new Set(["content-length"]) },
+    );
   }
 
   /** 브라우저 직접 업로드용 서명 URL. */
