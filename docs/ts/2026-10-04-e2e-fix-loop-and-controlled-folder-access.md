@@ -31,3 +31,4 @@ related: [apps/web/e2e/m4.spec.ts, docs/plan/2026-10-03-m4-forms-drafting-approv
 - `biome`·`git` 등이 EPERM으로 실패하면 재시도 루프를 쓰지 말고 Windows 차단 기록(제어된 폴더 액세스, 백신 잠금)을 먼저 사용자에게 확인한다.
 
 ## 재발 기록
+- 2026-10-04 (M5-A3): `lint:fix | tail`로 출력을 줄이면 `ELIFECYCLE`만 보여 원인을 알 수 없었다. 전체 출력을 보니 두 가지였다. ① 실제 린트 오류(`organizeImports`, `useIterableCallbackReturn`) — 고치면 통과한다. ② `spawnSync ...biome.exe EPERM` — 간헐적이며 코드 문제가 아니다(같은 명령을 다시 실행하면 통과, 제어된 폴더 액세스 의심은 여전히 검증하지 못함). 규칙: 린트·테스트 출력은 `tail`로 자르지 말고 실패하면 전체를 읽는다. EPERM이면 한 번만 다시 실행하고 반복되면 사용자에게 알린다.

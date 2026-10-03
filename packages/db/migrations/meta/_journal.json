@@ -71,6 +71,20 @@
       "when": 1791038346027,
       "tag": "0009_forms_rls_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791045088445,
+      "tag": "0010_mailbox_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791045096323,
+      "tag": "0011_mailbox_rls_triggers",
+      "breakpoints": true
     }
   ]
 }

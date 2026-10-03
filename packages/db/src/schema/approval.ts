@@ -2,6 +2,7 @@
 // 무결성(완료 후 불변, 추가 전용)은 마이그레이션 0006의 트리거·권한이 보장한다.
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -82,6 +83,8 @@ export const document = pgTable(
       .default("normal"),
     urgent: boolean().notNull().default(false),
     desiredDueDate: date(),
+    /** 금액 검색용 (원 단위). 양식의 금액 필드 값을 상신할 때 복사한다 (APV-082, ADR 0009) */
+    amount: bigint({ mode: "number" }),
     /** 가장 최근 본문 리비전 번호 (0이면 아직 저장된 본문이 없다) */
     latestRevision: integer().notNull().default(0),
     submittedAt: timestamp({ withTimezone: true }),

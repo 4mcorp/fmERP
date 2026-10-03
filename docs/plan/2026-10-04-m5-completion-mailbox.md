@@ -76,7 +76,7 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m4-forms-dra
 **M5-A 서버·규칙**
 - [x] A1. 패키지 검증(설치는 쓰는 단계에서), ADR 0009(완료 패키지 형식·`post-approvals/`·`document_package` 상태·검색 색인), 패키지 형식을 `storage-backup.md`에 반영
 - [x] A2. core(TDD): `canViewDocument`, 수신 접수·배부 규칙, 이관 규칙
-- [ ] A3. DB: `document_package`, `document_recipient`, `document_search`, 금액 열, 인덱스, 트리거 예외, 권한 GRANT, RLS
+- [x] A3. DB: `document_package`, `document_recipient`, `document_search`, 금액 열, 인덱스, 트리거 예외, 권한 GRANT, RLS
 - [ ] A4. 서버: 열람 판정 통합, 수신·공람·참조 API, 문서함 API(커서), 검색 API, 이관·미처리 목록 API, `in-flight` 실제 쿼리, 감사 로그
 - [ ] A5. 통합 테스트·보안 점검
 
