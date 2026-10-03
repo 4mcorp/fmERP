@@ -41,6 +41,9 @@ importers:
       '@fmerp/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@fmerp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db

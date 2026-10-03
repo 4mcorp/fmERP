@@ -13,6 +13,7 @@
   "dependencies": {
     "@fmerp/audit": "workspace:*",
     "@fmerp/auth": "workspace:*",
+    "@fmerp/core": "workspace:*",
     "@fmerp/db": "workspace:*",
     "@fmerp/storage": "workspace:*",
     "@hono/zod-openapi": "~1.6.3",

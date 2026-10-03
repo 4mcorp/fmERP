@@ -30,6 +30,8 @@ export class ApiError extends Error {
     readonly status: 400 | 401 | 403 | 404 | 409 | 423,
     readonly code: string,
     message: string,
+    /** 응답 본문(`extensions`)에 실을 부가 정보 (예: 뎁스를 넘는 부서 목록) */
+    readonly extensions?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -61,8 +63,28 @@ export function toProblemResponse(error: unknown): Response | null {
       typeof remaining === "number" ? `${remaining}초 후 다시 시도하세요` : undefined,
     );
   }
-  if (error instanceof ApiError) return problem(error.status, error.code, error.message);
-  return null;
+  if (error instanceof ApiError) {
+    return problem(error.status, error.code, error.message, undefined, error.extensions);
+  }
+  return dbConstraintProblem(error);
+}
+
+/**
+ * DB가 막은 규칙 위반(트리거 CHECK·유일성·참조)을 업무 오류로 바꾼다. 규칙은 먼저 core·API에서 검사하고,
+ * 이 변환은 마지막 방어선이 막았을 때 사용자에게 이유를 보여 주기 위한 것이다.
+ */
+function dbConstraintProblem(error: unknown): Response | null {
+  const cause = (error as { cause?: { code?: string; message?: string } } | null)?.cause;
+  switch (cause?.code) {
+    case "23514":
+      return problem(400, "validation_error", cause.message ?? "허용되지 않는 값입니다");
+    case "23505":
+      return problem(409, "duplicate", "이미 사용 중인 값입니다");
+    case "23503":
+      return problem(409, "in_use", "다른 데이터가 사용 중이어서 처리할 수 없습니다");
+    default:
+      return null;
+  }
 }
 
 /**

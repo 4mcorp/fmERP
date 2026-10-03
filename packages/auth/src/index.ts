@@ -5,6 +5,7 @@ export {
   createAccount,
   createInvitationToken,
   hashInvitationToken,
+  type InvitationPreset,
   listMyAccounts,
   previewInvitation,
   requireActiveMembership,

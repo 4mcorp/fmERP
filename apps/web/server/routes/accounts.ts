@@ -4,6 +4,8 @@ import {
   previewInvitation,
   switchActiveAccount,
 } from "@fmerp/auth";
+import { DEFAULT_POSITIONS } from "@fmerp/core";
+import { schema, withTenant } from "@fmerp/db";
 import { createRoute, z } from "@hono/zod-openapi";
 import { ApiError, type AppRouter, type DepsProvider, requireSession } from "../http";
 import { errorResponses, json, OkSchema } from "./common";
@@ -45,6 +47,12 @@ export function registerAccountsRoutes(app: AppRouter, deps: DepsProvider) {
           name: c.req.valid("json").name,
           request: c.get("request"),
         },
+      );
+      // 직위 마스터 기본값 (ORG-030). 첫 사업자 등록은 온보딩 화면이 안내한다 (ORG-002)
+      await withTenant(d.appDb, created.accountId, (tx) =>
+        tx
+          .insert(schema.position)
+          .values(DEFAULT_POSITIONS.map((p) => ({ accountId: created.accountId, ...p }))),
       );
       return c.json(created, 201);
     },
