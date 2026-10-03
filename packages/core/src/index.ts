@@ -94,6 +94,15 @@ export {
   seriesKey,
   validateDocNumberRule,
 } from "./doc-number";
+export {
+  type AttachmentCheck,
+  checkAttachment,
+  DEFAULT_ALLOWED_EXTENSIONS,
+  extensionOf,
+  type SniffKind,
+  safeFileName,
+  sniffFile,
+} from "./file-sniff";
 export { DEFAULT_FORMS, type DefaultForm } from "./form-defaults";
 export {
   type AttachmentField,

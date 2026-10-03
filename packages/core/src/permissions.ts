@@ -54,7 +54,8 @@ export type Action =
   | "document.read_all"
   | "org.read"
   | "approval.act"
-  | "delegation.manage";
+  | "delegation.manage"
+  | "approval.manage";
 
 interface Rule {
   owner?: boolean;
@@ -81,6 +82,8 @@ const RULES: Record<Action, Rule> = {
   "org.read": { everyone: true },
   "approval.act": { everyone: true },
   // 다른 사람의 부재·대결 설정 (APV-052). 본인 설정은 누구나 가능하다
+  // 결재 진행 문서 관리: 보류 해제 대행, 진행 중 결재선 변경 (PRD 3.2 결재 관리자). 문서 본문 열람 권한은 아니다
+  "approval.manage": { owner: true, admin: true, grants: ["approval_admin"] },
   "delegation.manage": { owner: true, admin: true, grants: ["approval_admin"] },
 };
 

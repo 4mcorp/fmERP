@@ -127,6 +127,32 @@ describe("부재 설정 대행 (APV-052)", () => {
   });
 });
 
+describe("결재 진행 문서 관리", () => {
+  it("소유자·관리자·결재 관리자(범위 안)만 하고, 사업자 관리자·감사인은 못 한다", () => {
+    const approver = actor("member", [
+      { role: "approval_admin", scopeType: "business", scopeId: A },
+    ]);
+    expect(can(actor("owner"), "approval.manage", bizA)).toBe(true);
+    expect(can(actor("admin"), "approval.manage", bizA)).toBe(true);
+    expect(can(approver, "approval.manage", bizA)).toBe(true);
+    expect(can(approver, "approval.manage", bizB)).toBe(false);
+    expect(
+      can(
+        actor("member", [{ role: "business_admin", scopeType: "business", scopeId: A }]),
+        "approval.manage",
+        bizA,
+      ),
+    ).toBe(false);
+    expect(
+      can(
+        actor("member", [{ role: "auditor", scopeType: "account", scopeId: null }]),
+        "approval.manage",
+        bizA,
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("결재 관리자", () => {
   it("양식 관리는 가능하고 조직 관리는 못 한다", () => {
     const ap = actor("member", [{ role: "approval_admin", scopeType: "account", scopeId: null }]);
