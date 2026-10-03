@@ -40,7 +40,7 @@ import {
   writeRevision,
 } from "./drafts";
 import { ApprovalError } from "./errors";
-import { formUsableBy, getForm, latestVersion, versionToInput } from "./forms";
+import { formUsableBy, getForm, getFormVersion, latestVersion, versionToInput } from "./forms";
 import { loadMemberCards, loadOrgSnapshot } from "./org-snapshot";
 import { type LoadedDocument, lockAndLoad, persistResult } from "./store";
 
@@ -325,6 +325,82 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
     request: ctx.request,
   });
   return { documentId: doc.id, warnings: validation.warnings };
+}
+
+/**
+ * 초안의 결재선을 통째로 바꾼다 (APV-036). 양식 규칙(수정 허용·후결·전결)과 검증은 생성할 때와 같다.
+ * 기안자의 초안에서만 할 수 있다.
+ */
+export async function replaceDraftLine(
+  ctx: ServiceContext,
+  input: {
+    documentId: string;
+    actorMembershipId: string;
+    line: DraftLineItem[];
+    allowDuplicate?: boolean;
+  },
+) {
+  const { tx } = ctx;
+  const loaded = await lockAndLoad(tx, input.documentId);
+  const doc = loaded.row;
+  if (doc.drafterMembershipId !== input.actorMembershipId) {
+    throw new ApprovalError("forbidden", "기안자만 결재선을 바꿀 수 있습니다");
+  }
+  if (doc.status !== "DRAFT") {
+    throw new ApprovalError("invalid_state", "상신된 문서의 결재선은 초안에서만 바꿀 수 있습니다");
+  }
+  let line = input.line;
+  if (doc.formVersionId) {
+    const version = await getFormVersion(tx, doc.formVersionId);
+    line = lineForForm(version, input.line);
+  }
+  const org = await loadOrgSnapshot(tx);
+  const assignment = org.assignments.find(
+    (a) => a.membershipId === doc.drafterMembershipId && a.businessId === doc.businessId,
+  );
+  const resolved = resolveLine(line, org, {
+    membershipId: doc.drafterMembershipId,
+    departmentId: assignment?.departmentId ?? "",
+  });
+  if (!resolved.ok) {
+    throw new ApprovalError("line_invalid", "결재선을 해석할 수 없습니다", {
+      errors: resolved.errors,
+    });
+  }
+  const ranks = new Map<string, number>();
+  for (const a of org.assignments) {
+    if (a.positionRank !== null)
+      ranks.set(a.membershipId, Math.max(ranks.get(a.membershipId) ?? 0, a.positionRank));
+  }
+  const inactive = new Set(
+    org.members.filter((m) => m.status !== "active").map((m) => m.membershipId),
+  );
+  const validation = validateLine(resolved.steps, {
+    drafterId: doc.drafterMembershipId,
+    allowDuplicate: input.allowDuplicate ?? false,
+    ranks,
+    inactive,
+  });
+  if (validation.errors.length > 0) {
+    throw new ApprovalError("line_invalid", validation.errors.join("; "), {
+      errors: validation.errors,
+    });
+  }
+  await tx.delete(schema.approvalStep).where(eq(schema.approvalStep.documentId, doc.id));
+  const cards = await loadMemberCards(
+    tx,
+    resolved.steps.flatMap((s) => s.assigneeIds),
+  );
+  await insertSteps(ctx, doc.id, resolved.steps, cards);
+  await recordAudit(tx, {
+    accountId: ctx.accountId,
+    actorUserId: ctx.userId,
+    action: "approval.replace_line",
+    target: { type: "document", id: doc.id, label: doc.title },
+    result: "success",
+    request: ctx.request,
+  });
+  return { warnings: validation.warnings };
 }
 
 async function insertSteps(

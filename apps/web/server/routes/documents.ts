@@ -20,6 +20,7 @@ import {
   isParticipant,
   redraftDocument,
   reopenDocument,
+  replaceDraftLine,
   submitDocument,
   withdrawDocument,
 } from "../approval/service";
@@ -151,6 +152,45 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
           throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
         }
         return (await loadBody(ctx, id, n)) ?? { revision: 0, body: {} };
+      });
+      return c.json(result, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/approvals/{id}/draft-line",
+      tags: ["approval"],
+      summary: "초안 결재선 지정·교체 (양식이 수정을 막으면 기본 결재선이 유지된다)",
+      request: {
+        params: idParam,
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                line: z.array(LineItem).min(1).max(30),
+                allowDuplicate: z.boolean().optional(),
+              }),
+            },
+          },
+        },
+      },
+      responses: { 200: json(z.object({ warnings: z.array(z.string()) })), ...errorResponses },
+    }),
+    async (c) => {
+      const d = deps();
+      const tenant = c.get("tenant");
+      const { id } = c.req.valid("param");
+      const body = c.req.valid("json");
+      const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
+        const { membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        return replaceDraftLine(serviceContext(c, d, tx), {
+          documentId: id,
+          actorMembershipId: membershipId,
+          line: body.line,
+          allowDuplicate: body.allowDuplicate,
+        });
       });
       return c.json(result, 200);
     },

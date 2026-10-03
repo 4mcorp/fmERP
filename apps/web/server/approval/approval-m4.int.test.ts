@@ -1058,3 +1058,53 @@ describe("테넌트 격리 (PERM-002) — M4 테이블", () => {
     expect((await ownerB.request(`/api/forms/${generalFormId}`)).status).toBe(404);
   });
 });
+
+describe("초안 결재선 지정 (APV-036)", () => {
+  const putLine = (c: TestClient, id: string, line: unknown) =>
+    put(c, `/api/approvals/${id}/draft-line`, { line });
+
+  it("기안자가 초안의 결재선을 바꾸고, 상신 후에는 바꿀 수 없다", async () => {
+    const doc = await createDoc(member1);
+    const res = await putLine(member1, doc.documentId, [
+      approve(1, "member2@example.com"),
+      { type: "agree", seq: 2, target: user("hr@example.com") },
+      { type: "agree", seq: 2, target: user("approver@example.com"), quorum: 1 },
+    ]);
+    expect(res.status).toBe(200);
+    const v = await view(member1, doc.documentId);
+    expect(v.steps.map((s) => s.type)).toEqual(["approve", "agree", "agree"]);
+    expect((await putLine(member2, doc.documentId, [approve(1, "hr@example.com")])).status).toBe(
+      403,
+    );
+    expect((await putLine(member1, doc.documentId, [approve(1, "left@example.com")])).status).toBe(
+      400,
+    );
+    await post(member1, `/api/approvals/${doc.documentId}/submit`);
+    expect((await putLine(member1, doc.documentId, [approve(1, "hr@example.com")])).status).toBe(
+      409,
+    );
+  });
+
+  it("결재선 수정을 막는 양식은 지정해도 기본 결재선이 유지된다", async () => {
+    const locked = await json<{ formId: string }>(
+      await post(admin, "/api/forms", {
+        code: "LOCKED3",
+        name: "고정3",
+        version: version({
+          allowLineEdit: false,
+          defaultLine: [approve(1, "bizadmin@example.com")],
+        }),
+      }),
+    );
+    const doc = await createDoc(member1, { formId: locked.formId, body: { memo: "m" } });
+    await putLine(member1, doc.documentId, [approve(1, "auditor@example.com")]);
+    const steps = await withTenant(appDb.db, accountId, (tx) =>
+      tx
+        .select()
+        .from(schema.approvalStep)
+        .where(eq(schema.approvalStep.documentId, doc.documentId)),
+    );
+    expect(steps).toHaveLength(1);
+    expect(steps[0]?.assigneeIds).toEqual([ids["bizadmin@example.com"]]);
+  });
+});
