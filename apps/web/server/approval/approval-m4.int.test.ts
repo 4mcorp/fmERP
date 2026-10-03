@@ -880,7 +880,7 @@ describe("첨부 (APV-013, FILE-002·004·005, M1 FU-1·2)", () => {
         `/api/approvals/${doc.documentId}/attachments/${att.id}/url?preview=true`,
       ),
     );
-    expect((await fetch(preview.url)).headers.get("content-disposition")).toBeNull();
+    expect((await fetch(preview.url)).headers.get("content-disposition")).toBe("inline");
     expect(
       (await auditor.request(`/api/approvals/${doc.documentId}/attachments/${att.id}/url`)).status,
     ).toBe(404);

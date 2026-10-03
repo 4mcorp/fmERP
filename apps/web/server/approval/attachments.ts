@@ -244,7 +244,7 @@ export async function attachmentUrl(
     row.storageKey,
     300,
     input.preview
-      ? { contentType: row.mime }
+      ? { contentType: row.mime, inline: true }
       : { downloadName: row.filename, contentType: row.mime },
   );
   await recordAudit(ctx.tx, {

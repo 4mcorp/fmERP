@@ -140,7 +140,7 @@ export class ObjectStorage {
   presignGet(
     key: string,
     expiresInSeconds = 300,
-    options: { downloadName?: string; contentType?: string } = {},
+    options: { downloadName?: string; inline?: boolean; contentType?: string } = {},
   ): Promise<string> {
     return getSignedUrl(
       this.client,
@@ -150,7 +150,9 @@ export class ObjectStorage {
         ResponseContentType: options.contentType,
         ResponseContentDisposition: options.downloadName
           ? `attachment; filename*=UTF-8''${encodeURIComponent(options.downloadName)}`
-          : undefined,
+          : options.inline
+            ? "inline"
+            : undefined,
       }),
       { expiresIn: expiresInSeconds },
     );
