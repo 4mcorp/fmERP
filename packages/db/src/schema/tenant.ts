@@ -1,5 +1,18 @@
 // PRD의 "계정"(테넌트)과 구성원·초대 (ADR 0005). account·membership은 Better Auth organization 모델과 필드를 맞춘다.
-import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+
+import { sql } from "drizzle-orm";
+import {
+  check,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { createdAt, primaryId } from "./columns";
 
@@ -7,17 +20,31 @@ import { createdAt, primaryId } from "./columns";
 export interface SecurityPolicy {
   idleTimeoutMinutes?: number;
   absoluteTimeoutHours?: number;
+  /** 재인증(결재 PIN) 사용 여부. 기본 true (AUTH-009, ADM-001) */
+  pinRequired?: boolean;
+  /** 첨부 정책 (ADM-001, 실제 적용은 M4) */
+  attachmentMaxMb?: number;
+  attachmentExtensions?: string[];
 }
 
-export const account = pgTable("account", {
-  id: primaryId(),
-  name: text().notNull(),
-  slug: text().notNull().unique(),
-  logo: text(),
-  metadata: text(),
-  securityPolicy: jsonb().$type<SecurityPolicy>().notNull().default({}),
-  createdAt: createdAt(),
-});
+export const account = pgTable(
+  "account",
+  {
+    id: primaryId(),
+    name: text().notNull(),
+    slug: text().notNull().unique(),
+    logo: text(),
+    metadata: text(),
+    securityPolicy: jsonb().$type<SecurityPolicy>().notNull().default({}),
+    /** 부서 최대 뎁스 1~5 (ORG-010). 낮추기는 core 검사와 DB 트리거가 막는다 */
+    maxDeptDepth: integer().notNull().default(1),
+    allowedDomains: text().array().notNull().default(sql`'{}'::text[]`),
+    timezone: text().notNull().default("Asia/Seoul"),
+    locale: text().notNull().default("ko"),
+    createdAt: createdAt(),
+  },
+  (t) => [check("account_max_dept_depth_range", sql`${t.maxDeptDepth} between 1 and 5`)],
+);
 
 export const MEMBERSHIP_ROLES = ["owner", "admin", "member"] as const;
 export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];
@@ -43,7 +70,12 @@ export const membership = pgTable(
     leftAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [uniqueIndex().on(t.accountId, t.userId), index().on(t.userId)],
+  (t) => [
+    uniqueIndex().on(t.accountId, t.userId),
+    unique("membership_id_account_unique").on(t.id, t.accountId),
+    unique().on(t.accountId, t.employeeNo),
+    index().on(t.userId),
+  ],
 );
 
 /** 초대 (PRD AUTH-006). 링크로 수락하므로 이메일 일치를 요구하지 않는다. 토큰은 해시만 저장한다. */

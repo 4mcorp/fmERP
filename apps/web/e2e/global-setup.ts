@@ -1,4 +1,5 @@
 import { seedTestAccounts } from "@fmerp/auth/seed";
+import { seedTestOrganization } from "@fmerp/auth/seed-org";
 import { createDatabase } from "@fmerp/db";
 import { resetTestDatabase } from "@fmerp/db/test/reset";
 import { e2eEnv } from "./test-env";
@@ -7,9 +8,12 @@ import { e2eEnv } from "./test-env";
 export default async function globalSetup() {
   await resetTestDatabase(e2eEnv.MIGRATION_DATABASE_URL);
   const { db, pool } = createDatabase(e2eEnv.AUTH_DATABASE_URL);
+  const migrator = createDatabase(e2eEnv.MIGRATION_DATABASE_URL);
   try {
     await seedTestAccounts(db);
+    await seedTestOrganization(migrator.db);
   } finally {
     await pool.end();
+    await migrator.pool.end();
   }
 }

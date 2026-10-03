@@ -22,6 +22,20 @@
       "when": 1790996461057,
       "tag": "0002_grants_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791001224272,
+      "tag": "0003_org_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791001242482,
+      "tag": "0004_org_rls_triggers",
+      "breakpoints": true
     }
   ]
 }

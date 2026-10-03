@@ -66,9 +66,39 @@ export const TEST_USERS: TestUser[] = [
     purpose: "비활성(퇴사) 구성원 (진입 차단 확인)",
   },
   {
+    email: "bizadmin@example.com",
+    name: "오사업",
+    memberships: [{ account: "main", role: "member" }],
+    purpose: "사업자 관리자 (포엠테스트 본사 범위)",
+  },
+  {
+    email: "hr@example.com",
+    name: "송인사",
+    memberships: [{ account: "main", role: "member" }],
+    purpose: "인사 관리자 (계정 범위)",
+  },
+  {
+    email: "auditor@example.com",
+    name: "감사인",
+    memberships: [{ account: "main", role: "member" }],
+    purpose: "감사인 (경영지원본부 범위)",
+  },
+  {
+    email: "approver@example.com",
+    name: "결재관리",
+    memberships: [{ account: "main", role: "member" }],
+    purpose: "결재 관리자 (계정 범위)",
+  },
+  {
     email: "newbie@example.com",
     name: "신입사원",
     memberships: [],
     purpose: "소속 없음 (회사 만들기·초대 수락)",
+  },
+  {
+    email: "newbie2@example.com",
+    name: "신입둘",
+    memberships: [],
+    purpose: "소속 없음 (초대에 지정한 소속으로 합류하는 흐름 확인)",
   },
 ];
