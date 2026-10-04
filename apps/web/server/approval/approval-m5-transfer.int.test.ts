@@ -277,9 +277,8 @@ describe("장기 미처리 목록 (ADM-005)", () => {
     const mine = rows.find((r) => r.id === id);
     expect(mine?.waitingDays).toBeGreaterThanOrEqual(10);
     expect(mine?.waiting).toHaveLength(1);
-    expect(
-      (await json<unknown[]>(await req("member1", "/api/approval-admin/overdue?days=7"))).length,
-    ).toBe(0);
+    // 결재 관리 권한이 없으면 빈 목록이 아니라 403이다
+    expect((await req("member1", "/api/approval-admin/overdue?days=7")).status).toBe(403);
     expect(
       (
         await json<{ id: string }[]>(await req("approver", "/api/approval-admin/overdue?days=30"))

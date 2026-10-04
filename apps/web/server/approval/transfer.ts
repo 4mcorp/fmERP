@@ -39,6 +39,11 @@ export async function transferAssignments(
   if (input.fromMembershipId === input.toMembershipId) {
     throw new ApprovalError("invalid_transfer", "같은 사람에게는 이관할 수 없습니다");
   }
+  const [from] = await tx
+    .select({ id: schema.membership.id })
+    .from(schema.membership)
+    .where(eq(schema.membership.id, input.fromMembershipId));
+  if (!from) throw new ApprovalError("validation_failed", "이관할 구성원을 찾을 수 없습니다");
   const [to] = await tx
     .select({ id: schema.membership.id, status: schema.membership.status })
     .from(schema.membership)
@@ -116,6 +121,11 @@ export async function listOverdue(
   actor: Actor,
   days: number,
 ): Promise<OverdueItem[]> {
+  // 결재 관리 범위가 하나도 없으면 빈 목록이 아니라 접근 거부로 구분한다
+  const businesses = await ctx.tx.select({ id: schema.business.id }).from(schema.business);
+  if (!businesses.some((b) => can(actor, "approval.manage", businessTarget(b.id)))) {
+    throw new ApprovalError("forbidden", "결재 관리 권한이 없습니다");
+  }
   const { rows } = await ctx.tx.execute<{
     id: string;
     title: string;

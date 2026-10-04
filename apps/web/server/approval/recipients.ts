@@ -1,6 +1,6 @@
 // 참조·수신·공람 (PRD APV-070·072·073): 지정, 열람 기록, 접수, 배부
 import { recordAudit } from "@fmerp/audit";
-import { canDistribute, canReceive, type Recipient } from "@fmerp/core";
+import { canDistribute, canReceive, canViewDocument, type Recipient } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { and, eq, inArray } from "drizzle-orm";
 import { loadViewFacts, type Viewer } from "./access";
@@ -150,7 +150,8 @@ export async function markRead(ctx: ServiceContext, documentId: string, viewer: 
 export async function listRecipients(ctx: ServiceContext, documentId: string, viewer: Viewer) {
   const { tx } = ctx;
   const facts = await loadViewFacts(ctx, documentId, viewer);
-  if (!facts) throw notFound();
+  // 열람할 수 없으면 대상자 명단도 알려 주지 않는다 (PERM-003)
+  if (!facts || !canViewDocument(facts)) throw notFound();
   const rows = await tx
     .select()
     .from(schema.documentRecipient)

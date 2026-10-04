@@ -137,6 +137,8 @@ describe("문서 열람 권한 (PERM-003)", () => {
     await submit(id);
     for (const who of ["multi", "admin", "bizadmin", "hr", "approver"]) {
       expect(await status(who, id), who).toBe(404);
+      // 대상자 명단(수신 부서·접수자·참조자)도 열람 권한이 없으면 알려 주지 않는다
+      expect((await req(who, `/api/approvals/${id}/recipients`)).status, who).toBe(404);
     }
   });
 
