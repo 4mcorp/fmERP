@@ -184,6 +184,24 @@ importers:
         specifier: ~0.45.3
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
 
+  packages/completion:
+    dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../audit
+      '@fmerp/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../db
+      '@fmerp/storage':
+        specifier: workspace:*
+        version: link:../storage
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+
   packages/core: {}
 
   packages/db:
