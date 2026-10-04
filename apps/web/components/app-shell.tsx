@@ -151,6 +151,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               { href: "/approval/new", label: "새 결재" },
               { href: "/approval/pending", label: "결재 대기", count: pending?.length },
               { href: "/approval/mine", label: "기안함" },
+              { href: "/mailbox", label: "문서함" },
+              { href: "/search", label: "검색" },
               { href: "/org", label: "조직도" },
             ].map((n) => (
               <Link

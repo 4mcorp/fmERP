@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AttachmentList } from "@/components/approval/attachment-uploader";
+import { CompletionFiles } from "@/components/approval/completion-files";
 import { FormValuesView } from "@/components/approval/form-view";
 import { LineEditor, type LineRow, rowsToItems } from "@/components/approval/line-editor";
 import { PinDialog } from "@/components/approval/pin-dialog";
@@ -376,6 +377,8 @@ export default function ApprovalDetailPage() {
           {view.submittedAt ? ` · ${formatDateTime(view.submittedAt)} 상신` : ""}
         </p>
       </div>
+
+      {view.status === "COMPLETED" && <CompletionFiles documentId={id} />}
 
       {actionStep && (
         <Card className="border-primary">

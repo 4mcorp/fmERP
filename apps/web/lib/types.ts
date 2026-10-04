@@ -393,3 +393,54 @@ export const SECURITY_LABEL: Record<SecurityLevel, string> = {
   confidential: "대외비",
   secret: "비밀",
 };
+
+/** 문서함·검색 목록의 한 줄 (PRD APV-080~082) */
+export interface DocumentListItem {
+  id: string;
+  title: string;
+  docNo: string | null;
+  status: string;
+  urgent: boolean;
+  securityLevel: string;
+  drafterName: string;
+  createdAt: string;
+  submittedAt: string | null;
+  completedAt: string | null;
+}
+
+export interface DocumentPage {
+  items: DocumentListItem[];
+  nextCursor: string | null;
+}
+
+export type MailboxId =
+  | "upcoming"
+  | "progress"
+  | "completed"
+  | "cc"
+  | "receive"
+  | "circulate"
+  | "post"
+  | "dept"
+  | "audit";
+
+/** 문서함 탭. `/approval/pending`·`/approval/mine`은 기존 화면으로 이어진다 */
+export const MAILBOX_TABS: { id: MailboxId; label: string; help: string }[] = [
+  { id: "upcoming", label: "결재 예정", help: "앞으로 내 차례가 올 문서" },
+  { id: "progress", label: "진행 중", help: "내가 기안했거나 결재선에 있는 진행 중 문서" },
+  { id: "completed", label: "완료함", help: "내가 관여한 완료 문서" },
+  { id: "cc", label: "참조함", help: "참조로 지정된 문서" },
+  {
+    id: "receive",
+    label: "수신함",
+    help: "우리 부서가 수신한 문서 (접수 전에는 접수 담당자에게만 보입니다)",
+  },
+  { id: "circulate", label: "공람함", help: "공람으로 회람된 완료 문서" },
+  { id: "post", label: "후결·후열", help: "후결 대기 단계와 내 대신 대결로 처리된 문서" },
+  {
+    id: "dept",
+    label: "부서 문서함",
+    help: "내 부서에서 기안한 완료 문서와 부서가 접수한 문서 중 내가 열 수 있는 것",
+  },
+  { id: "audit", label: "감사함", help: "감사 범위 안의 상신된 문서 (읽기 전용)" },
+];

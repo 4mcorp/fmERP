@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 import type {
   ApprovalView,
@@ -10,6 +10,7 @@ import type {
   CommentInfo,
   CurrentAccount,
   Department,
+  DocumentPage,
   FormDetail,
   FormSummary,
   MasterItem,
@@ -106,5 +107,38 @@ export const usePending = (enabled = true) =>
     enabled,
   });
 
+/** 완료 PDF·패키지 생성 상태. 만드는 중이면 몇 초마다 다시 확인한다 (APV-063) */
+export const usePackageStatus = (id: string | undefined, enabled: boolean) =>
+  useQuery({
+    queryKey: ["approval-package", id],
+    queryFn: () =>
+      api<{ status: "NONE" | "PENDING" | "READY" | "FAILED"; readyAt: string | null }>(
+        `/api/approvals/${id}/package`,
+      ),
+    enabled: Boolean(id) && enabled,
+    refetchInterval: (q) => (q.state.data?.status === "PENDING" ? 4000 : false),
+  });
+
 export const useMine = () =>
   useQuery({ queryKey: ["inbox-mine"], queryFn: () => api<MineItem[]>("/api/inbox/mine") });
+
+/** 문서함 목록. 커서로 이어서 가져온다 (APV-080·081) */
+export const useMailbox = (box: string) =>
+  useInfiniteQuery({
+    queryKey: ["mailbox", box],
+    queryFn: ({ pageParam }) =>
+      api<DocumentPage>(`/api/mailbox/${box}?limit=30${pageParam ? `&cursor=${pageParam}` : ""}`),
+    initialPageParam: "",
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
+
+/** 문서 검색 (APV-082). `query`는 `q=...&status=...` 형태이며 비어 있으면 요청하지 않는다 */
+export const useSearch = (query: string) =>
+  useInfiniteQuery({
+    queryKey: ["search", query],
+    queryFn: ({ pageParam }) =>
+      api<DocumentPage>(`/api/search?${query}&limit=30${pageParam ? `&cursor=${pageParam}` : ""}`),
+    initialPageParam: "",
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+    enabled: query !== "",
+  });
