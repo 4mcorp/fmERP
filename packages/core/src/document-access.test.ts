@@ -25,6 +25,7 @@ const dept = (over: Partial<Recipient> = {}): Recipient => ({
   target: { type: "department", id: "dept-x" },
   receivedByMembershipId: null,
   assigneeMembershipId: null,
+  departmentHeadMembershipId: null,
   ...over,
 });
 
@@ -126,6 +127,32 @@ describe("canViewDocument (PERM-003)", () => {
   describe("수신 (APV-070)", () => {
     it("접수 전에는 수신 부서원이 보지 못한다", () => {
       expect(canViewDocument(base({ recipients: [dept()] }))).toBe(false);
+    });
+
+    it("접수 담당자(부서장)는 완료 후 접수 전에도 문서를 열어 볼 수 있다", () => {
+      const head = dept({ departmentHeadMembershipId: "viewer" });
+      expect(canViewDocument(base({ recipients: [head] }))).toBe(true);
+      // 대외비 이상이어도 접수 담당자는 본다 (본 뒤에 접수 여부를 정한다)
+      expect(canViewDocument(base({ securityLevel: "secret", recipients: [head] }))).toBe(true);
+      // 완료 전에는 아직 전달되지 않았으므로 볼 수 없다
+      expect(canViewDocument(base({ status: "IN_PROGRESS", recipients: [head] }))).toBe(false);
+    });
+
+    it("지정 담당자가 있으면 부서장이 아니라 그 사람만 접수 전에 본다", () => {
+      const r = dept({ assigneeMembershipId: "clerk", departmentHeadMembershipId: "viewer" });
+      expect(canViewDocument(base({ recipients: [r] }))).toBe(false);
+      expect(canViewDocument(base({ viewerMembershipId: "clerk", recipients: [r] }))).toBe(true);
+    });
+
+    it("이미 접수됐다면 접수 담당자 자격만으로는 더 넓게 보이지 않는다", () => {
+      // 일반 문서는 부서원 규칙, 대외비 이상은 접수자만
+      const received = dept({
+        receivedByMembershipId: "head",
+        departmentHeadMembershipId: "viewer",
+      });
+      expect(canViewDocument(base({ securityLevel: "confidential", recipients: [received] }))).toBe(
+        false,
+      );
     });
 
     it("접수 후에는 수신 부서원 전체가 본다 (일반 문서)", () => {

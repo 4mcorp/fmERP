@@ -6,7 +6,7 @@ import {
   type Recipient,
 } from "@fmerp/core";
 import { schema } from "@fmerp/db";
-import { and, eq, gt, isNull, or } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import { businessTarget, departmentTarget } from "../org-access";
 import type { ServiceContext } from "./context";
 import { ApprovalError } from "./errors";
@@ -88,6 +88,19 @@ export async function loadViewFacts(
   ];
   const hasReadAll = readAllTargets.some((t) => can(viewer.actor, "document.read_all", t));
 
+  // 접수 전 열람 판정에 쓸 수신 부서장
+  const receiveDepartments = recipientRows
+    .filter((r) => r.kind === "receive" && r.targetDepartmentId)
+    .map((r) => r.targetDepartmentId as string);
+  const heads =
+    receiveDepartments.length > 0
+      ? await tx
+          .select({ id: schema.department.id, head: schema.department.headMembershipId })
+          .from(schema.department)
+          .where(inArray(schema.department.id, receiveDepartments))
+      : [];
+  const headOf = new Map(heads.map((d) => [d.id, d.head]));
+
   const recipients: Recipient[] = recipientRows.map((r) => ({
     kind: r.kind,
     target: r.targetMembershipId
@@ -95,6 +108,9 @@ export async function loadViewFacts(
       : { type: "department", id: r.targetDepartmentId ?? "" },
     receivedByMembershipId: r.receivedByMembershipId,
     assigneeMembershipId: r.assigneeMembershipId,
+    departmentHeadMembershipId: r.targetDepartmentId
+      ? (headOf.get(r.targetDepartmentId) ?? null)
+      : null,
   }));
 
   return {

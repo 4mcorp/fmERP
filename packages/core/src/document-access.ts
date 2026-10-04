@@ -15,6 +15,8 @@ export interface Recipient {
   receivedByMembershipId: string | null;
   /** 수신: 지정 담당자. 없으면 수신 부서장이 접수한다 */
   assigneeMembershipId: string | null;
+  /** 수신 부서의 부서장. 지정 담당자가 없을 때 접수 담당자를 정한다 */
+  departmentHeadMembershipId?: string | null;
 }
 
 export interface DocumentViewFacts {
@@ -57,7 +59,12 @@ export function canViewDocument(facts: DocumentViewFacts): boolean {
       case "circulate":
         return completed && matches(r.target, facts);
       case "receive": {
-        if (!completed || r.receivedByMembershipId === null) return false;
+        if (!completed) return false;
+        if (r.receivedByMembershipId === null) {
+          // 접수 전에는 접수 담당자(지정자, 없으면 부서장)만 본다. 내용을 보고 접수 여부를 정한다
+          const receiver = r.assigneeMembershipId ?? r.departmentHeadMembershipId ?? null;
+          return receiver !== null && receiver === facts.viewerMembershipId;
+        }
         if (facts.securityLevel !== "normal") {
           return r.receivedByMembershipId === facts.viewerMembershipId;
         }

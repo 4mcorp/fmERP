@@ -250,7 +250,10 @@ describe("수신 접수·배부 (APV-070)", () => {
     const id = await receivedDoc();
     await complete(id);
     const [r] = await recipients("member1", id);
-    expect(await status("bizadmin", id)).toBe(404);
+    // 접수 담당자(부서장)는 접수 전에도 내용을 열어 보고 접수한다. 같은 부서의 다른 사람은 접수 뒤에야 본다
+    expect(await status("bizadmin", id)).toBe(200);
+    const forHead = await recipients("bizadmin", id);
+    expect(forHead[0]).toMatchObject({ canReceive: true, canDistribute: false });
     // 부서장이 아닌 사람(read_all이 있어도)은 접수 건이 있는지도 알 수 없다
     expect((await req("auditor", `/api/recipients/${r?.id}/receive`, "POST")).status).toBe(404);
     expect((await req("bizadmin", `/api/recipients/${r?.id}/receive`, "POST")).status).toBe(200);
