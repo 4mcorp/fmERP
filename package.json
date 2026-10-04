@@ -18,7 +18,7 @@
     "test:e2e": "pnpm --filter @fmerp/web test:e2e",
     "db:generate": "pnpm --filter @fmerp/db generate",
     "db:migrate": "pnpm --filter @fmerp/db migrate",
-    "env:up": "docker compose -f docker-compose.dev.yml up -d --wait",
+    "env:up": "docker compose -f docker-compose.dev.yml up -d --wait && pnpm --filter @fmerp/storage ensure-bucket",
     "env:down": "docker compose -f docker-compose.dev.yml down",
     "prepare": "lefthook install",
     "db:seed": "pnpm --filter @fmerp/auth seed"

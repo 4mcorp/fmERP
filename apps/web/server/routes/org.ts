@@ -672,6 +672,7 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
         "assignment.manage",
         "position.manage",
         "audit.read",
+        "document.read_all",
         "form.manage",
         "approval.manage",
         "delegation.manage",

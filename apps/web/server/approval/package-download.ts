@@ -50,6 +50,15 @@ async function requireReady(ctx: ServiceContext, documentId: string, viewer: Vie
   return doc;
 }
 
+/** ZIP을 열기 전 확인: 열람 권한과 패키지 준비 상태만 본다. 파일을 열지 않고 감사 로그도 남기지 않는다 */
+export async function checkPackageDownload(
+  ctx: ServiceContext,
+  documentId: string,
+  viewer: Viewer,
+) {
+  await requireReady(ctx, documentId, viewer);
+}
+
 const safeName = (doc: { docNo: string | null; title: string }, ext: string) =>
   `${(doc.docNo ?? doc.title).replace(/[\\/:*?"<>|\r\n]/g, "_").slice(0, 80)}.${ext}`;
 
