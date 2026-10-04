@@ -444,3 +444,27 @@ export const MAILBOX_TABS: { id: MailboxId; label: string; help: string }[] = [
   },
   { id: "audit", label: "감사함", help: "감사 범위 안의 상신된 문서 (읽기 전용)" },
 ];
+
+/** 참조·수신·공람 대상과 열람·접수·배부 상태 (APV-070·072·073) */
+export interface RecipientInfo {
+  id: string;
+  kind: "cc" | "receive" | "circulate";
+  targetType: "member" | "department";
+  targetId: string;
+  targetName: string;
+  assigneeMembershipId: string | null;
+  assigneeName: string | null;
+  canReceive: boolean;
+  canDistribute: boolean;
+  receivedByName: string | null;
+  receivedAt: string | null;
+  /** 열람 일시는 기안자·결재선 참여자에게만 온다 */
+  reads: { membershipId: string; name: string; readAt: string }[];
+  distributedTo: { membershipId: string; name: string }[];
+}
+
+export const RECIPIENT_KIND_LABEL: Record<RecipientInfo["kind"], string> = {
+  cc: "참조",
+  receive: "수신",
+  circulate: "공람",
+};

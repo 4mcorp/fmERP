@@ -15,6 +15,7 @@ import {
   type LineRow,
   rowsToItems,
 } from "@/components/approval/line-editor";
+import { RecipientEditor } from "@/components/approval/recipient-editor";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -450,6 +451,18 @@ export default function DraftEditorPage() {
           ) : (
             <LinePreview rows={lineRows} ctx={ctx} />
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">참조·수신·공람</CardTitle>
+          <CardDescription>
+            선택 사항입니다. 상신하면 바꿀 수 없습니다(공람은 완료 뒤에도 추가할 수 있습니다).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RecipientEditor documentId={id} />
         </CardContent>
       </Card>
 

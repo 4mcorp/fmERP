@@ -19,6 +19,7 @@ import type {
   MineItem,
   OrgChart,
   PendingItem,
+  RecipientInfo,
 } from "./types";
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: () => api<Me>("/api/me") });
@@ -117,6 +118,14 @@ export const usePackageStatus = (id: string | undefined, enabled: boolean) =>
       ),
     enabled: Boolean(id) && enabled,
     refetchInterval: (q) => (q.state.data?.status === "PENDING" ? 4000 : false),
+  });
+
+/** 참조·수신·공람 대상과 열람·접수·배부 상태 */
+export const useRecipients = (id: string | undefined) =>
+  useQuery({
+    queryKey: ["approval-recipients", id],
+    queryFn: () => api<RecipientInfo[]>(`/api/approvals/${id}/recipients`),
+    enabled: Boolean(id),
   });
 
 export const useMine = () =>

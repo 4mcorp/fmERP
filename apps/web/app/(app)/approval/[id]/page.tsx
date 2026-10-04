@@ -12,6 +12,7 @@ import { CompletionFiles } from "@/components/approval/completion-files";
 import { FormValuesView } from "@/components/approval/form-view";
 import { LineEditor, type LineRow, rowsToItems } from "@/components/approval/line-editor";
 import { PinDialog } from "@/components/approval/pin-dialog";
+import { RecipientPanel } from "@/components/approval/recipient-panel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -173,7 +174,7 @@ export default function ApprovalDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: me } = useMe();
-  const { data: view } = useApproval(id);
+  const { data: view, error: viewError } = useApproval(id);
   const { data: serverBody } = useApprovalBody(id);
   const { data: attachments } = useAttachments(id);
   const { data: comments } = useComments(id);
@@ -288,6 +289,23 @@ export default function ApprovalDetailPage() {
     if (redirectToDraft) router.replace(`/approval/draft/${id}`);
   }, [redirectToDraft, router, id]);
 
+  if (viewError && !view) {
+    // 없는 문서이거나 열람 권한이 없으면 같은 안내를 준다 (문서가 있는지도 알려 주지 않는다)
+    const notFound = viewError instanceof ApiProblem && viewError.status === 404;
+    return (
+      <div className="space-y-3">
+        <h1 className="text-2xl font-semibold">문서를 열 수 없습니다</h1>
+        <p role="alert" className="text-sm text-muted-foreground">
+          {notFound
+            ? "문서가 없거나 열람 권한이 없습니다. 문서함이나 검색에서 다시 찾아 보세요."
+            : errorMessage(viewError)}
+        </p>
+        <Link href="/mailbox" className="text-sm underline underline-offset-4">
+          문서함으로 이동
+        </Link>
+      </div>
+    );
+  }
   if (!view || !me || redirectToDraft) return null;
 
   const isDrafter = view.drafterMembershipId === myMembershipId;
@@ -379,6 +397,15 @@ export default function ApprovalDetailPage() {
       </div>
 
       {view.status === "COMPLETED" && <CompletionFiles documentId={id} />}
+
+      <RecipientPanel
+        documentId={id}
+        completed={view.status === "COMPLETED"}
+        involved={
+          isDrafter ||
+          view.steps.some((s) => s.assignees.some((a) => a.membershipId === myMembershipId))
+        }
+      />
 
       {actionStep && (
         <Card className="border-primary">
