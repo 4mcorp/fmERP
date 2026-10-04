@@ -144,17 +144,26 @@ export interface MailboxPage {
   nextCursor: string | null;
 }
 
-const encodeCursor = (createdAt: Date, id: string) =>
-  Buffer.from(`${createdAt.toISOString()}|${id}`).toString("base64url");
+/**
+ * 커서의 시각은 DB가 준 **마이크로초 문자열**을 그대로 쓴다. JS Date는 밀리초까지만 담아서, 같은 밀리초 안에 만들어진
+ * 문서가 다음 쪽에서 빠지거나 겹친다.
+ */
+const CURSOR_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}Z$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function decodeCursor(cursor: string): { at: Date; id: string } {
-  const [iso, id] = Buffer.from(cursor, "base64url").toString().split("|");
-  const at = new Date(iso ?? "");
-  if (!id || Number.isNaN(at.getTime())) {
+const encodeCursor = (at: string, id: string) => Buffer.from(`${at}|${id}`).toString("base64url");
+
+function decodeCursor(cursor: string): { at: string; id: string } {
+  const [at, id] = Buffer.from(cursor, "base64url").toString().split("|");
+  if (!at || !id || !CURSOR_AT.test(at) || !UUID.test(id)) {
     throw new ApprovalError("validation_failed", "잘못된 커서입니다");
   }
   return { at, id };
 }
+
+/** 쪽 나누기용 내부 값. 응답에는 싣지 않는다 */
+type ItemRow = MailboxItem & { cursorAt: string };
+const toItem = ({ cursorAt: _cursorAt, ...item }: ItemRow): MailboxItem => item;
 
 const SELECT_FIELDS = {
   id: D.id,
@@ -167,16 +176,14 @@ const SELECT_FIELDS = {
   createdAt: D.createdAt,
   submittedAt: D.submittedAt,
   completedAt: D.completedAt,
+  cursorAt: sql<string>`to_char(${D.createdAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
 };
 
-const cursorCondition = (cursor: { at: Date; id: string } | null) =>
+const cursorCondition = (cursor: { at: string; id: string } | null) =>
   cursor
     ? or(
-        sql`${D.createdAt} < ${cursor.at.toISOString()}::timestamptz`,
-        and(
-          sql`${D.createdAt} = ${cursor.at.toISOString()}::timestamptz`,
-          sql`${D.id} < ${cursor.id}::uuid`,
-        ),
+        sql`${D.createdAt} < ${cursor.at}::timestamptz`,
+        and(sql`${D.createdAt} = ${cursor.at}::timestamptz`, sql`${D.id} < ${cursor.id}::uuid`),
       )
     : undefined;
 
@@ -199,8 +206,8 @@ export async function pageDocuments(
   const page = rows.slice(0, limit);
   const last = page[page.length - 1];
   return {
-    items: page,
-    nextCursor: rows.length > limit && last ? encodeCursor(last.createdAt, last.id) : null,
+    items: page.map(toItem),
+    nextCursor: rows.length > limit && last ? encodeCursor(last.cursorAt, last.id) : null,
   };
 }
 
@@ -220,7 +227,7 @@ export async function pageDocumentsChunked(
 ): Promise<MailboxPage> {
   const limit = Math.min(Math.max(opts.limit ?? 30, 1), MAX_LIMIT);
   let cursor = opts.cursor ? decodeCursor(opts.cursor) : null;
-  const found: MailboxItem[] = [];
+  const found: ItemRow[] = [];
   let nextCursor: string | null = null;
 
   for (let n = 0; n < MAX_CHUNKS; n++) {
@@ -248,7 +255,7 @@ export async function pageDocumentsChunked(
       .with(chunk)
       .select({
         n: sql<number>`count(*)::int`,
-        at: sql<Date>`min(${D.createdAt})`,
+        at: sql<string>`to_char(min(${D.createdAt}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
         id: sql<string>`(array_agg(${D.id} order by ${D.createdAt} asc, ${D.id} asc))[1]`,
       })
       .from(chunk);
@@ -256,16 +263,19 @@ export async function pageDocumentsChunked(
       cursor = null; // 끝까지 읽었다
       break;
     }
-    cursor = { at: new Date(edge.at), id: edge.id };
+    cursor = { at: edge.at, id: edge.id };
     nextCursor = encodeCursor(cursor.at, cursor.id);
   }
 
   if (found.length > limit) {
     const page = found.slice(0, limit);
     const last = page[page.length - 1];
-    return { items: page, nextCursor: last ? encodeCursor(last.createdAt, last.id) : null };
+    return {
+      items: page.map(toItem),
+      nextCursor: last ? encodeCursor(last.cursorAt, last.id) : null,
+    };
   }
-  return { items: found, nextCursor: cursor ? nextCursor : null };
+  return { items: found.map(toItem), nextCursor: cursor ? nextCursor : null };
 }
 
 /** 내가 열람할 수 있는 문서 조건 (PERM-003): 기안자·결재선 참여자·참조·수신(접수 후)·공람·감사 범위. 초안은 기안자 본인만 */
