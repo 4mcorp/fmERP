@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { api, errorMessage } from "@/lib/api";
+import { ApiProblem, api, errorMessage } from "@/lib/api";
 import { useBusinesses, useDepartments, useDuties, usePositions } from "@/lib/queries";
 import {
   type AssignmentHistoryItem,
@@ -61,6 +62,7 @@ function BasicSection({
   canEmpNo: boolean;
 }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [status, setStatus] = useState<MemberStatus>(member.status);
   const [employeeNo, setEmployeeNo] = useState(member.employeeNo ?? "");
 
@@ -79,6 +81,16 @@ function BasicSection({
       await queryClient.invalidateQueries({ queryKey: ["members"] });
       toast.success("저장했습니다");
     } catch (error) {
+      if (error instanceof ApiProblem && error.code === "in_flight") {
+        // 처리 전 결재가 남아 있으면 퇴사·휴직 처리가 거부된다: 이관 화면으로 바로 갈 수 있게 한다 (ORG-036)
+        toast.error(errorMessage(error), {
+          action: {
+            label: "결재 이관",
+            onClick: () => router.push(`/admin/approvals?from=${member.membershipId}`),
+          },
+        });
+        return;
+      }
       toast.error(errorMessage(error));
     }
   }
