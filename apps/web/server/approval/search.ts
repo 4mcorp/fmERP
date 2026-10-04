@@ -5,7 +5,12 @@ import type { Actor } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { type SQL, sql } from "drizzle-orm";
 import type { ServiceContext } from "./context";
-import { type MailboxPage, pageDocuments, viewableCondition } from "./mailbox";
+import {
+  type MailboxPage,
+  pageDocuments,
+  pageDocumentsChunked,
+  viewableCondition,
+} from "./mailbox";
 
 export interface SearchInput {
   q?: string;
@@ -24,6 +29,25 @@ export interface SearchInput {
 
 const D = schema.document;
 
+/** 글자에 맞는 문서가 이만큼 이하이면 후보 id로 좁혀 조회하고, 넘으면 최근 순으로 덩어리씩 훑는다 */
+const CANDIDATE_LIMIT = 1000;
+
+/**
+ * 제목·문서번호·본문·첨부 파일명에 낱말이 들어 있는 문서 id를 trigram 인덱스로 먼저 구한다.
+ * CANDIDATE_LIMIT건을 넘으면 null (흔한 낱말이라 후보로 좁히는 이득이 없다).
+ */
+async function textCandidates(ctx: ServiceContext, like: string): Promise<string[] | null> {
+  const { rows } = await ctx.tx.execute<{ id: string }>(
+    sql`select id from (
+          select id from document where title ilike ${like}
+          union select id from document where doc_no ilike ${like}
+          union select document_id from document_search where body ilike ${like}
+          union select document_id from attachment where filename ilike ${like}
+        ) c limit ${CANDIDATE_LIMIT + 1}`,
+  );
+  return rows.length > CANDIDATE_LIMIT ? null : rows.map((r) => r.id);
+}
+
 /** LIKE 와일드카드를 글자 그대로 찾도록 이스케이프한다 */
 const escapeLike = (v: string) => v.replace(/[\\%_]/g, (c) => `\\${c}`);
 
@@ -35,6 +59,7 @@ export async function searchDocuments(
   const where: (SQL | undefined)[] = [await viewableCondition(ctx, viewer)];
 
   const q = input.q?.trim();
+  let chunked = false;
   if (q) {
     const like = `%${escapeLike(q)}%`;
     // 3글자 미만은 trigram 인덱스를 쓸 수 없어 제목·문서번호의 앞부분 일치만 한다
@@ -42,12 +67,26 @@ export async function searchDocuments(
       const prefix = `${escapeLike(q)}%`;
       where.push(sql`(${D.title} ilike ${prefix} or ${D.docNo} ilike ${prefix})`);
     } else {
-      where.push(sql`(
-        ${D.title} ilike ${like}
-        or ${D.docNo} ilike ${like}
-        or exists (select 1 from document_search ds where ds.document_id = ${D.id} and ds.body ilike ${like})
-        or exists (select 1 from attachment at where at.document_id = ${D.id} and at.filename ilike ${like})
-      )`);
+      const candidates = await textCandidates(ctx, like);
+      if (candidates === null) {
+        // 흔한 낱말: 열람 권한 판정이 비싸므로 최근 순으로 덩어리씩 훑으며 필요한 만큼만 찾는다
+        chunked = true;
+        where.push(sql`(
+          ${D.title} ilike ${like}
+          or ${D.docNo} ilike ${like}
+          or exists (select 1 from document_search ds where ds.document_id = ${D.id} and ds.body ilike ${like})
+          or exists (select 1 from attachment at where at.document_id = ${D.id} and at.filename ilike ${like})
+        )`);
+      } else if (candidates.length === 0) {
+        return { items: [], nextCursor: null };
+      } else {
+        where.push(
+          sql`${D.id} = any(array[${sql.join(
+            candidates.map((id) => sql`${id}::uuid`),
+            sql`, `,
+          )}])`,
+        );
+      }
     }
   }
   if (input.drafter?.trim()) {
@@ -81,5 +120,6 @@ export async function searchDocuments(
   if (input.minAmount !== undefined) where.push(sql`${D.amount} >= ${input.minAmount}`);
   if (input.maxAmount !== undefined) where.push(sql`${D.amount} <= ${input.maxAmount}`);
 
-  return pageDocuments(ctx, where, { limit: input.limit, cursor: input.cursor });
+  const page = chunked ? pageDocumentsChunked : pageDocuments;
+  return page(ctx, where, { limit: input.limit, cursor: input.cursor });
 }

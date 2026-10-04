@@ -1,6 +1,6 @@
 // M5-A4 통합 테스트: 문서 검색 (APV-082) — 본문 색인, 금액·기간·상태·양식·부서 조건, 열람 권한 필터 (실제 DB)
 import { createDatabase, schema, withTenant } from "@fmerp/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { json, loginAs, type TestClient } from "../test-client";
 
@@ -290,6 +290,61 @@ describe("열람 권한 필터", () => {
     expect((await req("member1", `/api/approvals/${draft}/submit`, "POST")).status).toBe(200);
     expect(await found("hr", q)).toEqual([`${tag} 초안문서`]);
     expect(await found("hr", `q=${encodeURIComponent(`${tag}본문`)}`)).toEqual([`${tag} 초안문서`]);
+  });
+});
+
+describe("흔한 낱말 검색 (덩어리 조회)", () => {
+  const COMMON = `흔함${TAG}`;
+  const COUNT = 1100; // 후보 상한(1000)을 넘긴다
+
+  beforeAll(async () => {
+    await withTenant(appDb.db, accountId, (tx) =>
+      tx.execute(sql`insert into document (id, account_id, business_id, drafter_membership_id, title, status, policy, submitted_at, created_at)
+        select uuidv7(), ${accountId}::uuid, ${businessId}::uuid, ${ids["member1@example.com"]}::uuid,
+               ${COMMON} || ' ' || g, 'IN_PROGRESS',
+               '{"disagree":"reject","rejectTo":"drafter","auditCanReject":true}'::jsonb,
+               now(), now() - (g || ' seconds')::interval
+        from generate_series(1, ${COUNT}) g`),
+    );
+  });
+
+  it("끝까지 이어서 가져오면 모두 한 번씩 나오고 최근 순이다", async () => {
+    const seen: string[] = [];
+    let cursor: string | null = null;
+    let guard = 0;
+    do {
+      const page: Page = await search(
+        "member1",
+        `q=${encodeURIComponent(COMMON)}&limit=100${cursor ? `&cursor=${cursor}` : ""}`,
+      );
+      seen.push(...page.items.map((i) => i.title));
+      cursor = page.nextCursor;
+      guard++;
+    } while (cursor && guard < 60);
+    expect(seen).toHaveLength(COUNT);
+    expect(new Set(seen).size).toBe(COUNT);
+    // 만든 시각이 최근인 g=1이 먼저 나온다
+    expect(seen[0]).toBe(`${COMMON} 1`);
+    expect(seen[COUNT - 1]).toBe(`${COMMON} ${COUNT}`);
+  });
+
+  it("열람 권한이 없는 사람에게는 한 건도 나오지 않는다", async () => {
+    const page = await search("hr", `q=${encodeURIComponent(COMMON)}&limit=100`);
+    expect(page.items).toEqual([]);
+  });
+
+  it("다른 조건과 함께 써도 덩어리 조회가 맞게 거른다", async () => {
+    const page = await search(
+      "member1",
+      `q=${encodeURIComponent(COMMON)}&status=COMPLETED&limit=100`,
+    );
+    expect(page.items).toEqual([]);
+    const some = await search(
+      "member1",
+      `q=${encodeURIComponent(COMMON)}&status=IN_PROGRESS&limit=5`,
+    );
+    expect(some.items).toHaveLength(5);
+    expect(some.nextCursor).not.toBeNull();
   });
 });
 

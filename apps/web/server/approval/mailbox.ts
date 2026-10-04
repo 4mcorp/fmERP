@@ -156,6 +156,30 @@ function decodeCursor(cursor: string): { at: Date; id: string } {
   return { at, id };
 }
 
+const SELECT_FIELDS = {
+  id: D.id,
+  title: D.title,
+  docNo: D.docNo,
+  status: D.status,
+  urgent: D.urgent,
+  securityLevel: D.securityLevel,
+  drafterName: schema.user.name,
+  createdAt: D.createdAt,
+  submittedAt: D.submittedAt,
+  completedAt: D.completedAt,
+};
+
+const cursorCondition = (cursor: { at: Date; id: string } | null) =>
+  cursor
+    ? or(
+        sql`${D.createdAt} < ${cursor.at.toISOString()}::timestamptz`,
+        and(
+          sql`${D.createdAt} = ${cursor.at.toISOString()}::timestamptz`,
+          sql`${D.id} < ${cursor.id}::uuid`,
+        ),
+      )
+    : undefined;
+
 /** 쪽 나누기 조회: 최근 만든 순(created_at, id)의 키셋 페이지네이션이라 쪽이 깊어져도 느려지지 않는다 (NFR-P03) */
 export async function pageDocuments(
   ctx: ServiceContext,
@@ -165,35 +189,11 @@ export async function pageDocuments(
   const limit = Math.min(Math.max(opts.limit ?? 30, 1), MAX_LIMIT);
   const cursor = opts.cursor ? decodeCursor(opts.cursor) : null;
   const rows = await ctx.tx
-    .select({
-      id: D.id,
-      title: D.title,
-      docNo: D.docNo,
-      status: D.status,
-      urgent: D.urgent,
-      securityLevel: D.securityLevel,
-      drafterName: schema.user.name,
-      createdAt: D.createdAt,
-      submittedAt: D.submittedAt,
-      completedAt: D.completedAt,
-    })
+    .select(SELECT_FIELDS)
     .from(D)
     .innerJoin(schema.membership, eq(schema.membership.id, D.drafterMembershipId))
     .innerJoin(schema.user, eq(schema.user.id, schema.membership.userId))
-    .where(
-      and(
-        ...where,
-        cursor
-          ? or(
-              sql`${D.createdAt} < ${cursor.at.toISOString()}::timestamptz`,
-              and(
-                sql`${D.createdAt} = ${cursor.at.toISOString()}::timestamptz`,
-                sql`${D.id} < ${cursor.id}::uuid`,
-              ),
-            )
-          : undefined,
-      ),
-    )
+    .where(and(...where, cursorCondition(cursor)))
     .orderBy(sql`${D.createdAt} desc`, sql`${D.id} desc`)
     .limit(limit + 1);
   const page = rows.slice(0, limit);
@@ -202,6 +202,70 @@ export async function pageDocuments(
     items: page,
     nextCursor: rows.length > limit && last ? encodeCursor(last.createdAt, last.id) : null,
   };
+}
+
+const CHUNK_SIZE = 2000;
+const MAX_CHUNKS = 25;
+
+/**
+ * 덩어리 조회: 최근 순으로 상신된 문서 CHUNK_SIZE건씩 훑으면서 조건에 맞는 것을 모은다. 조건이 흔해서 곧 채워지는
+ * 경우(예: 모든 문서에 들어 있는 낱말)에 전체를 읽지 않고 멈추려는 용도다. 한 번에 MAX_CHUNKS 덩어리까지 보고,
+ * 그래도 못 채우면 지금까지 찾은 것과 이어서 읽을 커서를 준다. 조건이 드문 경우는 호출자가 후보 id로 좁혀 pageDocuments를 쓴다.
+ * 안쪽 덩어리를 `document`라는 이름의 CTE로 만들어 where 조건이 그대로 적용되게 한다.
+ */
+export async function pageDocumentsChunked(
+  ctx: ServiceContext,
+  where: (SQL | undefined)[],
+  opts: { limit?: number; cursor?: string } = {},
+): Promise<MailboxPage> {
+  const limit = Math.min(Math.max(opts.limit ?? 30, 1), MAX_LIMIT);
+  let cursor = opts.cursor ? decodeCursor(opts.cursor) : null;
+  const found: MailboxItem[] = [];
+  let nextCursor: string | null = null;
+
+  for (let n = 0; n < MAX_CHUNKS; n++) {
+    const chunkQuery = ctx.tx
+      .select()
+      .from(D)
+      .where(and(sql`${D.status} <> 'DRAFT'`, cursorCondition(cursor)))
+      .orderBy(sql`${D.createdAt} desc`, sql`${D.id} desc`)
+      .limit(CHUNK_SIZE);
+    const chunk = ctx.tx.$with("document").as(chunkQuery);
+    const rows = await ctx.tx
+      .with(chunk)
+      .select(SELECT_FIELDS)
+      .from(chunk)
+      .innerJoin(schema.membership, eq(schema.membership.id, D.drafterMembershipId))
+      .innerJoin(schema.user, eq(schema.user.id, schema.membership.userId))
+      .where(and(...where))
+      .orderBy(sql`${D.createdAt} desc`, sql`${D.id} desc`)
+      .limit(limit + 1 - found.length);
+    found.push(...rows);
+    if (found.length > limit) break;
+
+    // 이번 덩어리에서 어디까지 읽었는지 (가장 오래된 문서)와 덩어리가 꽉 찼는지
+    const [edge] = await ctx.tx
+      .with(chunk)
+      .select({
+        n: sql<number>`count(*)::int`,
+        at: sql<Date>`min(${D.createdAt})`,
+        id: sql<string>`(array_agg(${D.id} order by ${D.createdAt} asc, ${D.id} asc))[1]`,
+      })
+      .from(chunk);
+    if (!edge || edge.n < CHUNK_SIZE) {
+      cursor = null; // 끝까지 읽었다
+      break;
+    }
+    cursor = { at: new Date(edge.at), id: edge.id };
+    nextCursor = encodeCursor(cursor.at, cursor.id);
+  }
+
+  if (found.length > limit) {
+    const page = found.slice(0, limit);
+    const last = page[page.length - 1];
+    return { items: page, nextCursor: last ? encodeCursor(last.createdAt, last.id) : null };
+  }
+  return { items: found, nextCursor: cursor ? nextCursor : null };
 }
 
 /** 내가 열람할 수 있는 문서 조건 (PERM-003): 기안자·결재선 참여자·참조·수신(접수 후)·공람·감사 범위. 초안은 기안자 본인만 */
