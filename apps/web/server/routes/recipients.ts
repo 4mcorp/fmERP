@@ -76,7 +76,10 @@ export function registerRecipientRoutes(app: AppRouter, deps: DepsProvider) {
               targetType: z.string(),
               targetId: z.string(),
               targetName: z.string(),
+              assigneeMembershipId: z.string().nullable(),
               assigneeName: z.string().nullable(),
+              canReceive: z.boolean(),
+              canDistribute: z.boolean(),
               receivedByName: z.string().nullable(),
               receivedAt: z.string().nullable(),
               reads: z.array(

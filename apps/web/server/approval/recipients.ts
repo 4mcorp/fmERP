@@ -178,10 +178,19 @@ export async function listRecipients(ctx: ServiceContext, documentId: string, vi
       .select({ id: schema.membership.id, name: schema.user.name })
       .from(schema.membership)
       .innerJoin(schema.user, eq(schema.user.id, schema.membership.userId)),
-    tx.select({ id: schema.department.id, name: schema.department.name }).from(schema.department),
+    tx
+      .select({
+        id: schema.department.id,
+        name: schema.department.name,
+        head: schema.department.headMembershipId,
+      })
+      .from(schema.department),
   ]);
   const memberName = new Map(members.map((m) => [m.id, m.name]));
   const departmentName = new Map(departments.map((d) => [d.id, d.name]));
+
+  const headOf = new Map(departments.map((d) => [d.id, d.head]));
+  const completed = facts.status === "COMPLETED" || facts.status === "ARCHIVED";
 
   return rows.map((r) => ({
     id: r.id,
@@ -191,7 +200,25 @@ export async function listRecipients(ctx: ServiceContext, documentId: string, vi
     targetName: r.targetMembershipId
       ? (memberName.get(r.targetMembershipId) ?? "")
       : (departmentName.get(r.targetDepartmentId ?? "") ?? ""),
+    assigneeMembershipId: r.assigneeMembershipId,
     assigneeName: r.assigneeMembershipId ? (memberName.get(r.assigneeMembershipId) ?? "") : null,
+    /** 내가 접수할 수 있나: 지정 담당자(없으면 수신 부서장)가 완료 뒤에 한 번만 */
+    canReceive:
+      r.kind === "receive" &&
+      canReceive({
+        status: facts.status,
+        recipient: {
+          kind: r.kind,
+          target: { type: "department", id: r.targetDepartmentId ?? "" },
+          receivedByMembershipId: r.receivedByMembershipId,
+          assigneeMembershipId: r.assigneeMembershipId,
+        },
+        viewerMembershipId: viewer.membershipId,
+        departmentHeadMembershipId: headOf.get(r.targetDepartmentId ?? "") ?? null,
+      }),
+    /** 내가 배부할 수 있나: 접수한 사람 */
+    canDistribute:
+      r.kind === "receive" && completed && r.receivedByMembershipId === viewer.membershipId,
     receivedByName: r.receivedByMembershipId
       ? (memberName.get(r.receivedByMembershipId) ?? "")
       : null,
