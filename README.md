@@ -31,6 +31,7 @@
    pnpm db:migrate
    pnpm db:seed
    ```
+   > **새 마이그레이션이 생기면(`git pull` 뒤, 또는 `packages/db/migrations`에 파일이 늘었을 때) `pnpm dev` 전에 `pnpm db:migrate`를 다시 실행하세요.** 개발 DB는 자동으로 갱신되지 않아, 놓치면 로그인 후 화면이 비고 API가 500을 돌려줍니다. 자동 테스트는 별도 DB를 매번 초기화해서 이 문제를 잡지 못합니다 ([ts](docs/ts/2026-10-04-dev-db-not-migrated.md)). 조직·양식 시드가 늘었을 때는 `pnpm db:seed`도 실행합니다(시드는 upsert라 반복해도 안전하며, 다시 로그인해야 할 수 있습니다).
 4. **실행:** `pnpm dev` → 웹 http://localhost:3000 → **테스트 로그인 화면(`/dev-login`)에서 시드 계정을 골라 로그인** (API 문서 `/api/doc`), worker 헬스체크 http://localhost:3001/health, 개발 메일함 http://localhost:58025
 
 | 명령 | 내용 |
