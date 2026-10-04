@@ -62,6 +62,20 @@ export {
   normalizeBusinessNumber,
 } from "./business-number";
 export {
+  type ApprovalRecordInput,
+  type AttachmentRef,
+  buildApprovalJson,
+  buildDocumentJson,
+  buildManifest,
+  canonicalJson,
+  type DocumentJsonInput,
+  type ManifestFileInput,
+  PACKAGE_SCHEMA_VERSION,
+  type PersonCard,
+  type RecordAction,
+  type RecordStep,
+} from "./completion-package";
+export {
   type DelegationCheck,
   type DelegationRule,
   decideDelegate,
