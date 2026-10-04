@@ -5,6 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { generatePackage, PackageConflictError } from "./generate";
 import { sha256Hex } from "./hash";
+import { loadSeedContext, type SeedContext, seedCompletedDocument } from "./test-support";
 
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
@@ -21,6 +22,7 @@ afterAll(async () => {
   await authDb.pool.end();
 });
 
+let seed: SeedContext;
 let accountId: string;
 let otherAccountId: string;
 let businessId: string;
@@ -35,108 +37,14 @@ const renderPdf = async (html: string) => {
 };
 const deps = () => ({ db: appDb.db, authDb: authDb.db, storage, renderPdf });
 
-/** 문서·단계·처리 기록을 DB에 직접 만든다 (완료 상태). 본문 리비전은 S3에 쓴다 */
-async function seedCompleted(
-  title = "완료 패키지 시험",
-  values: Record<string, unknown> = { memo: "본문" },
-) {
-  const documentId = crypto.randomUUID();
-  const drafter = members["member1@example.com"] ?? "";
-  const approver = members["member2@example.com"] ?? "";
-  const prefix = `docs/${accountId}/FM/2026/${documentId}/`;
-  const bytes = new TextEncoder().encode(JSON.stringify(values));
-  const revisionKey = `${prefix}revisions/1.json`;
-  await storage.put(revisionKey, bytes, "application/json");
-  await withTenant(appDb.db, accountId, async (tx) => {
-    await tx.execute(sql`insert into document (id, account_id, business_id, drafter_membership_id, drafter_snapshot, title, status, policy,
-        doc_no, form_version_id, content_hash, latest_revision, submitted_at, completed_at, created_at)
-      values (${documentId}::uuid, ${accountId}::uuid, ${businessId}::uuid, ${drafter}::uuid,
-        ${JSON.stringify({ membershipId: drafter, name: "박사원", departmentName: "재무팀", positionName: "사원" })}::jsonb,
-        ${title}, 'DRAFT', '{"disagree":"reject","rejectTo":"drafter","auditCanReject":true}'::jsonb,
-        ${`FM-T-2026-${Math.floor(Math.random() * 9000 + 1000)}`}, ${formVersionId}::uuid, ${"c".repeat(64)}, 0,
-        '2026-10-01T01:00:00Z', null, '2026-09-30T12:00:00Z')`);
-    await tx.insert(schema.documentRevision).values({
-      accountId,
-      documentId,
-      n: 1,
-      storageKey: revisionKey,
-      sha256: sha256Hex(bytes),
-      size: bytes.byteLength,
-      savedByMembershipId: drafter,
-    });
-    await tx.execute(sql`update document set latest_revision = 1 where id = ${documentId}::uuid`);
-    const [step] = await tx
-      .insert(schema.approvalStep)
-      .values({
-        accountId,
-        documentId,
-        seq: 1,
-        type: "approve",
-        assigneeIds: [approver],
-        assigneeSnapshot: [
-          {
-            membershipId: approver,
-            name: "최대리",
-            departmentName: "재무팀",
-            positionName: "대리",
-          },
-        ],
-        status: "PENDING",
-      })
-      .returning();
-    await tx.execute(
-      sql`update document set status = 'IN_PROGRESS' where id = ${documentId}::uuid`,
-    );
-    await tx.insert(schema.approvalAction).values({
-      accountId,
-      documentId,
-      stepId: step?.id ?? "",
-      actorMembershipId: approver,
-      action: "approve",
-      comment: "확인했습니다",
-      idempotencyKey: crypto.randomUUID(),
-      docHash: "c".repeat(64),
-      ip: "203.0.113.5",
-    });
-    await tx.execute(
-      sql`update approval_step set status = 'APPROVED' where id = ${step?.id}::uuid`,
-    );
-    await tx.execute(
-      sql`update document set status = 'COMPLETED', completed_at = '2026-10-02T01:00:00Z' where id = ${documentId}::uuid`,
-    );
-  });
-  return { documentId, prefix };
-}
+const seedCompleted = (title?: string, values?: Record<string, unknown>) =>
+  seedCompletedDocument({ appDb: appDb.db, authDb: authDb.db, storage }, seed, title, values);
 
 const read = async (key: string) => new TextDecoder().decode(await storage.getBytes(key));
 
 beforeAll(async () => {
-  const accounts = await authDb.db.select().from(schema.account);
-  accountId = accounts.find((a) => a.slug === "fourm-test")?.id ?? "";
-  otherAccountId = accounts.find((a) => a.slug === "other-company")?.id ?? "";
-  const rows = await authDb.db
-    .select({
-      id: schema.membership.id,
-      email: schema.user.email,
-      accountId: schema.membership.accountId,
-    })
-    .from(schema.membership)
-    .innerJoin(schema.user, eq(schema.user.id, schema.membership.userId));
-  members = Object.fromEntries(
-    rows.filter((m) => m.accountId === accountId).map((m) => [m.email, m.id]),
-  );
-  const businesses = await withTenant(appDb.db, accountId, (tx) =>
-    tx.select().from(schema.business),
-  );
-  businessId = businesses.find((b) => b.code === "FM")?.id ?? "";
-  const [fv] = await withTenant(appDb.db, accountId, (tx) =>
-    tx
-      .select({ id: schema.formVersion.id })
-      .from(schema.formVersion)
-      .innerJoin(schema.form, eq(schema.form.id, schema.formVersion.formId))
-      .where(eq(schema.form.code, "GENERAL")),
-  );
-  formVersionId = fv?.id ?? "";
+  seed = await loadSeedContext({ appDb: appDb.db, authDb: authDb.db, storage });
+  ({ accountId, otherAccountId, businessId, formVersionId, members } = seed);
 });
 
 describe("완료 패키지 생성 (BAK-003, APV-063)", () => {
