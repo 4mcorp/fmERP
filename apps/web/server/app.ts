@@ -16,6 +16,7 @@ import { registerMailboxRoutes } from "./routes/mailbox";
 import { registerMeRoutes } from "./routes/me";
 import { registerMemberRoutes } from "./routes/members";
 import { registerOrgRoutes } from "./routes/org";
+import { registerPackageRoutes } from "./routes/package";
 import { registerRecipientRoutes } from "./routes/recipients";
 import { registerSearchRoutes } from "./routes/search";
 
@@ -49,6 +50,7 @@ export const app = createApp({
     registerDocumentRoutes(router, getServerDeps);
     registerRecipientRoutes(router, getServerDeps);
     registerMailboxRoutes(router, getServerDeps);
+    registerPackageRoutes(router, getServerDeps);
     registerSearchRoutes(router, getServerDeps);
     registerApprovalAdminRoutes(router, getServerDeps);
   },

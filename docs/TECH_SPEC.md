@@ -65,7 +65,7 @@
 | 에디터 | @tiptap/react, @tiptap/pm, @tiptap/starter-kit | ~3.31.4 |
 | 클라이언트 저장 | dexie | ~4.4.6 |
 | 스토리지·메일 | @aws-sdk/client-s3, @aws-sdk/s3-request-presigner, @aws-sdk/client-sesv2 | ~3.1145.0 |
-| 파일 처리 | archiver | ~8.0.0 |
+| 파일 처리 | archiver | ~8.0.0 (타입은 `@types/archiver` ~8.0.0, 타입 전용·MIT) |
 | | write-excel-file | ~4.1.1 (**exceljs 대체**: exceljs는 2024-12 이후 업데이트가 없고 deprecated 하위 의존성 6개 포함) |
 | 변경 비교 | microdiff | ~1.6.0 |
 | 날짜 | date-fns | ~4.4.0 |

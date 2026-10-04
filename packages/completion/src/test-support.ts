@@ -59,6 +59,7 @@ export async function seedCompletedDocument(
   ctx: SeedContext,
   title = "완료 패키지 시험",
   values: Record<string, unknown> = { memo: "본문" },
+  options: { attachment?: { filename: string; bytes: Uint8Array } } = {},
 ) {
   const { accountId, businessId, formVersionId, members } = ctx;
   const documentId = crypto.randomUUID();
@@ -87,6 +88,22 @@ export async function seedCompletedDocument(
       savedByMembershipId: drafter,
     });
     await tx.execute(sql`update document set latest_revision = 1 where id = ${documentId}::uuid`);
+    // 첨부는 초안일 때만 붙일 수 있다
+    if (options.attachment) {
+      const { filename, bytes: file } = options.attachment;
+      const key = `${prefix}attachments/seed_${filename}`;
+      await env.storage.put(key, file, "application/octet-stream");
+      await tx.insert(schema.attachment).values({
+        accountId,
+        documentId,
+        storageKey: key,
+        filename,
+        size: file.byteLength,
+        mime: "application/octet-stream",
+        sha256: sha256Hex(file),
+        uploadedByMembershipId: drafter,
+      });
+    }
     const [step] = await tx
       .insert(schema.approvalStep)
       .values({

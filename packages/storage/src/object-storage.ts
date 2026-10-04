@@ -86,6 +86,13 @@ export class ObjectStorage {
     return result.Body.transformToByteArray();
   }
 
+  /** 객체를 스트림으로 읽는다 (큰 파일을 통째로 메모리에 올리지 않고 ZIP 등으로 흘려보낼 때) */
+  async getStream(key: string): Promise<Readable> {
+    const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    if (!result.Body) throw new Error(`객체 본문이 비어 있습니다: ${key}`);
+    return result.Body as Readable;
+  }
+
   async head(key: string): Promise<ObjectInfo | null> {
     try {
       const result = await this.client.send(
