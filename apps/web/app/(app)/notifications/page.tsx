@@ -3,8 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api, errorMessage } from "@/lib/api";
@@ -12,9 +11,31 @@ import { useNotifications } from "@/lib/queries";
 import { formatDateTime } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+/** 이동할 곳이 있으면 링크(새 탭 열기 지원), 없으면(홈으로만 가는 알림) 읽음 처리만 하는 버튼 */
+function Row({
+  href,
+  onActivate,
+  className,
+  children,
+}: {
+  href: string;
+  onActivate: () => void;
+  className: string;
+  children: ReactNode;
+}) {
+  return href === "/" ? (
+    <button type="button" onClick={onActivate} className={className}>
+      {children}
+    </button>
+  ) : (
+    <Link href={href} onClick={onActivate} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 /** 알림 센터 (PRD NTF-002). 알림을 누르면 읽음으로 표시하고 해당 문서로 이동한다 */
 export default function NotificationsPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const { data, isPending, error, hasNextPage, fetchNextPage, isFetchingNextPage } =
@@ -22,20 +43,22 @@ export default function NotificationsPage() {
   const items = data?.pages.flatMap((p) => p.items) ?? [];
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
-  async function open(id: string, href: string, read: boolean) {
+  /** 알림을 읽음으로 표시한다. 이동은 링크가 맡으므로 기다리지 않고, 실패하면 알린다 */
+  async function markRead(id: string, read: boolean) {
+    if (read) return;
     try {
-      if (!read) await api(`/api/notifications/${id}/read`, { method: "POST" });
+      await api(`/api/notifications/${id}/read`, { method: "POST" });
       await refresh();
     } catch (e) {
       toast.error(errorMessage(e));
     }
-    if (href !== "/") router.push(href);
   }
 
   async function readAll() {
     try {
       await api("/api/notifications/read-all", { method: "POST" });
       await refresh();
+      toast.success("모든 알림을 읽음으로 표시했습니다");
     } catch (e) {
       toast.error(errorMessage(e));
     }
@@ -77,9 +100,9 @@ export default function NotificationsPage() {
         <ul className="divide-y rounded-md border">
           {items.map((n) => (
             <li key={n.id}>
-              <button
-                type="button"
-                onClick={() => open(n.id, n.href, n.readAt !== null)}
+              <Row
+                href={n.href}
+                onActivate={() => markRead(n.id, n.readAt !== null)}
                 className={cn(
                   "flex w-full flex-col gap-0.5 px-4 py-3 text-left hover:bg-muted/50 focus-visible:bg-muted/50",
                   n.readAt === null && "bg-muted/30",
@@ -89,14 +112,16 @@ export default function NotificationsPage() {
                   {n.readAt === null && (
                     <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden />
                   )}
-                  <span className={cn("truncate", n.readAt === null && "font-medium")}>
+                  <span className={cn("min-w-0 truncate", n.readAt === null && "font-medium")}>
                     {n.title}
                   </span>
                   {n.readAt === null && <span className="sr-only">(읽지 않음)</span>}
                 </span>
-                {n.body && <span className="truncate text-sm text-muted-foreground">{n.body}</span>}
+                {n.body && (
+                  <span className="min-w-0 truncate text-sm text-muted-foreground">{n.body}</span>
+                )}
                 <span className="text-xs text-muted-foreground">{formatDateTime(n.createdAt)}</span>
-              </button>
+              </Row>
             </li>
           ))}
         </ul>

@@ -137,21 +137,25 @@ export default function HomePage() {
         </Button>
       </div>
 
-      <dl className="grid grid-cols-3 gap-3">
+      <ul aria-label="요약" className="grid grid-cols-3 gap-3">
         {[
           { href: "/approval/pending", label: "결재 대기", value: pending?.length, accent: true },
           { href: "/approval/mine", label: "진행 중", value: mine ? inProgress.length : undefined },
           { href: "/approval/mine", label: "임시저장", value: mine ? drafts.length : undefined },
         ].map((s) => (
-          <Link key={s.label} href={s.href} className="rounded-lg border p-3 hover:bg-muted/50">
-            <dt className="text-sm text-muted-foreground">{s.label}</dt>
-            <dd className={`text-2xl font-semibold ${s.accent && s.value ? "text-primary" : ""}`}>
-              {s.value ?? "–"}
-              {s.value !== undefined && <span className="ml-0.5 text-sm font-normal">건</span>}
-            </dd>
-          </Link>
+          <li key={s.label}>
+            <Link href={s.href} className="block rounded-lg border p-3 hover:bg-muted/50">
+              <span className="block text-sm text-muted-foreground">{s.label}</span>
+              <span
+                className={`block text-2xl font-semibold tabular-nums ${s.accent && s.value ? "text-primary" : ""}`}
+              >
+                {s.value ?? "–"}
+                {s.value !== undefined && <span className="ml-0.5 text-sm font-normal">건</span>}
+              </span>
+            </Link>
+          </li>
         ))}
-      </dl>
+      </ul>
 
       <Section
         title="결재 대기"

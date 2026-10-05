@@ -24,6 +24,8 @@ export function TelegramSection() {
   const [waitingUntil, setWaitingUntil] = useState<number | null>(null);
   const [confirmUnlink, setConfirmUnlink] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** 만든 연결 링크. 팝업이 차단돼도 누를 수 있게 화면에 남긴다 */
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["my-telegram"] });
 
   // 링크를 연 뒤에는 연결이 끝났는지 3초마다 확인한다
@@ -39,6 +41,7 @@ export function TelegramSection() {
   useEffect(() => {
     if (data?.linked && waitingUntil !== null) {
       setWaitingUntil(null);
+      setLinkUrl(null);
       toast.success("텔레그램이 연결되었습니다");
     }
   }, [data?.linked, waitingUntil]);
@@ -47,7 +50,9 @@ export function TelegramSection() {
     setBusy(true);
     try {
       const { url } = await api<{ url: string }>("/api/me/telegram/link", { method: "POST" });
+      setLinkUrl(url);
       setWaitingUntil(Date.now() + WAIT_MS);
+      // 비동기 응답 뒤라 브라우저가 팝업으로 막을 수 있다. 막히면 아래의 링크를 누른다
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) {
       toast.error(errorMessage(error));
@@ -106,6 +111,16 @@ export function TelegramSection() {
                 ? "버튼을 누르면 텔레그램이 열립니다. 대화 아래의 [시작] 버튼을 한 번 누르면 끝납니다."
                 : "텔레그램에서 [시작]을 눌러 주세요. 연결되면 이 화면이 자동으로 바뀝니다. (링크는 10분 동안 유효합니다)"}
             </p>
+            {linkUrl && waitingUntil !== null && (
+              <a
+                href={linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-sm underline"
+              >
+                텔레그램이 열리지 않으면 여기를 누르세요
+              </a>
+            )}
           </>
         )}
       </CardContent>
