@@ -1,3 +1,4 @@
+import { recordAudit } from "@fmerp/audit";
 import {
   type Actor,
   can,
@@ -6,7 +7,7 @@ import {
   type Recipient,
 } from "@fmerp/core";
 import { schema } from "@fmerp/db";
-import { and, eq, gt, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import { businessTarget, departmentTarget } from "../org-access";
 import type { ServiceContext } from "./context";
 import { ApprovalError } from "./errors";
@@ -136,13 +137,63 @@ export async function canView(
   return facts !== null && canViewDocument(facts);
 }
 
-/** 열람할 수 없으면 문서가 있는지도 알려 주지 않는다 (404) */
+/** 같은 사용자·문서의 감사인 열람 기록은 이 시간 안에는 한 번만 남긴다 (조회·새로고침마다 쌓이는 것을 막는다) */
+export const AUDIT_VIEW_DEDUPE_MS = 10 * 60 * 1000;
+
+/**
+ * 열람 근거가 `read_all`(감사인·소유자) 하나뿐일 때만 열람 사실을 감사 로그에 남긴다 (AUD-010).
+ * 참여자·참조자 등 다른 근거로 보는 경우는 기록하지 않는다.
+ */
+async function recordReadAllView(
+  ctx: ServiceContext,
+  documentId: string,
+  securityLevel: string,
+): Promise<void> {
+  if (!ctx.userId) return;
+  const A = schema.auditLog;
+  const [recent] = await ctx.tx
+    .select({ id: A.id })
+    .from(A)
+    .where(
+      and(
+        eq(A.action, "document.audit_view"),
+        eq(A.actorUserId, ctx.userId),
+        eq(A.targetId, documentId),
+        gt(A.occurredAt, sql`now() - ${`${AUDIT_VIEW_DEDUPE_MS / 1000} seconds`}::interval`),
+      ),
+    )
+    .limit(1);
+  if (recent) return;
+  const [doc] = await ctx.tx
+    .select({ title: schema.document.title })
+    .from(schema.document)
+    .where(eq(schema.document.id, documentId));
+  const label = doc?.title ?? documentId;
+  await recordAudit(ctx.tx, {
+    accountId: ctx.accountId,
+    actorUserId: ctx.userId,
+    action: "document.audit_view",
+    target: {
+      type: "document",
+      id: documentId,
+      label: securityLevel === "normal" ? label : `${label} [${securityLevel}]`,
+    },
+    result: "success",
+    request: ctx.request,
+  });
+}
+
+/** 열람할 수 없으면 문서가 있는지도 알려 주지 않는다 (404). 감사인·소유자만의 열람이면 기록을 남긴다 */
 export async function requireView(
   ctx: ServiceContext,
   documentId: string,
   viewer: Viewer,
 ): Promise<void> {
-  if (!(await canView(ctx, documentId, viewer))) {
+  const facts = await loadViewFacts(ctx, documentId, viewer);
+  if (!facts || !canViewDocument(facts)) {
     throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+  }
+  if (facts.hasReadAll && !canViewDocument({ ...facts, hasReadAll: false })) {
+    await recordReadAllView(ctx, documentId, facts.securityLevel);
   }
 }
