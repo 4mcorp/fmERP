@@ -177,7 +177,7 @@ flowchart LR
 | 작업 큐 | pg-boss 12 | Redis 불필요 |
 | PDF | Playwright 1.63 (worker, 한글 폰트 포함) | |
 | 외부 연결 | **cloudflared (Tunnel)** | TLS·라우팅을 Cloudflare가 처리하므로 **별도 리버스 프록시(Caddy) 불필요** |
-| 이메일 | AWS SES | |
+| 알림 | 인앱 + 텔레그램 봇 DM | 이메일(AWS SES)·카카오 알림톡은 문서(PRD NTF-004)로만 남기고 구현하지 않음. 봇 토큰은 서버 `.env`에만 (ADR 없음, M8 plan) |
 
 ### 6.2 Docker Compose 서비스 (운영, 메모리 16GB 기준)
 | 서비스 | 이미지 | 역할 | 메모리 상한 |

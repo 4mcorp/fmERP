@@ -67,6 +67,7 @@
 | Cloudflare Tunnel·Access·무료 플랜 제약(100MB·100초) | DEPLOYMENT_PLAN 7장 |
 | DB 덤프·복구 절차·이관 절차·로컬 사본 | DEPLOYMENT_PLAN 8장, [ops/migration.md](ops/migration.md)(운영자 절차), ADR 0011 |
 | 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
+| 스테이징 구축·배포·Access 절차 (초안, 미검증) | [ops/staging.md](ops/staging.md), `docker-compose.staging.yml`, `apps/web/Dockerfile`, `.env.staging.example` |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
 | 개발용 테스트 계정 목록·비밀번호 | `packages/auth/src/test-accounts.ts` (시드: `pnpm db:seed`) |
 | 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
@@ -158,6 +159,7 @@
 | [2026-10-05-m6-security-review.md](plan/2026-10-05-m6-security-review.md) | done | M6 보안 리뷰: 관리자의 로그 경유 문서 내용 노출(S1)·타임라인 정보 노출(S2·S3)·인쇄 로그 범람(S4) 수정, 후속 FU-M6-1·2 |
 | [2026-10-05-m7-backup-export-migration.md](plan/2026-10-05-m7-backup-export-migration.md) | done | M7 덤프·내보내기·이관: 암호화 DB 덤프(시스템 관리자), 계정 전체 내보내기 ZIP, 복원·리허설·색인 재구성 CLI, 이관 절차 |
 | [2026-10-05-m7-security-review.md](plan/2026-10-05-m7-security-review.md) | done | M7 보안 리뷰: 앱 역할이 완료 상태·키를 직접 쓰는 문제(S1~S3)·덤프 멈춤(S4) 수정, 후속 FU-M7-1~3 |
+| [2026-10-05-m8-notifications-home.md](plan/2026-10-05-m8-notifications-home.md) | draft | M8 알림·홈·통합 검증: outbox 소비 알림(인앱·이메일), 홈 대시보드, E2E S2~S7, 스테이징 초안 |
 
 ---
 
@@ -190,6 +192,7 @@
 | 대상 | 경로 |
 |---|---|
 | 웹 화면 (App Router) | `apps/web/app/` — 로그인 필요 영역 `app/(app)/`(홈, `me`, `admin/members`, `onboarding`, `invite/[token]`), 테스트 로그인 `app/dev-login` |
+| 홈 대시보드 (M8) | `apps/web/app/(app)/page.tsx` — 결재 대기·진행 중·최근 완료·자주 쓰는 양식 |
 | 앱 공통 레이아웃·계정 전환 메뉴 | `apps/web/components/app-shell.tsx` |
 | 화면 쪽 API 호출·타입 | `apps/web/lib/api.ts`, `lib/types.ts`, `lib/queries.ts` |
 | shadcn 컴포넌트 / 유틸 | `apps/web/components/ui/`, `apps/web/lib/utils.ts` |
@@ -223,4 +226,5 @@
 | 덤프·내보내기·복구 (M7) | `packages/backup/src/`(`dump.ts` 덤프, `export.ts` 계정 ZIP, `reindex.ts` 색인 재구성, `rehearse.ts` 복원·리허설, `age.ts` 암호화, `verify.ts` 패키지 검증), 순수 규칙 `packages/core/src/backup.ts`·`doc-number-parse.ts` |
 | 덤프·내보내기 API·화면 | `apps/web/server/system/backups.ts`·`routes/system.ts`(시스템 관리자), `server/account-export.ts`·`routes/exports.ts`(계정 내보내기), 화면 `app/(app)/system/backups`, `app/(app)/admin/backups` |
 | 백업 worker·운영자 CLI | `apps/worker/src/backup-jobs.ts`(스케줄·요청 처리), `backup-config.ts`, `cli/{dump,restore,rehearse,reindex}.ts` (`pnpm backup:*`) |
+| 알림 (M8) | `packages/core/src/notification-rules.ts`(이벤트→수신자·문구), `packages/notification/src/`(`consume.ts` 이벤트→알림, `send.ts` 텔레그램 발송, `link.ts` 연결 토큰·`/start`, `receiver.ts` 폴링·웹훅 어댑터, `telegram-api.ts`), worker `apps/worker/src/notification-jobs.ts`, API `apps/web/server/routes/notifications.ts`·`server/notifications/`, 화면 `app/(app)/notifications`·`components/me/telegram-section.tsx`·`app/(app)/system/telegram`, 스키마 `packages/db/src/schema/notification.ts`, `migrations/0018~0020` |
 | 덤프·내보내기 스키마 | `packages/db/src/schema/backup.ts`, `migrations/0015_backup_tables.sql`, `0016_backup_rls_roles.sql` |
