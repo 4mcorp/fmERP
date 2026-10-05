@@ -49,9 +49,9 @@ await registerPackageJobs(boss, appDb.pool, {
 
 // 백업 (M7): 설정이 있을 때만 켠다. 운영에서는 env.ts가 설정 누락을 막는다
 let backupJobs: BackupJobs | null = null;
-const backup = createBackupContext(env, storage, authDb.db);
+const backup = createBackupContext(env, storage, authDb.db, appDb.db);
 if (backup) {
-  backupJobs = await registerBackupJobs(boss, backup.deps);
+  backupJobs = await registerBackupJobs(boss, backup.deps, backup.exportDeps);
 } else {
   console.warn("[worker] BACKUP_DATABASE_URL·BACKUP_AGE_RECIPIENTS가 없어 백업이 꺼져 있습니다");
 }

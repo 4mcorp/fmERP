@@ -1,5 +1,5 @@
 // 백업 도구 설정 (worker와 운영자 CLI가 공유). 환경 변수 → BackupDeps
-import type { BackupDeps } from "@fmerp/backup";
+import type { BackupDeps, ExportDeps } from "@fmerp/backup";
 import { createDatabase, type Db } from "@fmerp/db";
 import type { ObjectStorage } from "@fmerp/storage";
 import type { env as Env } from "./env";
@@ -8,6 +8,7 @@ type WorkerEnv = typeof Env;
 
 export interface BackupContext {
   deps: BackupDeps;
+  exportDeps: ExportDeps;
   close: () => Promise<void>;
 }
 
@@ -16,6 +17,7 @@ export function createBackupContext(
   env: WorkerEnv,
   storage: ObjectStorage,
   authDb: Db,
+  appDb: Db,
 ): BackupContext | null {
   if (!env.BACKUP_DATABASE_URL || !env.BACKUP_AGE_RECIPIENTS) return null;
   const db = createDatabase(env.BACKUP_DATABASE_URL);
@@ -32,6 +34,7 @@ export function createBackupContext(
         url: env.BACKUP_PG_DUMP_URL ?? env.BACKUP_DATABASE_URL,
       },
     },
+    exportDeps: { pool: db.pool, appDb, storage },
     close: () => db.pool.end(),
   };
 }

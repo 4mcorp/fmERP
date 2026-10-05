@@ -85,7 +85,7 @@ beforeAll(async () => {
       url: "postgres://fmerp_backup:fmerp_backup_dev@localhost:5432/fmerp",
     },
   };
-  jobs = await registerBackupJobs(boss, deps);
+  jobs = await registerBackupJobs(boss, deps, { pool: backupDb.pool, appDb: appDb.db, storage });
 }, 60_000);
 
 afterAll(async () => {
@@ -138,4 +138,28 @@ describe("worker 백업 작업 (BAK-005·006)", () => {
     expect(done.storage_key).toMatch(/^_system\/db-dumps\/manual\//);
     expect(await storage.head(done.storage_key)).toMatchObject({ size: Number(done.size) });
   }, 60_000);
+
+  it("계정 내보내기 요청(QUEUED)을 집어 ZIP을 만들고 READY로 바꾼다 (덤프와 따로 돈다)", async () => {
+    const acc = await owner.pool.query("select id from account where slug = 'fourm-test'");
+    const mem = await owner.pool.query(
+      "select m.id from membership m join \"user\" u on u.id = m.user_id where u.email = 'owner@example.com' and m.account_id = $1",
+      [acc.rows[0].id],
+    );
+    await owner.pool.query(
+      "update backup_job set status = 'FAILED', finished_at = now(), error = 'test' where status in ('QUEUED','RUNNING')",
+    );
+    const { rows } = await owner.pool.query(
+      "insert into backup_job (account_id, requested_by_membership_id) values ($1, $2) returning id",
+      [acc.rows[0].id, mem.rows[0].id],
+    );
+    const done = await waitFor(async () => {
+      const r = await owner.pool.query(
+        "select status, storage_key, size from backup_job where id = $1",
+        [rows[0].id],
+      );
+      return r.rows[0]?.status === "READY" ? r.rows[0] : null;
+    });
+    expect(done.storage_key).toBe(`exports/${acc.rows[0].id}/${rows[0].id}.zip`);
+    expect(await storage.head(done.storage_key)).toMatchObject({ size: Number(done.size) });
+  }, 90_000);
 });

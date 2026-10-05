@@ -18,7 +18,7 @@ const storage = new ObjectStorage({
   secretAccessKey: env.S3_SECRET_ACCESS_KEY,
   forcePathStyle: env.S3_FORCE_PATH_STYLE,
 });
-const backup = createBackupContext(env, storage, authDb.db);
+const backup = createBackupContext(env, storage, authDb.db, authDb.db);
 
 let code = 0;
 try {
