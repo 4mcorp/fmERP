@@ -152,7 +152,7 @@ test.describe("감사 기능 (M6)", () => {
   test("감사 로그와 월간 점검 화면은 360px에서도 쓸 수 있다", async ({ page }) => {
     await loginAs(page, "김대표");
     await page.goto("/admin/audit");
-    await expect(page.getByRole("button", { name: "조회" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "조회", exact: true })).toBeVisible();
     await expect(page.getByRole("table")).toBeVisible();
     await expectNoPageOverflow(page);
     await page.goto("/admin/audit/review");
