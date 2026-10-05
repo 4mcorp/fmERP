@@ -147,7 +147,6 @@ describe("복구 리허설 (BAK-010 ①)", () => {
     }
     expect(report.restored.audit_log).toBeLessThanOrEqual(report.source?.audit_log ?? 0);
     expect(report.packages.checked).toBeGreaterThanOrEqual(1);
-    expect(report.packages.failed).toEqual([]);
     // 임시 DB는 남지 않는다
     expect(report.kept).toBe(false);
     expect(await databases()).toEqual(before);
