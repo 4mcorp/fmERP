@@ -38,6 +38,9 @@ export async function requireStrictReauth(d: ServerDeps, session: ActiveSession)
   }
 }
 
+/** 덤프 객체는 이 접두사 아래에만 있다. DB의 키가 다른 곳을 가리키면 URL·태그를 만들지 않는다 (다층 방어) */
+const DUMP_PREFIX = "_system/db-dumps/";
+
 const HISTORY_LIMIT = 50;
 /** 덤프 파일의 다운로드 서명 URL 유효 시간 (M7 Q6와 같은 원칙: 짧게) */
 const DOWNLOAD_URL_SECONDS = 600;
@@ -192,7 +195,11 @@ export async function backupDownloadUrl(
   request: RequestCtx,
 ) {
   const row = await loadBackup(d, id);
-  if (row.status !== "SUCCEEDED" || !row.storageKey || row.deleteRequestedAt) {
+  if (
+    row.status !== "SUCCEEDED" ||
+    !row.storageKey?.startsWith(DUMP_PREFIX) ||
+    row.deleteRequestedAt
+  ) {
     throw new ApiError(409, "not_downloadable", "내려받을 수 없는 덤프입니다");
   }
   const filename = `fmerp-db-${row.id.slice(-8)}.dump.age`;
@@ -225,7 +232,7 @@ export async function requestBackupDeletion(
   if (row.kind !== "manual") {
     throw new ApiError(409, "not_deletable", "자동 덤프는 보관 규칙에 따라 자동으로 정리됩니다");
   }
-  if (row.status !== "SUCCEEDED" || !row.storageKey) {
+  if (row.status !== "SUCCEEDED" || !row.storageKey?.startsWith(`${DUMP_PREFIX}manual/`)) {
     throw new ApiError(409, "not_deletable", "완료된 수동 덤프만 삭제할 수 있습니다");
   }
   if (row.deleteRequestedAt) return { ok: true as const };

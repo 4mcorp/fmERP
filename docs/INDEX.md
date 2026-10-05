@@ -137,6 +137,7 @@
 | [2026-10-05-modal-dropdown-and-org-db-flake.md](ts/2026-10-05-modal-dropdown-and-org-db-flake.md) | ui, modal, select, test, flaky, db | 모달 안 드롭다운은 실제 마우스로 확인(배경 클릭 판정은 위치도 본다, ref에 인라인 함수 금지). 테스트에서 코드로 `find`할 때는 사업자 범위로 먼저 거르고 간헐 실패는 실제 값을 남겨 원인을 찾는다 |
 | [2026-10-05-audit-view-race-and-concurrent-int-runs.md](ts/2026-10-05-audit-view-race-and-concurrent-int-runs.md) | audit, db, concurrency, test, flaky, worker | 여러 API를 동시에 부르는 화면의 "확인 후 기록"은 advisory lock으로 직렬화하고 동시 요청 테스트로 고정. 통합 테스트를 백그라운드로 걸고 같은 DB에 또 돌리지 않는다. 공유 큐는 시작 시 비운다 |
 | [2026-10-05-backup-role-existing-volume.md](ts/2026-10-05-backup-role-existing-volume.md) | db, migration, backup, infra | 슈퍼유저만 만들 수 있는 DB 역할(fmerp_backup)은 기존 볼륨에 직접 SQL로 적용하고, 마이그레이션은 역할이 없으면 원인을 알리며 멈춘다 |
+| [2026-10-05-m7-implementation-lessons.md](ts/2026-10-05-m7-implementation-lessons.md) | backup, db, test, flaky, git, workflow, ui, windows | 키셋 커서 시각은 마이크로초 문자열(2,000건 넘는 같은 시각 시험), 시험은 끝날 때 가짜 상태·PIN·객체를 되돌리고 전체를 연속 2회 통과, 커밋 후 `git log -1`로 확인, 프로세스는 내가 띄운 PID만 종료, 폼의 Radix Select는 빈 값 무시 |
 
 ---
 
@@ -156,6 +157,7 @@
 | [2026-10-05-m6-audit.md](plan/2026-10-05-m6-audit.md) | done | M6 감사 기능: 감사인 열람 기록, 문서 이력 타임라인, 인쇄 기록, 감사 로그 조회 화면, 월간 점검 |
 | [2026-10-05-m6-security-review.md](plan/2026-10-05-m6-security-review.md) | done | M6 보안 리뷰: 관리자의 로그 경유 문서 내용 노출(S1)·타임라인 정보 노출(S2·S3)·인쇄 로그 범람(S4) 수정, 후속 FU-M6-1·2 |
 | [2026-10-05-m7-backup-export-migration.md](plan/2026-10-05-m7-backup-export-migration.md) | done | M7 덤프·내보내기·이관: 암호화 DB 덤프(시스템 관리자), 계정 전체 내보내기 ZIP, 복원·리허설·색인 재구성 CLI, 이관 절차 |
+| [2026-10-05-m7-security-review.md](plan/2026-10-05-m7-security-review.md) | done | M7 보안 리뷰: 앱 역할이 완료 상태·키를 직접 쓰는 문제(S1~S3)·덤프 멈춤(S4) 수정, 후속 FU-M7-1~3 |
 
 ---
 

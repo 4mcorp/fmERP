@@ -304,4 +304,20 @@ describe("DB 덤프 (BAK-005·006, AUD-023)", () => {
     await queueManual("활성");
     expect((await runManualDumpNow(deps(), { note: `${MARK} 중복` })).status).toBe("BUSY");
   }, 120_000);
+
+  it("pg_dump가 시간 안에 끝나지 않으면 중단하고 실패로 기록한다 (멈춘 덤프가 새 덤프를 막지 않게)", async () => {
+    await closeActive(); // 앞선 시험이 남긴 대기 행이 있으면 새 요청이 막힌다
+    const id = await queueManual("시간 초과");
+    const out = await runDump(deps({ timeoutMs: 1 }), { kind: "manual", systemBackupId: id });
+    expect(out.status).toBe("FAILED");
+    if (out.status === "FAILED") expect(out.error).toMatch(/안에 끝나지 않아 중단/);
+    const { rows } = await owner.pool.query(
+      "select status, storage_key from system_backup where id = $1",
+      [id],
+    );
+    expect(rows[0]).toEqual({ status: "FAILED", storage_key: null });
+    // 막혀 있지 않다: 바로 다음 덤프가 시작된다
+    const next = await runManualDumpNow(deps(), { note: `${MARK} 이어서` });
+    expect(next.status).toBe("SUCCEEDED");
+  }, 120_000);
 });

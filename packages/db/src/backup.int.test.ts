@@ -103,7 +103,7 @@ describe("system_backup (시스템 덤프 이력)", () => {
   });
 
   it("성공한 덤프는 크기·해시·키가 있어야 한다", async () => {
-    const { rows } = await insertDump(app.pool, "RUNNING", "제약");
+    const { rows } = await insertDump(backup.pool, "RUNNING", "제약");
     const id = rows[0]?.id;
     await expect(
       backup.pool.query("update system_backup set status = 'SUCCEEDED' where id = $1", [id]),
@@ -113,7 +113,7 @@ describe("system_backup (시스템 덤프 이력)", () => {
 
   it("요청 대기·실행 중인 덤프는 동시에 하나만 있을 수 있다", async () => {
     await insertDump(app.pool, "QUEUED", "동시1");
-    await expect(insertDump(app.pool, "RUNNING", "동시2")).rejects.toThrow(
+    await expect(insertDump(backup.pool, "RUNNING", "동시2")).rejects.toThrow(
       /system_backup_single_active/,
     );
     // 끝난 행은 제한과 무관하다
@@ -219,6 +219,53 @@ describe("backup_job (계정 내보내기)", () => {
       backup.pool.query("update backup_job set status = 'READY' where id = $1", [id]),
     ).rejects.toThrow(/바꿀 수 없습니다/);
     await clean();
+  });
+});
+
+describe("앱 역할은 요청만 만들 수 있다 (보안 리뷰 S5)", () => {
+  it("앱 역할이 완료 상태나 저장소 키를 직접 넣은 행은 거부한다 (다른 계정의 내보내기·덤프를 가리키는 행을 만들 수 없다)", async () => {
+    await clean();
+    const asApp = async (text: string, params: unknown[]) => {
+      const c = await app.pool.connect();
+      try {
+        await c.query("begin");
+        await c.query("select set_config('app.account_id', $1, true)", [accountA]);
+        await c.query(text, params);
+      } finally {
+        await c.query("rollback");
+        c.release();
+      }
+    };
+    // 계정 내보내기: READY나 storage_key가 있는 행
+    await expect(
+      asApp(
+        "insert into backup_job (account_id, requested_by_membership_id, status, size, sha256, storage_key, expires_at) values ($1, $2, 'READY', 1, 'a', 'exports/다른계정/x.zip', now() + interval '1 day')",
+        [accountA, membershipA],
+      ),
+    ).rejects.toThrow(/요청\(QUEUED\)만/);
+    await expect(
+      asApp(
+        "insert into backup_job (account_id, requested_by_membership_id, storage_key) values ($1, $2, 'exports/다른계정/x.zip')",
+        [accountA, membershipA],
+      ),
+    ).rejects.toThrow(/요청\(QUEUED\)만/);
+    // 시스템 덤프: SUCCEEDED나 storage_key가 있는 행
+    await expect(
+      asApp(
+        "insert into system_backup (kind, status, size, sha256, storage_key) values ('manual', 'SUCCEEDED', 1, 'a', 'docs/비밀')",
+        [],
+      ),
+    ).rejects.toThrow(/요청\(QUEUED\)만/);
+    // 정상 요청은 그대로 된다
+    await asApp("insert into backup_job (account_id, requested_by_membership_id) values ($1, $2)", [
+      accountA,
+      membershipA,
+    ]);
+    // 소유자(마이그레이션)·백업 역할이 만드는 행은 막지 않는다 (시험 도구·운영 CLI가 쓴다)
+    await owner.pool.query(
+      "insert into system_backup (kind, status, note, finished_at, size, sha256, storage_key) values ('auto', 'SUCCEEDED', $1, now(), 1, 'a', 'k')",
+      [`${MARK} 소유자`],
+    );
   });
 });
 

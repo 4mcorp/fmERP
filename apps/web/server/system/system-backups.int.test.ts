@@ -57,7 +57,7 @@ async function closeActive() {
 
 /** 이력에 성공한 덤프 한 건을 만들고 실제 객체도 올려 둔다 */
 async function seedDump(kind: "auto" | "manual", body = "암호문 흉내") {
-  const key = `test/${MARK}/${kind}-${Math.random().toString(36).slice(2)}.dump.age`;
+  const key = `_system/db-dumps/${kind === "auto" ? "daily" : "manual"}/test-${MARK}-${Math.random().toString(36).slice(2)}.dump.age`;
   keys.push(key);
   await storage.put(key, body, "application/octet-stream");
   const info = await storage.hashObject(key);
@@ -234,5 +234,18 @@ describe("덤프 내려받기·삭제 요청 (BAK-007)", () => {
     const { id } = await seedDump("auto");
     await verifyPin("owner");
     expect((await req("owner", `/api/system/backups/${id}/delete`, "POST")).status).toBe(409);
+  });
+
+  it("DB의 저장소 키가 덤프 경로 밖을 가리키면 내려받기·삭제 요청을 거부한다 (다층 방어)", async () => {
+    await verifyPin("owner");
+    // 덤프 경로가 아닌 곳(예: 다른 계정의 문서 객체)을 가리키는 성공 행 (끝난 행은 트리거로 고정돼 처음부터 이렇게 넣는다)
+    const { rows } = await owner.pool.query(
+      `insert into system_backup (kind, status, note, finished_at, size, sha256, storage_key)
+       values ('manual', 'SUCCEEDED', $1, now(), 1, 'a', 'docs/다른계정/비밀.txt') returning id`,
+      [`${MARK} 잘못된 키`],
+    );
+    const bad = { id: rows[0].id as string };
+    expect((await req("owner", `/api/system/backups/${bad.id}/download`)).status).toBe(409);
+    expect((await req("owner", `/api/system/backups/${bad.id}/delete`, "POST")).status).toBe(409);
   });
 });

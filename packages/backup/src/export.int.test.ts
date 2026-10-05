@@ -291,6 +291,43 @@ describe("계정 전체 내보내기 (BAK-009)", () => {
     await dropDocument(doc.documentId);
   }, 180_000);
 
+  it("첨부 키가 이 계정의 경로 밖을 가리키면 ZIP에 담지 않고 경고한다 (다층 방어)", async () => {
+    await closeActive();
+    const env = { appDb: appDb.db, authDb: authDb.db, storage };
+    // 다른 계정의 객체를 가리키도록 DB 값이 잘못됐다고 가정한다
+    const foreignKey = `docs/${seed.otherAccountId}/FM/2026/남의문서/attachments/비밀.txt`;
+    await storage.put(foreignKey, "다른 회사의 비밀 내용");
+    const doc = await seedCompletedDocument(
+      env,
+      seed,
+      "외부 첨부 문서",
+      { memo: "x" },
+      {
+        attachment: { filename: "내것.txt", bytes: new TextEncoder().encode("내 첨부") },
+      },
+    );
+    await generatePackage(
+      { db: appDb.db, authDb: authDb.db, storage, renderPdf },
+      { accountId: seed.accountId, documentId: doc.documentId },
+    );
+    await owner.pool.query("update attachment set storage_key = $2 where document_id = $1", [
+      doc.documentId,
+      foreignKey,
+    ]);
+
+    await queueExport(seed.accountId, ownerMembership);
+    const out = await runNextExport(deps());
+    expect(out?.status).toBe("READY");
+    if (out?.status !== "READY") return;
+    const zip = readZip(await download(out.key));
+    for (const [name, bytes] of zip) {
+      expect(bytes.toString("utf8"), name).not.toContain("다른 회사의 비밀 내용");
+    }
+    expect([...zip.keys()].some((n) => n.includes(`${doc.documentId}/attachments/`))).toBe(false);
+    expect((zip.get("README.txt") as Buffer).toString("utf8")).toContain("계정 경로 밖의 첨부");
+    await dropDocument(doc.documentId);
+  }, 180_000);
+
   it("대기열: 가장 오래된 요청부터, 동시에 선점해도 같은 작업을 두 번 잡지 않는다", async () => {
     await closeActive();
     const a = await queueExport(seed.accountId, ownerMembership);

@@ -510,6 +510,12 @@ export async function runAccountExport(
         });
       }
       for (const a of attachmentsByDoc.get(d.id) ?? []) {
+        // 첨부 키는 이 계정의 문서 경로 아래여야 한다. DB 값이 다른 곳(다른 계정 등)을 가리키면 담지 않는다 (다층 방어)
+        if (!a.storageKey.startsWith(`docs/${job.accountId}/`)) {
+          warnings.push(`계정 경로 밖의 첨부라 담지 않았습니다: ${a.id}`);
+          missing += 1;
+          continue;
+        }
         objects.push({
           key: a.storageKey,
           path: `${base}attachments/${a.id}_${safeEntryName(a.filename)}`,

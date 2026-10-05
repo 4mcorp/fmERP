@@ -111,6 +111,10 @@ async function loadPackage(deps: ReindexDeps, prefix: string, accountId: string)
   if (approval.restore.accountId !== accountId) {
     throw new Skip("패키지 안의 계정이 경로의 계정과 다릅니다");
   }
+  // 첨부 참조는 이 계정의 문서 경로 아래여야 한다 (다른 계정의 객체를 가리키는 패키지는 되살리지 않는다)
+  if (approval.attachments.some((a) => !a.key.startsWith(`docs/${accountId}/`))) {
+    throw new Skip("첨부 참조가 계정 경로 밖을 가리킵니다");
+  }
   return { manifestBytes, approval, document };
 }
 

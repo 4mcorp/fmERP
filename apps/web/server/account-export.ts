@@ -185,6 +185,10 @@ export async function exportDownloadUrl(
     if (job.status !== "READY" || !job.storageKey) {
       throw new ApiError(409, "export_not_ready", "아직 완성되지 않은 내보내기입니다");
     }
+    // 저장소 키는 worker만 채운다(앱 역할은 못 넣는다). 그래도 이 계정의 내보내기 경로가 아니면 URL을 만들지 않는다 (다층 방어)
+    if (!job.storageKey.startsWith(`exports/${tenant.accountId}/`)) {
+      throw new ApiError(409, "export_invalid", "내려받을 수 없는 내보내기입니다");
+    }
     const day = d.now().toISOString().slice(0, 10).replaceAll("-", "");
     const filename = `fmerp-export-${day}-${job.id.slice(-8)}.zip`;
     const url = await d.storage.presignGet(job.storageKey, DOWNLOAD_URL_SECONDS, {

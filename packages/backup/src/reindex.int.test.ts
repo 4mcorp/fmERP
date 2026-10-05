@@ -225,6 +225,36 @@ describe("색인 재구성 (BAK-010 ②)", () => {
     expect(result.skipped.find((s) => s.documentId === doc.documentId)?.reason).toMatch(/v1/);
   }, 180_000);
 
+  it("첨부 참조가 계정 경로 밖을 가리키는 패키지는 되살리지 않는다 (다층 방어)", async () => {
+    const attachment = { filename: "내것.txt", bytes: new TextEncoder().encode("내 첨부") };
+    const doc = await makeDoc("외부 첨부 참조", { attachment });
+    const approvalKey = `${doc.prefix}final/approval.json`;
+    const manifestKey = `${doc.prefix}final/manifest.json`;
+    const approval = JSON.parse(new TextDecoder().decode(await storage.getBytes(approvalKey))) as {
+      attachments: { key: string }[];
+    };
+    (approval.attachments[0] as { key: string }).key =
+      `docs/${seed.otherAccountId}/FM/2026/남의문서/attachments/비밀.txt`;
+    const approvalBytes = new TextEncoder().encode(JSON.stringify(approval));
+    await storage.put(approvalKey, approvalBytes, "application/json");
+    // manifest의 approval.json 해시를 새 내용에 맞춰 일관되게 만든다 (해시 검사가 아니라 경로 검사에 걸리게)
+    const manifest = JSON.parse(new TextDecoder().decode(await storage.getBytes(manifestKey))) as {
+      files: { path: string; size: number; sha256: string }[];
+    };
+    const entry = manifest.files.find((f) => f.path === "approval.json");
+    if (entry) {
+      entry.size = approvalBytes.length;
+      entry.sha256 = sha(approvalBytes);
+    }
+    await storage.put(manifestKey, JSON.stringify(manifest), "application/json");
+    await loseFromDb(doc.documentId);
+    const result = await reindexAccount(deps, { accountId: seed.accountId });
+    expect(result.restored).not.toContain(doc.documentId);
+    expect(result.skipped.find((s) => s.documentId === doc.documentId)?.reason).toMatch(
+      /계정 경로 밖/,
+    );
+  }, 180_000);
+
   it("다른 계정의 패키지는 건드리지 않는다", async () => {
     const result = await reindexAccount(deps, { accountId: seed.otherAccountId });
     // 다른 회사에는 완료 패키지가 없거나, 있어도 이 계정 경로에서만 찾는다

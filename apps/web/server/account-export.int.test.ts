@@ -280,4 +280,24 @@ describe("내보내기 내려받기 (BAK-009)", () => {
     expect((await req("member1", `/api/account/exports/${ready.jobId}/download`)).status).toBe(403);
     await clearJobs();
   });
+
+  it("DB의 저장소 키가 이 계정의 내보내기 경로 밖을 가리키면 URL을 만들지 않는다 (다층 방어)", async () => {
+    await clearJobs();
+    await verifyPin("owner");
+    const me = ids[`owner@example.com:${accountA}`] as string;
+    // 다른 계정의 내보내기 파일을 가리키는 READY 행 (앱 역할은 이런 행을 만들 수 없지만, 만들어졌다고 가정한다)
+    const foreign = await seedReady(accountB, ids[`owner-b@example.com:${accountB}`] as string, {
+      body: "다른 회사 ZIP",
+    });
+    const jobId = crypto.randomUUID();
+    await owner.pool.query(
+      `insert into backup_job (id, account_id, status, requested_by_membership_id, finished_at, size, sha256, storage_key, expires_at)
+       values ($1, $2, 'READY', $3, now(), 1, 'a', $4, now() + interval '7 days')`,
+      [jobId, accountA, me, foreign.key],
+    );
+    const res = await req("owner", `/api/account/exports/${jobId}/download`);
+    expect(res.status).toBe(409);
+    expect(await json(res)).toMatchObject({ code: "export_invalid" });
+    await clearJobs();
+  });
 });

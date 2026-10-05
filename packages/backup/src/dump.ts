@@ -27,6 +27,8 @@ export interface BackupDeps {
   pgDump: PgToolConfig;
   /** 임시 파일 폴더. 기본은 OS 임시 폴더 */
   tmpDir?: string;
+  /** pg_dump가 이 시간(밀리초) 안에 끝나지 않으면 중단한다. 기본 90분. 멈춘 덤프가 RUNNING으로 남아 새 덤프를 막지 않게 한다 */
+  timeoutMs?: number;
   now?: () => Date;
 }
 
@@ -44,6 +46,9 @@ export type DumpOutcome =
   | { status: "FAILED"; id: string; error: string }
   /** 다른 덤프가 실행 중이거나 이미 처리된 요청이라 아무것도 하지 않았다 */
   | { status: "BUSY" };
+
+/** 덤프 제한 시간: 100명 규모 DB는 분 단위로 끝난다. 이보다 오래 걸리면 멈춘 것으로 본다 */
+const DEFAULT_TIMEOUT_MS = 90 * 60_000;
 
 const KST_OFFSET_MS = 9 * 3_600_000;
 const pad = (n: number, w = 2) => String(n).padStart(w, "0");
@@ -192,6 +197,9 @@ export async function runDump(deps: BackupDeps, options: DumpOptions): Promise<D
 
   let workDir: string | null = null;
   let tool: ReturnType<typeof runTool> | null = null;
+  let timer: NodeJS.Timeout | null = null;
+  let timedOut = false;
+  const timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   try {
     // 2. 자동 덤프: 직전 덤프 이후 변경이 없으면 건너뛴다
     if (options.kind === "auto") {
@@ -226,6 +234,10 @@ export async function runDump(deps: BackupDeps, options: DumpOptions): Promise<D
       "--exclude-table-data=public.session",
       "--exclude-table-data=public.verification",
     ]);
+    timer = setTimeout(() => {
+      timedOut = true;
+      tool?.child.kill();
+    }, timeoutMs);
     const encrypted = await encryptStream(tool.stdout, deps.recipients);
     const hash = createHash("sha256");
     let size = 0;
@@ -242,6 +254,11 @@ export async function runDump(deps: BackupDeps, options: DumpOptions): Promise<D
     );
     // pg_dump가 도중에 실패하면 잘린 덤프가 정상 파일처럼 암호화되므로 종료 코드를 반드시 확인한다
     const { code, stderr } = await tool.done;
+    if (timedOut) {
+      throw new Error(
+        `pg_dump가 ${Math.round(timeoutMs / 60_000)}분 안에 끝나지 않아 중단했습니다`,
+      );
+    }
     if (code !== 0) throw new Error(`pg_dump 실패 (종료 코드 ${code}): ${clip(stderr)}`);
     if (size === 0) throw new Error("덤프가 비어 있습니다");
     const sha256 = hash.digest("hex");
@@ -280,6 +297,7 @@ export async function runDump(deps: BackupDeps, options: DumpOptions): Promise<D
     );
     return { status: "FAILED", id, error: message };
   } finally {
+    if (timer) clearTimeout(timer);
     if (workDir) await rm(workDir, { recursive: true, force: true });
   }
 }
