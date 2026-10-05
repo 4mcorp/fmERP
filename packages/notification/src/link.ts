@@ -1,6 +1,7 @@
 // 텔레그램 연결 (M8 plan): 일회용 토큰 발급·소비와 수신한 업데이트 처리.
 // 수신 방식(폴링·웹훅)과 무관하게 processUpdate 한 곳을 거친다. 인증 DB(fmerp_auth) 연결로 동작한다.
 import { createHash, randomBytes } from "node:crypto";
+import { recordAudit } from "@fmerp/audit";
 import { type Db, schema } from "@fmerp/db";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import type { TelegramClient, TelegramUpdate } from "./telegram-api";
@@ -110,6 +111,15 @@ export async function processUpdate(
     await reply(MESSAGES.invalid);
     return "invalid";
   }
+  // 알림이 가는 곳이 바뀌므로 연결이 완료된 것도 감사 로그에 남긴다 (요청만 남기면 누가 연결했는지 모른다)
+  await recordAudit(deps.authDb, {
+    accountId: null,
+    actorUserId: linked.userId,
+    action: "notification.telegram_linked",
+    target: { type: "user", id: linked.userId },
+    result: "success",
+    request: {},
+  }).catch(() => undefined);
   await reply(MESSAGES.linked);
   return "linked";
 }

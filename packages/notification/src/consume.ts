@@ -9,7 +9,6 @@ export type PendingEvent = {
   account_id: string;
   document_id: string;
   type: string;
-  payload: ApprovalEvent;
 };
 
 export interface CreatedNotification {
@@ -17,7 +16,7 @@ export interface CreatedNotification {
   accountId: string;
 }
 
-/** 아직 알림 처리 표시가 없는 최근 7일의 결재 이벤트 (계정을 가로지르는 DB 함수) */
+/** 아직 알림 처리 표시가 없는 최근 7일의 결재 이벤트의 위치 (계정을 가로지르는 DB 함수. 내용은 돌려주지 않는다) */
 export async function pendingEvents(appDb: Db, limit = 100): Promise<PendingEvent[]> {
   const result = await appDb.execute<PendingEvent>(
     sql`select * from notification_pending_events(${limit}, interval '7 days')`,
@@ -33,6 +32,12 @@ export async function processEvent(
   telegram = true,
 ): Promise<CreatedNotification[]> {
   return withTenant(appDb, event.account_id, async (tx) => {
+    // 이벤트 내용(반려 의견·결재선 변경 사유 포함)은 테넌트를 지정한 이 트랜잭션에서만 읽는다
+    const [row] = await tx
+      .select({ payload: schema.approvalEvent.payload })
+      .from(schema.approvalEvent)
+      .where(eq(schema.approvalEvent.id, event.event_id));
+    const payload = row?.payload as unknown as ApprovalEvent | undefined;
     const [doc] = await tx
       .select({
         title: schema.document.title,
@@ -42,7 +47,7 @@ export async function processEvent(
       .where(eq(schema.document.id, event.document_id));
 
     const created: CreatedNotification[] = [];
-    if (doc) {
+    if (doc && payload) {
       const [drafter] = await tx
         .select({ name: schema.user.name })
         .from(schema.membership)
@@ -67,7 +72,7 @@ export async function processEvent(
         recipientIds = rows.flatMap((r) => [r.target, r.assignee]).filter((id) => id !== null);
       }
 
-      const drafts = notificationsForEvent(event.payload, {
+      const drafts = notificationsForEvent(payload, {
         docTitle: doc.title,
         drafterId: doc.drafterId,
         drafterName: drafter?.name ?? "알 수 없음",

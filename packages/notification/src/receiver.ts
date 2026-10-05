@@ -3,6 +3,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Db } from "@fmerp/db";
 import { processUpdate } from "./link";
+import { safeErrorText } from "./safe-error";
 import {
   getReceiverMode,
   getUpdateOffset,
@@ -23,7 +24,7 @@ export interface Logger {
   error(message: string): void;
 }
 
-const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const errorText = safeErrorText;
 
 export type UpdateHandler = (update: TelegramUpdate) => Promise<unknown>;
 

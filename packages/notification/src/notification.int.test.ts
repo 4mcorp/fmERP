@@ -153,6 +153,12 @@ describe("텔레그램 연결 (토큰 + /start)", () => {
     const { token } = await createLinkToken(auth.db, drafter.userId, now());
     expect(await start(555, `/start ${token}`)).toBe("linked");
     expect(await findChatId(auth.db, drafter.userId)).toBe(555);
+    // 연결이 완료된 것이 감사 로그에 남는다
+    const audit = await owner.pool.query(
+      "select 1 from audit_log where action = 'notification.telegram_linked' and actor_user_id = $1",
+      [drafter.userId],
+    );
+    expect(audit.rowCount).toBeGreaterThan(0);
     expect(fake.sent).toEqual([{ chatId: 555, text: MESSAGES.linked }]);
   });
 

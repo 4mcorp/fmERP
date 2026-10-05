@@ -137,7 +137,7 @@ describe("notification_pending_events (교차 계정 이벤트 조회)", () => {
     const eventId = ev.rows[0]?.id ?? "";
 
     const before = await app.pool.query<{ event_id: string }>(
-      "select event_id from notification_pending_events(500, interval '1 hour')",
+      "select * from notification_pending_events(500, interval '1 hour')",
     );
     expect(before.rows.map((r) => r.event_id)).toContain(eventId);
 
@@ -147,6 +147,13 @@ describe("notification_pending_events (교차 계정 이벤트 조회)", () => {
         accountA,
       ]),
     );
+    // 계정을 가로지르는 함수는 이벤트의 위치만 알려 준다 (반려 의견 같은 내용은 돌려주지 않는다)
+    expect(before.fields.map((f) => f.name).sort()).toEqual([
+      "account_id",
+      "document_id",
+      "event_id",
+      "type",
+    ]);
     const after = await app.pool.query<{ event_id: string }>(
       "select event_id from notification_pending_events(500, interval '1 hour')",
     );

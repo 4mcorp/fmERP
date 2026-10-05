@@ -7,6 +7,7 @@ import {
   pendingTelegram,
   ReceiverManager,
   type SendDeps,
+  safeErrorText,
   sendTelegramNotification,
   type TelegramClient,
 } from "@fmerp/notification";
@@ -33,7 +34,7 @@ export interface NotificationJobs {
   stop(): Promise<void>;
 }
 
-const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const errorText = safeErrorText;
 
 const enqueue = (boss: PgBoss, job: TelegramJob) =>
   boss.send(NOTIFY_TELEGRAM, job, {

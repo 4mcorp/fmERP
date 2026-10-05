@@ -8,6 +8,7 @@ import {
   getReceiverStatus,
   processUpdate,
   type ReceiverMode,
+  safeErrorText,
   setReceiverMode,
   TelegramClient,
   type TelegramUpdate,
@@ -110,9 +111,7 @@ export async function handleWebhook(
     await processUpdate(update, { authDb: d.authDb, client, now: d.now });
   } catch (error) {
     // 오류 객체 전체(SQL·파라미터)는 남기지 않는다
-    console.error(
-      `[telegram] 웹훅 업데이트 처리 실패: ${error instanceof Error ? error.message : "알 수 없음"}`,
-    );
+    console.error(`[telegram] 웹훅 업데이트 처리 실패: ${safeErrorText(error)}`);
   }
 }
 

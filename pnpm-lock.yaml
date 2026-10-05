@@ -308,6 +308,9 @@ importers:
 
   packages/notification:
     dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../audit
       '@fmerp/core':
         specifier: workspace:*
         version: link:../core

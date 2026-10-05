@@ -26,6 +26,7 @@ export {
   verifyWebhookSecret,
   WebhookReceiver,
 } from "./receiver";
+export { safeErrorText } from "./safe-error";
 export {
   notificationLink,
   pendingTelegram,
