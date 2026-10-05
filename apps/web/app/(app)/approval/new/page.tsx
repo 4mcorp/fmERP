@@ -146,6 +146,13 @@ export default function NewApprovalPage() {
     }
   }
 
+  // 홈의 바로가기(?form=<양식 id>)로 들어오면 그 양식을 미리 고른다
+  useEffect(() => {
+    if (!forms || formId) return;
+    const wanted = new URLSearchParams(window.location.search).get("form");
+    if (wanted && forms.some((f) => f.id === wanted)) setFormId(wanted);
+  }, [forms, formId]);
+
   if (!forms) return null;
 
   const FormCard = ({ f }: { f: FormSummary }) => (
