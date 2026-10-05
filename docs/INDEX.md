@@ -136,6 +136,7 @@
 | [2026-10-04-dev-db-not-migrated.md](ts/2026-10-04-dev-db-not-migrated.md) | db, migration, dev, test, workflow | 서버 시작 전·새 마이그레이션이 생기면 `pnpm db:migrate`(필요시 `db:seed`). 화면이 비고 API가 한꺼번에 500이면 개발 DB 마이그레이션을 먼저 의심. 화면 작업은 개발 서버에서 직접 열어 확인 |
 | [2026-10-05-modal-dropdown-and-org-db-flake.md](ts/2026-10-05-modal-dropdown-and-org-db-flake.md) | ui, modal, select, test, flaky, db | 모달 안 드롭다운은 실제 마우스로 확인(배경 클릭 판정은 위치도 본다, ref에 인라인 함수 금지). 테스트에서 코드로 `find`할 때는 사업자 범위로 먼저 거르고 간헐 실패는 실제 값을 남겨 원인을 찾는다 |
 | [2026-10-05-audit-view-race-and-concurrent-int-runs.md](ts/2026-10-05-audit-view-race-and-concurrent-int-runs.md) | audit, db, concurrency, test, flaky, worker | 여러 API를 동시에 부르는 화면의 "확인 후 기록"은 advisory lock으로 직렬화하고 동시 요청 테스트로 고정. 통합 테스트를 백그라운드로 걸고 같은 DB에 또 돌리지 않는다. 공유 큐는 시작 시 비운다 |
+| [2026-10-05-backup-role-existing-volume.md](ts/2026-10-05-backup-role-existing-volume.md) | db, migration, backup, infra | 슈퍼유저만 만들 수 있는 DB 역할(fmerp_backup)은 기존 볼륨에 직접 SQL로 적용하고, 마이그레이션은 역할이 없으면 원인을 알리며 멈춘다 |
 
 ---
 

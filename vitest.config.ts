@@ -6,6 +6,7 @@ const integrationEnv = {
   DATABASE_URL: "postgres://fmerp_app:fmerp_app_dev@localhost:55433/fmerp",
   AUTH_DATABASE_URL: "postgres://fmerp_auth:fmerp_auth_dev@localhost:55433/fmerp",
   MIGRATION_DATABASE_URL: "postgres://fmerp_migrator:fmerp_migrator_dev@localhost:55433/fmerp",
+  BACKUP_DATABASE_URL: "postgres://fmerp_backup:fmerp_backup_dev@localhost:55433/fmerp",
   BETTER_AUTH_SECRET: "integration-test-secret-not-for-production-use",
   BETTER_AUTH_URL: "http://localhost:3000",
   DEV_TEST_LOGIN: "true",

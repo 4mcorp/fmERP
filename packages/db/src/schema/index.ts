@@ -2,6 +2,7 @@
 export * from "./approval";
 export * from "./audit";
 export * from "./auth";
+export * from "./backup";
 export * from "./form";
 export * from "./mailbox";
 export * from "./org";
