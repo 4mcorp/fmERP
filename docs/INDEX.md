@@ -150,7 +150,7 @@
 | [2026-10-03-m3-approval-engine.md](plan/2026-10-03-m3-approval-engine.md) | done | M3 결재 엔진: 상태 머신·결재선·병렬 합의·대결·동시성·채번·완료 후 불변 |
 | [2026-10-03-m3-security-review.md](plan/2026-10-03-m3-security-review.md) | done | M3 보안 리뷰: 처리 권한·불변성·기안자 권한 상승, 후속 FU-11~15 |
 | [2026-10-03-m4-forms-drafting-approval-ui.md](plan/2026-10-03-m4-forms-drafting-approval-ui.md) | accepted | M4 양식·기안·결재 화면: 양식 빌더·버전, 본문 S3 리비전, 첨부(staging 검증), 처리 API·재인증, 모바일 결재 |
-| [2026-10-04-m5-completion-mailbox.md](plan/2026-10-04-m5-completion-mailbox.md) | accepted | M5 완료 처리·문서함: 결재 PDF·완료 패키지(`final/` 한 번만 쓰기), 완료 이벤트 큐, 열람 권한 통합, 수신·공람·참조, 문서함·검색·내보내기, 일괄 이관 |
+| [2026-10-04-m5-completion-mailbox.md](plan/2026-10-04-m5-completion-mailbox.md) | done | M5 완료 처리·문서함: 결재 PDF·완료 패키지(`final/` 한 번만 쓰기), 완료 이벤트 큐, 열람 권한 통합, 수신·공람·참조, 문서함·검색·내보내기, 일괄 이관 |
 
 ---
 

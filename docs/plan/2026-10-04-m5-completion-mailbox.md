@@ -1,7 +1,7 @@
 ---
 title: M5 완료 처리·문서함 상세 계획
 date: 2026-10-04
-status: accepted
+status: done
 tags: [approval, storage, worker, pdf, db, api, ui, search, security, test]
 related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m4-forms-drafting-approval-ui.md, docs/rules/storage-backup.md, docs/rules/architecture.md, docs/adr/0007, docs/adr/0008, APV-063, APV-064, APV-070, APV-072, APV-073, APV-080, APV-081, APV-082, APV-083, BAK-002, BAK-003, BAK-004, BAK-008, PERM-003, ADM-005]
 ---
@@ -92,11 +92,11 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m4-forms-dra
 **M5-D 수신·공람·이관 화면**
 - [x] D1. 기안 화면 수신·공람·참조 지정, 수신함 접수·배부, 공람 열람 표시
 - [x] D2. 결재 문서 관리(일괄 이관·미처리 목록), 퇴사·휴직 경고 연결
-- [ ] D3. E2E(완료 → PDF·패키지, 문서함·검색, 수신 접수·배부·공람, 이관), `web-design-guidelines` 점검, 보안 리뷰, 문서 정리
+- [x] D3. E2E(완료 → PDF·패키지, 문서함·검색, 수신 접수·배부·공람, 이관), `web-design-guidelines` 점검, 보안 리뷰, 문서 정리
 
 ## 완료 기준
-- [ ] 단위: `canViewDocument`(참여자·참조·수신 접수 전후·공람·감사인·소유자·관리자 불가·대외비 수신), 이관 규칙
-- [ ] 통합:
+- [x] 단위: `canViewDocument`(참여자·참조·수신 접수 전후·공람·감사인·소유자·관리자 불가·대외비 수신), 이관 규칙
+- [x] 통합:
   - **패키지:** 완료하면 `final/` 4개 파일과 해시가 맞는 manifest, 같은 키에 다시 쓰면 거부(같은 해시 재실행은 성공), 앱 키에 삭제 수단 없음, 패키지 생성 실패 후 스윕이 재시도
   - **권한:** 타 계정·무권한 사용자의 문서·PDF·ZIP·검색 결과 접근 불가(404), 대외비 수신은 접수자만
   - **검색:** 본문·첨부 파일명·금액 범위·기간 검색이 열람 권한으로 필터링됨, 10만 건 시드에서 문서함·검색 1초 이내
@@ -104,9 +104,9 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m4-forms-dra
   - **이관:** 진행 중 결재가 있는 퇴사 거부, 일괄 이관은 사유·재인증·감사 로그, 처리된 단계 보호
   - **테넌트 격리:** 신규 테이블 전부
   - M2·M3·M4 통합 테스트 회귀 없음
-- [ ] E2E(데스크톱·360px 모바일): 완료 → PDF 링크 → 다운로드, 문서함 이동·검색, 수신 접수·배부, 공람 열람 표시, 일괄 이관
-- [ ] lint · typecheck · 전체 테스트 · `next build`
-- [ ] 한글 PDF 샘플 7종 시각 확인 결과를 기록 (검증하지 못한 부분은 그대로 적는다)
+- [x] E2E(데스크톱·360px 모바일, **PDF는 "생성 중/내려받기 표시"까지 확인하고 실제 파일 다운로드는 통합 테스트가 확인한다. E2E 환경에는 worker가 없다**): 완료 → PDF 링크 → 다운로드, 문서함 이동·검색, 수신 접수·배부, 공람 열람 표시, 일괄 이관
+- [x] lint · typecheck · 전체 테스트 · `next build`
+- [ ] **(미완)** 한글 PDF 샘플 7종 시각 확인 결과를 기록 (검증하지 못한 부분은 그대로 적는다)
 
 ## 결정 필요
 | # | 항목 | 제안 |
@@ -137,3 +137,4 @@ related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-03-m4-forms-dra
 - 2026-10-04: M5-B3 완료 (다운로드). `GET /api/approvals/{id}/package`(상태), `/package/pdf`(서명 URL, 감사 로그), `/package/zip`(final/ 4개 파일 + 첨부 스트리밍, PIN 재인증, 감사 로그). `archiver` ~8.0.0과 타입 전용 `@types/archiver` ~8.0.0(MIT)을 web에 설치하고 TECH_SPEC 표에 반영했다. 통합 274·단위 267·lint·typecheck·`next build` 통과. **M5-B 전체 완료.** 남은 것: worker Dockerfile 초안, Pretendard 글꼴(라이선스 승인 필요), M5-C·D 화면과 E2E
 - 2026-10-05: M5-C1·C2 완료 (화면). `/mailbox/{box}`(9종 탭·더 보기), `/search`(조건·URL 상태·CSV·엑셀 내보내기), 완료 문서 상세의 PDF 생성 상태·PDF·ZIP 내려받기를 만들고 개발 서버에서 직접 열어 확인했다(문서함·검색 결과·PDF 서명 URL이 실제 Chromium PDF를 줌·내보내기 200). 확인 중 발견한 문제를 고쳤다: 커서가 시각을 밀리초로 잘라 같은 밀리초의 문서가 쪽 사이에서 빠지던 결함(문서함·검색 전체), 개발용 S3 버킷이 없어 본문 저장이 `revision_conflict`로 보이던 문제(`env:up`이 버킷을 만들도록 함). **알려진 한계:** 내보내기는 `exceljs`가 아니라 `write-excel-file`, ZIP은 첨부를 메모리에 쌓지 않고 스트리밍하나 매우 큰 첨부의 실제 한도는 측정하지 않았다
 - 2026-10-05: M5-D1·D2 완료 (수신·공람·이관 화면)와 E2E. 기안 화면의 참조·수신·공람 지정(바로 저장), 문서 상세의 접수·배부·공람 지정과 열람 현황, 결재 문서 관리(일괄 이관·장기 미처리, PIN 재인증)와 퇴사 처리 연결을 만들고 개발 서버에서 직접 눌러 확인했다. **확인 중 발견해 고친 결함:** ① 접수 담당자가 접수 전에는 문서를 열 수 없던 규칙(접수 담당자는 완료 후 접수 전에도 열람하도록 PERM-003 보정), ② 열람할 수 없는 문서가 빈 화면으로 보이던 문제(안내 표시), ③ 모달 안 드롭다운이 모달을 닫던 결함(배경 클릭 판정·포털 위치, [ts](../ts/2026-10-05-modal-dropdown-and-org-db-flake.md)), ④ `org-db` 테스트 간헐 실패(사업자 범위 필터 누락). E2E `m5.spec.ts` 6개(데스크톱 5·모바일 1)와 전체 E2E 30개, 통합 283을 6회 연속 통과. **남은 것:** `web-design-guidelines` 점검, M5 보안 리뷰(B·C·D), worker Dockerfile 초안, Pretendard 글꼴(라이선스 승인 필요), 완료 기준 점검과 plan 마무리
+- 2026-10-05: **M5 완료 (보류 항목 있음).** `web-design-guidelines` 점검(높음 2건·중간·낮음 일부 반영, URL 상태·스켈레톤·의견 등록 버튼 비활성은 보류)과 보안 리뷰(B~D: 확실한 취약점 없음, 로그에 오류 객체 전체를 남기던 낮음 1건 수정)를 마쳤다. lint·typecheck·단위 270·통합 283(6회 연속)·E2E 30·`next build` 통과. **보류·미검증:** ① Pretendard 글꼴(OFL 라이선스 승인 필요, 지금은 시스템 글꼴), ② 한글 PDF 샘플 7종의 시각 확인 — 샘플 1건만 스크린샷으로 확인했고 PDF 파일 자체를 페이지 이미지로 보는 도구(poppler)가 없어 인쇄용 여백·용지 방향은 눈으로 검증하지 못했다, ③ worker Dockerfile은 초안이며 도커 빌더 연결 오류로 빌드를 검증하지 못했다, ④ 일괄 이관·접수 같은 흐름의 알림(M8)과 감사인 화면(M6), 덤프·내보내기·이관 도구(M7)는 범위 밖
