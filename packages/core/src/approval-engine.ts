@@ -366,11 +366,15 @@ export function withdraw(doc: ApprovalDoc, actorId: string, ctx: EngineContext):
   );
   if (touched) return fail("cannot_withdraw", "이미 처리된 단계가 있어 회수할 수 없습니다");
   const d = new Draft(doc, ctx);
+  // 단계를 되돌리기 전에 결재 차례였던 사람을 기록한다 (회수 알림 대상, NTF-001)
+  const activeAssigneeIds = doc.steps
+    .filter((s) => s.type !== "post" && s.status === "ACTIVE")
+    .flatMap((s) => [...s.assigneeIds, ...Object.values(s.delegates)]);
   for (const s of d.doc.steps) {
     if (s.status !== "PENDING") d.setStatus(s, "PENDING");
   }
   d.setDocStatus("WITHDRAWN");
-  d.events.push({ type: "withdrawn", docId: doc.id });
+  d.events.push({ type: "withdrawn", docId: doc.id, activeAssigneeIds });
   return d.result({
     stepId: doc.steps[0]?.id ?? "",
     action: "withdraw",

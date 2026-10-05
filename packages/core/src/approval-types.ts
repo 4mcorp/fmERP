@@ -121,7 +121,7 @@ export type ApprovalEvent =
   | { type: "reactivated"; docId: string; stepId: string }
   | { type: "held"; docId: string; stepId: string }
   | { type: "released"; docId: string; stepId: string }
-  | { type: "withdrawn"; docId: string }
+  | { type: "withdrawn"; docId: string; activeAssigneeIds?: string[] }
   | { type: "rejected"; docId: string; stepId: string; comment: string }
   | { type: "completed"; docId: string }
   | { type: "post_pending"; docId: string; stepId: string; assigneeIds: string[] }
