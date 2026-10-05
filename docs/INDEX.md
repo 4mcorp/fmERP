@@ -134,6 +134,7 @@
 | [2026-10-03-playwright-label-region-and-shell-heredoc.md](ts/2026-10-03-playwright-label-region-and-shell-heredoc.md) | test, e2e, playwright, windows, tooling | 폼 컨트롤은 role(combobox)로 찾는다. 행 버튼엔 항목 이름이 든 aria-label. 긴 heredoc·`python -` 대신 파일 도구 |
 | [2026-10-04-e2e-fix-loop-and-controlled-folder-access.md](ts/2026-10-04-e2e-fix-loop-and-controlled-folder-access.md) | windows, e2e, playwright, biome, defender, workflow | E2E 실패는 실패한 테스트만 재실행하고 전체는 단계 끝에 1회. 같은 실패 3회 반복 시 멈추고 보고. EPERM은 재시도 루프 대신 Windows 차단 기록 확인 |
 | [2026-10-04-dev-db-not-migrated.md](ts/2026-10-04-dev-db-not-migrated.md) | db, migration, dev, test, workflow | 서버 시작 전·새 마이그레이션이 생기면 `pnpm db:migrate`(필요시 `db:seed`). 화면이 비고 API가 한꺼번에 500이면 개발 DB 마이그레이션을 먼저 의심. 화면 작업은 개발 서버에서 직접 열어 확인 |
+| [2026-10-05-modal-dropdown-and-org-db-flake.md](ts/2026-10-05-modal-dropdown-and-org-db-flake.md) | ui, modal, select, test, flaky, db | 모달 안 드롭다운은 실제 마우스로 확인(배경 클릭 판정은 위치도 본다, ref에 인라인 함수 금지). 테스트에서 코드로 `find`할 때는 사업자 범위로 먼저 거르고 간헐 실패는 실제 값을 남겨 원인을 찾는다 |
 
 ---
 
