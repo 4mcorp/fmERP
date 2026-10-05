@@ -135,7 +135,10 @@ describe("부서 뎁스 트리거 (S2, ORG-010~013)", () => {
         .update(schema.department)
         .set({ parentId: dept("SALES").id })
         .where(eq(schema.department.id, dept("FIN").id));
-      const rows = await tx.select().from(schema.department);
+      // 다른 사업자(포엠물류)에 같은 코드의 부서가 복제돼 있을 수 있어 본사 부서만 본다.
+      // 사업자를 가리지 않고 코드로 찾으면 DB 행 순서에 따라 엉뚱한 부서가 잡혀 가끔 실패했다
+      const fmId = dept("FIN").businessId;
+      const rows = (await tx.select().from(schema.department)).filter((r) => r.businessId === fmId);
       const fin = rows.find((r) => r.code === "FIN");
       const cash = rows.find((r) => r.code === "CASH");
       expect([fin?.depth, cash?.depth]).toEqual([2, 3]);

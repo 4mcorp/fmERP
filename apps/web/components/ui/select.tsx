@@ -4,6 +4,8 @@ import { cn } from "cn";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
 import type * as React from "react";
+import { useContext } from "react";
+import { ModalContainerContext } from "@/components/ui/modal";
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
   return <SelectPrimitive.Root data-slot="select" {...props} />;
@@ -56,8 +58,10 @@ function SelectContent({
   align = "center",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  // 모달 안이면 그 안에 그린다 (body에 그리면 모달 밖이라 클릭할 수 없다)
+  const modal = useContext(ModalContainerContext);
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal container={modal ?? undefined}>
       <SelectPrimitive.Content
         data-slot="select-content"
         data-align-trigger={position === "item-aligned"}
