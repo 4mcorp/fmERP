@@ -135,6 +135,7 @@
 | [2026-10-04-e2e-fix-loop-and-controlled-folder-access.md](ts/2026-10-04-e2e-fix-loop-and-controlled-folder-access.md) | windows, e2e, playwright, biome, defender, workflow | E2E 실패는 실패한 테스트만 재실행하고 전체는 단계 끝에 1회. 같은 실패 3회 반복 시 멈추고 보고. EPERM은 재시도 루프 대신 Windows 차단 기록 확인 |
 | [2026-10-04-dev-db-not-migrated.md](ts/2026-10-04-dev-db-not-migrated.md) | db, migration, dev, test, workflow | 서버 시작 전·새 마이그레이션이 생기면 `pnpm db:migrate`(필요시 `db:seed`). 화면이 비고 API가 한꺼번에 500이면 개발 DB 마이그레이션을 먼저 의심. 화면 작업은 개발 서버에서 직접 열어 확인 |
 | [2026-10-05-modal-dropdown-and-org-db-flake.md](ts/2026-10-05-modal-dropdown-and-org-db-flake.md) | ui, modal, select, test, flaky, db | 모달 안 드롭다운은 실제 마우스로 확인(배경 클릭 판정은 위치도 본다, ref에 인라인 함수 금지). 테스트에서 코드로 `find`할 때는 사업자 범위로 먼저 거르고 간헐 실패는 실제 값을 남겨 원인을 찾는다 |
+| [2026-10-05-audit-view-race-and-concurrent-int-runs.md](ts/2026-10-05-audit-view-race-and-concurrent-int-runs.md) | audit, db, concurrency, test, flaky, worker | 여러 API를 동시에 부르는 화면의 "확인 후 기록"은 advisory lock으로 직렬화하고 동시 요청 테스트로 고정. 통합 테스트를 백그라운드로 걸고 같은 DB에 또 돌리지 않는다. 공유 큐는 시작 시 비운다 |
 
 ---
 
@@ -151,7 +152,7 @@
 | [2026-10-03-m3-security-review.md](plan/2026-10-03-m3-security-review.md) | done | M3 보안 리뷰: 처리 권한·불변성·기안자 권한 상승, 후속 FU-11~15 |
 | [2026-10-03-m4-forms-drafting-approval-ui.md](plan/2026-10-03-m4-forms-drafting-approval-ui.md) | accepted | M4 양식·기안·결재 화면: 양식 빌더·버전, 본문 S3 리비전, 첨부(staging 검증), 처리 API·재인증, 모바일 결재 |
 | [2026-10-04-m5-completion-mailbox.md](plan/2026-10-04-m5-completion-mailbox.md) | done | M5 완료 처리·문서함: 결재 PDF·완료 패키지(`final/` 한 번만 쓰기), 완료 이벤트 큐, 열람 권한 통합, 수신·공람·참조, 문서함·검색·내보내기, 일괄 이관 |
-| [2026-10-05-m6-audit.md](plan/2026-10-05-m6-audit.md) | draft | M6 감사 기능: 감사인 열람 기록, 문서 이력 타임라인, 인쇄 기록, 감사 로그 조회 화면, 월간 점검 (사용자 검토 대기) |
+| [2026-10-05-m6-audit.md](plan/2026-10-05-m6-audit.md) | done | M6 감사 기능: 감사인 열람 기록, 문서 이력 타임라인, 인쇄 기록, 감사 로그 조회 화면, 월간 점검 |
 
 ---
 
@@ -173,6 +174,7 @@
 | [0005-better-auth-organization-as-tenant.md](adr/0005-better-auth-organization-as-tenant.md) | Better Auth organization = 계정(테넌트), `fmerp_auth` 역할, 자체 초대 |
 | [0008-document-body-revisions-and-attachments.md](adr/0008-document-body-revisions-and-attachments.md) | 본문 S3 리비전·상신 내용 해시, 첨부 staging 검증 후 복사, 양식 불변 버전, 결재선·재인증 규칙, dnd-kit 미사용 |
 | [0009-completion-package-and-document-search.md](adr/0009-completion-package-and-document-search.md) | 완료 패키지는 manifest를 마지막에 쓰는 한 번만 쓰기, 후결은 `post-approvals/`, 상태는 `document_package`, 열람 판정 통합, 검색은 상신 시 본문 텍스트 색인 |
+| [0010-audit-view-log-and-timeline.md](adr/0010-audit-view-log-and-timeline.md) | 감사인 열람은 `read_all` 단독일 때만 10분 중복 억제로 기록(advisory lock), 타임라인은 `approval_action` 정본 병합, 월간 점검은 추가 전용 `audit_review` |
 | [0007-approval-engine-rules.md](adr/0007-approval-engine-rules.md) | 결재 엔진은 core 순수 함수, 낙관적 잠금·추가 전용·outbox 저장, 그룹·정족수·반려·후결·대결 규칙 |
 | [0006-org-permission-model.md](adr/0006-org-permission-model.md) | 부서 트리는 구체화 경로+트리거, 역할은 `membership.role` + 범위 있는 `role_grant`, `can()` 한 곳 판정 |
 

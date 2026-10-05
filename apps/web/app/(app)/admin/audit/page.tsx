@@ -245,10 +245,13 @@ function AuditLogView() {
               <Label htmlFor="a-target">대상 ID</Label>
               <Input
                 id="a-target"
+                name="targetId"
+                autoComplete="off"
+                spellCheck={false}
                 value={form.targetId}
                 onChange={(e) => set("targetId")(e.target.value)}
                 maxLength={100}
-                placeholder="문서 ID 등"
+                placeholder="문서 ID 등…"
               />
             </div>
             <div className="space-y-2">
@@ -317,7 +320,10 @@ function AuditLogView() {
                   </TableCell>
                   <TableCell>{r.actorName ?? "시스템"}</TableCell>
                   <TableCell>{actionLabel(r.action)}</TableCell>
-                  <TableCell className="max-w-64 truncate">
+                  <TableCell
+                    className="max-w-64 truncate"
+                    title={r.targetLabel ?? r.targetId ?? undefined}
+                  >
                     {r.targetLabel ?? r.targetId ?? "—"}
                   </TableCell>
                   <TableCell>

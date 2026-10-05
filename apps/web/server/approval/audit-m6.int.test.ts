@@ -4,7 +4,7 @@ import { reviewTargetPeriod } from "@fmerp/core";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { json, loginAs, type TestClient } from "../test-client";
+import { clientWithCookie, json, loginAs, type TestClient } from "../test-client";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");
@@ -476,5 +476,22 @@ describe("월간 접속 기록 점검 (AUD-026)", () => {
       /permission denied/,
     );
     await expect(appDb.pool.query("delete from audit_review")).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("인증 없는 접근", () => {
+  it("로그인하지 않으면 감사 API는 모두 401이다", async () => {
+    const anon = clientWithCookie("");
+    const id = await submittedDoc();
+    for (const [path, method] of [
+      ["/api/audit-logs", "GET"],
+      ["/api/audit-logs/reviews", "GET"],
+      ["/api/audit-logs/reviews", "POST"],
+      [`/api/approvals/${id}/timeline`, "GET"],
+      [`/api/approvals/${id}/print-log`, "POST"],
+    ] as const) {
+      const res = await anon.request(path, { method, body: method === "POST" ? {} : undefined });
+      expect(res.status, `${method} ${path}`).toBe(401);
+    }
   });
 });
