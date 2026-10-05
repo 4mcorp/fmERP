@@ -59,7 +59,12 @@ export async function seedCompletedDocument(
   ctx: SeedContext,
   title = "완료 패키지 시험",
   values: Record<string, unknown> = { memo: "본문" },
-  options: { attachment?: { filename: string; bytes: Uint8Array } } = {},
+  options: {
+    attachment?: { filename: string; bytes: Uint8Array };
+    /** 문서번호와 규칙을 함께 정한다 (색인 재구성의 시리즈 보정 시험) */
+    docNo?: string;
+    numbering?: Record<string, unknown>;
+  } = {},
 ) {
   const { accountId, businessId, formVersionId, members } = ctx;
   const documentId = crypto.randomUUID();
@@ -72,11 +77,12 @@ export async function seedCompletedDocument(
   await withTenant(env.appDb, accountId, async (tx) => {
     // 리비전과 결재선은 초안에서만 추가할 수 있어서 초안 → 진행 중 → 완료 순서로 만든다
     await tx.execute(sql`insert into document (id, account_id, business_id, drafter_membership_id, drafter_snapshot, title, status, policy,
-        doc_no, form_version_id, content_hash, latest_revision, submitted_at, completed_at, created_at)
+        doc_no, numbering, form_version_id, content_hash, latest_revision, submitted_at, completed_at, created_at)
       values (${documentId}::uuid, ${accountId}::uuid, ${businessId}::uuid, ${drafter}::uuid,
         ${JSON.stringify({ membershipId: drafter, name: "박사원", departmentName: "재무팀", positionName: "사원" })}::jsonb,
         ${title}, 'DRAFT', '{"disagree":"reject","rejectTo":"drafter","auditCanReject":true}'::jsonb,
-        ${`FM-T-2026-${Math.floor(Math.random() * 9000 + 1000)}`}, ${formVersionId}::uuid, ${"c".repeat(64)}, 0,
+        ${options.docNo ?? `FM-T-2026-${Math.floor(Math.random() * 9000 + 1000)}`},
+        ${options.numbering ? JSON.stringify(options.numbering) : null}::jsonb, ${formVersionId}::uuid, ${"c".repeat(64)}, 0,
         '2026-10-01T01:00:00Z', null, '2026-09-30T12:00:00Z')`);
     await tx.insert(schema.documentRevision).values({
       accountId,

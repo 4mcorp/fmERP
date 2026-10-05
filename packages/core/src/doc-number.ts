@@ -80,3 +80,8 @@ export function seriesKey(rule: string, ctx: DocNumberContext, cycle: ResetCycle
         : "-";
   return `${render(rule, ctx, () => "#")}|${period}`;
 }
+
+/** 일련번호 자리를 `marker`로 둔 렌더링 (렌더링한 번호에서 순번을 되읽을 때 쓴다) */
+export function renderForParse(rule: string, ctx: DocNumberContext, marker: string): string {
+  return render(rule, ctx, () => marker);
+}

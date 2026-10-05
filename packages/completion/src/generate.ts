@@ -132,6 +132,7 @@ export async function generatePackage(
           steps: data.steps,
           actions: data.actions,
           attachments: data.attachments,
+          restore: data.restore,
         }),
       ),
     );

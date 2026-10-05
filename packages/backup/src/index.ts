@@ -31,4 +31,11 @@ export {
   splitCommand,
   toolVersion,
 } from "./pg-tools";
+export {
+  type ReindexDeps,
+  type ReindexOptions,
+  type ReindexResult,
+  reindexAccount,
+} from "./reindex";
 export { restoreDump } from "./restore";
+export { PackageVerifyError, verifyPackage } from "./verify";

@@ -107,6 +107,8 @@ export {
   type PersonCard,
   type RecordAction,
   type RecordStep,
+  type RestoreInfo,
+  type RestoreStep,
 } from "./completion-package";
 export {
   type DelegationCheck,
@@ -141,6 +143,7 @@ export {
   seriesKey,
   validateDocNumberRule,
 } from "./doc-number";
+export { parseDocNumberSeq } from "./doc-number-parse";
 export {
   canDistribute,
   canReceive,

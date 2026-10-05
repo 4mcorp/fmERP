@@ -1,5 +1,12 @@
 // 완료 패키지에 담을 데이터를 DB·S3에서 읽는다 (PRD BAK-003, APV-063). 호출자가 withTenant 트랜잭션을 연다.
-import type { AttachmentRef, FormSchema, PersonCard, RecordAction, RecordStep } from "@fmerp/core";
+import type {
+  AttachmentRef,
+  FormSchema,
+  PersonCard,
+  RecordAction,
+  RecordStep,
+  RestoreInfo,
+} from "@fmerp/core";
 import { type Db, schema, type Tx } from "@fmerp/db";
 import { docPrefix, type ObjectStorage } from "@fmerp/storage";
 import { asc, eq, inArray } from "drizzle-orm";
@@ -43,6 +50,8 @@ export interface PackageData {
     signatures: Record<string, string>;
     stamps: Record<string, string>;
   };
+  /** 색인 재구성용 DB 값 (approval.json의 restore 블록, BAK-010) */
+  restore: RestoreInfo;
 }
 
 const STEP_LABEL: Record<string, string> = {
@@ -313,5 +322,22 @@ export async function loadPackageData(
     names,
     approvers,
     images,
+    restore: {
+      accountId: doc.accountId,
+      businessId: doc.businessId,
+      businessCode: row.businessCode,
+      formVersionId: doc.formVersionId,
+      policy: doc.policy as unknown as Record<string, unknown>,
+      numbering: (doc.numbering as unknown as Record<string, unknown> | null) ?? null,
+      drafterSnapshot: doc.drafterSnapshot,
+      createdAt: doc.createdAt.toISOString(),
+      steps: stepRows.map((s) => ({
+        id: s.id,
+        assigneeIds: s.assigneeIds,
+        delegates: s.delegates,
+        assigneeSnapshot: s.assigneeSnapshot,
+        version: s.version,
+      })),
+    },
   };
 }

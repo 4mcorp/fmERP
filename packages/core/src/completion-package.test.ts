@@ -83,7 +83,7 @@ describe("buildApprovalJson (BAK-003)", () => {
   it("결재선·처리 이력·문서번호·상신 해시와 첨부 참조를 담는다", () => {
     const json = buildApprovalJson(record());
     expect(json).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       documentId: "d-1",
       docNo: "FM-GEN-2026-0001",
       contentHash: "c".repeat(64),
@@ -97,6 +97,36 @@ describe("buildApprovalJson (BAK-003)", () => {
       docHash: "c".repeat(64),
     });
     expect(json.attachments[0]).toMatchObject({ filename: "영수증.pdf", sha256: "a".repeat(64) });
+  });
+
+  it("색인 재구성용 restore 블록은 있을 때만 담고 단계는 id순으로 정렬한다 (형식 v2)", () => {
+    expect(buildApprovalJson(record())).not.toHaveProperty("restore");
+    const withRestore = buildApprovalJson({
+      ...record(),
+      restore: {
+        accountId: "a-1",
+        businessId: "b-1",
+        businessCode: "FM",
+        formVersionId: "fv-1",
+        policy: { disagree: "reject" },
+        numbering: null,
+        drafterSnapshot: { name: "박사원" },
+        createdAt: "2026-09-30T12:00:00.000Z",
+        steps: [
+          { id: "s-2", assigneeIds: ["m-3"], delegates: {}, assigneeSnapshot: [], version: 1 },
+          {
+            id: "s-1",
+            assigneeIds: ["m-2"],
+            delegates: { "m-2": "m-9" },
+            assigneeSnapshot: [],
+            version: 2,
+          },
+        ],
+      },
+    });
+    expect(withRestore.schemaVersion).toBe(2);
+    expect(withRestore.restore?.steps.map((s) => s.id)).toEqual(["s-1", "s-2"]);
+    expect(withRestore.restore?.steps[0]?.delegates).toEqual({ "m-2": "m-9" });
   });
 
   it("완료 시점에 후결 대기인 단계를 따로 적는다 (이후 승인은 post-approvals에 기록)", () => {
@@ -155,7 +185,7 @@ describe("buildDocumentJson", () => {
       revision: { n: 2, key: "docs/x/revisions/2.json", sha256: "e".repeat(64) },
     });
     expect(json).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       form: { code: "GEN", version: 3 },
       values: { memo: "서울" },
       revision: { n: 2, sha256: "e".repeat(64) },

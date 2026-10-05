@@ -5,7 +5,11 @@
  * (이 패키지는 Node 모듈을 쓰지 않는다).
  */
 
-export const PACKAGE_SCHEMA_VERSION = 1;
+/**
+ * 패키지 형식 버전. 2부터 `approval.json`에 DB 색인을 다시 만드는 데 필요한 `restore` 블록이 있다 (BAK-010, ADR 0011).
+ * 1은 그 정보가 없어 색인 재구성에서 건너뛴다.
+ */
+export const PACKAGE_SCHEMA_VERSION = 2;
 
 /** 키를 정렬하고 2칸 들여쓴 JSON. undefined는 뺀다. 끝에 줄바꿈 한 개 */
 export function canonicalJson(value: unknown): string {
@@ -65,6 +69,33 @@ export interface RecordAction {
   docHash: string | null;
 }
 
+/** 색인 재구성용: 결재 단계의 DB 값 중 `RecordStep`에 없는 것 */
+export interface RestoreStep {
+  id: string;
+  assigneeIds: string[];
+  /** 활성화 때 정해진 대결자: 처리자 id → 대결자 id */
+  delegates: Record<string, string>;
+  assigneeSnapshot: Record<string, unknown>[];
+  version: number;
+}
+
+/**
+ * 색인 재구성용 정보 (BAK-010 ②). DB를 잃어도 이 패키지만으로 문서 행·결재선·처리 기록을 되살릴 수 있게 한다.
+ * 화면에 보이는 내용이 아니라 DB 복원에 필요한 값이다.
+ */
+export interface RestoreInfo {
+  accountId: string;
+  businessId: string;
+  businessCode: string;
+  formVersionId: string;
+  policy: Record<string, unknown>;
+  numbering: Record<string, unknown> | null;
+  drafterSnapshot: Record<string, unknown>;
+  /** 문서를 만든 시각(ISO). S3 경로의 연도가 이 값에서 나온다 */
+  createdAt: string;
+  steps: RestoreStep[];
+}
+
 export interface ApprovalRecordInput {
   documentId: string;
   docNo: string | null;
@@ -78,6 +109,7 @@ export interface ApprovalRecordInput {
   steps: RecordStep[];
   actions: RecordAction[];
   attachments: AttachmentRef[];
+  restore?: RestoreInfo;
 }
 
 /** `approval.json`: 결재선, 단계별 처리자·대결 여부·일시·IP·의견, 문서번호, 상신 해시, 파일별 SHA-256 */
@@ -101,6 +133,14 @@ export function buildApprovalJson(input: ApprovalRecordInput) {
     /** 완료 시점에 후결 대기였던 단계. 이후의 후결 승인은 post-approvals/에 따로 기록된다 */
     pendingPostSteps: input.steps.filter((s) => s.status === "POST_PENDING").map((s) => s.id),
     attachments: [...input.attachments].sort((a, b) => (a.id < b.id ? -1 : 1)),
+    ...(input.restore
+      ? {
+          restore: {
+            ...input.restore,
+            steps: [...input.restore.steps].sort((a, b) => (a.id < b.id ? -1 : 1)),
+          },
+        }
+      : {}),
   };
 }
 
