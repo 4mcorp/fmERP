@@ -1,7 +1,7 @@
 import { can } from "@fmerp/core";
 import { schema, type Tx, withTenant } from "@fmerp/db";
 import { createRoute, z } from "@hono/zod-openapi";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { requireView } from "../approval/access";
 import { createDelegation, listDelegations, revokeDelegation } from "../approval/delegation";
 import { ApprovalError } from "../approval/errors";
@@ -160,6 +160,8 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
                 version: z.number().int(),
                 canFinalize: z.boolean(),
                 assignees: z.array(z.record(z.string(), z.unknown())),
+                /** 대결로 처리된 기록: 처리한 사람(actorName)과 원래 처리자(originalName) */
+                proxies: z.array(z.object({ actorName: z.string(), originalName: z.string() })),
               }),
             ),
           }),
@@ -185,6 +187,33 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
           .from(schema.approvalStep)
           .where(eq(schema.approvalStep.documentId, id))
           .orderBy(asc(schema.approvalStep.seq), asc(schema.approvalStep.id));
+        // 대결 처리 기록 (결재란에 "대결 OOO"로 보인다, APV-052)
+        const proxyRows = await tx
+          .select({
+            stepId: schema.approvalAction.stepId,
+            actorMembershipId: schema.approvalAction.actorMembershipId,
+            onBehalfOf: schema.approvalAction.onBehalfOfMembershipId,
+          })
+          .from(schema.approvalAction)
+          .where(
+            and(
+              eq(schema.approvalAction.documentId, id),
+              isNotNull(schema.approvalAction.onBehalfOfMembershipId),
+            ),
+          )
+          .orderBy(asc(schema.approvalAction.createdAt));
+        const memberIds = [
+          ...new Set(proxyRows.flatMap((r) => [r.actorMembershipId, r.onBehalfOf ?? ""])),
+        ].filter(Boolean);
+        const nameOf = new Map<string, string>();
+        if (memberIds.length > 0) {
+          const people = await tx
+            .select({ id: schema.membership.id, name: schema.user.name })
+            .from(schema.membership)
+            .innerJoin(schema.user, eq(schema.user.id, schema.membership.userId))
+            .where(inArray(schema.membership.id, memberIds));
+          for (const person of people) nameOf.set(person.id, person.name);
+        }
         return {
           id: doc.id,
           title: doc.title,
@@ -209,6 +238,12 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
             version: s.version,
             canFinalize: s.canFinalize,
             assignees: s.assigneeSnapshot,
+            proxies: proxyRows
+              .filter((r) => r.stepId === s.id)
+              .map((r) => ({
+                actorName: nameOf.get(r.actorMembershipId) ?? "알 수 없음",
+                originalName: nameOf.get(r.onBehalfOf ?? "") ?? "알 수 없음",
+              })),
           })),
         };
       });

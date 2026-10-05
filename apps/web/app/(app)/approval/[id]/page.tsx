@@ -504,6 +504,16 @@ export default function ApprovalDetailPage() {
                   {s.assignees
                     .map((a) => [a.name, a.positionName].filter(Boolean).join(" "))
                     .join(" / ") || "-"}
+                  {s.proxies.map((x) => (
+                    <Badge
+                      key={`${x.actorName}-${x.originalName}`}
+                      variant="secondary"
+                      className="ml-2"
+                      title={`${x.originalName}님 대신 처리`}
+                    >
+                      대결 {x.actorName}
+                    </Badge>
+                  ))}
                 </span>
                 <Badge
                   variant={
