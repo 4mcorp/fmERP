@@ -8,6 +8,7 @@ export {
   isoWeekKey,
   readChangeToken,
   runDump,
+  runManualDumpNow,
   weeklyKey,
 } from "./dump";
 export {

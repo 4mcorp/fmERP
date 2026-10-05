@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
     "start": "tsx src/main.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "backup:dump": "tsx --env-file-if-exists=../../.env src/cli/dump.ts"
   },
   "dependencies": {
     "@fmerp/backup": "workspace:*",

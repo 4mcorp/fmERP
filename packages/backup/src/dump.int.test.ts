@@ -7,7 +7,7 @@ import { ObjectStorage } from "@fmerp/storage";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { decryptStream, generateKeyPair } from "./age";
-import { type BackupDeps, runDump } from "./dump";
+import { type BackupDeps, runDump, runManualDumpNow } from "./dump";
 import { type PgToolConfig, toolVersion } from "./pg-tools";
 import { restoreDump } from "./restore";
 
@@ -290,4 +290,18 @@ describe("DB 덤프 (BAK-005·006, AUD-023)", () => {
     expect(out.status).toBe("FAILED");
     if (out.status === "FAILED") expect(out.error).toMatch(/공개키/);
   }, 60_000);
+
+  it("요청 행 없이 바로 실행하는 수동 덤프(운영자 CLI): 이력이 남고, 활성 덤프가 있으면 시작하지 않는다", async () => {
+    const out = await runManualDumpNow(deps(), { note: `${MARK} CLI` });
+    expect(out.status).toBe("SUCCEEDED");
+    if (out.status === "SUCCEEDED") {
+      const { rows } = await owner.pool.query(
+        "select kind, status, note from system_backup where id = $1",
+        [out.id],
+      );
+      expect(rows[0]).toEqual({ kind: "manual", status: "SUCCEEDED", note: `${MARK} CLI` });
+    }
+    await queueManual("활성");
+    expect((await runManualDumpNow(deps(), { note: `${MARK} 중복` })).status).toBe("BUSY");
+  }, 120_000);
 });

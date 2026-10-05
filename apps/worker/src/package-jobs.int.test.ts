@@ -30,11 +30,26 @@ const renderPdf = async () => {
   return new TextEncoder().encode(`%PDF-1.7 fake ${rendered}`);
 };
 
+/**
+ * 남은 작업을 비운다. `boss.start()` 직후의 백그라운드 유지보수와 겹치면 교착(deadlock detected)이 날 수 있어 몇 번 다시 시도한다
+ */
+async function clearJobs(b: PgBoss) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await b.deleteAllJobs();
+      return;
+    } catch (error) {
+      if (attempt >= 5 || !String(error).includes("deadlock")) throw error;
+      await new Promise((r) => setTimeout(r, 300 * attempt));
+    }
+  }
+}
+
 beforeAll(async () => {
   boss.on("error", () => {});
   await boss.start();
   // 이전 실행이 남긴 작업(이미 지워진 문서를 가리켜 계속 재시도한다)이 새 작업을 밀어내지 않게, 워커를 붙이기 전에 비운다
-  await boss.deleteAllJobs();
+  await clearJobs(boss);
   await registerPackageJobs(boss, appDb.pool, {
     db: appDb.db,
     authDb: authDb.db,

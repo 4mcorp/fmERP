@@ -15,6 +15,8 @@ const schema = z.object({
   S3_ACCESS_KEY_ID: z.string().min(1),
   S3_SECRET_ACCESS_KEY: z.string().min(1),
   S3_FORCE_PATH_STYLE: z.stringbool().default(false),
+  /** DB 덤프를 다룰 수 있는 시스템 관리자의 이메일(쉼표 구분). 비어 있으면 덤프 기능 전체가 꺼진다 (M7) */
+  SYSTEM_ADMIN_EMAILS: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

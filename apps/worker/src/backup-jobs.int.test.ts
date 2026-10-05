@@ -41,10 +41,25 @@ async function waitFor<T>(fn: () => Promise<T | null | false>, ms = 40_000): Pro
   throw new Error("시간 안에 조건이 충족되지 않았습니다");
 }
 
+/**
+ * 남은 작업을 비운다. `boss.start()` 직후의 백그라운드 유지보수와 겹치면 교착(deadlock detected)이 날 수 있어 몇 번 다시 시도한다
+ */
+async function clearJobs(b: PgBoss) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await b.deleteAllJobs();
+      return;
+    } catch (error) {
+      if (attempt >= 5 || !String(error).includes("deadlock")) throw error;
+      await new Promise((r) => setTimeout(r, 300 * attempt));
+    }
+  }
+}
+
 beforeAll(async () => {
   boss.on("error", () => {});
   await boss.start();
-  await boss.deleteAllJobs();
+  await clearJobs(boss);
   // 이전 실행이 남긴 활성 행을 닫고, 오늘 성공한 덤프가 있는 것으로 만들어 시작 시 보충 덤프가 돌지 않게 한다
   await owner.pool.query(
     "update system_backup set status = 'FAILED', finished_at = now(), error = 'test' where status in ('QUEUED','RUNNING')",

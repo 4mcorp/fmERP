@@ -117,6 +117,29 @@ export async function failStaleDumps(pool: Pool, olderThanMinutes: number): Prom
   return rowCount ?? 0;
 }
 
+/**
+ * 수동 덤프를 요청 행 없이 바로 실행한다 (운영 배포 직전 실행용 CLI, PRD BAK-006).
+ * 요청 행(QUEUED)을 만든 뒤 같은 경로로 실행하므로 이력·감사 로그·동시 실행 제한이 똑같이 적용된다.
+ */
+export async function runManualDumpNow(
+  deps: BackupDeps,
+  options: { note?: string; requestedByUserId?: string | null } = {},
+): Promise<DumpOutcome> {
+  let id: string;
+  try {
+    const { rows } = await deps.pool.query<{ id: string }>(
+      `insert into system_backup (kind, status, note, requested_by_user_id)
+       values ('manual', 'QUEUED', $1, $2) returning id`,
+      [options.note ?? null, options.requestedByUserId ?? null],
+    );
+    id = (rows[0] as { id: string }).id;
+  } catch (error) {
+    if ((error as { code?: string }).code === "23505") return { status: "BUSY" };
+    throw error;
+  }
+  return runDump(deps, { kind: "manual", systemBackupId: id, ...options });
+}
+
 /** 덤프를 한 건 실행한다. 한 번에 하나만 돈다(DB의 부분 고유 인덱스) */
 export async function runDump(deps: BackupDeps, options: DumpOptions): Promise<DumpOutcome> {
   const now = deps.now ?? (() => new Date());

@@ -9,6 +9,7 @@ export const e2eEnv = {
   BETTER_AUTH_SECRET: "e2e-test-secret-not-for-production-use-0000",
   BETTER_AUTH_URL: `http://localhost:${E2E_PORT}`,
   DEV_TEST_LOGIN: "true",
+  SYSTEM_ADMIN_EMAILS: "owner@example.com",
   S3_ENDPOINT: "http://localhost:58333",
   S3_REGION: "us-east-1",
   S3_BUCKET: "fmerp-test",
