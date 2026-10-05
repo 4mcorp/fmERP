@@ -20,10 +20,13 @@ import type {
   Me,
   Member,
   MineItem,
+  MyTelegram,
+  NotificationPage,
   OrgChart,
   PendingItem,
   RecipientInfo,
   SystemBackups,
+  SystemTelegram,
   TimelineItem,
 } from "./types";
 
@@ -216,4 +219,34 @@ export const useAccountExports = (enabled: boolean) =>
     queryFn: () => api<AccountExports>("/api/account/exports"),
     enabled,
     refetchInterval: (q) => (q.state.data?.items.some((i) => ACTIVE.has(i.status)) ? 5000 : false),
+  });
+
+/** 읽지 않은 알림 수 (헤더 배지). 30초마다 다시 읽는다 */
+export const useUnreadCount = (enabled: boolean) =>
+  useQuery({
+    queryKey: ["notifications", "unread-count"],
+    queryFn: () => api<{ count: number }>("/api/notifications/unread-count"),
+    enabled,
+    refetchInterval: 30_000,
+  });
+
+export const useNotifications = (unreadOnly: boolean) =>
+  useInfiniteQuery({
+    queryKey: ["notifications", "list", unreadOnly],
+    queryFn: ({ pageParam }) =>
+      api<NotificationPage>(
+        `/api/notifications?limit=30&unread=${unreadOnly}${pageParam ? `&cursor=${pageParam}` : ""}`,
+      ),
+    initialPageParam: "",
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
+
+export const useMyTelegram = () =>
+  useQuery({ queryKey: ["my-telegram"], queryFn: () => api<MyTelegram>("/api/me/telegram") });
+
+export const useSystemTelegram = (enabled: boolean) =>
+  useQuery({
+    queryKey: ["system-telegram"],
+    queryFn: () => api<SystemTelegram>("/api/system/telegram"),
+    enabled,
   });

@@ -2,6 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  Bell,
   Building2,
   CalendarOff,
   ChevronDown,
@@ -9,6 +10,7 @@ import {
   LogOut,
   Network,
   Plus,
+  Send,
   Settings,
   UserRound,
 } from "lucide-react";
@@ -28,7 +30,14 @@ import {
 import { adminEntry } from "@/lib/admin-nav";
 import { api, errorMessage } from "@/lib/api";
 import { clearLocalDrafts } from "@/lib/local-drafts";
-import { useCapabilities, useCurrentAccount, useMe, usePending, useSystemMe } from "@/lib/queries";
+import {
+  useCapabilities,
+  useCurrentAccount,
+  useMe,
+  usePending,
+  useSystemMe,
+  useUnreadCount,
+} from "@/lib/queries";
 import { ROLE_LABEL } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
   const pathname = usePathname();
   const { data: pending } = usePending(Boolean(me?.activeAccountId));
+  const { data: unread } = useUnreadCount(Boolean(me?.activeAccountId));
   const adminLink = adminEntry(caps);
   // DB 덤프 메뉴는 시스템 관리자에게만 보인다 (실제 권한은 서버가 판정한다)
   const { data: systemMe } = useSystemMe();
@@ -99,6 +109,22 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div className="flex-1" />
 
+          {me?.activeAccountId && (
+            <Button variant="ghost" size="sm" className="relative" asChild>
+              <Link
+                href="/notifications"
+                aria-label={unread?.count ? `알림, 읽지 않은 알림 ${unread.count}건` : "알림"}
+              >
+                <Bell className="size-4" aria-hidden />
+                {unread?.count ? (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 text-primary-foreground">
+                    {unread.count > 99 ? "99+" : unread.count}
+                  </span>
+                ) : null}
+              </Link>
+            </Button>
+          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-1" aria-label="사용자 메뉴">
@@ -138,12 +164,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </DropdownMenuItem>
               )}
               {systemMe?.systemAdmin && (
-                <DropdownMenuItem asChild>
-                  <Link href="/system/backups">
-                    <DatabaseBackup className="size-4" aria-hidden />
-                    시스템 덤프
-                  </Link>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/system/backups">
+                      <DatabaseBackup className="size-4" aria-hidden />
+                      시스템 덤프
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/system/telegram">
+                      <Send className="size-4" aria-hidden />
+                      텔레그램 수신 방식
+                    </Link>
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={signOut}>

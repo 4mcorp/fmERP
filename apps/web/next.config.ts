@@ -11,7 +11,14 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: repoRoot,
   turbopack: { root: repoRoot },
-  transpilePackages: ["@fmerp/audit", "@fmerp/auth", "@fmerp/core", "@fmerp/db", "@fmerp/storage"],
+  transpilePackages: [
+    "@fmerp/audit",
+    "@fmerp/auth",
+    "@fmerp/core",
+    "@fmerp/db",
+    "@fmerp/notification",
+    "@fmerp/storage",
+  ],
 };
 
 export default nextConfig;

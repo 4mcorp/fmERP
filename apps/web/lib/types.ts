@@ -292,6 +292,8 @@ export interface ApprovalStepView {
   version: number;
   canFinalize: boolean;
   assignees: StepAssignee[];
+  /** 대결로 처리된 기록 (처리한 사람, 원래 처리자) */
+  proxies: { actorName: string; originalName: string }[];
 }
 
 export interface ApprovalView {
@@ -614,4 +616,40 @@ export function formatBytes(n: number | null): string {
     i += 1;
   }
   return `${v.toFixed(v < 10 ? 1 : 0)} ${units[i]}`;
+}
+
+export interface NotificationItem {
+  id: string;
+  kind: string;
+  title: string;
+  body: string;
+  documentId: string | null;
+  href: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationPage {
+  items: NotificationItem[];
+  nextCursor: string | null;
+}
+
+export interface MyTelegram {
+  enabled: boolean;
+  linked: boolean;
+}
+
+export type ReceiverMode = "polling" | "webhook";
+
+export interface SystemTelegram {
+  configured: {
+    botToken: boolean;
+    botUsername: boolean;
+    webhookSecret: boolean;
+    webhookReady: boolean;
+    publicBaseUrl: string;
+  };
+  mode: ReceiverMode;
+  applied: { mode: ReceiverMode | null; error: string | null; at: string } | null;
+  webhook: { url: string; pendingUpdateCount: number; lastErrorMessage: string | null } | null;
 }

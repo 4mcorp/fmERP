@@ -15,6 +15,7 @@
     "@fmerp/auth": "workspace:*",
     "@fmerp/core": "workspace:*",
     "@fmerp/db": "workspace:*",
+    "@fmerp/notification": "workspace:*",
     "@fmerp/storage": "workspace:*",
     "@hono/zod-openapi": "~1.6.3",
     "@hookform/resolvers": "~5.9.1",
