@@ -9,5 +9,6 @@ export function adminEntry(caps: Record<string, boolean> | undefined): string | 
   }
   if (caps["position.manage"]) return "/admin/positions";
   if (caps["form.manage"]) return "/admin/forms";
+  if (caps["audit.log"]) return "/admin/audit";
   return null;
 }

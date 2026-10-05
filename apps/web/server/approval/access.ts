@@ -150,6 +150,11 @@ async function recordReadAllView(
   securityLevel: string,
 ): Promise<void> {
   if (!ctx.userId) return;
+  // 화면 하나가 여러 API를 동시에 부르므로, 같은 사용자·문서의 "확인 후 기록"이 겹치지 않게 직렬화한다
+  // (트랜잭션이 끝나면 자동으로 풀린다). 락을 기다린 쪽은 먼저 끝난 쪽의 기록을 보고 건너뛴다
+  await ctx.tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`audit_view:${ctx.userId}:${documentId}`}, 0))`,
+  );
   const A = schema.auditLog;
   const [recent] = await ctx.tx
     .select({ id: A.id })

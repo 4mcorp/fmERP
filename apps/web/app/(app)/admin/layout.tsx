@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { useCapabilities, useMe } from "@/lib/queries";
+import { Badge } from "@/components/ui/badge";
+import { useAuditReviews, useCapabilities, useMe } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -18,6 +19,7 @@ const NAV = [
   { href: "/admin/positions", label: "직위·직책", any: ["position.manage"] },
   { href: "/admin/forms", label: "양식", any: ["form.manage"] },
   { href: "/admin/approvals", label: "결재 문서", any: ["approval.manage"] },
+  { href: "/admin/audit", label: "감사 로그", any: ["audit.log"] },
 ] as const;
 
 /** 관리 콘솔 공통 레이아웃: 내가 쓸 수 있는 메뉴만 보여 준다 (실제 권한은 서버가 판정한다) */
@@ -25,7 +27,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: me } = useMe();
   const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
+  // 지난달 접속 기록 점검을 아직 안 했으면 메뉴에 표시한다 (AUD-026)
+  const { data: reviews } = useAuditReviews(Boolean(caps?.["audit.log"]));
   if (!caps) return null;
+  const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const items = NAV.filter((n) => n.any.some((a) => caps[a]));
   if (items.length === 0) {
     return <p className="text-muted-foreground">관리 콘솔을 사용할 권한이 없습니다.</p>;
@@ -38,13 +43,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <Link
             key={n.href}
             href={n.href}
-            aria-current={pathname === n.href ? "page" : undefined}
+            aria-current={active(n.href) ? "page" : undefined}
             className={cn(
               "shrink-0 rounded-md px-3 py-1.5 text-sm hover:bg-muted",
-              pathname === n.href && "bg-muted font-medium",
+              active(n.href) && "bg-muted font-medium",
             )}
           >
             {n.label}
+            {n.href === "/admin/audit" && reviews?.overdue && (
+              <Badge variant="destructive" className="ml-1.5">
+                점검 필요
+              </Badge>
+            )}
           </Link>
         ))}
       </nav>

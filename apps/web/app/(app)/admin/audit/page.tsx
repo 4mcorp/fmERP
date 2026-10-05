@@ -1,0 +1,366 @@
+"use client";
+
+import { Search as SearchIcon } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { type FormEvent, Suspense, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Modal } from "@/components/ui/modal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ApiProblem, errorMessage } from "@/lib/api";
+import { useAuditLogs, useMembers } from "@/lib/queries";
+import {
+  AUDIT_ACTION_GROUPS,
+  AUDIT_ACTION_LABEL,
+  type AuditLogRow,
+  formatDateTime,
+} from "@/lib/types";
+import { AuditTabs } from "./audit-tabs";
+
+const FILTER_KEYS = ["from", "to", "action", "actorUserId", "targetId", "result"] as const;
+type FilterKey = (typeof FILTER_KEYS)[number];
+type Filters = Record<FilterKey, string>;
+
+const ALL = "all";
+const DAY_MS = 86_400_000;
+
+const fromParams = (p: URLSearchParams): Filters =>
+  Object.fromEntries(FILTER_KEYS.map((k) => [k, p.get(k) ?? ""])) as Filters;
+
+/** 화면 조건(URL 상태)을 API 쿼리로. 날짜는 한국 시간 하루 단위로 해석하고, 끝 날짜는 그날 끝까지 포함한다 */
+function toApiQuery(f: Filters): string {
+  const out = new URLSearchParams();
+  if (f.from) out.set("from", new Date(`${f.from}T00:00:00+09:00`).toISOString());
+  if (f.to) {
+    out.set("to", new Date(new Date(`${f.to}T00:00:00+09:00`).getTime() + DAY_MS).toISOString());
+  }
+  for (const k of ["action", "actorUserId", "result"] as const) if (f[k]) out.set(k, f[k]);
+  if (f.targetId.trim()) out.set("targetId", f.targetId.trim());
+  return out.toString();
+}
+
+const toUrlQuery = (f: Filters) => {
+  const out = new URLSearchParams();
+  for (const k of FILTER_KEYS) if (f[k].trim() !== "") out.set(k, f[k].trim());
+  return out.toString();
+};
+
+const actionLabel = (action: string) => AUDIT_ACTION_LABEL[action] ?? action;
+
+const show = (v: unknown) => {
+  if (v === undefined) return "—";
+  const text = typeof v === "string" ? v : JSON.stringify(v);
+  return text.length > 200 ? `${text.slice(0, 200)}…` : text;
+};
+
+interface DiffEntry {
+  op: "add" | "remove" | "change";
+  path: string;
+  value?: unknown;
+  oldValue?: unknown;
+}
+
+function Detail({ row, onClose }: { row: AuditLogRow | null; onClose: () => void }) {
+  const diff = Array.isArray(row?.diff) ? (row?.diff as DiffEntry[]) : [];
+  const fields: [string, string | null][] = row
+    ? [
+        ["일시", formatDateTime(row.occurredAt)],
+        ["행위자", row.actorName ?? "시스템"],
+        ["대리 처리 원 권한자", row.onBehalfOfName],
+        ["행위", `${actionLabel(row.action)} (${row.action})`],
+        ["대상", row.targetType ? `${row.targetType} · ${row.targetLabel ?? row.targetId}` : null],
+        ["대상 ID", row.targetId],
+        ["정보주체", row.subjectName],
+        ["결과", row.result === "success" ? "성공" : "실패"],
+        ["사유·메모", row.reason],
+        ["접속지(IP)", row.ip],
+        ["브라우저", row.userAgent],
+        ["요청 ID", row.requestId],
+      ]
+    : [];
+  return (
+    <Modal open={row !== null} onClose={onClose} title="감사 로그 상세" className="max-w-2xl">
+      <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
+        {fields
+          .filter(([, v]) => v)
+          .map(([k, v]) => (
+            <div key={k} className="contents">
+              <dt className="text-muted-foreground">{k}</dt>
+              <dd className="break-all">{v}</dd>
+            </div>
+          ))}
+      </dl>
+      {diff.length > 0 && (
+        <div className="mt-4">
+          <h3 className="mb-1 text-sm font-medium">변경 내용</h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">항목</TableHead>
+                <TableHead scope="col">변경 전</TableHead>
+                <TableHead scope="col">변경 후</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {diff.map((d) => (
+                <TableRow key={d.path}>
+                  <TableCell className="break-all">{d.path}</TableCell>
+                  <TableCell className="break-all">
+                    {d.op === "add" ? "—" : show(d.oldValue)}
+                  </TableCell>
+                  <TableCell className="break-all">
+                    {d.op === "remove" ? "—" : show(d.value)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      <div className="mt-4 flex justify-end">
+        <Button variant="outline" onClick={onClose}>
+          닫기
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+/**
+ * 감사 로그 조회 (AUD-025): 기간·행위자·행위 유형·대상으로 걸러 본다.
+ * 계정 범위 감사 권한자(소유자·관리자·감사인)만 열 수 있고, 조회한 사실도 로그에 남는다.
+ */
+function AuditLogView() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const applied = fromParams(params);
+  const [form, setForm] = useState<Filters>(() => applied);
+  const [selected, setSelected] = useState<AuditLogRow | null>(null);
+  const { data: members } = useMembers();
+  const query = useAuditLogs(toApiQuery(applied), true);
+  const rows = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const set = (key: FilterKey) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const forbidden = query.error instanceof ApiProblem && query.error.status === 403;
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    const qs = toUrlQuery(form);
+    router.replace(qs ? `/admin/audit?${qs}` : "/admin/audit");
+  }
+
+  function reset() {
+    setForm(fromParams(new URLSearchParams()));
+    router.replace("/admin/audit");
+  }
+
+  if (forbidden) {
+    return (
+      <p role="alert" className="text-muted-foreground">
+        감사 로그를 볼 권한이 없습니다. (계정 범위 감사 권한이 필요합니다)
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-2xl font-semibold">감사 로그</h1>
+      <AuditTabs />
+      <Card>
+        <CardContent className="pt-6">
+          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="a-from">시작일</Label>
+              <Input
+                id="a-from"
+                type="date"
+                value={form.from}
+                onChange={(e) => set("from")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="a-to">끝일</Label>
+              <Input
+                id="a-to"
+                type="date"
+                value={form.to}
+                onChange={(e) => set("to")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="a-action">행위 유형</Label>
+              <Select
+                value={form.action || ALL}
+                onValueChange={(v) => set("action")(v === ALL ? "" : v)}
+              >
+                <SelectTrigger id="a-action" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>전체</SelectItem>
+                  {AUDIT_ACTION_GROUPS.map((g) => (
+                    <SelectItem key={g.value} value={g.value}>
+                      {g.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="a-actor">행위자</Label>
+              <Select
+                value={form.actorUserId || ALL}
+                onValueChange={(v) => set("actorUserId")(v === ALL ? "" : v)}
+              >
+                <SelectTrigger id="a-actor" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>전체</SelectItem>
+                  {(members ?? []).map((m) => (
+                    <SelectItem key={m.userId} value={m.userId}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="a-target">대상 ID</Label>
+              <Input
+                id="a-target"
+                value={form.targetId}
+                onChange={(e) => set("targetId")(e.target.value)}
+                maxLength={100}
+                placeholder="문서 ID 등"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="a-result">결과</Label>
+              <Select
+                value={form.result || ALL}
+                onValueChange={(v) => set("result")(v === ALL ? "" : v)}
+              >
+                <SelectTrigger id="a-result" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>전체</SelectItem>
+                  <SelectItem value="success">성공</SelectItem>
+                  <SelectItem value="failure">실패</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
+              <Button type="submit">
+                <SearchIcon aria-hidden />
+                조회
+              </Button>
+              <Button type="button" variant="outline" onClick={reset}>
+                조건 지우기
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                시작일을 비우면 최근 30일을 보여 줍니다. 조회한 사실도 로그에 남습니다.
+              </p>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {query.error && !forbidden && (
+        <p role="alert" className="text-sm text-destructive">
+          {errorMessage(query.error)}
+        </p>
+      )}
+      {query.isPending ? (
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          불러오는 중…
+        </p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">조건에 맞는 기록이 없습니다.</p>
+      ) : (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">일시</TableHead>
+                <TableHead scope="col">행위자</TableHead>
+                <TableHead scope="col">행위</TableHead>
+                <TableHead scope="col">대상</TableHead>
+                <TableHead scope="col">결과</TableHead>
+                <TableHead scope="col">
+                  <span className="sr-only">상세</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="whitespace-nowrap">
+                    {formatDateTime(r.occurredAt)}
+                  </TableCell>
+                  <TableCell>{r.actorName ?? "시스템"}</TableCell>
+                  <TableCell>{actionLabel(r.action)}</TableCell>
+                  <TableCell className="max-w-64 truncate">
+                    {r.targetLabel ?? r.targetId ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {r.result === "success" ? (
+                      <Badge variant="outline">성공</Badge>
+                    ) : (
+                      <Badge variant="destructive">실패</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelected(r)}
+                      aria-label={`${formatDateTime(r.occurredAt)} ${actionLabel(r.action)} 상세 보기`}
+                    >
+                      상세
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {query.hasNextPage && (
+            <Button
+              variant="outline"
+              onClick={() => query.fetchNextPage()}
+              disabled={query.isFetchingNextPage}
+            >
+              {query.isFetchingNextPage ? "불러오는 중…" : "더 보기"}
+            </Button>
+          )}
+        </>
+      )}
+      <Detail row={selected} onClose={() => setSelected(null)} />
+    </div>
+  );
+}
+
+export default function AuditLogPage() {
+  return (
+    <Suspense>
+      <AuditLogView />
+    </Suspense>
+  );
+}

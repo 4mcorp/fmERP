@@ -197,6 +197,15 @@ describe("감사인 열람 기록 (AUD-010)", () => {
     expect(rows.every((r) => r.result === "success" && r.actorUserId)).toBe(true);
   });
 
+  it("화면이 여러 API를 동시에 불러도 감사 열람은 한 건만 기록한다", async () => {
+    const id = await submittedDoc();
+    const paths = ["", "/body", "/comments", "/timeline", "/form", "/package", "/attachments"];
+    const calls = Array.from({ length: 4 }, () => paths).flat();
+    const results = await Promise.all(calls.map((p) => req("auditor", `/api/approvals/${id}${p}`)));
+    expect(results.filter((r) => r.status === 200).length).toBeGreaterThan(10);
+    expect(await auditRows("document.audit_view", id)).toHaveLength(1);
+  });
+
   it("기안자·결재선 참여자의 열람은 기록하지 않는다", async () => {
     const id = await submittedDoc();
     expect(await status("member1", id)).toBe(200);

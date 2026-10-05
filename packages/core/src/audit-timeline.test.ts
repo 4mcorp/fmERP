@@ -95,6 +95,7 @@ describe("문서 이력 타임라인 (AUD-011)", () => {
       ["document.download_pdf", null],
       ["document.print", null],
       ["document.circulate", null],
+      ["approval.transfer", "인수인계"],
     ] as const;
     const items = buildTimeline({
       ...empty(),
@@ -106,7 +107,13 @@ describe("문서 이력 타임라인 (AUD-011)", () => {
         ip: null,
       })),
     });
-    expect(items.map((i) => i.label)).toEqual(["결재선 변경", "PDF 내려받기", "인쇄", "공람 지정"]);
+    expect(items.map((i) => i.label)).toEqual([
+      "결재선 변경",
+      "PDF 내려받기",
+      "인쇄",
+      "공람 지정",
+      "결재자 이관",
+    ]);
     expect(items[0]?.detail).toBe("사유 있음");
   });
 

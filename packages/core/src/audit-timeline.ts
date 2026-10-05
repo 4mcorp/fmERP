@@ -62,6 +62,7 @@ const LOG_LABELS: Record<string, string> = {
   "approval.redraft": "재기안",
   "approval.replace_line": "결재선 교체",
   "approval.line_change": "결재선 변경",
+  "approval.transfer": "결재자 이관",
   "approval.comment": "의견 등록",
   "document.download_pdf": "PDF 내려받기",
   "document.download_package": "패키지 내려받기",

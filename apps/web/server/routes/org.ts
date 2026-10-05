@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
 import {
   type Action,
+  can,
   canInAnyScope,
   checkMaxDepthChange,
   isValidBusinessNumber,
@@ -679,7 +680,9 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
       ];
       const result = await withTenant(deps().appDb, tenant.accountId, async (tx) => {
         const { actor } = await loadActor(tx, tenant, c.get("session").userId);
-        return Object.fromEntries(actions.map((a) => [a, canInAnyScope(actor, a)]));
+        const caps = Object.fromEntries(actions.map((a) => [a, canInAnyScope(actor, a)]));
+        // 감사 로그 조회·월간 점검은 계정 범위 감사 권한자만 쓴다. 부서·사업자 범위 감사인은 문서 이력만 본다
+        return { ...caps, "audit.log": can(actor, "audit.read", ACCOUNT_TARGET) };
       });
       return c.json(result, 200);
     },

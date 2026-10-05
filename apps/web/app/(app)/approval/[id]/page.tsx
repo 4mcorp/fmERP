@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AttachmentList } from "@/components/approval/attachment-uploader";
+import { DocumentTimeline, PrintButton } from "@/components/approval/audit-trail";
 import { CompletionFiles } from "@/components/approval/completion-files";
 import { FormValuesView } from "@/components/approval/form-view";
 import { LineEditor, type LineRow, rowsToItems } from "@/components/approval/line-editor";
@@ -309,6 +310,9 @@ export default function ApprovalDetailPage() {
   if (!view || !me || redirectToDraft) return null;
 
   const isDrafter = view.drafterMembershipId === myMembershipId;
+  // 기안자·결재선 참여자만 의견을 쓸 수 있다. 감사인·참조자 같은 열람자는 읽기 전용이다
+  const involved =
+    isDrafter || view.steps.some((s) => s.assignees.some((a) => a.membershipId === myMembershipId));
   const flowSteps = view.steps.filter((s) => s.type !== "post");
   const untouched = flowSteps.every((s) => s.status === "PENDING" || s.status === "ACTIVE");
   const myPending = pending?.find((p) => p.documentId === id);
@@ -387,6 +391,7 @@ export default function ApprovalDetailPage() {
               원문 보기
             </Link>
           )}
+          <PrintButton documentId={id} />
         </div>
         <p className="text-sm text-muted-foreground">
           {docForm?.name ?? "문서"} · {view.drafterSnapshot.name ?? ""}
@@ -398,14 +403,7 @@ export default function ApprovalDetailPage() {
 
       {view.status === "COMPLETED" && <CompletionFiles documentId={id} />}
 
-      <RecipientPanel
-        documentId={id}
-        completed={view.status === "COMPLETED"}
-        involved={
-          isDrafter ||
-          view.steps.some((s) => s.assignees.some((a) => a.membershipId === myMembershipId))
-        }
-      />
+      <RecipientPanel documentId={id} completed={view.status === "COMPLETED"} involved={involved} />
 
       {actionStep && (
         <Card className="border-primary">
@@ -571,38 +569,46 @@ export default function ApprovalDetailPage() {
               ))}
             </ul>
           )}
-          <form onSubmit={addComment} className="space-y-2">
-            <Label htmlFor="comment-body">의견 추가</Label>
-            <Textarea
-              id="comment-body"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              maxLength={2000}
-              required
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <Label htmlFor="comment-visibility" className="sr-only">
-                공개 범위
-              </Label>
-              <Select
-                value={commentVisibility}
-                onValueChange={(v) => setCommentVisibility(v as "all" | "drafter")}
-              >
-                <SelectTrigger id="comment-visibility" className="w-44">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">결재선 전체에 공개</SelectItem>
-                  <SelectItem value="drafter">기안자에게만</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button type="submit" variant="outline">
-                의견 등록
-              </Button>
-            </div>
-          </form>
+          {involved ? (
+            <form onSubmit={addComment} className="space-y-2">
+              <Label htmlFor="comment-body">의견 추가</Label>
+              <Textarea
+                id="comment-body"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                maxLength={2000}
+                required
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Label htmlFor="comment-visibility" className="sr-only">
+                  공개 범위
+                </Label>
+                <Select
+                  value={commentVisibility}
+                  onValueChange={(v) => setCommentVisibility(v as "all" | "drafter")}
+                >
+                  <SelectTrigger id="comment-visibility" className="w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">결재선 전체에 공개</SelectItem>
+                    <SelectItem value="drafter">기안자에게만</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="submit" variant="outline">
+                  의견 등록
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              열람 권한으로 보고 있어 의견을 남길 수 없습니다 (읽기 전용).
+            </p>
+          )}
         </CardContent>
       </Card>
+
+      <DocumentTimeline documentId={id} />
 
       <Modal
         open={reason !== null}
