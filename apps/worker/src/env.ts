@@ -22,6 +22,12 @@ const schema = z.object({
   BACKUP_AGE_RECIPIENTS: z.string().optional(),
   /** pg_dump 실행 명령. 개발 PC에서는 DB 컨테이너 안에서 실행하도록 바꿀 수 있다 */
   PG_DUMP_COMMAND: z.string().default("pg_dump"),
+  /** pg_restore 실행 명령 (복원·복구 리허설 CLI) */
+  PG_RESTORE_COMMAND: z.string().default("pg_restore"),
+  /** 복구 리허설이 임시 DB를 만들고 지울 수 있는 관리 연결 (CREATEDB 권한) */
+  REHEARSAL_ADMIN_URL: z.url().optional(),
+  /** pg_restore가 접속할 서버 주소 (기본은 REHEARSAL_ADMIN_URL). 컨테이너 안에서 실행하면 그 안에서 보이는 주소 */
+  REHEARSAL_TOOL_URL: z.url().optional(),
   /** pg_dump가 접속할 URL (기본은 BACKUP_DATABASE_URL). 컨테이너 안에서 실행하면 그 안에서 보이는 주소 */
   BACKUP_PG_DUMP_URL: z.url().optional(),
   NODE_ENV: z.string().optional(),

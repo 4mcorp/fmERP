@@ -7,7 +7,10 @@
     "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
     "start": "tsx src/main.ts",
     "typecheck": "tsc --noEmit",
-    "backup:dump": "tsx --env-file-if-exists=../../.env src/cli/dump.ts"
+    "backup:dump": "tsx --env-file-if-exists=../../.env src/cli/dump.ts",
+    "backup:restore": "tsx --env-file-if-exists=../../.env src/cli/restore.ts",
+    "backup:rehearse": "tsx --env-file-if-exists=../../.env src/cli/rehearse.ts",
+    "backup:reindex": "tsx --env-file-if-exists=../../.env src/cli/reindex.ts"
   },
   "dependencies": {
     "@fmerp/backup": "workspace:*",

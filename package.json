@@ -22,7 +22,10 @@
     "env:down": "docker compose -f docker-compose.dev.yml down",
     "prepare": "lefthook install",
     "db:seed": "pnpm --filter @fmerp/auth seed",
-    "backup:dump": "pnpm --filter @fmerp/worker backup:dump"
+    "backup:dump": "pnpm --filter @fmerp/worker backup:dump",
+    "backup:restore": "pnpm --filter @fmerp/worker backup:restore",
+    "backup:rehearse": "pnpm --filter @fmerp/worker backup:rehearse",
+    "backup:reindex": "pnpm --filter @fmerp/worker backup:reindex"
   },
   "devDependencies": {
     "@biomejs/biome": "~2.5.15",

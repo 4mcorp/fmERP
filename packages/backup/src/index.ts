@@ -32,6 +32,16 @@ export {
   toolVersion,
 } from "./pg-tools";
 export {
+  COUNTED_TABLES,
+  type DumpSource,
+  type RehearseDeps,
+  type RehearseOptions,
+  type RehearseReport,
+  rehearseRestore,
+  restoreFromDump,
+  type TableCounts,
+} from "./rehearse";
+export {
   type ReindexDeps,
   type ReindexOptions,
   type ReindexResult,
