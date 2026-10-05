@@ -1,7 +1,9 @@
+import type { BackupDeps } from "@fmerp/backup";
 import { createDatabase } from "@fmerp/db";
 import { ObjectStorage } from "@fmerp/storage";
 import { serve } from "@hono/node-server";
 import { PgBoss } from "pg-boss";
+import { type BackupJobs, registerBackupJobs } from "./backup-jobs";
 import { env } from "./env";
 import { loadFontCss } from "./fonts";
 import { createHealthApp } from "./health";
@@ -45,16 +47,40 @@ await registerPackageJobs(boss, appDb.pool, {
   fontCss,
 });
 
+// 백업 (M7): 설정이 있을 때만 켠다. 운영에서는 env.ts가 설정 누락을 막는다
+let backupJobs: BackupJobs | null = null;
+let backupDb: ReturnType<typeof createDatabase> | null = null;
+if (env.BACKUP_DATABASE_URL && env.BACKUP_AGE_RECIPIENTS) {
+  backupDb = createDatabase(env.BACKUP_DATABASE_URL);
+  const backupDeps: BackupDeps = {
+    pool: backupDb.pool,
+    authDb: authDb.db,
+    storage,
+    recipients: env.BACKUP_AGE_RECIPIENTS.split(",")
+      .map((r) => r.trim())
+      .filter(Boolean),
+    pgDump: {
+      command: env.PG_DUMP_COMMAND,
+      url: env.BACKUP_PG_DUMP_URL ?? env.BACKUP_DATABASE_URL,
+    },
+  };
+  backupJobs = await registerBackupJobs(boss, backupDeps);
+} else {
+  console.warn("[worker] BACKUP_DATABASE_URL·BACKUP_AGE_RECIPIENTS가 없어 백업이 꺼져 있습니다");
+}
+
 ready = true;
 console.log(`[worker] 시작됨 — health: http://localhost:${env.WORKER_PORT}/health`);
 
 async function shutdown() {
   ready = false;
+  backupJobs?.stop();
   await boss.stop({ graceful: true });
   await closeBrowser();
   server.close();
   await appDb.pool.end();
   await authDb.pool.end();
+  await backupDb?.pool.end();
   process.exit(0);
 }
 process.on("SIGINT", shutdown);

@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fmerp/backup": "workspace:*",
     "@fmerp/completion": "workspace:*",
+    "@fmerp/core": "workspace:*",
     "@fmerp/db": "workspace:*",
     "@fmerp/storage": "workspace:*",
     "@hono/node-server": "~2.1.3",
