@@ -127,6 +127,27 @@
       "when": 1791204612189,
       "tag": "0017_backup_request_only",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791208959130,
+      "tag": "0018_notification_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791208970358,
+      "tag": "0019_notification_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791209711700,
+      "tag": "0020_notification_external_text",
+      "breakpoints": true
     }
   ]
 }
