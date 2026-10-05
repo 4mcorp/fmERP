@@ -1,0 +1,132 @@
+# 스테이징 (초안, 미검증): 운영과 같은 서버에서 도는 별도 Compose 프로젝트. DEPLOYMENT_PLAN 6·7장, docs/ops/staging.md
+# 실행:  docker compose -f docker-compose.staging.yml --env-file .env.staging up -d --build
+# 규칙: ports를 두지 않는다(Docker가 연 포트는 호스트 방화벽을 우회한다). 밖에서는 cloudflared만 edge 네트워크로 들어온다.
+# 메모리 상한 합계 3GB 안: postgres 512 + web 640 + worker 1536 + cloudflared 128 + migrate 256(1회)
+name: fmerp-staging
+
+x-app-env: &app-env
+  NODE_ENV: production
+  # 스테이징만 운영 모드에서 테스트 로그인을 켠다. 접근은 Cloudflare Access로 막는다 (docs/ops/staging.md)
+  APP_ENV: staging
+  DEV_TEST_LOGIN: "true"
+  DATABASE_URL: postgres://fmerp_app:${APP_DB_PASSWORD}@postgres:5432/fmerp
+  AUTH_DATABASE_URL: postgres://fmerp_auth:${AUTH_DB_PASSWORD}@postgres:5432/fmerp
+  S3_ENDPOINT: ${S3_ENDPOINT:-}
+  S3_REGION: ${S3_REGION:-auto}
+  S3_BUCKET: ${S3_BUCKET}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+  SYSTEM_ADMIN_EMAILS: ${SYSTEM_ADMIN_EMAILS:-}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+
+services:
+  postgres:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: fmerp
+      MIGRATOR_DB_PASSWORD: ${MIGRATOR_DB_PASSWORD}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      BACKUP_DB_PASSWORD: ${BACKUP_DB_PASSWORD}
+    volumes:
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fmerp"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 512m
+    networks: [internal]
+
+  # 배포 때마다 1회: 마이그레이션. 시드(테스트 계정)는 `--profile seed`로 따로 실행한다
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    working_dir: /app
+    command: ["pnpm", "--filter", "@fmerp/db", "migrate"]
+    environment:
+      MIGRATION_DATABASE_URL: postgres://fmerp_migrator:${MIGRATOR_DB_PASSWORD}@postgres:5432/fmerp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    mem_limit: 256m
+    networks: [internal]
+
+  seed:
+    profiles: ["seed"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    working_dir: /app
+    command: ["pnpm", "--filter", "@fmerp/auth", "seed"]
+    environment:
+      <<: *app-env
+      MIGRATION_DATABASE_URL: postgres://fmerp_migrator:${MIGRATOR_DB_PASSWORD}@postgres:5432/fmerp
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+    mem_limit: 256m
+    networks: [internal]
+
+  web-staging:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runner
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      BETTER_AUTH_URL: https://staging.${DOMAIN}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    mem_limit: 640m
+    networks: [edge, internal]
+
+  worker-staging:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      PUBLIC_BASE_URL: https://staging.${DOMAIN}
+      BACKUP_DATABASE_URL: postgres://fmerp_backup:${BACKUP_DB_PASSWORD}@postgres:5432/fmerp
+      BACKUP_AGE_RECIPIENTS: ${BACKUP_AGE_RECIPIENTS}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    mem_limit: 1536m
+    networks: [internal]
+
+  # 스테이징 전용 Tunnel(운영과 다른 토큰). 호스트 이름 staging.<도메인> → http://web-staging:3000
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${STAGING_TUNNEL_TOKEN}
+    depends_on: [web-staging]
+    mem_limit: 128m
+    networks: [edge]
+
+networks:
+  # cloudflared ↔ web. DB에는 닿지 않는다
+  edge:
+  # web·worker ↔ postgres. 밖으로 나가는 연결(S3, 텔레그램)은 기본 라우팅을 쓴다
+  internal:
+
+volumes:
+  pgdata:
