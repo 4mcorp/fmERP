@@ -168,4 +168,33 @@ describe("문서 이력 타임라인 (AUD-011)", () => {
     });
     expect(items.map((i) => i.kind)).toEqual(["create", "submit"]);
   });
+
+  it("의견 등록은 기안자 전용 의견의 존재를 알릴 수 있어 넣지 않는다", () => {
+    const items = buildTimeline({
+      ...empty(),
+      logs: [
+        { at: t("1T00:00:00"), action: "approval.comment", actor: "홍", reason: null, ip: null },
+      ],
+      includeViews: true,
+      includeIp: true,
+    });
+    expect(items).toEqual([]);
+  });
+
+  it("결재자 이관 사유는 감사 권한자에게만 보인다", () => {
+    const logs = [
+      {
+        at: t("1T00:00:00"),
+        action: "approval.transfer",
+        actor: "결재관리",
+        reason: "병가 인수인계",
+        ip: null,
+      },
+    ];
+    expect(buildTimeline({ ...empty(), logs })[0]).toMatchObject({
+      label: "결재자 이관",
+      detail: null,
+    });
+    expect(buildTimeline({ ...empty(), logs, includeIp: true })[0]?.detail).toBe("병가 인수인계");
+  });
 });

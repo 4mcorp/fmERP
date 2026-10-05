@@ -97,6 +97,12 @@ function Detail({ row, onClose }: { row: AuditLogRow | null; onClose: () => void
     : [];
   return (
     <Modal open={row !== null} onClose={onClose} title="감사 로그 상세" className="max-w-2xl">
+      {row?.masked && (
+        <p className="mb-3 rounded-md bg-muted p-2 text-sm text-muted-foreground">
+          문서를 열람할 권한이 없어 제목·결재 의견·첨부 이름은 가렸습니다. (관리자는 문서 내용을 볼
+          수 없습니다)
+        </p>
+      )}
       <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
         {fields
           .filter(([, v]) => v)
@@ -324,7 +330,11 @@ function AuditLogView() {
                     className="max-w-64 truncate"
                     title={r.targetLabel ?? r.targetId ?? undefined}
                   >
-                    {r.targetLabel ?? r.targetId ?? "—"}
+                    {r.masked ? (
+                      <span className="text-muted-foreground">문서 내용 가림 · {r.targetId}</span>
+                    ) : (
+                      (r.targetLabel ?? r.targetId ?? "—")
+                    )}
                   </TableCell>
                   <TableCell>
                     {r.result === "success" ? (

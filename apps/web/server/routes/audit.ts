@@ -36,6 +36,7 @@ const LogRowSchema = z.object({
   requestId: z.string().nullable(),
   result: z.string(),
   reason: z.string().nullable(),
+  masked: z.boolean(),
 });
 
 const ReviewMonthSchema = z.object({

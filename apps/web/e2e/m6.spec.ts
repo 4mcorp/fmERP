@@ -101,6 +101,21 @@ test.describe("감사 기능 (M6)", () => {
     await expect(dialog).toBeHidden();
   });
 
+  test("관리자는 감사 로그에서 문서 제목을 볼 수 없다 @stateful", async ({ page }) => {
+    await loginAs(page, "박사원");
+    const title = unique("E2E 비밀 제목");
+    const id = await submitDoc(page, title);
+
+    await loginAs(page, "이관리");
+    await page.goto(`/admin/audit?targetId=${id}`);
+    await expect(page.getByText(/문서 내용 가림/).first()).toBeVisible();
+    await expect(page.getByText(title)).toHaveCount(0);
+    await page.getByRole("button", { name: /상신 상세 보기/ }).click();
+    await expect(
+      page.getByText("문서를 열람할 권한이 없어 제목·결재 의견·첨부 이름은 가렸습니다"),
+    ).toBeVisible();
+  });
+
   test("월간 접속 기록 점검을 기록하면 상태가 점검 완료로 바뀌고 점검 필요 표시가 사라진다 @stateful", async ({
     page,
   }) => {

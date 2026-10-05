@@ -495,3 +495,64 @@ describe("인증 없는 접근", () => {
     }
   });
 });
+
+describe("보안 리뷰 반영 (M6)", () => {
+  it("본문을 열람할 수 없는 관리자에게 감사 로그가 문서 제목·결재 의견·첨부 이름을 보이지 않는다", async () => {
+    const title = `비밀 제목 ${Date.now().toString(36)}`;
+    const id = await submittedDoc({ title });
+    const v = await json<View>(await req("member1", `/api/approvals/${id}`));
+    const step = v.steps.find((s) => s.status === "ACTIVE");
+    const act = await req("member2", `/api/approvals/${id}/steps/${step?.id}/act`, "POST", {
+      action: { kind: "reject", comment: "극비 결재 의견" },
+      idempotencyKey: key(),
+      expectedVersion: step?.version,
+    });
+    expect(act.status).toBe(200);
+
+    type Row = LogPage["items"][number] & {
+      targetLabel: string | null;
+      reason: string | null;
+      masked: boolean;
+    };
+    const rows = async (who: string) =>
+      (await json<{ items: Row[] }>(await req(who, `/api/audit-logs?targetId=${id}`))).items;
+
+    // 관리자: 누가·언제·무엇을 했는지는 보이지만 제목과 의견 내용은 가려진다
+    const adminRows = await rows("admin");
+    expect(adminRows.length).toBeGreaterThanOrEqual(3);
+    expect(JSON.stringify(adminRows)).not.toContain(title);
+    expect(JSON.stringify(adminRows)).not.toContain("극비 결재 의견");
+    expect(adminRows.every((r) => r.masked && r.targetLabel === null && r.reason === null)).toBe(
+      true,
+    );
+    expect(adminRows.every((r) => r.actorName && r.action)).toBe(true);
+
+    // 소유자(계정 범위 read_all)는 그대로 본다
+    const ownerRows = await rows("owner");
+    expect(JSON.stringify(ownerRows)).toContain(title);
+    expect(JSON.stringify(ownerRows)).toContain("극비 결재 의견");
+    expect(ownerRows.every((r) => !r.masked)).toBe(true);
+  });
+
+  it("타임라인에 기안자 전용 의견의 존재가 드러나지 않는다", async () => {
+    const id = await submittedDoc();
+    const res = await req("member2", `/api/approvals/${id}/comments`, "POST", {
+      body: "기안자에게만 하는 말",
+      visibility: "drafter",
+    });
+    expect(res.status).toBeLessThan(300);
+    const mine = await timeline("member1", id);
+    expect(mine.map((i) => i.label)).not.toContain("의견 등록");
+    const audited = await timeline("auditor", id);
+    expect(audited.map((i) => i.label)).not.toContain("의견 등록");
+  });
+
+  it("인쇄 기록을 짧은 시간에 반복해도 로그가 불어나지 않는다", async () => {
+    const id = await submittedDoc();
+    const calls = await Promise.all(
+      Array.from({ length: 10 }, () => req("member1", `/api/approvals/${id}/print-log`, "POST")),
+    );
+    expect(calls.every((r) => r.status === 200)).toBe(true);
+    expect(await auditRows("document.print", id)).toHaveLength(1);
+  });
+});

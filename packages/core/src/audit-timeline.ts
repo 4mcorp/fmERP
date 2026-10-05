@@ -63,7 +63,6 @@ const LOG_LABELS: Record<string, string> = {
   "approval.replace_line": "결재선 교체",
   "approval.line_change": "결재선 변경",
   "approval.transfer": "결재자 이관",
-  "approval.comment": "의견 등록",
   "document.download_pdf": "PDF 내려받기",
   "document.download_package": "패키지 내려받기",
   "document.print": "인쇄",
@@ -73,8 +72,14 @@ const LOG_LABELS: Record<string, string> = {
   "document.audit_view": "감사 열람",
 };
 
-/** 감사 로그에 같이 남지만 타임라인에는 넣지 않는 행위 */
-const LOG_SKIPPED = new Set(["approval.save_draft", "document.package_ready"]);
+/**
+ * 감사 로그에 같이 남지만 타임라인에는 넣지 않는 행위.
+ * `approval.comment`는 기안자 전용 의견의 존재(누가·언제)를 다른 열람자에게 알릴 수 있어 뺀다.
+ */
+const LOG_SKIPPED = new Set(["approval.save_draft", "document.package_ready", "approval.comment"]);
+
+/** 사유가 인사 사정(휴직·퇴사 인수인계 등)일 수 있어 감사 권한자에게만 보이는 행위 */
+const LOG_DETAIL_RESTRICTED = new Set(["approval.transfer"]);
 
 /** `approval_action`이 정본인 단계 처리 행위의 감사 로그 이름 */
 const STEP_LOG_ACTIONS = new Set(Object.keys(ACTION_LABELS).map((k) => `approval.${k}`));
@@ -114,7 +119,7 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
       label: LOG_LABELS[l.action] ?? l.action,
       actor: l.actor,
       onBehalfOf: null,
-      detail: l.reason,
+      detail: LOG_DETAIL_RESTRICTED.has(l.action) && !input.includeIp ? null : l.reason,
       ip: input.includeIp ? l.ip : null,
     });
   }

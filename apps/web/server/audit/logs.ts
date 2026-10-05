@@ -1,6 +1,6 @@
 // 감사 로그 조회(AUD-025)와 월간 접속 기록 점검(AUD-026). 전체 로그는 계정 범위 `audit.read` 보유자만 본다.
 import { recordAudit } from "@fmerp/audit";
-import { type Actor, reviewStatuses, reviewTargetPeriod } from "@fmerp/core";
+import { type Actor, can, reviewStatuses, reviewTargetPeriod } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { and, desc, eq, gte, lt, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -43,7 +43,12 @@ export interface AuditLogRow {
   requestId: string | null;
   result: string;
   reason: string | null;
+  /** 문서 내용(제목·결재 의견·첨부 이름)을 열람할 권한이 없어 targetLabel·reason을 가렸는지 */
+  masked: boolean;
 }
+
+/** 문서·첨부를 대상으로 한 로그의 targetLabel(제목·파일명)과 reason(결재 의견 등)은 문서 내용이다 */
+const CONTENT_TARGETS = new Set(["document", "attachment"]);
 
 const escapeLike = (s: string) => s.replace(/[%_]/g, (c) => `\${c}`);
 
@@ -55,6 +60,8 @@ export async function queryAuditLogs(
   opts: { limit?: number; cursor?: string } = {},
 ): Promise<{ items: AuditLogRow[]; nextCursor: string | null }> {
   authorize(actor, "audit.read", ACCOUNT_TARGET);
+  // 관리자는 감사 로그를 보지만 문서 본문은 볼 수 없다(PRD 3.3 각주). 로그의 제목·의견으로 우회하지 못하게 가린다
+  const canSeeContent = can(actor, "document.read_all", ACCOUNT_TARGET);
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), MAX_LIMIT);
   const cursor = opts.cursor ? decodeCursor(opts.cursor) : null;
   const from = filters.from ?? new Date(ctx.now.getTime() - DEFAULT_DAYS * 86_400_000);
@@ -123,7 +130,11 @@ export async function queryAuditLogs(
     });
   }
   return {
-    items: page.map(({ cursorAt: _cursorAt, ...row }) => row),
+    items: page.map(({ cursorAt: _cursorAt, ...row }) => {
+      const masked =
+        !canSeeContent && row.targetType !== null && CONTENT_TARGETS.has(row.targetType);
+      return masked ? { ...row, targetLabel: null, reason: null, masked } : { ...row, masked };
+    }),
     nextCursor: rows.length > limit && last ? encodeCursor(last.cursorAt, last.id) : null,
   };
 }

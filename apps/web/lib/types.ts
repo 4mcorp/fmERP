@@ -488,6 +488,8 @@ export interface AuditLogRow {
   requestId: string | null;
   result: string;
   reason: string | null;
+  /** 문서 내용을 볼 권한이 없어 제목·의견을 가렸는지 */
+  masked: boolean;
 }
 
 export interface AuditLogPage {
