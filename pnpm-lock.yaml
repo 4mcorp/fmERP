@@ -47,6 +47,9 @@ importers:
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@fmerp/notification':
+        specifier: workspace:*
+        version: link:../../packages/notification
       '@fmerp/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -162,6 +165,9 @@ importers:
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@fmerp/notification':
+        specifier: workspace:*
+        version: link:../../packages/notification
       '@fmerp/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -299,6 +305,18 @@ importers:
       drizzle-kit:
         specifier: ~0.31.11
         version: 0.31.11
+
+  packages/notification:
+    dependencies:
+      '@fmerp/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
 
   packages/storage:
     dependencies:

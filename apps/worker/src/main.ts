@@ -1,4 +1,5 @@
 import { createDatabase } from "@fmerp/db";
+import { TelegramClient } from "@fmerp/notification";
 import { ObjectStorage } from "@fmerp/storage";
 import { serve } from "@hono/node-server";
 import { PgBoss } from "pg-boss";
@@ -7,6 +8,7 @@ import { type BackupJobs, registerBackupJobs } from "./backup-jobs";
 import { env } from "./env";
 import { loadFontCss } from "./fonts";
 import { createHealthApp } from "./health";
+import { registerNotificationJobs } from "./notification-jobs";
 import { registerPackageJobs } from "./package-jobs";
 import { closeBrowser, renderPdf } from "./render";
 
@@ -56,12 +58,31 @@ if (backup) {
   console.warn("[worker] BACKUP_DATABASE_URL·BACKUP_AGE_RECIPIENTS가 없어 백업이 꺼져 있습니다");
 }
 
+// 알림 (M8): 이벤트 소비는 항상, 텔레그램은 봇 토큰이 있을 때만 켠다
+const publicBase = env.PUBLIC_BASE_URL.replace(/\/$/, "");
+const notificationJobs = await registerNotificationJobs(boss, {
+  appDb: appDb.db,
+  authDb: authDb.db,
+  baseUrl: publicBase,
+  client: env.TELEGRAM_BOT_TOKEN
+    ? new TelegramClient({ token: env.TELEGRAM_BOT_TOKEN, baseUrl: env.TELEGRAM_API_BASE_URL })
+    : null,
+  // 웹훅은 텔레그램이 요구하는 https 주소와 비밀 값이 모두 있을 때만 켤 수 있다
+  webhook:
+    env.TELEGRAM_WEBHOOK_SECRET && publicBase.startsWith("https://")
+      ? { url: `${publicBase}/api/telegram/webhook`, secret: env.TELEGRAM_WEBHOOK_SECRET }
+      : null,
+  systemAdminEmails: env.SYSTEM_ADMIN_EMAILS,
+  logger: console,
+});
+
 ready = true;
 console.log(`[worker] 시작됨 — health: http://localhost:${env.WORKER_PORT}/health`);
 
 async function shutdown() {
   ready = false;
   backupJobs?.stop();
+  await notificationJobs.stop();
   await boss.stop({ graceful: true });
   await closeBrowser();
   server.close();

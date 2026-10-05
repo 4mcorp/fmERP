@@ -30,6 +30,16 @@ const schema = z.object({
   REHEARSAL_TOOL_URL: z.url().optional(),
   /** pg_dump가 접속할 URL (기본은 BACKUP_DATABASE_URL). 컨테이너 안에서 실행하면 그 안에서 보이는 주소 */
   BACKUP_PG_DUMP_URL: z.url().optional(),
+  /** 텔레그램 봇 토큰(@BotFather). 없으면 텔레그램 알림이 꺼진다. 비밀정보라 .env에만 둔다 */
+  TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
+  /** Bot API 주소 (시험용 가짜 서버로 바꿀 때만 쓴다) */
+  TELEGRAM_API_BASE_URL: z.url().optional(),
+  /** 웹훅 요청 검증용 비밀 값 (웹 서버와 같은 값). 웹훅을 쓸 때만 필요 */
+  TELEGRAM_WEBHOOK_SECRET: z.string().min(16).optional(),
+  /** 사용자가 접속하는 공개 주소. 알림 링크와 웹훅 등록 주소의 기준 (웹훅은 https만) */
+  PUBLIC_BASE_URL: z.url().default("http://localhost:3000"),
+  /** 덤프 문제 알림을 받을 시스템 관리자 이메일(쉼표 구분). 웹 서버와 같은 값 */
+  SYSTEM_ADMIN_EMAILS: z.string().optional(),
   NODE_ENV: z.string().optional(),
 });
 
