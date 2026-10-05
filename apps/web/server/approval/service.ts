@@ -41,7 +41,7 @@ import {
 } from "./drafts";
 import { ApprovalError } from "./errors";
 import { formUsableBy, getForm, getFormVersion, latestVersion, versionToInput } from "./forms";
-import { loadMemberCards, loadOrgSnapshot } from "./org-snapshot";
+import { loadAuditorIds, loadMemberCards, loadOrgSnapshot } from "./org-snapshot";
 import { indexSubmitted } from "./search-index";
 import { type LoadedDocument, lockAndLoad, persistResult } from "./store";
 
@@ -267,6 +267,7 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
     allowDuplicate: input.allowDuplicate ?? false,
     ranks,
     inactive,
+    auditors: await loadAuditorIds(tx),
   });
   if (validation.errors.length > 0) {
     throw new ApprovalError("line_invalid", validation.errors.join("; "), {
@@ -381,6 +382,7 @@ export async function replaceDraftLine(
     allowDuplicate: input.allowDuplicate ?? false,
     ranks,
     inactive,
+    auditors: await loadAuditorIds(tx),
   });
   if (validation.errors.length > 0) {
     throw new ApprovalError("line_invalid", validation.errors.join("; "), {

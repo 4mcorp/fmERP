@@ -37,6 +37,15 @@ export async function loadOrgSnapshot(tx: Tx): Promise<OrgSnapshot> {
   };
 }
 
+/** 감사인 역할(`auditor`)을 가진 구성원 id. 범위(계정·사업자·부서)는 묻지 않는다 (감사 단계 대상 검증, AUD-001) */
+export async function loadAuditorIds(tx: Tx): Promise<Set<string>> {
+  const rows = await tx
+    .selectDistinct({ membershipId: schema.roleGrant.membershipId })
+    .from(schema.roleGrant)
+    .where(eq(schema.roleGrant.role, "auditor"));
+  return new Set(rows.map((r) => r.membershipId));
+}
+
 export interface MemberCard {
   membershipId: string;
   name: string;

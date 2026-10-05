@@ -233,6 +233,23 @@ describe("결재선 검증 (APV-015·038)", () => {
     expect(validateLine([s(1, ["drafter"])], base).errors.join()).toMatch(/본인/);
   });
 
+  it("감사 단계의 처리자는 감사인 역할 보유자여야 한다 (AUD-001)", () => {
+    const withAuditors = { ...base, auditors: new Set(["aud"]) };
+    const audit = (ids: string[]) => s(2, ids, { type: "audit" });
+    expect(validateLine([s(1, ["lead"]), audit(["aud"])], withAuditors).errors).toEqual([]);
+    expect(validateLine([s(1, ["lead"]), audit(["lead"])], withAuditors).errors.join()).toMatch(
+      /감사인/,
+    );
+    // 일부만 감사인이어도 오류
+    expect(validateLine([s(1, ["lead"]), audit(["aud", "lead"])], withAuditors).errors.length).toBe(
+      1,
+    );
+    // 감사인 목록을 주지 않으면 검사하지 않는다
+    expect(validateLine([s(1, ["lead"]), audit(["other"])], base).errors).toEqual([]);
+    // 감사 단계가 아닌 단계는 영향 없음
+    expect(validateLine([s(1, ["lead"])], withAuditors).errors).toEqual([]);
+  });
+
   it("비활성·퇴사자가 처리자의 전부인 단계는 오류", () => {
     const withGone = { ...base, inactive: new Set(["gone"]) };
     expect(validateLine([s(1, ["gone"])], withGone).errors.join()).toMatch(/비활성/);

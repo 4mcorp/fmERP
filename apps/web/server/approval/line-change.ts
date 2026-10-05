@@ -15,7 +15,7 @@ import { and, eq } from "drizzle-orm";
 import type { ServiceContext } from "./context";
 import { ApprovalError } from "./errors";
 import { getFormVersion } from "./forms";
-import { loadMemberCards, loadOrgSnapshot } from "./org-snapshot";
+import { loadAuditorIds, loadMemberCards, loadOrgSnapshot } from "./org-snapshot";
 import { lockAndLoad } from "./store";
 
 export type LineChangeInput =
@@ -97,7 +97,13 @@ export async function changeLine(
       assigneeIds: s.assigneeIds,
       quorum: s.quorum,
     })),
-    { drafterId: row.drafterMembershipId, allowDuplicate: true, ranks: new Map(), inactive },
+    {
+      drafterId: row.drafterMembershipId,
+      allowDuplicate: true,
+      ranks: new Map(),
+      inactive,
+      auditors: await loadAuditorIds(ctx.tx),
+    },
   );
   if (validation.errors.length > 0) {
     throw new ApprovalError("line_invalid", validation.errors.join("; "), {

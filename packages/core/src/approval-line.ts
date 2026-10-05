@@ -173,6 +173,11 @@ export interface ValidationOptions {
   /** 구성원 id → 직위 서열 */
   ranks: Map<string, number>;
   inactive: Set<string>;
+  /**
+   * 감사인 역할(`auditor`)을 가진 구성원 id. 주어지면 감사 단계의 처리자는 전부 여기에 있어야 한다 (AUD-001).
+   * 생략하면 감사 단계 대상을 검사하지 않는다.
+   */
+  auditors?: Set<string>;
 }
 
 export interface LineValidation {
@@ -200,6 +205,14 @@ export function validateLine(
       errors.push("비활성·퇴사 구성원만 처리자인 단계가 있습니다");
       break;
     }
+  }
+
+  const auditors = opts.auditors;
+  if (auditors) {
+    const notAuditor = steps.some(
+      (s) => s.type === "audit" && s.assigneeIds.some((id) => !auditors.has(id)),
+    );
+    if (notAuditor) errors.push("감사 단계의 처리자는 감사인 역할을 가진 구성원이어야 합니다");
   }
 
   const groups = new Map<number, typeof flow>();
