@@ -8,6 +8,7 @@ import { registerAccountRoutes } from "./routes/account";
 import { registerAccountsRoutes } from "./routes/accounts";
 import { registerApprovalAdminRoutes } from "./routes/approval-admin";
 import { registerApprovalRoutes } from "./routes/approvals";
+import { registerAuditRoutes } from "./routes/audit";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerDepartmentRoutes } from "./routes/departments";
 import { registerDocumentRoutes } from "./routes/documents";
@@ -53,5 +54,6 @@ export const app = createApp({
     registerPackageRoutes(router, getServerDeps);
     registerSearchRoutes(router, getServerDeps);
     registerApprovalAdminRoutes(router, getServerDeps);
+    registerAuditRoutes(router, getServerDeps);
   },
 });

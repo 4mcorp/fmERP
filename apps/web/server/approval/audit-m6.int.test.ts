@@ -1,4 +1,6 @@
 // M6 통합 테스트: 감사 단계 대상(AUD-001), 감사인 열람 기록(AUD-010), 타임라인(AUD-011), 감사 로그 조회(AUD-025), 월간 점검(AUD-026) (실제 DB)
+
+import { reviewTargetPeriod } from "@fmerp/core";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -24,6 +26,8 @@ const req = (who: string, path: string, method = "GET", body?: unknown) =>
   (clients[who] as TestClient).request(path, {
     method,
     body: body === undefined && method !== "GET" ? {} : body,
+    // 접속지(AUD-021)가 기록되는지 보려고 프록시 헤더를 흉내 낸다 (개발·테스트에서만 믿는 헤더)
+    headers: { "x-forwarded-for": "203.0.113.7" },
   });
 
 interface View {
@@ -241,5 +245,227 @@ describe("감사인은 읽기 전용이다", () => {
     expect(comment.status).toBeLessThan(500);
     const after = await json<View>(await req("member1", `/api/approvals/${id}`));
     expect(after.status).toBe("IN_PROGRESS");
+  });
+});
+
+interface TimelineItem {
+  kind: string;
+  label: string;
+  actor: string | null;
+  onBehalfOf: string | null;
+  ip: string | null;
+}
+const timeline = async (who: string, id: string) =>
+  json<TimelineItem[]>(await req(who, `/api/approvals/${id}/timeline`));
+
+describe("문서 이력 타임라인 (AUD-011)", () => {
+  it("작성 → 상신 → 승인 → 완료를 순서대로 보이고 같은 사건을 중복하지 않는다", async () => {
+    const id = await submittedDoc();
+    await complete(id);
+    const items = await timeline("member1", id);
+    expect(items.map((i) => i.label)).toEqual(["작성", "상신", "승인", "완료"]);
+    expect(items.filter((i) => i.label === "승인")).toHaveLength(1);
+    expect(items[2]?.actor).toBeTruthy();
+  });
+
+  it("접속지와 감사 열람은 감사 권한자에게만 보인다", async () => {
+    const id = await submittedDoc();
+    expect(await status("auditor", id)).toBe(200); // 감사 열람 기록을 남긴다
+    const mine = await timeline("member1", id);
+    expect(mine.every((i) => i.ip === null)).toBe(true);
+    expect(mine.map((i) => i.label)).not.toContain("감사 열람");
+    const audited = await timeline("auditor", id);
+    expect(audited.map((i) => i.label)).toContain("감사 열람");
+    expect(audited.some((i) => i.ip !== null)).toBe(true);
+  });
+
+  it("다운로드·인쇄·공람 같은 후속 행위도 이력에 남는다", async () => {
+    const id = await submittedDoc();
+    expect((await req("member1", `/api/approvals/${id}/print-log`, "POST")).status).toBe(200);
+    const items = await timeline("member1", id);
+    const print = items.find((i) => i.label === "인쇄");
+    expect(print?.actor).toBeTruthy();
+  });
+
+  it("열람 권한이 없으면 타임라인도 인쇄 기록도 404다", async () => {
+    const id = await submittedDoc();
+    for (const who of ["multi", "admin", "owner-b"]) {
+      expect((await req(who, `/api/approvals/${id}/timeline`)).status, who).toBe(404);
+      expect((await req(who, `/api/approvals/${id}/print-log`, "POST")).status, who).toBe(404);
+    }
+    expect(await auditRows("document.print", id)).toHaveLength(0);
+  });
+
+  it("임시저장 문서는 감사인에게 404다", async () => {
+    const draft = await createDoc();
+    expect((await req("auditor", `/api/approvals/${draft}/timeline`)).status).toBe(404);
+  });
+});
+
+interface LogPage {
+  items: {
+    id: string;
+    occurredAt: string;
+    action: string;
+    targetId: string | null;
+    actorName: string | null;
+    ip: string | null;
+  }[];
+  nextCursor: string | null;
+}
+const logs = async (who: string, query = "") =>
+  json<LogPage>(await req(who, `/api/audit-logs${query}`));
+
+describe("감사 로그 조회 (AUD-025)", () => {
+  it("계정 범위 감사 권한자(소유자·관리자)만 볼 수 있다", async () => {
+    for (const who of ["owner", "admin"]) {
+      expect((await req(who, "/api/audit-logs")).status, who).toBe(200);
+    }
+    // 일반 구성원과 부서 범위 감사인은 전체 로그를 볼 수 없다
+    for (const who of ["member1", "auditor", "hr", "bizadmin"]) {
+      expect((await req(who, "/api/audit-logs")).status, who).toBe(403);
+    }
+  });
+
+  it("행위·대상 필터와 행위자 이름·접속지를 돌려준다", async () => {
+    const id = await submittedDoc();
+    const page = await logs("owner", `?targetId=${id}`);
+    expect(page.items.map((i) => i.action).sort()).toEqual(["approval.create", "approval.submit"]);
+    expect(page.items.every((i) => i.actorName && i.ip)).toBe(true);
+    const only = await logs("owner", `?targetId=${id}&action=approval.submit`);
+    expect(only.items).toHaveLength(1);
+    // 점(.)으로 끝나면 접두사 필터
+    const prefix = await logs("owner", `?targetId=${id}&action=approval.`);
+    expect(prefix.items).toHaveLength(2);
+    expect((await logs("owner", `?targetId=${id}&action=document.`)).items).toHaveLength(0);
+  });
+
+  it("기간 필터: 미래 시작이면 비고, 지난 시작이면 포함한다", async () => {
+    const id = await submittedDoc();
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    expect((await logs("owner", `?targetId=${id}&from=${future}`)).items).toHaveLength(0);
+    const past = new Date(Date.now() - 86_400_000).toISOString();
+    expect((await logs("owner", `?targetId=${id}&from=${past}`)).items.length).toBeGreaterThan(0);
+    expect((await logs("owner", `?targetId=${id}&to=${past}`)).items).toHaveLength(0);
+  });
+
+  it("커서로 이어 읽으면 겹침·누락 없이 최근 순이다", async () => {
+    const first = await logs("owner", "?limit=3");
+    expect(first.items).toHaveLength(3);
+    expect(first.nextCursor).toBeTruthy();
+    const second = await logs("owner", `?limit=3&cursor=${first.nextCursor}`);
+    const all = [...first.items, ...second.items];
+    expect(new Set(all.map((i) => i.id)).size).toBe(6);
+    const times = all.map((i) => Date.parse(i.occurredAt));
+    expect([...times].sort((a, b) => b - a)).toEqual(times);
+    expect((await req("owner", "/api/audit-logs?cursor=abc")).status).toBe(400);
+  });
+
+  it("조회 행위도 기록한다 (첫 쪽만)", async () => {
+    const count = async () =>
+      (
+        await authDb.db
+          .select()
+          .from(schema.auditLog)
+          .where(
+            and(
+              eq(schema.auditLog.accountId, accountId),
+              eq(schema.auditLog.action, "audit.view_log"),
+            ),
+          )
+      ).length;
+    const before = await count();
+    const page = await logs("owner", "?limit=1");
+    expect(await count()).toBe(before + 1);
+    await logs("owner", `?limit=1&cursor=${page.nextCursor}`);
+    expect(await count()).toBe(before + 1);
+  });
+
+  it("다른 회사의 로그는 보이지 않는다", async () => {
+    const id = await submittedDoc();
+    expect((await logs("owner-b", `?targetId=${id}`)).items).toHaveLength(0);
+  });
+});
+
+interface Overview {
+  targetPeriod: string;
+  overdue: boolean;
+  months: {
+    period: string;
+    state: "pending" | "done" | "abnormal";
+    last: { memo: string | null; abnormal: boolean; reviewerName: string } | null;
+  }[];
+}
+const overview = async (who: string) => json<Overview>(await req(who, "/api/audit-logs/reviews"));
+const review = (who: string, body: unknown) => req(who, "/api/audit-logs/reviews", "POST", body);
+
+describe("월간 접속 기록 점검 (AUD-026)", () => {
+  it("직전 달부터 12개월을 돌려주고, 점검 대상 달은 직전 달이다", async () => {
+    const o = await overview("owner");
+    expect(o.months).toHaveLength(12);
+    expect(o.months[0]?.period).toBe(o.targetPeriod);
+    expect(o.months[0]?.period).toBe(reviewTargetPeriod(new Date()));
+  });
+
+  it("점검 완료를 남기면 상태가 바뀌고, 같은 달 정정은 마지막 건이 현재 상태다", async () => {
+    const period = (await overview("admin")).targetPeriod;
+    const bad = await review("admin", { period, abnormal: true, abnormalNote: "심야 대량 조회" });
+    expect(bad.status).toBe(201);
+    let m = (await overview("owner")).months[0];
+    expect(m?.state).toBe("abnormal");
+    expect(m?.last?.reviewerName).toBeTruthy();
+
+    const fixed = await review("owner", { period, abnormal: false, memo: "확인 후 정상" });
+    expect(fixed.status).toBe(201);
+    m = (await overview("owner")).months[0];
+    expect(m?.state).toBe("done");
+    expect(m?.last?.memo).toBe("확인 후 정상");
+    expect((await overview("owner")).overdue).toBe(false);
+  });
+
+  it("점검할 수 없는 달·이상 내용 누락·형식 오류는 거부한다", async () => {
+    const period = (await overview("owner")).targetPeriod;
+    // 이번 달과 12개월보다 오래된 달은 점검 대상이 아니다
+    const now = new Date();
+    const thisMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+    expect((await review("owner", { period: thisMonth, abnormal: false })).status).toBe(400);
+    expect((await review("owner", { period: "2000-01", abnormal: false })).status).toBe(400);
+    expect((await review("owner", { period, abnormal: true })).status).toBe(400);
+    expect((await review("owner", { period, abnormal: true, abnormalNote: "  " })).status).toBe(
+      400,
+    );
+    expect((await review("owner", { period: "2026-13", abnormal: false })).status).toBe(400);
+  });
+
+  it("점검 기록은 감사 로그에도 남는다", async () => {
+    const period = (await overview("owner")).targetPeriod;
+    await review("owner", { period, abnormal: false });
+    const rows = await authDb.db
+      .select()
+      .from(schema.auditLog)
+      .where(
+        and(eq(schema.auditLog.accountId, accountId), eq(schema.auditLog.action, "audit.review")),
+      );
+    expect(rows.some((r) => r.targetLabel === period)).toBe(true);
+  });
+
+  it("권한 없는 사용자는 조회·등록할 수 없다", async () => {
+    const period = (await overview("owner")).targetPeriod;
+    for (const who of ["member1", "auditor", "hr"]) {
+      expect((await req(who, "/api/audit-logs/reviews")).status, who).toBe(403);
+      expect((await review(who, { period, abnormal: false })).status, who).toBe(403);
+    }
+  });
+
+  it("다른 회사의 점검 기록과 섞이지 않는다", async () => {
+    const other = await overview("owner-b");
+    expect(other.months.every((m) => m.last === null)).toBe(true);
+  });
+
+  it("점검 기록은 수정·삭제할 수 없다 (앱 계정은 INSERT·SELECT만)", async () => {
+    await expect(appDb.pool.query("update audit_review set memo = 'x'")).rejects.toThrow(
+      /permission denied/,
+    );
+    await expect(appDb.pool.query("delete from audit_review")).rejects.toThrow(/permission denied/);
   });
 });

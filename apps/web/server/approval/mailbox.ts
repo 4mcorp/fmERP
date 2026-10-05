@@ -151,9 +151,10 @@ export interface MailboxPage {
 const CURSOR_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}Z$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const encodeCursor = (at: string, id: string) => Buffer.from(`${at}|${id}`).toString("base64url");
+export const encodeCursor = (at: string, id: string) =>
+  Buffer.from(`${at}|${id}`).toString("base64url");
 
-function decodeCursor(cursor: string): { at: string; id: string } {
+export function decodeCursor(cursor: string): { at: string; id: string } {
   const [at, id] = Buffer.from(cursor, "base64url").toString().split("|");
   if (!at || !id || !CURSOR_AT.test(at) || !UUID.test(id)) {
     throw new ApprovalError("validation_failed", "잘못된 커서입니다");
