@@ -151,6 +151,7 @@
 | [2026-10-03-m3-security-review.md](plan/2026-10-03-m3-security-review.md) | done | M3 보안 리뷰: 처리 권한·불변성·기안자 권한 상승, 후속 FU-11~15 |
 | [2026-10-03-m4-forms-drafting-approval-ui.md](plan/2026-10-03-m4-forms-drafting-approval-ui.md) | accepted | M4 양식·기안·결재 화면: 양식 빌더·버전, 본문 S3 리비전, 첨부(staging 검증), 처리 API·재인증, 모바일 결재 |
 | [2026-10-04-m5-completion-mailbox.md](plan/2026-10-04-m5-completion-mailbox.md) | done | M5 완료 처리·문서함: 결재 PDF·완료 패키지(`final/` 한 번만 쓰기), 완료 이벤트 큐, 열람 권한 통합, 수신·공람·참조, 문서함·검색·내보내기, 일괄 이관 |
+| [2026-10-05-m6-audit.md](plan/2026-10-05-m6-audit.md) | draft | M6 감사 기능: 감사인 열람 기록, 문서 이력 타임라인, 인쇄 기록, 감사 로그 조회 화면, 월간 점검 (사용자 검토 대기) |
 
 ---
 
