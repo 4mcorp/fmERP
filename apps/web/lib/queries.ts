@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 import type {
+  AccountExports,
   ApprovalView,
   AttachmentInfo,
   AuditLogPage,
@@ -22,6 +23,7 @@ import type {
   OrgChart,
   PendingItem,
   RecipientInfo,
+  SystemBackups,
   TimelineItem,
 } from "./types";
 
@@ -185,4 +187,33 @@ export const useTimeline = (documentId: string, enabled: boolean) =>
     queryKey: ["timeline", documentId],
     queryFn: () => api<TimelineItem[]>(`/api/approvals/${documentId}/timeline`),
     enabled,
+  });
+
+// ===== 덤프·내보내기 (M7) =====
+
+/** 내가 시스템 관리자인지 (DB 덤프 메뉴 노출용. 아니어도 200) */
+export const useSystemMe = () =>
+  useQuery({
+    queryKey: ["system-me"],
+    queryFn: () => api<{ systemAdmin: boolean }>("/api/system/me"),
+  });
+
+const ACTIVE = new Set(["QUEUED", "RUNNING"]);
+
+/** DB 덤프 이력. 대기·실행 중인 덤프가 있으면 5초마다 다시 읽는다 */
+export const useSystemBackups = (enabled: boolean) =>
+  useQuery({
+    queryKey: ["system-backups"],
+    queryFn: () => api<SystemBackups>("/api/system/backups"),
+    enabled,
+    refetchInterval: (q) => (q.state.data?.items.some((i) => ACTIVE.has(i.status)) ? 5000 : false),
+  });
+
+/** 계정 내보내기 이력. 만드는 중인 것이 있으면 5초마다 다시 읽는다 */
+export const useAccountExports = (enabled: boolean) =>
+  useQuery({
+    queryKey: ["account-exports"],
+    queryFn: () => api<AccountExports>("/api/account/exports"),
+    enabled,
+    refetchInterval: (q) => (q.state.data?.items.some((i) => ACTIVE.has(i.status)) ? 5000 : false),
   });

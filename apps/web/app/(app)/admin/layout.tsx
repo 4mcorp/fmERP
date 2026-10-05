@@ -20,6 +20,7 @@ const NAV = [
   { href: "/admin/forms", label: "양식", any: ["form.manage"] },
   { href: "/admin/approvals", label: "결재 문서", any: ["approval.manage"] },
   { href: "/admin/audit", label: "감사 로그", any: ["audit.log"] },
+  { href: "/admin/backups", label: "내보내기", any: ["account.export"] },
 ] as const;
 
 /** 관리 콘솔 공통 레이아웃: 내가 쓸 수 있는 메뉴만 보여 준다 (실제 권한은 서버가 판정한다) */

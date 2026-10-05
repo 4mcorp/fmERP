@@ -79,6 +79,7 @@ const SecurityPolicyPatch = z
     idleTimeoutMinutes: z.number().int().min(5).max(1440),
     absoluteTimeoutHours: z.number().int().min(1).max(72),
     pinRequired: z.boolean(),
+    allowAdminExport: z.boolean(),
     attachmentMaxMb: z.number().int().min(1).max(100),
     attachmentExtensions: z
       .array(
@@ -177,6 +178,10 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
       await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor } = await loadActor(tx, tenant, c.get("session").userId);
         authorize(actor, "account.settings", ACCOUNT_TARGET);
+        // 계정 관리자에게 내보내기를 허용하는 일은 소유자만 한다 (관리자가 스스로 허용하는 것을 막는다)
+        if (patch.securityPolicy?.allowAdminExport !== undefined && tenant.role !== "owner") {
+          throw new ApiError(403, "forbidden", "내보내기 허용 설정은 소유자만 바꿀 수 있습니다");
+        }
         const [before] = await tx.select().from(schema.account);
         if (!before) throw new ApiError(404, "not_found", "회사를 찾을 수 없습니다");
 
@@ -682,7 +687,18 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
         const { actor } = await loadActor(tx, tenant, c.get("session").userId);
         const caps = Object.fromEntries(actions.map((a) => [a, canInAnyScope(actor, a)]));
         // 감사 로그 조회·월간 점검은 계정 범위 감사 권한자만 쓴다. 부서·사업자 범위 감사인은 문서 이력만 본다
-        return { ...caps, "audit.log": can(actor, "audit.read", ACCOUNT_TARGET) };
+        // 계정 전체 내보내기: 소유자, 또는 소유자가 허용한 계정 관리자 (PRD 3.3 각주 2)
+        const [acct] = await tx
+          .select({ policy: schema.account.securityPolicy })
+          .from(schema.account);
+        const exportAllowed =
+          tenant.role === "owner" ||
+          (tenant.role === "admin" && acct?.policy.allowAdminExport === true);
+        return {
+          ...caps,
+          "audit.log": can(actor, "audit.read", ACCOUNT_TARGET),
+          "account.export": exportAllowed,
+        };
       });
       return c.json(result, 200);
     },

@@ -17,11 +17,16 @@ export function PinDialog({
   needsSetup,
   onClose,
   onVerified,
+  description,
+  setupDescription,
 }: {
   open: boolean;
   needsSetup: boolean;
   onClose: () => void;
   onVerified: () => void;
+  /** 확인 안내 문구. 결재 처리가 아닌 곳(백업·내보내기)에서 바꿔 쓴다 */
+  description?: string;
+  setupDescription?: string;
 }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -53,8 +58,9 @@ export function PinDialog({
       title={needsSetup ? "결재 PIN 설정이 필요합니다" : "결재 PIN 확인"}
       description={
         needsSetup
-          ? "결재를 처리하려면 먼저 내 정보에서 결재 PIN을 설정하세요."
-          : "결재를 처리하기 전에 본인 확인을 위해 결재 PIN을 입력하세요. 확인 후 30분 동안은 다시 묻지 않습니다."
+          ? (setupDescription ?? "결재를 처리하려면 먼저 내 정보에서 결재 PIN을 설정하세요.")
+          : (description ??
+            "결재를 처리하기 전에 본인 확인을 위해 결재 PIN을 입력하세요. 확인 후 30분 동안은 다시 묻지 않습니다.")
       }
     >
       {needsSetup ? (

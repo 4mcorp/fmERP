@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarOff,
   ChevronDown,
+  DatabaseBackup,
   LogOut,
   Network,
   Plus,
@@ -27,7 +28,7 @@ import {
 import { adminEntry } from "@/lib/admin-nav";
 import { api, errorMessage } from "@/lib/api";
 import { clearLocalDrafts } from "@/lib/local-drafts";
-import { useCapabilities, useCurrentAccount, useMe, usePending } from "@/lib/queries";
+import { useCapabilities, useCurrentAccount, useMe, usePending, useSystemMe } from "@/lib/queries";
 import { ROLE_LABEL } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: pending } = usePending(Boolean(me?.activeAccountId));
   const adminLink = adminEntry(caps);
+  // DB 덤프 메뉴는 시스템 관리자에게만 보인다 (실제 권한은 서버가 판정한다)
+  const { data: systemMe } = useSystemMe();
 
   async function switchAccount(accountId: string) {
     try {
@@ -131,6 +134,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link href={adminLink}>
                     <Settings className="size-4" aria-hidden />
                     관리 콘솔
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {systemMe?.systemAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link href="/system/backups">
+                    <DatabaseBackup className="size-4" aria-hidden />
+                    시스템 덤프
                   </Link>
                 </DropdownMenuItem>
               )}

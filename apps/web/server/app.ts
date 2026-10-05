@@ -12,6 +12,7 @@ import { registerAuditRoutes } from "./routes/audit";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerDepartmentRoutes } from "./routes/departments";
 import { registerDocumentRoutes } from "./routes/documents";
+import { registerExportRoutes } from "./routes/exports";
 import { registerFormRoutes } from "./routes/forms";
 import { registerMailboxRoutes } from "./routes/mailbox";
 import { registerMeRoutes } from "./routes/me";
@@ -57,5 +58,6 @@ export const app = createApp({
     registerApprovalAdminRoutes(router, getServerDeps);
     registerAuditRoutes(router, getServerDeps);
     registerSystemRoutes(router, getServerDeps);
+    registerExportRoutes(router, getServerDeps);
   },
 });

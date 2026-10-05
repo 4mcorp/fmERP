@@ -10,6 +10,8 @@ const integrationEnv = {
   BETTER_AUTH_SECRET: "integration-test-secret-not-for-production-use",
   BETTER_AUTH_URL: "http://localhost:3000",
   DEV_TEST_LOGIN: "true",
+  // 시스템 관리자(DB 덤프 권한) 테스트 계정
+  SYSTEM_ADMIN_EMAILS: "owner@example.com",
   S3_ENDPOINT: "http://localhost:58333",
   S3_REGION: "us-east-1",
   S3_BUCKET: "fmerp-test",

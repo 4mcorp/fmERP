@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ApiProblem, api, errorMessage } from "@/lib/api";
+import { useCurrentAccount, useMe } from "@/lib/queries";
 import type { AccountSettings } from "@/lib/types";
 
 interface Exceeding {
@@ -33,6 +34,8 @@ const splitList = (value: string) =>
 /** 계정 설정: 기본 정보·허용 도메인·부서 최대 뎁스·세션·재인증·첨부 정책 (PRD ORG-001, ORG-012, ADM-001) */
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const { data: me } = useMe();
+  const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
   const { data } = useQuery({
     queryKey: ["settings"],
     queryFn: () => api<AccountSettings>("/api/account/settings"),
@@ -44,6 +47,7 @@ export default function SettingsPage() {
     idle: "",
     absolute: "",
     pinRequired: true,
+    allowAdminExport: false,
     attachMb: "",
     attachExt: "",
   });
@@ -60,6 +64,7 @@ export default function SettingsPage() {
       idle: p.idleTimeoutMinutes ? String(p.idleTimeoutMinutes) : "",
       absolute: p.absoluteTimeoutHours ? String(p.absoluteTimeoutHours) : "",
       pinRequired: p.pinRequired ?? true,
+      allowAdminExport: p.allowAdminExport ?? false,
       attachMb: p.attachmentMaxMb ? String(p.attachmentMaxMb) : "",
       attachExt: (p.attachmentExtensions ?? []).join(", "),
     });
@@ -83,6 +88,8 @@ export default function SettingsPage() {
             ...(form.idle ? { idleTimeoutMinutes: Number(form.idle) } : {}),
             ...(form.absolute ? { absoluteTimeoutHours: Number(form.absolute) } : {}),
             pinRequired: form.pinRequired,
+            // 계정 관리자에게 내보내기를 허용하는 설정은 소유자만 바꿀 수 있다 (관리자가 보내면 서버가 거부한다)
+            ...(account?.myRole === "owner" ? { allowAdminExport: form.allowAdminExport } : {}),
             ...(form.attachMb ? { attachmentMaxMb: Number(form.attachMb) } : {}),
             attachmentExtensions: splitList(form.attachExt),
           },
@@ -144,7 +151,8 @@ export default function SettingsPage() {
         <CardContent className="space-y-3">
           <div className="max-w-40 space-y-2">
             <Label htmlFor="s-depth">최대 뎁스</Label>
-            <Select value={form.depth} onValueChange={set("depth")}>
+            {/* Radix Select는 값이 바뀔 때 숨은 select가 빈 값("")을 보낼 수 있어, 빈 값은 무시한다 (그대로 저장하면 최대 뎁스가 0이 된다) */}
+            <Select value={form.depth} onValueChange={(v) => v && set("depth")(v)}>
               <SelectTrigger id="s-depth" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -211,8 +219,30 @@ export default function SettingsPage() {
               onChange={(e) => set("pinRequired")(e.target.checked)}
               className="size-4"
             />
-            <Label htmlFor="s-pin">결재·백업 다운로드 전에 PIN 재인증을 요구한다</Label>
+            <Label htmlFor="s-pin">
+              결재를 처리하기 전에 PIN 재인증을 요구한다 (백업·내보내기는 이 설정과 상관없이 항상
+              요구)
+            </Label>
           </div>
+          {account?.myRole === "owner" && (
+            <div className="space-y-1 sm:col-span-2">
+              <div className="flex items-center gap-2">
+                <input
+                  id="s-export"
+                  type="checkbox"
+                  checked={form.allowAdminExport}
+                  onChange={(e) => set("allowAdminExport")(e.target.checked)}
+                  className="size-4"
+                />
+                <Label htmlFor="s-export">계정 관리자에게 계정 전체 내보내기를 허용한다</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                내보내기 파일에는 모든 완료 문서의 본문이 들어 있습니다. 계정 관리자는 원래 문서
+                본문을 볼 수 없으므로 꼭 필요할 때만 허용하세요. 요청과 내려받기는 모두 감사 로그에
+                남습니다.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="s-mb">첨부 최대 크기 (MB, 1~100)</Label>
             <Input

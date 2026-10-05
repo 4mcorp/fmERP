@@ -25,6 +25,11 @@ export interface SecurityPolicy {
   /** 첨부 정책 (ADM-001, 실제 적용은 M4) */
   attachmentMaxMb?: number;
   attachmentExtensions?: string[];
+  /**
+   * 계정 관리자의 계정 전체 내보내기를 허용할지. 기본 꺼짐 (PRD 3.3 각주 2).
+   * 내보내기 ZIP에는 모든 완료 문서 본문이 들어 있어, 문서를 볼 수 없는 관리자에게는 소유자가 명시적으로 허용했을 때만 연다
+   */
+  allowAdminExport?: boolean;
 }
 
 export const account = pgTable(
