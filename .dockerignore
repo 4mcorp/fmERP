@@ -1,0 +1,12 @@
+# 이미지에 넣지 않는다: 의존성은 이미지 안에서 lockfile로 설치하고, 비밀·산출물·문서는 제외한다
+**/node_modules
+**/.next
+**/test-results
+**/playwright-report
+.git
+.env
+.env.*
+!.env.example
+docs
+.claude
+*.log
