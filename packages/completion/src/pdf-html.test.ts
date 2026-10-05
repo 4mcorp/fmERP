@@ -108,6 +108,12 @@ const base = (): PdfInput => ({
 });
 
 describe("buildPdfHtml (APV-063)", () => {
+  it("결재란은 쪽 경계에서 갈라지지 않는다", () => {
+    const html = buildPdfHtml(base());
+    expect(html).toMatch(/table\.approval \{[^}]*break-inside: avoid/);
+    expect(html).toMatch(/\.bottom-box \{[^}]*break-inside: avoid/);
+  });
+
   it("문서번호·제목·사업자·양식 이름을 머리에 둔다", () => {
     const html = buildPdfHtml(base());
     for (const text of ["FM-GEN-2026-0001", "출장 정산", "포엠테스트 본사", "지출결의서"]) {

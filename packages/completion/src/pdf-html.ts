@@ -314,9 +314,10 @@ const CSS = `
   .top.approval-right { justify-content: flex-end; }
   .top.approval-left { justify-content: flex-start; }
   .top.approval-bottom { display: none; }
-  .bottom-box { display: none; margin-top: 8mm; }
+  .bottom-box { display: none; margin-top: 8mm; break-inside: avoid; }
   .bottom-box.show { display: flex; justify-content: flex-end; }
-  table.approval { border-collapse: collapse; }
+  table.approval { border-collapse: collapse; break-inside: avoid; }
+  table.approval tr, table.approval td.cell { break-inside: avoid; }
   table.approval td.cell { border: 1px solid #333; width: 24mm; text-align: center; vertical-align: top; padding: 0; }
   .cell .head { background: #f1f1f1; border-bottom: 1px solid #333; font-size: 8.5pt; padding: 1mm; min-height: 9mm; }
   .cell .body { height: 15mm; position: relative; display: flex; align-items: center; justify-content: center; }
