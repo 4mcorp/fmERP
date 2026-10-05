@@ -6,7 +6,7 @@
 
 ## 1. 인증
 - 로그인은 Better Auth의 Google·Naver 공급자를 쓴다(M9). 사용자 식별은 **공급자의 고유 ID**로 하고, 이메일로 식별하거나 자동 병합하지 않는다 (PRD AUTH-002·004).
-- **개발용 테스트 로그인**(M1~M8): 시드 계정만, `DEV_TEST_LOGIN=true`이고 운영이 아닐 때만 켜진다. 운영 모드에서 켜려 하면 서버가 기동되지 않아야 한다 (`resolveDevTestLogin`). 테스트 계정·비밀번호는 `packages/auth/src/test-accounts.ts`에만 둔다.
+- **개발용 테스트 로그인**(M1~M8): 시드 계정만, `DEV_TEST_LOGIN=true`이고 운영이 아닐 때만 켜진다. 운영 모드에서 켜려 하면 서버가 기동되지 않아야 한다 (`resolveDevTestLogin`). 예외는 스테이징뿐이며 `APP_ENV=staging`을 명시해야 하고, 그때도 Cloudflare Access 뒤에서 테스트 데이터만 둔다 ([ops/staging.md](../ops/staging.md)). 테스트 계정·비밀번호는 `packages/auth/src/test-accounts.ts`에만 둔다.
 - 결재 PIN은 Argon2id(`@node-rs/argon2`)로 해시하고, 5회 실패하면 15분 잠근다 (PRD AUTH-009).
 - 세션 쿠키는 HttpOnly·Secure·SameSite를 쓴다. 비활성화된 구성원의 세션은 즉시 끊는다 (PRD AUTH-008·015).
 - Better Auth가 여는 HTTP 경로 중 감사 로그·업무 규칙을 우회하는 것은 `disabledPaths`로 막고, 같은 기능은 감사 로그를 남기는 자체 API로 제공한다.

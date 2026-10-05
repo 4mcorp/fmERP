@@ -18,4 +18,17 @@ describe("개발용 테스트 로그인 가드", () => {
     );
     expect(resolveDevTestLogin({ NODE_ENV: "production" })).toBe(false);
   });
+
+  it("스테이징(APP_ENV=staging)만 운영 모드에서도 켤 수 있고, 다른 값은 막는다", () => {
+    expect(
+      resolveDevTestLogin({ NODE_ENV: "production", DEV_TEST_LOGIN: "true", APP_ENV: "staging" }),
+    ).toBe(true);
+    for (const appEnv of ["production", "prod", "Staging", "", undefined]) {
+      expect(() =>
+        resolveDevTestLogin({ NODE_ENV: "production", DEV_TEST_LOGIN: "true", APP_ENV: appEnv }),
+      ).toThrow(/운영 환경/);
+    }
+    // APP_ENV=staging만으로는 켜지지 않는다 (DEV_TEST_LOGIN=true를 따로 요청해야 한다)
+    expect(resolveDevTestLogin({ NODE_ENV: "production", APP_ENV: "staging" })).toBe(false);
+  });
 });
