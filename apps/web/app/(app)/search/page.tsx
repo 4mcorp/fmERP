@@ -124,6 +124,7 @@ function SearchView() {
               <Input
                 id="s-q"
                 type="search"
+                autoComplete="off"
                 value={form.q}
                 onChange={(e) => set("q")(e.target.value)}
                 placeholder="제목, 문서번호, 본문, 첨부 파일명…"

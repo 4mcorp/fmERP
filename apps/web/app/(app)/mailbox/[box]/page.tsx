@@ -13,7 +13,7 @@ export default function MailboxPage() {
   const { box } = useParams<{ box: string }>();
   const { data: capabilities } = useCapabilities(true);
   const tab = MAILBOX_TABS.find((t) => t.id === box);
-  const query = useMailbox(tab ? box : "progress");
+  const query = useMailbox(box, Boolean(tab));
   const tabs = MAILBOX_TABS.filter((t) => t.id !== "audit" || capabilities?.["document.read_all"]);
   const rows = query.data?.pages.flatMap((p) => p.items) ?? [];
   const forbidden = query.error instanceof ApiProblem && query.error.status === 403;

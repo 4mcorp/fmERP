@@ -60,7 +60,9 @@ export async function registerPackageJobs(
         console.error(`[worker] 완료 패키지 불일치(FAILED): ${job.data.documentId} ${error.key}`);
         return;
       }
-      console.error(`[worker] 완료 패키지 생성 실패: ${job.data.documentId}`, error);
+      // 오류 객체 전체(SQL·파라미터·스택)는 로그에 남기지 않고 메시지만 남긴다
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[worker] 완료 패키지 생성 실패: ${job.data.documentId} — ${message}`);
       throw error; // pg-boss가 지수 백오프로 다시 시도한다
     }
   });

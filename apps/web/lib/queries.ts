@@ -132,8 +132,9 @@ export const useMine = () =>
   useQuery({ queryKey: ["inbox-mine"], queryFn: () => api<MineItem[]>("/api/inbox/mine") });
 
 /** 문서함 목록. 커서로 이어서 가져온다 (APV-080·081) */
-export const useMailbox = (box: string) =>
+export const useMailbox = (box: string, enabled = true) =>
   useInfiniteQuery({
+    enabled,
     queryKey: ["mailbox", box],
     queryFn: ({ pageParam }) =>
       api<DocumentPage>(`/api/mailbox/${box}?limit=30${pageParam ? `&cursor=${pageParam}` : ""}`),

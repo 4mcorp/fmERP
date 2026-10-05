@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TargetSelect, type TargetValue } from "@/components/approval/target-select";
@@ -100,7 +100,7 @@ export function RecipientPanel({
                       )
                     }
                   >
-                    접수
+                    {busy ? "처리 중…" : "접수"}
                   </Button>
                 )}
                 {r.canDistribute && (
@@ -113,7 +113,7 @@ export function RecipientPanel({
                       setDistribute(r);
                     }}
                   >
-                    배부
+                    {busy ? "처리 중…" : "배부"}
                   </Button>
                 )}
               </span>
@@ -235,9 +235,25 @@ export function RecipientPanel({
           <ul className="flex flex-wrap gap-2">
             {circulateTargets.map((t) => (
               <li key={`${t.target.type}:${t.target.id}`}>
-                <Badge variant="secondary">
+                <Badge variant="secondary" className="gap-1 py-1 pr-1">
                   {t.target.type === "department" ? "[부서] " : ""}
                   {t.name}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-5"
+                    aria-label={`${t.name} 공람 대상 삭제`}
+                    onClick={() =>
+                      setCirculateTargets((list) =>
+                        list.filter(
+                          (x) => !(x.target.type === t.target.type && x.target.id === t.target.id),
+                        ),
+                      )
+                    }
+                  >
+                    <X className="size-3" aria-hidden />
+                  </Button>
                 </Badge>
               </li>
             ))}

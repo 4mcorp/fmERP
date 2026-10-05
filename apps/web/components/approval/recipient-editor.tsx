@@ -107,7 +107,7 @@ export function RecipientEditor({ documentId }: { documentId: string }) {
                   aria-label="접수 담당자 (선택)"
                   value={assignee}
                   onChange={(e) => setAssignee(e.target.value)}
-                  className="h-9 rounded-md border bg-transparent px-2 text-sm"
+                  className="h-9 rounded-md border bg-background px-2 text-sm text-foreground"
                 >
                   <option value="">접수 담당자: 부서장</option>
                   {(members ?? [])
