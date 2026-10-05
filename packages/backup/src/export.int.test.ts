@@ -89,6 +89,29 @@ const closeActive = () =>
     "update backup_job set status = 'FAILED', finished_at = now(), error = 'test' where status in ('QUEUED','RUNNING')",
   );
 
+/** DB에서 문서를 지운다. 불변 트리거는 소유자 권한으로 잠시 끈다 (이 테스트가 남긴 가짜 상태가 다른 시험을 흔들지 않게) */
+async function dropDocument(documentId: string) {
+  const c = await owner.pool.connect();
+  try {
+    await c.query("begin");
+    await c.query("alter table document disable trigger user");
+    await c.query("alter table approval_step disable trigger user");
+    await c.query("alter table document_package disable trigger user");
+    await c.query("delete from document_package where document_id = $1", [documentId]);
+    await c.query("delete from approval_action where document_id = $1", [documentId]);
+    await c.query("delete from document where id = $1", [documentId]);
+    await c.query("alter table document enable trigger user");
+    await c.query("alter table approval_step enable trigger user");
+    await c.query("alter table document_package enable trigger user");
+    await c.query("commit");
+  } catch (error) {
+    await c.query("rollback");
+    throw error;
+  } finally {
+    c.release();
+  }
+}
+
 async function download(key: string): Promise<Buffer> {
   return Buffer.from(await storage.getBytes(key));
 }
@@ -264,6 +287,8 @@ describe("계정 전체 내보내기 (BAK-009)", () => {
     };
     expect(manifest.counts.missingObjects).toBeGreaterThanOrEqual(1);
     expect((zip.get("README.txt") as Buffer).toString("utf8")).toContain("누락:");
+    // 객체 없이 READY로 표시한 가짜 패키지는 다른 시험(복구 리허설의 표본)에 남기지 않는다
+    await dropDocument(doc.documentId);
   }, 180_000);
 
   it("대기열: 가장 오래된 요청부터, 동시에 선점해도 같은 작업을 두 번 잡지 않는다", async () => {

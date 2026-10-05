@@ -33,6 +33,14 @@ const req = (who: string, path: string, method = "GET", body?: unknown) =>
   });
 
 /** PIN을 확인 상태로 만든다. 다른 테스트가 이미 PIN을 정해 뒀을 수 있어 알려진 값을 차례로 시도한다 */
+/** 이 파일이 설정한 PIN을 지운다. M1의 PIN 시험은 owner에게 PIN이 아직 없다고 가정한다 (파일 실행 순서에 영향을 주지 않게) */
+async function resetPins(emails: string[]) {
+  await owner.pool.query(
+    'delete from approval_pin where user_id in (select id from "user" where email = any($1::text[]))',
+    [emails],
+  );
+}
+
 async function verifyPin(who: string) {
   await req(who, "/api/me/pin", "PUT", { pin: "246810" });
   for (const pin of ["246810", "135790", "482915"]) {
@@ -70,6 +78,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await closeActive();
+  await resetPins(["owner@example.com"]);
   await owner.pool.query("delete from system_backup where note like $1", [`${MARK}%`]);
   await owner.pool.end();
   await authDb.pool.end();

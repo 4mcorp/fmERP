@@ -1,7 +1,7 @@
 ---
 title: M7 덤프·내보내기·이관 상세 계획
 date: 2026-10-05
-status: draft
+status: done
 tags: [backup, storage, worker, db, api, ui, security, test, infra]
 related: [docs/plan/2026-10-03-mvp-roadmap.md, docs/plan/2026-10-04-m5-completion-mailbox.md, docs/rules/storage-backup.md, docs/DEPLOYMENT_PLAN.md, docs/adr/0009, BAK-005, BAK-006, BAK-007, BAK-009, BAK-010, AUD-023, ADM-006]
 ---
@@ -99,25 +99,25 @@ DB를 잃어도, 서버를 바꿔도, 서비스를 옮겨도 **문서와 데이�
 
 ## 단계 (4개 하위 단계, 태스크마다 커밋, 단계 끝에 전체 검증)
 **M7-A 기반**
-- [ ] A1. 현황 재확인(트리거와 재구성 쓰기 경로, `fmerp_backup` 역할 적용, 컨테이너 안 `pg_dump` 실행, 패키지 형식 v2 필드 확정), ADR 0011 작성, 패키지 `age-encryption`·`@aws-sdk/lib-storage` 검증 후 보고·승인
-- [ ] A2. 스토리지 어댑터: `list`·스트림 업로드·태그 지정(+실제 S3 호출 테스트). `fmerp_backup` 역할(initdb + 기존 볼륨 적용 방법 기록)
-- [ ] A3. DB: `system_backup`, `backup_job`(RLS), 계정 설정 `allowAdminExport`, 마이그레이션
-- [ ] A4. core(TDD): `backupHealth`, 변경 토큰 비교, 내보내기 manifest·CSV 규칙, 시스템 관리자 판정
+- [x] A1. 현황 재확인(트리거와 재구성 쓰기 경로, `fmerp_backup` 역할 적용, 컨테이너 안 `pg_dump` 실행, 패키지 형식 v2 필드 확정), ADR 0011 작성, 패키지 `age-encryption`·`@aws-sdk/lib-storage` 검증 후 보고·승인
+- [x] A2. 스토리지 어댑터: `list`·스트림 업로드·태그 지정(+실제 S3 호출 테스트). `fmerp_backup` 역할(initdb + 기존 볼륨 적용 방법 기록)
+- [x] A3. DB: `system_backup`, `backup_job`(RLS), 계정 설정 `allowAdminExport`, 마이그레이션
+- [x] A4. core(TDD): `backupHealth`, 변경 토큰 비교, 내보내기 manifest·CSV 규칙, 시스템 관리자 판정
 
 **M7-B 덤프**
-- [ ] B1. worker `backup.dump`: pg_dump→age→업로드→검증, 임시 파일 정리, 자동 스케줄·주간 복사·건너뜀
-- [ ] B2. 시스템 API(`/api/system/backups`): 수동 덤프·이력·상태·다운로드 URL·삭제 요청(시스템 관리자·재인증·감사 로그)
-- [ ] B3. CLI `backup:dump`, 통합 테스트(덤프→복호화→빈 DB 복원→행 수 일치, 건너뜀, 동시 실행 방지, 실패 기록)
+- [x] B1. worker `backup.dump`: pg_dump→age→업로드→검증, 임시 파일 정리, 자동 스케줄·주간 복사·건너뜀
+- [x] B2. 시스템 API(`/api/system/backups`): 수동 덤프·이력·상태·다운로드 URL·삭제 요청(시스템 관리자·재인증·감사 로그)
+- [x] B3. CLI `backup:dump`, 통합 테스트(덤프→복호화→빈 DB 복원→행 수 일치, 건너뜀, 동시 실행 방지, 실패 기록)
 
 **M7-C 내보내기와 화면**
-- [ ] C1. worker `account.export` ZIP 스트리밍(문서·첨부·org·forms·audit), manifest·해시
-- [ ] C2. 계정 API(`/api/account/exports`): 요청·이력·다운로드 URL·허용 설정, 만료 처리
-- [ ] C3. 화면 `/system/backups`, `/admin/backups`, 설정의 허용 토글과 경고
+- [x] C1. worker `account.export` ZIP 스트리밍(문서·첨부·org·forms·audit), manifest·해시
+- [x] C2. 계정 API(`/api/account/exports`): 요청·이력·다운로드 URL·허용 설정, 만료 처리
+- [x] C3. 화면 `/system/backups`, `/admin/backups`, 설정의 허용 토글과 경고
 
 **M7-D 복원·재구성·마무리**
-- [ ] D1. 패키지 형식 v2 + 색인 재구성 스크립트(드라이런·멱등·해시 불일치 보고) + `storage-backup.md`·ADR 0009 갱신
-- [ ] D2. `backup:restore`·`backup:rehearse`, 이관 절차 문서(`docs/ops/migration.md`)
-- [ ] D3. E2E, `web-design-guidelines`, 보안 리뷰(`differential-review`), worker Dockerfile `postgresql-client-18`, 문서 정리
+- [x] D1. 패키지 형식 v2 + 색인 재구성 스크립트(드라이런·멱등·해시 불일치 보고) + `storage-backup.md`·ADR 0009 갱신
+- [x] D2. `backup:restore`·`backup:rehearse`, 이관 절차 문서(`docs/ops/migration.md`)
+- [x] D3. E2E, `web-design-guidelines`, 보안 리뷰(`differential-review`), worker Dockerfile `postgresql-client-18`, 문서 정리
 
 ## 완료 기준
 - [ ] 단위: `backupHealth`(성공·건너뜀·누락·03:30 경계·KST), 변경 토큰 비교(같음·다름·감소), 시스템 관리자 판정, 내보내기 manifest·CSV 수식 주입 방어

@@ -33,6 +33,14 @@ const req = (who: string, path: string, method = "GET", body?: unknown) =>
     headers: { "x-forwarded-for": "198.51.100.20" },
   });
 
+/** 이 파일이 설정한 PIN을 지운다. M1의 PIN 시험은 owner에게 PIN이 아직 없다고 가정한다 (파일 실행 순서에 영향을 주지 않게) */
+async function resetPins(emails: string[]) {
+  await owner.pool.query(
+    'delete from approval_pin where user_id in (select id from "user" where email = any($1::text[]))',
+    [emails],
+  );
+}
+
 async function verifyPin(who: string) {
   await req(who, "/api/me/pin", "PUT", { pin: "246810" });
   for (const pin of ["246810", "135790", "482915"]) {
@@ -77,7 +85,9 @@ beforeAll(async () => {
   }
   const acc = await owner.pool.query("select id, slug from account");
   accountA = acc.rows.find((a) => a.slug === "fourm-test")?.id;
-  accountB = acc.rows.find((a) => a.slug === "other-company")?.id;
+  // owner-b가 다른 테스트 때문에 회사를 여러 개 가질 수 있어, 슬러그가 아니라 그 세션의 활성 회사를 쓴다
+  accountB = (await json<{ activeAccountId: string }>(await req("owner-b", "/api/me")))
+    .activeAccountId;
   const m = await owner.pool.query(
     'select m.id, u.email, m.account_id from membership m join "user" u on u.id = m.user_id',
   );
@@ -88,6 +98,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await clearJobs();
+  await resetPins(["owner@example.com", "owner-b@example.com", "admin@example.com"]);
   await setAdminExport(false);
   await owner.pool.end();
   await authDb.pool.end();
@@ -188,7 +199,10 @@ describe("내보내기 요청", () => {
     const other = await json<{ items: { id: string }[] }>(
       await req("owner-b", "/api/account/exports"),
     );
-    expect(other.items.map((i) => i.id)).toEqual([b.jobId]);
+    expect(
+      other.items.map((i) => i.id),
+      JSON.stringify(other),
+    ).toEqual([b.jobId]);
     await clearJobs();
   });
 });

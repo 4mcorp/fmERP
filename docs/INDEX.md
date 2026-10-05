@@ -16,7 +16,7 @@
 | 조직(사업자·부서·직위·소속)·역할 권한, 관리 콘솔 | [rules/database.md](rules/database.md) 2장, [rules/api.md](rules/api.md) 3장 | `supabase-postgres-best-practices`, `shadcn` | PRD 5.2·5.3, ADR 0006 | `db`, `api`, `auth`, `ui` |
 | 결재 엔진 (기안·결재선·처리·위임·채번) | [rules/architecture.md](rules/architecture.md) 3장, [rules/database.md](rules/database.md) 2장, [rules/testing.md](rules/testing.md), ADR 0007, GLOSSARY | `tdd`, `domain-modeling` | PRD 5.4 | `approval` |
 | 감사 기능, 감사 로그 | [rules/security.md](rules/security.md), [rules/database.md](rules/database.md) | – | PRD 5.5 (Must·Should만 구현, 10.3 제외 목록) | `audit` |
-| 파일 업로드, S3, 완료 패키지, 덤프, 이관 | [rules/storage-backup.md](rules/storage-backup.md) | – | PRD 5.6·5.10, DEPLOYMENT_PLAN 2·7장 | `storage`, `backup` |
+| 파일 업로드, S3, 완료 패키지, 덤프, 이관 | [rules/storage-backup.md](rules/storage-backup.md), [ops/migration.md](ops/migration.md), ADR 0011 | – | PRD 5.6·5.10, DEPLOYMENT_PLAN 2·7장 | `storage`, `backup` |
 | 테스트 작성, 버그 수정 | [rules/testing.md](rules/testing.md) | `tdd`, `diagnosing-bugs`, `playwright-cli` | PRD 9장 | `test` |
 | 패키지 추가·버전 변경 | [rules/dependencies.md](rules/dependencies.md) | `supply-chain-risk-auditor` | TECH_SPEC 2·3·5장 | `deps`, `pnpm` |
 | 커밋, 브랜치 | [rules/git.md](rules/git.md) | `git-commit` | – | `git` |
@@ -65,7 +65,7 @@
 | 비용 (장비 1회 + 월) | DEPLOYMENT_PLAN 5장 |
 | Docker Compose 서비스·네트워크·환경(스테이징) | DEPLOYMENT_PLAN 6장 |
 | Cloudflare Tunnel·Access·무료 플랜 제약(100MB·100초) | DEPLOYMENT_PLAN 7장 |
-| DB 덤프·복구 절차·이관 절차·로컬 사본 | DEPLOYMENT_PLAN 8장 |
+| DB 덤프·복구 절차·이관 절차·로컬 사본 | DEPLOYMENT_PLAN 8장, [ops/migration.md](ops/migration.md)(운영자 절차), ADR 0011 |
 | 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
 | 개발용 테스트 계정 목록·비밀번호 | `packages/auth/src/test-accounts.ts` (시드: `pnpm db:seed`) |
@@ -155,7 +155,7 @@
 | [2026-10-04-m5-completion-mailbox.md](plan/2026-10-04-m5-completion-mailbox.md) | done | M5 완료 처리·문서함: 결재 PDF·완료 패키지(`final/` 한 번만 쓰기), 완료 이벤트 큐, 열람 권한 통합, 수신·공람·참조, 문서함·검색·내보내기, 일괄 이관 |
 | [2026-10-05-m6-audit.md](plan/2026-10-05-m6-audit.md) | done | M6 감사 기능: 감사인 열람 기록, 문서 이력 타임라인, 인쇄 기록, 감사 로그 조회 화면, 월간 점검 |
 | [2026-10-05-m6-security-review.md](plan/2026-10-05-m6-security-review.md) | done | M6 보안 리뷰: 관리자의 로그 경유 문서 내용 노출(S1)·타임라인 정보 노출(S2·S3)·인쇄 로그 범람(S4) 수정, 후속 FU-M6-1·2 |
-| [2026-10-05-m7-backup-export-migration.md](plan/2026-10-05-m7-backup-export-migration.md) | draft | M7 덤프·내보내기·이관: 암호화 DB 덤프(시스템 관리자), 계정 전체 내보내기 ZIP, 복원·색인 재구성 CLI, 이관 절차 (사용자 검토 대기) |
+| [2026-10-05-m7-backup-export-migration.md](plan/2026-10-05-m7-backup-export-migration.md) | done | M7 덤프·내보내기·이관: 암호화 DB 덤프(시스템 관리자), 계정 전체 내보내기 ZIP, 복원·리허설·색인 재구성 CLI, 이관 절차 |
 
 ---
 
@@ -178,6 +178,7 @@
 | [0008-document-body-revisions-and-attachments.md](adr/0008-document-body-revisions-and-attachments.md) | 본문 S3 리비전·상신 내용 해시, 첨부 staging 검증 후 복사, 양식 불변 버전, 결재선·재인증 규칙, dnd-kit 미사용 |
 | [0009-completion-package-and-document-search.md](adr/0009-completion-package-and-document-search.md) | 완료 패키지는 manifest를 마지막에 쓰는 한 번만 쓰기, 후결은 `post-approvals/`, 상태는 `document_package`, 열람 판정 통합, 검색은 상신 시 본문 텍스트 색인 |
 | [0010-audit-view-log-and-timeline.md](adr/0010-audit-view-log-and-timeline.md) | 감사인 열람은 `read_all` 단독일 때만 10분 중복 억제로 기록(advisory lock), 타임라인은 `approval_action` 정본 병합, 월간 점검은 추가 전용 `audit_review` |
+| [0011-backup-export-and-recovery.md](adr/0011-backup-export-and-recovery.md) | DB 덤프는 시스템 관리자만·서버에는 age 공개키만, 계정 내보내기는 소유자(허용 시 관리자)·worker 스트리밍, 복구는 패키지 형식 v2 `restore` 블록으로 색인 재구성 |
 | [0007-approval-engine-rules.md](adr/0007-approval-engine-rules.md) | 결재 엔진은 core 순수 함수, 낙관적 잠금·추가 전용·outbox 저장, 그룹·정족수·반려·후결·대결 규칙 |
 | [0006-org-permission-model.md](adr/0006-org-permission-model.md) | 부서 트리는 구체화 경로+트리거, 역할은 `membership.role` + 범위 있는 `role_grant`, `can()` 한 곳 판정 |
 
@@ -217,3 +218,7 @@
 | 린트·Git hook·커밋 규칙 | `biome.json`(core import 제한 포함), `lefthook.yml`, `commitlint.config.mjs` |
 | CI | `.github/workflows/ci.yml` |
 | Claude hook·권한 | `.claude/settings.json`, `.claude/hooks/format-file.mjs` |
+| 덤프·내보내기·복구 (M7) | `packages/backup/src/`(`dump.ts` 덤프, `export.ts` 계정 ZIP, `reindex.ts` 색인 재구성, `rehearse.ts` 복원·리허설, `age.ts` 암호화, `verify.ts` 패키지 검증), 순수 규칙 `packages/core/src/backup.ts`·`doc-number-parse.ts` |
+| 덤프·내보내기 API·화면 | `apps/web/server/system/backups.ts`·`routes/system.ts`(시스템 관리자), `server/account-export.ts`·`routes/exports.ts`(계정 내보내기), 화면 `app/(app)/system/backups`, `app/(app)/admin/backups` |
+| 백업 worker·운영자 CLI | `apps/worker/src/backup-jobs.ts`(스케줄·요청 처리), `backup-config.ts`, `cli/{dump,restore,rehearse,reindex}.ts` (`pnpm backup:*`) |
+| 덤프·내보내기 스키마 | `packages/db/src/schema/backup.ts`, `migrations/0015_backup_tables.sql`, `0016_backup_rls_roles.sql` |

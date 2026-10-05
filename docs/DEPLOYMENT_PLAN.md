@@ -52,11 +52,11 @@ s3://4merp-{env}/
  │       └─ manifest.json            ← 패키지 내 파일 목록 + 해시 (마지막에 쓰며, 있으면 패키지 완성)
  │   └─ post-approvals/{단계ID}.json ← 완료 이후의 후결 승인 기록 (건별 1회만 생성)
  ├─ _staging/{계정ID}/{업로드ID}     ← 첨부 업로드 직후 검증 전 객체 (등록되지 않으면 1일 후 자동 삭제)
- ├─ exports/{계정ID}/{작업ID}.zip    ← 관리자 내보내기 결과 (7일 후 자동 삭제)
- └─ _system/db-dumps/
-     ├─ daily/{YYYY-MM-DD}.dump      ← 자동 덤프 (최근 7개)
-     ├─ weekly/{YYYY-Www}.dump       ← 일요일 덤프 (최근 4개)
-     └─ manual/{YYYY-MM-DDTHHmm}_{요청자}.dump  ← 수동 덤프 (관리자가 삭제할 때까지)
+ ├─ exports/{계정ID}/{작업ID}.zip    ← 계정 전체 내보내기 결과 (7일 후 수명 주기 규칙으로 삭제)
+ └─ _system/db-dumps/              ← age로 암호화된 DB 덤프 (서버에는 공개키만 있다, ADR 0011)
+     ├─ daily/{YYYY-MM-DDTHHmmss}_{ID8}.dump.age   ← 자동 덤프 (7일 후 수명 주기 규칙으로 삭제)
+     ├─ weekly/{YYYY-Www}.dump.age                  ← 일요일 덤프 복사본 (28일 후 삭제)
+     └─ manual/{YYYY-MM-DDTHHmmss}_{ID8}.dump.age   ← 수동 덤프 (삭제 요청 시 `expire=1` 태그, 1일 후 삭제)
 ```
 
 ### 2.2 버킷 보호
@@ -230,7 +230,7 @@ flowchart LR
 | 구분 | 실행 | 보관 | 저장 위치 |
 |---|---|---|---|
 | **자동 일일 덤프** | 매일 03:00 KST, worker 예약 작업. 직전 덤프 이후 변경이 없으면 건너뜀 | 일 7개 + 주 4개 | `_system/db-dumps/daily`, `weekly` |
-| **관리자 수동 덤프** | 관리 콘솔 버튼(재인증 필요), 운영 배포 직전 자동 실행 | 관리자가 삭제할 때까지 | `_system/db-dumps/manual` |
+| **시스템 관리자 수동 덤프** | 시스템 관리 화면 버튼(시스템 관리자만, PIN 재인증 필요), 운영 배포 직전 `pnpm backup:dump` | 삭제 요청 전까지(삭제 요청은 `expire=1` 태그, 수명 주기 규칙이 1일 뒤 삭제) | `_system/db-dumps/manual` |
 
 - 형식은 `pg_dump -Fc`이고, age로 암호화한 뒤 업로드합니다. 복호화 키는 서버와 분리해 비밀번호 관리자에 2부 보관합니다.
 - 덤프 해시·크기는 `backup_job`에 기록합니다. 실패하거나 03:30까지 성공 신호가 없으면 관리자에게 알립니다.

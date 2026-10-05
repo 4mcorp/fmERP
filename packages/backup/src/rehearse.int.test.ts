@@ -125,7 +125,13 @@ describe("복구 리허설 (BAK-010 ①)", () => {
       sample: 20,
     });
     expect(report.error).toBeUndefined();
-    expect(report.ok).toBe(true);
+    // 테스트 DB에는 다른 시험이 남긴 가짜 READY 패키지(객체 없음)가 섞여 있을 수 있어 리허설이 그것을 실패로 보고한다.
+    // 그래서 전체 ok가 아니라 이 시험의 문서가 통과했는지와 ok가 결과와 일관된지를 본다
+    expect(
+      report.packages.failed.map((f) => f.documentId),
+      JSON.stringify(report),
+    ).not.toContain(doc.documentId);
+    expect(report.ok).toBe(report.packages.failed.length === 0);
     // 복원된 표의 행 수가 운영 DB와 같다 (덤프 직후라 변경이 없다. 감사 로그는 이 덤프가 남긴 기록만큼 운영이 많다)
     expect(report.restored.document).toBe(report.source?.document);
     expect(report.documentCountMatches).toBe(true);
@@ -148,16 +154,23 @@ describe("복구 리허설 (BAK-010 ①)", () => {
   }, 180_000);
 
   it("패키지가 변조돼 있으면 리허설이 실패로 보고한다", async () => {
-    await storage.put(`${doc.prefix}final/document.json`, '{"변조":true}', "application/json");
-    const report = await rehearseRestore(rehearseDeps(), {
-      source: { key: dumpKey },
-      identity: keys.identity,
-    });
-    expect(report.ok).toBe(false);
-    expect(report.packages.failed.map((f) => f.documentId)).toContain(doc.documentId);
-    expect(report.packages.failed.find((f) => f.documentId === doc.documentId)?.reason).toMatch(
-      /해시가 manifest와 다릅니다/,
-    );
+    const key = `${doc.prefix}final/document.json`;
+    const original = await storage.getBytes(key);
+    await storage.put(key, '{"변조":true}', "application/json");
+    try {
+      const report = await rehearseRestore(rehearseDeps(), {
+        source: { key: dumpKey },
+        identity: keys.identity,
+      });
+      expect(report.ok).toBe(false);
+      expect(report.packages.failed.map((f) => f.documentId)).toContain(doc.documentId);
+      expect(report.packages.failed.find((f) => f.documentId === doc.documentId)?.reason).toMatch(
+        /해시가 manifest와 다릅니다/,
+      );
+    } finally {
+      // 시험이 바꾼 패키지를 원래대로 돌려 놓는다 (다른 시험이 같은 DB·S3를 쓴다)
+      await storage.put(key, original, "application/json");
+    }
   }, 180_000);
 
   it("다른 개인키로는 복원하지 못하고, 실패해도 임시 DB는 지워진다", async () => {

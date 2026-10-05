@@ -1,7 +1,7 @@
 # worker 이미지 (초안): 완료 PDF·패키지, 큐, 예약 작업. DEPLOYMENT_PLAN 6장·TECH_SPEC 참고.
 # 저장소 루트를 빌드 컨텍스트로 쓴다:  docker build -f apps/worker/Dockerfile -t fmerp-worker .
 # Playwright 이미지 태그는 npm의 @playwright/test 버전(~1.63.0)과 반드시 같아야 한다.
-# 아직 DB 덤프용 postgresql-client-18·age는 넣지 않았다(M7에서 추가).
+# DB 덤프·복원용 postgresql-client-18은 PostgreSQL 공식 APT 저장소(PGDG)에서 받는다. 덤프 암호화는 age-encryption(npm)이라 age 바이너리는 필요 없다.
 FROM mcr.microsoft.com/playwright:v1.63.0-noble
 
 ENV CI=true \
@@ -10,6 +10,10 @@ ENV CI=true \
     PATH=/pnpm:$PATH \
     NODE_ENV=production
 WORKDIR /app
+
+# pg_dump·pg_restore (DB 서버와 같은 주 버전 18). PGDG 저장소 키는 공식 주소에서 받아 서명 검증에 쓴다
+USER root
+RUN apt-get update  && apt-get install -y --no-install-recommends curl ca-certificates gnupg  && install -d /usr/share/postgresql-common/pgdg  && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc  && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" > /etc/apt/sources.list.d/pgdg.list  && apt-get update  && apt-get install -y --no-install-recommends postgresql-client-18  && rm -rf /var/lib/apt/lists/*
 
 # pnpm은 corepack으로 고정 버전을 쓴다 (package.json의 packageManager와 같게 유지)
 RUN corepack enable && corepack prepare pnpm@11.28.3 --activate
