@@ -5,6 +5,7 @@
 FROM mcr.microsoft.com/playwright:v1.63.0-noble
 
 ENV CI=true \
+    LEFTHOOK=0 \
     PNPM_HOME=/pnpm \
     PATH=/pnpm:$PATH \
     NODE_ENV=production
@@ -15,7 +16,8 @@ RUN corepack enable && corepack prepare pnpm@11.28.3 --activate
 
 # 의존성 설치는 worker와 그것이 쓰는 워크스페이스 패키지만 (lockfile 고정)
 COPY . .
-RUN pnpm install --frozen-lockfile --filter @fmerp/worker...
+# 루트 prepare(lefthook install)는 .git이 없는 이미지에서 실패하므로 이 복사본에서만 제거한다
+RUN pnpm pkg delete scripts.prepare && pnpm install --frozen-lockfile --filter @fmerp/worker...
 
 # 설치가 끝난 뒤에 운영 모드로 바꾼다 (설치 전에 production이면 tsx 같은 실행 도구가 빠질 수 있다)
 ENV NODE_ENV=production
