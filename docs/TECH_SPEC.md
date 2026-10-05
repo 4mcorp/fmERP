@@ -64,9 +64,10 @@
 | 폼 | react-hook-form / @hookform/resolvers | ~7.89.0 / ~5.9.1 |
 | 에디터 | @tiptap/react, @tiptap/pm, @tiptap/starter-kit | ~3.31.4 |
 | 클라이언트 저장 | dexie | ~4.4.6 |
-| 스토리지·메일 | @aws-sdk/client-s3, @aws-sdk/s3-request-presigner, @aws-sdk/client-sesv2 | ~3.1145.0 |
+| 스토리지·메일 | @aws-sdk/client-s3, @aws-sdk/s3-request-presigner, @aws-sdk/lib-storage(멀티파트 스트림 업로드, M7), @aws-sdk/client-sesv2 | ~3.1145.0 |
 | 파일 처리 | archiver | ~8.0.0 (타입은 `@types/archiver` ~8.0.0, 타입 전용·MIT) |
 | | write-excel-file | ~4.1.1 (**exceljs 대체**: exceljs는 2024-12 이후 업데이트가 없고 deprecated 하위 의존성 6개 포함) |
+| 암호화 | age-encryption | ~0.3.1 (BSD-3-Clause, age 제작자 Filippo Valsorda 배포, 스트림 암·복호화 지원, 0.x. DB 덤프 암호화·복호화, M7) |
 | 변경 비교 | microdiff | ~1.6.0 |
 | 날짜 | date-fns | ~4.4.0 |
 | 테스트 | vitest | ~4.1.11 |
@@ -78,7 +79,7 @@
 | 로컬 개발 서비스 (Docker) | `postgres:18-bookworm`, `chrislusf/seaweedfs:4.47`(로컬 S3, MinIO 대체), `axllent/mailpit:v1.31`(개발 메일함) | docker-compose.dev.yml |
 | 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |
 
-**구현 단계에서 추가할 예정인 패키지** (해당 기능을 만들 때 같은 방식으로 검증): `@headless-tree/react`(부서 트리), `@xyflow/react`(조직도), `@dnd-kit/*`(양식 빌더), `serwist`·`web-push`(P1 PWA), `age-encryption`(덤프 암호화. 또는 worker 이미지에 age 바이너리 포함).
+**구현 단계에서 추가할 예정인 패키지** (해당 기능을 만들 때 같은 방식으로 검증): `@headless-tree/react`(부서 트리), `@xyflow/react`(조직도), `@dnd-kit/*`(양식 빌더), `serwist`·`web-push`(P1 PWA).
 
 ### 3.1 호환성 검증 결과 (2026-10-03)
 - 위 조합으로 `strictPeerDependencies: true`를 켠 상태에서 `pnpm install`이 **성공했고, peer 충돌은 0건**입니다(626개 패키지 해석).

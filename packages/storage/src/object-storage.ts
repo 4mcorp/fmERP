@@ -3,12 +3,16 @@ import type { Readable } from "node:stream";
 import {
   CopyObjectCommand,
   GetObjectCommand,
+  GetObjectTaggingCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   NotFound,
   PutObjectCommand,
+  PutObjectTaggingCommand,
   S3Client,
   S3ServiceException,
 } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export interface S3StorageConfig {
@@ -78,6 +82,69 @@ export class ObjectStorage {
       }
       throw error;
     }
+  }
+
+  /**
+   * 스트림을 멀티파트로 올린다 (덤프·내보내기 ZIP처럼 메모리에 담기 큰 객체).
+   * 키가 이미 있으면 쓰지 않는다(`putIfAbsent`와 같은 규칙). 호출하는 쪽이 키를 시각·작업 ID로 유일하게 만든다.
+   */
+  async putStream(
+    key: string,
+    body: Readable | ReadableStream<Uint8Array>,
+    contentType?: string,
+  ): Promise<void> {
+    if (await this.head(key)) throw new ObjectAlreadyExistsError(key);
+    await new Upload({
+      client: this.client,
+      params: { Bucket: this.bucket, Key: key, Body: body, ContentType: contentType },
+      // S3 멀티파트의 최소 조각(5MiB). 동시에 올리는 조각 수를 줄여 메모리를 아낀다
+      partSize: 8 * 1024 * 1024,
+      queueSize: 2,
+      leavePartsOnError: false,
+    }).done();
+  }
+
+  /** 접두사로 시작하는 객체를 나열한다 (읽기 전용, 여러 쪽을 이어 읽는다). 색인 재구성 등 운영 도구용 */
+  async *list(
+    prefix: string,
+    options: { pageSize?: number } = {},
+  ): AsyncGenerator<{ key: string; size: number }> {
+    let token: string | undefined;
+    do {
+      const page = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          MaxKeys: options.pageSize,
+          ContinuationToken: token,
+        }),
+      );
+      for (const o of page.Contents ?? []) {
+        if (o.Key) yield { key: o.Key, size: o.Size ?? 0 };
+      }
+      token = page.IsTruncated ? page.NextContinuationToken : undefined;
+    } while (token);
+  }
+
+  /**
+   * 객체 태그를 지정한다(기존 태그는 바뀐다). 앱 키에는 삭제 권한이 없으므로, 지울 객체에 태그(`expire=1`)만 붙이고
+   * 실제 삭제는 버킷 수명 주기 규칙이 한다 (PRD BAK-004·006, 배포 단계에서 적용).
+   */
+  async setTags(key: string, tags: Record<string, string>): Promise<void> {
+    await this.client.send(
+      new PutObjectTaggingCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Tagging: { TagSet: Object.entries(tags).map(([Key, Value]) => ({ Key, Value })) },
+      }),
+    );
+  }
+
+  async getTags(key: string): Promise<Record<string, string>> {
+    const result = await this.client.send(
+      new GetObjectTaggingCommand({ Bucket: this.bucket, Key: key }),
+    );
+    return Object.fromEntries((result.TagSet ?? []).map((t) => [t.Key ?? "", t.Value ?? ""]));
   }
 
   async getBytes(key: string): Promise<Uint8Array> {

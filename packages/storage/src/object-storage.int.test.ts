@@ -90,3 +90,61 @@ describe("ObjectStorage (로컬 S3)", () => {
     expect(await get.text()).toBe("hello");
   });
 });
+
+describe("ObjectStorage 확장 (M7: 목록·스트림 업로드·태그)", () => {
+  it("접두사로 객체를 나열한다 (페이지가 넘어가도 모두)", async () => {
+    const prefix = `test/${randomUUID()}/list/`;
+    const names = Array.from({ length: 5 }, (_, i) => `f${i}.txt`);
+    for (const n of names) await storage.put(`${prefix}${n}`, `내용 ${n}`);
+    await storage.put(`${prefix}sub/deep.txt`, "deep");
+    const found: { key: string; size: number }[] = [];
+    // 한 번에 2개씩 받아 여러 쪽을 이어 읽는지 확인한다
+    for await (const o of storage.list(prefix, { pageSize: 2 })) found.push(o);
+    expect(found.map((o) => o.key).sort()).toEqual(
+      [...names.map((n) => `${prefix}${n}`), `${prefix}sub/deep.txt`].sort(),
+    );
+    expect(found.find((o) => o.key.endsWith("deep.txt"))?.size).toBe(4);
+    const none: string[] = [];
+    for await (const o of storage.list(`test/${randomUUID()}/없음/`)) none.push(o.key);
+    expect(none).toEqual([]);
+  });
+
+  it("큰 본문을 스트림으로 올리고(멀티파트) 내려받아 해시가 같다", async () => {
+    const key = testKey("big.bin");
+    const parts = 4;
+    const chunk = Buffer.alloc(3 * 1024 * 1024, 7); // 3MiB × 4 = 12MiB → 멀티파트(5MiB 이상)
+    const { createHash } = await import("node:crypto");
+    const expected = createHash("sha256");
+    const { Readable } = await import("node:stream");
+    const source = Readable.from(
+      (async function* () {
+        for (let i = 0; i < parts; i++) {
+          expected.update(chunk);
+          yield chunk;
+        }
+      })(),
+    );
+    await storage.putStream(key, source, "application/octet-stream");
+    const { sha256, size } = await storage.hashObject(key);
+    expect(size).toBe(chunk.length * parts);
+    expect(sha256).toBe(expected.digest("hex"));
+  }, 60_000);
+
+  it("스트림 업로드도 키가 이미 있으면 덮어쓰지 않는다", async () => {
+    const key = testKey("once.bin");
+    const { Readable } = await import("node:stream");
+    await storage.putStream(key, Readable.from([Buffer.from("첫 번째")]));
+    await expect(
+      storage.putStream(key, Readable.from([Buffer.from("두 번째")])),
+    ).rejects.toBeInstanceOf(ObjectAlreadyExistsError);
+    expect(new TextDecoder().decode(await storage.getBytes(key))).toBe("첫 번째");
+  });
+
+  it("태그를 붙이고 읽는다 (수명 주기 규칙이 태그로 지울 객체를 고른다)", async () => {
+    const key = testKey("tag.bin");
+    await storage.put(key, "x");
+    expect(await storage.getTags(key)).toEqual({});
+    await storage.setTags(key, { expire: "1" });
+    expect(await storage.getTags(key)).toEqual({ expire: "1" });
+  });
+});
