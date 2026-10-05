@@ -73,6 +73,7 @@
 | 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
 | M1 보안 리뷰 결과·후속 과제 | plan/2026-10-03-m1-security-review.md |
 | 결재 엔진 규칙(그룹·정족수·반려·후결·대결), 보안 리뷰·후속 과제 | ADR 0007, GLOSSARY.md, plan/2026-10-03-m3-approval-engine.md, plan/2026-10-03-m3-security-review.md |
+| M8 알림·홈·텔레그램 설계, 보안 리뷰·후속 과제 | plan/2026-10-05-m8-notifications-home.md, plan/2026-10-06-m8-security-review.md |
 | M2 조직·권한 설계, 보안 리뷰·후속 과제 | plan/2026-10-03-m2-org-permission.md, plan/2026-10-03-m2-security-review.md, ADR 0006 |
 | 런타임·라이브러리 버전 | TECH_SPEC 2·3장 |
 | 저장소 구조·의존 방향 | TECH_SPEC 4장, rules/architecture.md |
@@ -159,7 +160,8 @@
 | [2026-10-05-m6-security-review.md](plan/2026-10-05-m6-security-review.md) | done | M6 보안 리뷰: 관리자의 로그 경유 문서 내용 노출(S1)·타임라인 정보 노출(S2·S3)·인쇄 로그 범람(S4) 수정, 후속 FU-M6-1·2 |
 | [2026-10-05-m7-backup-export-migration.md](plan/2026-10-05-m7-backup-export-migration.md) | done | M7 덤프·내보내기·이관: 암호화 DB 덤프(시스템 관리자), 계정 전체 내보내기 ZIP, 복원·리허설·색인 재구성 CLI, 이관 절차 |
 | [2026-10-05-m7-security-review.md](plan/2026-10-05-m7-security-review.md) | done | M7 보안 리뷰: 앱 역할이 완료 상태·키를 직접 쓰는 문제(S1~S3)·덤프 멈춤(S4) 수정, 후속 FU-M7-1~3 |
-| [2026-10-05-m8-notifications-home.md](plan/2026-10-05-m8-notifications-home.md) | draft | M8 알림·홈·통합 검증: outbox 소비 알림(인앱·이메일), 홈 대시보드, E2E S2~S7, 스테이징 초안 |
+| [2026-10-05-m8-notifications-home.md](plan/2026-10-05-m8-notifications-home.md) | done | M8 알림·홈·통합 검증: outbox 소비 알림(인앱·이메일), 홈 대시보드, E2E S2~S7, 스테이징 초안 |
+| [2026-10-06-m8-security-review.md](plan/2026-10-06-m8-security-review.md) | done | M8 보안 리뷰: 계정 교차 조회의 이벤트 내용 노출(S1)·연결 완료 미감사(S2)·오류 문구의 매개변수(S3) 수정, 후속 FU-M8-1~5 |
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: M8 알림·홈·통합 검증
 date: 2026-10-05
-status: draft
+status: done
 tags: [notification, dashboard, e2e, infra]
 related: [NTF-001, NTF-002, NTF-006, DSH-001, ADR 0007, mvp-roadmap]
 ---
@@ -44,7 +44,7 @@ related: [NTF-001, NTF-002, NTF-006, DSH-001, ADR 0007, mvp-roadmap]
 - [x] 6. 월간 점검·덤프 알림 스케줄
 - [x] 7. 홈 대시보드
 - [x] 8. E2E S2~S7, 스테이징 compose·문서
-- [ ] 9. `web-design-guidelines` 점검, 보안 리뷰, INDEX 갱신
+- [x] 9. `web-design-guidelines` 점검, 보안 리뷰, INDEX 갱신
 
 ## 완료 기준
 lint·typecheck·단위·통합(연속 2회)·E2E·`next build` 통과. 실제 봇으로 연결 → 상신 → DM 수신 → 링크로 결재까지 확인(봇 토큰은 사용자가 발급해 줘야 하며, 없으면 가짜 서버까지만 검증하고 "실봇 미검증"으로 보고).
@@ -78,3 +78,4 @@ lint·typecheck·단위·통합(연속 2회)·E2E·`next build` 통과. 실제 �
 | S7 보관·덤프·이관 | 통합 `package-jobs.int.test.ts`·`backup-jobs.int.test.ts`·`export.int.test.ts`, 복구 리허설(M7 기록) | 8일째 정리·버킷 복사 후 복원은 수명 주기 규칙이 필요해 **로컬에서 검증 불가**. 덤프 실패 30분 안 알림은 6단계(30분 판정)와 통합 테스트 |
 
 스테이징: `docker-compose.staging.yml`, `apps/web/Dockerfile`, `.env.staging.example`, [ops/staging.md](../ops/staging.md). web 이미지를 이 PC에서 빌드해 개발 DB에 붙여 실행했고(health 정상, 스테이징 모드 테스트 로그인 동작, `APP_ENV` 없이 켜면 막힘) compose 문법도 검사했지만, **worker 이미지·migrate/seed 서비스·Cloudflare Tunnel·Access 정책은 검증하지 못했다.** 결정: 스테이징은 운영과 같은 이미지(`NODE_ENV=production`)로 돌고 테스트 로그인이 필요해서, 운영 모드의 테스트 로그인 금지에 `APP_ENV=staging` 예외를 추가했다(`resolveDevTestLogin`, 단위 테스트 추가). Access가 뒤에서 막는다는 가정에 의존하므로 9단계 보안 리뷰에서 다시 본다.
+- 2026-10-06: 9단계 완료, **M8 완료.** `web-design-guidelines` 점검(알림 이동은 링크로, 연결 링크 팝업 차단 대체 경로, 홈 요약 구조 수정)과 보안 리뷰([M8 보안 리뷰](2026-10-06-m8-security-review.md): S1~S3 수정, FU-M8-1~5). 최종 검증: 린트(경고 6건)·타입·단위 327·`next build`·통합 418(연속 2회)·E2E 53(3 건너뜀) 통과. **미검증·한계:** ① 실제 텔레그램 봇(가짜 Bot API 서버로만 검증) ② 스테이징 실서버(worker 이미지·migrate/seed·Tunnel·Access) ③ 이메일·카카오는 구현하지 않음 ④ 후결·참조 부서 대상 수신 알림 일부, 기한 임박·초과 알림 제외 ⑤ `differential-review`·`semgrep`은 돌리지 않음 ⑥ 알림 센터의 안 읽은 필터는 URL에 반영되지 않음
