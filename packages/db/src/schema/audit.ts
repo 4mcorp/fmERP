@@ -1,7 +1,19 @@
 // 감사 로그 (PRD AUD-020~027). 앱에서는 INSERT·SELECT만 가능하다 (AUD-022, 마이그레이션의 GRANT 참고).
 // 다른 테이블이 지워지거나 바뀌어도 기록이 남도록 외래 키를 두지 않는다.
-import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { primaryId } from "./columns";
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  check,
+  foreignKey,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { createdAt, primaryId } from "./columns";
+import { account, membership } from "./tenant";
 
 export const AUDIT_RESULTS = ["success", "failure"] as const;
 
@@ -32,4 +44,38 @@ export const auditLog = pgTable(
     reason: text(),
   },
   (t) => [index().on(t.accountId, t.occurredAt), index().on(t.actorUserId, t.occurredAt)],
+);
+
+/**
+ * 월 1회 접속 기록 점검 기록 (PRD AUD-026). 추가만 한다(INSERT·SELECT 권한만).
+ * 같은 달에 여러 건이 있을 수 있고 가장 마지막 건이 그 달의 현재 상태다 (정정은 새 건으로).
+ */
+export const auditReview = pgTable(
+  "audit_review",
+  {
+    id: primaryId(),
+    accountId: uuid()
+      .notNull()
+      .references(() => account.id, { onDelete: "cascade" }),
+    /** 점검 대상 달 (`YYYY-MM`) */
+    period: text().notNull(),
+    reviewerMembershipId: uuid().notNull(),
+    reviewedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    memo: text(),
+    abnormal: boolean().notNull().default(false),
+    abnormalNote: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.reviewerMembershipId, t.accountId],
+      foreignColumns: [membership.id, membership.accountId],
+    }),
+    check("audit_review_period", sql`${t.period} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
+    check(
+      "audit_review_abnormal_note",
+      sql`not ${t.abnormal} or length(btrim(coalesce(${t.abnormalNote}, ''))) > 0`,
+    ),
+    index().on(t.accountId, t.period, t.reviewedAt),
+  ],
 );
