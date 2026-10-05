@@ -15,6 +15,10 @@
     "@fmerp/db": "workspace:*",
     "@fmerp/storage": "workspace:*",
     "age-encryption": "~0.3.1",
-    "drizzle-orm": "~0.45.3"
+    "drizzle-orm": "~0.45.3",
+    "pg": "~8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "~8.23.1"
   }
 }
