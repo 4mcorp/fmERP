@@ -1,6 +1,7 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { formatDateTime, type LoginHistoryItem, type SessionInfo } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -14,7 +15,6 @@ import {
 } from "@fmerp/shared/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { formatDateTime, type LoginHistoryItem, type SessionInfo } from "@/lib/types";
 
 const ACTION_LABEL: Record<string, string> = {
   "auth.login": "로그인",

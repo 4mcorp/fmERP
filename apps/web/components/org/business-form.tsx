@@ -1,13 +1,13 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import type { Business } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import type { Business } from "@/lib/types";
 
 const FIELDS = [
   { key: "name", label: "상호", required: true },

@@ -1,6 +1,19 @@
 "use client";
 
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
+import { useBusinesses, useDepartments, useDuties, usePositions } from "@fmerp/shared/lib/queries";
+import {
+  type AssignmentHistoryItem,
+  type Capabilities,
+  GRANT_ROLE_LABEL,
+  GRANT_ROLE_SCOPES,
+  type GrantRole,
+  type Member,
+  type MemberStatus,
+  SCOPE_LABEL,
+  type ScopeType,
+  STATUS_LABEL,
+} from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -25,19 +38,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { useBusinesses, useDepartments, useDuties, usePositions } from "@/lib/queries";
-import {
-  type AssignmentHistoryItem,
-  type Capabilities,
-  GRANT_ROLE_LABEL,
-  GRANT_ROLE_SCOPES,
-  type GrantRole,
-  type Member,
-  type MemberStatus,
-  SCOPE_LABEL,
-  type ScopeType,
-  STATUS_LABEL,
-} from "@/lib/types";
 
 const NONE = "__none";
 

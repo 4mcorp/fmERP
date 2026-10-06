@@ -1,11 +1,11 @@
 "use client";
 
+import { useMe } from "@fmerp/shared/lib/queries";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import type { ReactNode } from "react";
 import { PinSection } from "@/components/me/pin-section";
 import { ProfileSection } from "@/components/me/profile-section";
 import { LoginHistorySection, SessionsSection } from "@/components/me/sessions-section";
-import { useMe } from "@/lib/queries";
 
 /** `notifySection`은 알림 기능의 화면 조각이다. 합성 루트(app/(app)/me/page.tsx)가 끼워 넣는다 */
 export function MePage({ notifySection }: { notifySection: ReactNode }) {

@@ -3,6 +3,148 @@
   "overrides": [
     {
       "includes": [
+        "features/audit/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@aws-sdk/client-s3": "S3는 @fmerp/storage 어댑터(이전 후 shared/storage)로만 접근한다 (docs/rules/storage-backup.md)",
+                  "@aws-sdk/s3-request-presigner": "S3는 @fmerp/storage 어댑터(이전 후 shared/storage)로만 접근한다"
+                },
+                "patterns": [
+                  {
+                    "group": [
+                      "@fmerp/feature-*",
+                      "!@fmerp/feature-audit",
+                      "!@fmerp/feature-audit/*"
+                    ],
+                    "message": "기능 'audit'은 다른 기능을 import하지 않는다. shared로 올리거나 계약+주입, 이벤트를 쓴다 (docs/plan/2026-10-06-feature-architecture-refactor.md 3.2)"
+                  },
+                  {
+                    "group": [
+                      "@fmerp/tools",
+                      "@fmerp/web",
+                      "@fmerp/worker"
+                    ],
+                    "message": "기능은 합성 루트(apps)나 도구를 import하지 않는다"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "features/audit/src/domain/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@aws-sdk/client-s3": "core는 저장소를 import하지 않는다",
+                  "@aws-sdk/s3-request-presigner": "S3는 @fmerp/storage 어댑터(이전 후 shared/storage)로만 접근한다",
+                  "@fmerp/db": "core는 DB를 import하지 않는다 (docs/rules/architecture.md)",
+                  "@fmerp/storage": "core는 저장소를 import하지 않는다",
+                  "@fmerp/auth": "core는 인증을 import하지 않는다",
+                  "drizzle-orm": "core는 DB를 import하지 않는다",
+                  "pg": "core는 DB를 import하지 않는다",
+                  "pg-boss": "core는 작업 큐를 import하지 않는다",
+                  "hono": "core는 HTTP 프레임워크를 import하지 않는다",
+                  "next": "core는 프레임워크를 import하지 않는다",
+                  "react": "core는 UI를 import하지 않는다",
+                  "node:fs": "core는 파일 시스템을 쓰지 않는다",
+                  "node:fs/promises": "core는 파일 시스템을 쓰지 않는다",
+                  "node:http": "core는 네트워크를 쓰지 않는다",
+                  "node:net": "core는 네트워크를 쓰지 않는다"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "features/home/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@aws-sdk/client-s3": "S3는 @fmerp/storage 어댑터(이전 후 shared/storage)로만 접근한다 (docs/rules/storage-backup.md)",
+                  "@aws-sdk/s3-request-presigner": "S3는 @fmerp/storage 어댑터(이전 후 shared/storage)로만 접근한다"
+                },
+                "patterns": [
+                  {
+                    "group": [
+                      "@fmerp/feature-*",
+                      "!@fmerp/feature-home",
+                      "!@fmerp/feature-home/*"
+                    ],
+                    "message": "기능 'home'은 다른 기능을 import하지 않는다. shared로 올리거나 계약+주입, 이벤트를 쓴다 (docs/plan/2026-10-06-feature-architecture-refactor.md 3.2)"
+                  },
+                  {
+                    "group": [
+                      "@fmerp/tools",
+                      "@fmerp/web",
+                      "@fmerp/worker"
+                    ],
+                    "message": "기능은 합성 루트(apps)나 도구를 import하지 않는다"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "features/home/src/domain/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@aws-sdk/client-s3": "core는 저장소를 import하지 않는다",
+                  "@aws-sdk/s3-request-presigner": "S3는 @fmerp/storage 어댑터(이전 후 shared/storage)로만 접근한다",
+                  "@fmerp/db": "core는 DB를 import하지 않는다 (docs/rules/architecture.md)",
+                  "@fmerp/storage": "core는 저장소를 import하지 않는다",
+                  "@fmerp/auth": "core는 인증을 import하지 않는다",
+                  "drizzle-orm": "core는 DB를 import하지 않는다",
+                  "pg": "core는 DB를 import하지 않는다",
+                  "pg-boss": "core는 작업 큐를 import하지 않는다",
+                  "hono": "core는 HTTP 프레임워크를 import하지 않는다",
+                  "next": "core는 프레임워크를 import하지 않는다",
+                  "react": "core는 UI를 import하지 않는다",
+                  "node:fs": "core는 파일 시스템을 쓰지 않는다",
+                  "node:fs/promises": "core는 파일 시스템을 쓰지 않는다",
+                  "node:http": "core는 네트워크를 쓰지 않는다",
+                  "node:net": "core는 네트워크를 쓰지 않는다"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
         "features/notification/**"
       ],
       "linter": {

@@ -1,5 +1,6 @@
 "use client";
 
+import { DOC_STATUS_LABEL, type DocumentListItem, formatDateTime } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
@@ -12,7 +13,6 @@ import {
   TableRow,
 } from "@fmerp/shared/ui/table";
 import Link from "next/link";
-import { DOC_STATUS_LABEL, type DocumentListItem, formatDateTime } from "@/lib/types";
 
 const SECURITY_LABEL: Record<string, string> = { confidential: "대외비", secret: "비밀" };
 

@@ -1,3 +1,4 @@
+import { registerAuditRoutes } from "@fmerp/feature-audit/api/routes";
 import { registerNotificationRoutes } from "@fmerp/feature-notification/api/routes";
 import { getEnv } from "@fmerp/shared/server/env";
 import { requireSameOrigin } from "@fmerp/shared/server/http";
@@ -10,7 +11,6 @@ import { registerAccountRoutes } from "./routes/account";
 import { registerAccountsRoutes } from "./routes/accounts";
 import { registerApprovalAdminRoutes } from "./routes/approval-admin";
 import { registerApprovalRoutes } from "./routes/approvals";
-import { registerAuditRoutes } from "./routes/audit";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerDepartmentRoutes } from "./routes/departments";
 import { registerDocumentRoutes } from "./routes/documents";

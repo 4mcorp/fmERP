@@ -1,6 +1,8 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { useAttachments } from "@fmerp/shared/lib/queries";
+import type { AttachmentInfo } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
@@ -9,8 +11,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Download, Eye, Paperclip, Trash2 } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
 import { toast } from "sonner";
-import { useAttachments } from "@/lib/queries";
-import type { AttachmentInfo } from "@/lib/types";
 
 const PREVIEWABLE = /^(image\/(png|jpeg|gif|webp)|application\/pdf)$/;
 

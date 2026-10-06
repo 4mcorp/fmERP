@@ -1,6 +1,5 @@
-apps/web/app/(app)/approval/[id]/page.tsx -> apps/web/components/approval/audit-trail.tsx
-apps/web/app/(app)/approval/[id]/page.tsx -> apps/web/components/approval/completion-files.tsx
 apps/web/app/(app)/onboarding/page.tsx -> apps/web/components/org/business-form.tsx
+apps/web/components/approval/approval-detail.tsx -> apps/web/components/approval/completion-files.tsx
 apps/web/server/account-export.ts -> packages/auth/src/session-guard.ts
 apps/web/server/approval/attachments.ts -> apps/web/server/approval/document-storage.ts
 apps/web/server/approval/drafts.ts -> apps/web/server/approval/document-storage.ts

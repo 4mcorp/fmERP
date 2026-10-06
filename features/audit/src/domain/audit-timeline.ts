@@ -3,18 +3,18 @@
 //  - 완료: `approval_event`의 `completed`
 //  - 그 밖의 문서 행위(작성·상신·회수·결재선 변경·다운로드·인쇄·공람 등): 감사 로그
 
-export interface TimelineAction {
+interface TimelineAction {
   at: Date;
   kind: string;
   actor: string;
   onBehalfOf: string | null;
   comment: string | null;
 }
-export interface TimelineEvent {
+interface TimelineEvent {
   at: Date;
   type: string;
 }
-export interface TimelineLog {
+interface TimelineLog {
   at: Date;
   action: string;
   actor: string | null;

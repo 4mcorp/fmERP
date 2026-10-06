@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiProblem, errorMessage } from "@fmerp/shared/lib/api";
+import { formatDateTime } from "@fmerp/shared/lib/format";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
@@ -25,14 +26,14 @@ import {
 import { Search as SearchIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useState } from "react";
-import { useAuditLogs, useMembers } from "@/lib/queries";
+import { AuditTabs } from "../components/audit-tabs";
 import {
   AUDIT_ACTION_GROUPS,
   AUDIT_ACTION_LABEL,
   type AuditLogRow,
-  formatDateTime,
-} from "@/lib/types";
-import { AuditTabs } from "./audit-tabs";
+  useAuditActors,
+  useAuditLogs,
+} from "../queries";
 
 const FILTER_KEYS = ["from", "to", "action", "actorUserId", "targetId", "result"] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
@@ -159,7 +160,7 @@ function AuditLogView() {
   const applied = fromParams(params);
   const [form, setForm] = useState<Filters>(() => applied);
   const [selected, setSelected] = useState<AuditLogRow | null>(null);
-  const { data: members } = useMembers();
+  const { data: members } = useAuditActors();
   const query = useAuditLogs(toApiQuery(applied), true);
   const rows = query.data?.pages.flatMap((p) => p.items) ?? [];
   const set = (key: FilterKey) => (value: string) => setForm((f) => ({ ...f, [key]: value }));

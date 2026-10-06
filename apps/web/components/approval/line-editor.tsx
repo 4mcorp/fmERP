@@ -1,5 +1,14 @@
 "use client";
 
+import {
+  type Business,
+  type Department,
+  type LineItemInput,
+  type LineTarget,
+  type Member,
+  STEP_TYPE_LABEL,
+  type StepType,
+} from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Input } from "@fmerp/shared/ui/input";
@@ -13,15 +22,6 @@ import {
 } from "@fmerp/shared/ui/select";
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import {
-  type Business,
-  type Department,
-  type LineItemInput,
-  type LineTarget,
-  type Member,
-  STEP_TYPE_LABEL,
-  type StepType,
-} from "@/lib/types";
 
 /** 화면에서 다루는 결재선 한 줄. 같은 순번(병렬) 여부는 앞 줄과의 관계(parallelWithPrev)로 표현한다 */
 export interface LineRow {

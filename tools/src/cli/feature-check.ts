@@ -55,7 +55,15 @@ const violations = summary.violations.filter(
 for (const v of violations) fail(`${v.rule.name}: ${v.from} -> ${v.to}`);
 
 // 3) 테스트 + 커버리지 하한
-if (!skipTests) {
+const hasTests =
+  fs.existsSync(path.join(ROOT, "features", feature, "tests")) &&
+  fs.readdirSync(path.join(ROOT, "features", feature, "tests")).some((f) => /.test.ts$/.test(f));
+if (!skipTests && !hasTests) {
+  console.log(
+    `[${feature}] 단위·통합 테스트가 없습니다 (화면은 E2E가 확인합니다). 테스트·커버리지 검사를 건너뜁니다`,
+  );
+}
+if (!skipTests && hasTests) {
   console.log(`[${feature}] 단위·통합 테스트와 커버리지`);
   const floors = readJson<Record<string, CoverageFloor>>(
     path.join(BASELINE_DIR, "coverage.json"),

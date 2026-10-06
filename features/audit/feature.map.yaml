@@ -1,0 +1,31 @@
+# 기능 지도 초안 (계획 5장). P8에서 형식을 확정하고 CI가 정합성을 검사한다.
+id: audit
+summary: 감사 로그 조회, 문서 이력 타임라인·인쇄 기록, 월간 접속 기록 점검(AUD-026)
+keywords: [감사, 로그, 접속 기록, 타임라인, 이력, 인쇄, 월간 점검, 감사인]
+access:
+  - { who: 감사 권한 보유자, path: "관리 콘솔 → 감사 로그 → /admin/audit", entry: ui/pages/audit-logs }
+  - { who: 감사 권한 보유자, path: "감사 로그 → 월간 점검 → /admin/audit/review", entry: ui/pages/audit-review }
+  - { who: 문서 열람자, path: "결재 문서 상세 하단 이력·인쇄 버튼", entry: ui/components/audit-trail }
+screens:
+  - { route: /admin/audit, file: src/ui/pages/audit-logs.tsx }
+  - { route: /admin/audit/review, file: src/ui/pages/audit-review.tsx }
+adapters:
+  - apps/web/app/(app)/admin/audit/page.tsx
+  - apps/web/app/(app)/admin/audit/review/page.tsx
+  - apps/web/app/(app)/approval/[id]/page.tsx   # 결재 상세에 PrintButton·DocumentTimeline을 끼운다 (슬롯 주입)
+  - apps/web/app/(app)/admin/layout.tsx          # 점검 누락 배지에 ui/queries를 쓴다
+api: { generated: true, entry: api/routes }       # registerAuditRoutes(router, deps, access)
+tables:
+  owns: { generated: true }                       # audit_review (audit_log 쓰기는 shared/audit만)
+  reads: [audit_log]
+events: { publishes: [], consumes: [] }
+contracts:
+  - shared/contracts/document-access              # 문서 열람 확인 (결재가 제공, app.ts가 주입)
+  - shared/contracts/ops-alerts                   # reviewStatuses를 운영 알림에 공급 (worker가 주입)
+tests:
+  unit: tests/*.test.ts
+  int: tests/audit.int.test.ts
+  e2e: apps/web/e2e/m6.spec.ts
+invariants:
+  - audit_log는 INSERT만 한다 (수정·삭제 코드 금지)
+  - 열람할 수 없는 문서는 존재도 알리지 않는다 (404)

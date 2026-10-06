@@ -2,6 +2,27 @@
 
 import type { FormSchema } from "@fmerp/core";
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
+import {
+  useApproval,
+  useApprovalBody,
+  useAttachments,
+  useBusinesses,
+  useCapabilities,
+  useComments,
+  useDepartments,
+  useMe,
+  useMembers,
+  usePending,
+} from "@fmerp/shared/lib/queries";
+import {
+  type ApprovalStepView,
+  DOC_STATUS_LABEL,
+  type FormDefinition,
+  formatDateTime,
+  SECURITY_LABEL,
+  STEP_STATUS_LABEL,
+  STEP_TYPE_LABEL,
+} from "@fmerp/shared/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
@@ -21,36 +42,14 @@ import { Textarea } from "@fmerp/shared/ui/textarea";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Pause, Play, X } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AttachmentList } from "@/components/approval/attachment-uploader";
-import { DocumentTimeline, PrintButton } from "@/components/approval/audit-trail";
 import { CompletionFiles } from "@/components/approval/completion-files";
 import { FormValuesView } from "@/components/approval/form-view";
 import { LineEditor, type LineRow, rowsToItems } from "@/components/approval/line-editor";
 import { RecipientPanel } from "@/components/approval/recipient-panel";
-import {
-  useApproval,
-  useApprovalBody,
-  useAttachments,
-  useBusinesses,
-  useCapabilities,
-  useComments,
-  useDepartments,
-  useMe,
-  useMembers,
-  usePending,
-} from "@/lib/queries";
-import {
-  type ApprovalStepView,
-  DOC_STATUS_LABEL,
-  type FormDefinition,
-  formatDateTime,
-  SECURITY_LABEL,
-  STEP_STATUS_LABEL,
-  STEP_TYPE_LABEL,
-} from "@/lib/types";
 
 interface DocForm {
   name: string;
@@ -170,8 +169,16 @@ function buttonsFor(
 const ICONS = { check: Check, x: X, pause: Pause, play: Play } as const;
 
 /** 문서 상세·결재 처리: 본문, 진행 현황, 첨부, 의견, 처리(재인증), 회수·재기안, 결재선 변경 (APV-017·019·037·040~043·048). 360px 모바일에서 전 과정 가능 */
-export default function ApprovalDetailPage() {
-  const { id } = useParams<{ id: string }>();
+/** `printButton`·`timeline`은 감사 기능의 화면 조각이다. 합성 루트(app/(app)/approval/[id]/page.tsx)가 끼워 넣는다 */
+export function ApprovalDetailPage({
+  id,
+  printButton,
+  timeline,
+}: {
+  id: string;
+  printButton: ReactNode;
+  timeline: ReactNode;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: me } = useMe();
@@ -391,7 +398,7 @@ export default function ApprovalDetailPage() {
               원문 보기
             </Link>
           )}
-          <PrintButton documentId={id} />
+          {printButton}
         </div>
         <p className="text-sm text-muted-foreground">
           {docForm?.name ?? "문서"} · {view.drafterSnapshot.name ?? ""}
@@ -618,7 +625,7 @@ export default function ApprovalDetailPage() {
         </CardContent>
       </Card>
 
-      <DocumentTimeline documentId={id} />
+      {timeline}
 
       <Modal
         open={reason !== null}

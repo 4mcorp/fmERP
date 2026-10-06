@@ -1,6 +1,5 @@
 // M6 통합 테스트: 감사 단계 대상(AUD-001), 감사인 열람 기록(AUD-010), 타임라인(AUD-011), 감사 로그 조회(AUD-025), 월간 점검(AUD-026) (실제 DB)
 
-import { reviewTargetPeriod } from "@fmerp/core";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
 import {
   clientWithCookie,
@@ -10,6 +9,7 @@ import {
 } from "@fmerp/shared/testing/test-client";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { reviewTargetPeriod } from "../src/domain/audit-review";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");

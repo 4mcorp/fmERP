@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { type AuditReviewRecord, reviewStatuses, reviewTargetPeriod } from "./audit-review";
+import {
+  type AuditReviewRecord,
+  reviewStatuses,
+  reviewTargetPeriod,
+} from "../src/domain/audit-review";
 
 const rec = (period: string, at: string, abnormal = false): AuditReviewRecord => ({
   period,

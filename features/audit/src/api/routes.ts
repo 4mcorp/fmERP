@@ -10,8 +10,8 @@ import {
 } from "@fmerp/shared/server/http";
 import { serviceContext } from "@fmerp/shared/server/service-context";
 import { createRoute, z } from "@hono/zod-openapi";
-import { addReview, queryAuditLogs, reviewOverview } from "../audit/logs";
-import { documentTimeline, recordPrint } from "../audit/timeline";
+import { addReview, queryAuditLogs, reviewOverview } from "../service/logs";
+import { documentTimeline, recordPrint } from "../service/timeline";
 
 const idParam = z.object({ id: z.uuid() });
 

@@ -1,13 +1,13 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { formatDateTime } from "@fmerp/shared/lib/format";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Printer } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { useTimeline } from "@/lib/queries";
-import { formatDateTime, type TimelineItem } from "@/lib/types";
+import { type TimelineItem, useTimeline } from "../queries";
 
 /** 같은 인쇄를 버튼 클릭과 브라우저의 beforeprint 이벤트가 겹쳐 두 번 기록하지 않도록 두는 간격 */
 const PRINT_LOG_GAP_MS = 5_000;

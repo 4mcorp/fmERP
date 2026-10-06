@@ -1,6 +1,8 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { useDepartments, useMembers, useRecipients } from "@fmerp/shared/lib/queries";
+import { formatDateTime, RECIPIENT_KIND_LABEL, type RecipientInfo } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -10,8 +12,6 @@ import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TargetSelect, type TargetValue } from "@/components/approval/target-select";
-import { useDepartments, useMembers, useRecipients } from "@/lib/queries";
-import { formatDateTime, RECIPIENT_KIND_LABEL, type RecipientInfo } from "@/lib/types";
 
 /**
  * 문서 상세의 참조·수신·공람 (APV-070·072·073): 대상과 열람·접수·배부 상태, 수신 접수·배부, 완료 문서의 공람 지정.

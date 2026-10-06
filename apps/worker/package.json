@@ -17,6 +17,7 @@
     "@fmerp/completion": "workspace:*",
     "@fmerp/core": "workspace:*",
     "@fmerp/db": "workspace:*",
+    "@fmerp/feature-audit": "workspace:*",
     "@fmerp/feature-notification": "workspace:*",
     "@fmerp/storage": "workspace:*",
     "@hono/node-server": "~2.1.3",

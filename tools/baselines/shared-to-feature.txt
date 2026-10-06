@@ -1,4 +1,4 @@
-apps/web/lib/types.ts -> packages/core/src/form-schema.ts
+shared/src/lib/types.ts -> packages/core/src/form-schema.ts
 shared/src/server/deps.ts -> packages/auth/src/auth.ts
 shared/src/server/errors.ts -> packages/core/src/approval-line-edit.ts
 shared/src/server/errors.ts -> packages/core/src/approval-types.ts

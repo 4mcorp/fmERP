@@ -1,11 +1,12 @@
 // 문서 이력 타임라인(AUD-011)과 인쇄 기록(AUD-020). 병합·중복 제거 규칙은 packages/core의 buildTimeline이 가진다.
 import { recordAudit } from "@fmerp/audit";
-import { buildTimeline, canInAnyScope } from "@fmerp/core";
+import { canInAnyScope } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import type { DocumentAccess, Viewer } from "@fmerp/shared/contracts/document-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { buildTimeline } from "../domain/audit-timeline";
 
 const MAX_LOGS = 500;
 /** 같은 사용자·문서의 인쇄 기록은 이 시간 안에는 한 번만 남긴다. 추가 전용 로그를 반복 호출로 부풀리지 못하게 한다 */

@@ -4,7 +4,7 @@ import { cn } from "@fmerp/shared/lib/utils";
 import { Badge } from "@fmerp/shared/ui/badge";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuditReviews } from "@/lib/queries";
+import { useAuditReviews } from "../queries";
 
 const TABS = [
   { href: "/admin/audit", label: "로그 조회" },

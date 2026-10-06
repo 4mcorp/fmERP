@@ -1,10 +1,10 @@
 "use client";
 
+import { usePending } from "@fmerp/shared/lib/queries";
+import { formatDateTime, SECURITY_LABEL, STEP_TYPE_LABEL } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
 import Link from "next/link";
-import { usePending } from "@/lib/queries";
-import { formatDateTime, SECURITY_LABEL, STEP_TYPE_LABEL } from "@/lib/types";
 
 /** 결재 대기: 지금 내가 처리할 차례인 문서 (APV-080 일부). 모바일에서도 목록에서 바로 문서로 들어간다 */
 export default function PendingPage() {

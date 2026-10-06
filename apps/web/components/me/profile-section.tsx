@@ -1,6 +1,7 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import type { Me } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
@@ -8,7 +9,6 @@ import { Label } from "@fmerp/shared/ui/label";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ChangeEvent, type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import type { Me } from "@/lib/types";
 
 type ImageKind = "signature" | "stamp";
 const KIND_LABEL: Record<ImageKind, string> = { signature: "서명", stamp: "도장" };

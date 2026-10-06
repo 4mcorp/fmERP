@@ -1,6 +1,8 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { useDepartments, useMembers, useRecipients } from "@fmerp/shared/lib/queries";
+import { RECIPIENT_KIND_LABEL, type RecipientInfo } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Label } from "@fmerp/shared/ui/label";
@@ -9,8 +11,6 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TargetSelect, type TargetValue } from "@/components/approval/target-select";
-import { useDepartments, useMembers, useRecipients } from "@/lib/queries";
-import { RECIPIENT_KIND_LABEL, type RecipientInfo } from "@/lib/types";
 
 const GROUPS: { kind: RecipientInfo["kind"]; help: string; departmentOnly?: boolean }[] = [
   { kind: "cc", help: "결재 과정을 함께 보는 사람·부서입니다. 열람 시점은 양식 설정을 따릅니다." },

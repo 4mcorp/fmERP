@@ -1,6 +1,8 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { useBusinesses } from "@fmerp/shared/lib/queries";
+import type { Business } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -10,8 +12,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 import { BusinessForm } from "@/components/org/business-form";
-import { useBusinesses } from "@/lib/queries";
-import type { Business } from "@/lib/types";
 
 const formatBizNo = (n: string) => `${n.slice(0, 3)}-${n.slice(3, 5)}-${n.slice(5)}`;
 

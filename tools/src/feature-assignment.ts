@@ -39,7 +39,10 @@ const RULES: readonly Rule[] = [
   [/^apps\/web\/app\/\(app\)\/layout\.tsx$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],
   // Next 페이지 어댑터: 기능의 화면 진입점을 한 줄로 내보낸다 (내 정보는 계정 화면에 알림 조각을 끼운다)
-  [/^apps\/web\/app\/\(app\)\/(me|notifications|system\/telegram)\/page\.tsx$/, "composition"],
+  [
+    /^apps\/web\/app\/\(app\)\/(me|notifications|system\/telegram|admin\/audit|admin\/audit\/review|approval\/\[id\])\/page\.tsx$/,
+    "composition",
+  ],
   [/^apps\/web\/components\/app-shell\.tsx$/, "composition"],
 
   // ── 알림 ── (코드는 features/notification/으로 이동 완료: 경로가 소유자를 알려 준다. E2E만 남아 있다)
@@ -64,7 +67,7 @@ const RULES: readonly Rule[] = [
   ],
   [/^apps\/web\/components\/approval\/completion-files\.tsx$/, "completion"],
 
-  // ── 감사 ──
+  // ── 감사 ── (코드는 features/audit/으로 이동 완료. E2E만 남아 있다)
   [/^packages\/core\/src\/audit-/, "audit"],
   [/^apps\/web\/server\/(audit\/|routes\/audit\.ts)/, "audit"],
   [/^apps\/web\/components\/approval\/audit-trail\.tsx$/, "audit"],
@@ -122,8 +125,8 @@ const RULES: readonly Rule[] = [
   [/^apps\/web\/app\/\(app\)\/admin\/(settings|businesses|org|members|positions)\//, "org"],
   [/^apps\/web\/e2e\/m2\.spec\.ts$/, "org"],
 
-  // ── 홈 ──
-  [/^apps\/web\/app\/\(app\)\/page\.tsx$/, "home"],
+  // ── 홈 ── (코드는 features/home/으로 이동 완료. app/(app)/page.tsx는 한 줄 어댑터)
+  [/^apps\/web\/app\/\(app\)\/page\.tsx$/, "composition"],
 ];
 
 /** 파일의 소유자. 배정되지 않은 파일이면 `null` */

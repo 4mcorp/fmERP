@@ -1,3 +1,14 @@
 {
-  "notification": { "lines": 78, "statements": 75, "functions": 69, "branches": 56 }
+  "notification": {
+    "lines": 78,
+    "statements": 75,
+    "functions": 69,
+    "branches": 56
+  },
+  "audit": {
+    "lines": 48,
+    "statements": 46,
+    "functions": 34,
+    "branches": 32
+  }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTimeline, type TimelineInput } from "./audit-timeline";
+import { buildTimeline, type TimelineInput } from "../src/domain/audit-timeline";
 
 const t = (s: string) => new Date(`2026-10-0${s}Z`);
 const empty = (): TimelineInput => ({

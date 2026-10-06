@@ -1,13 +1,6 @@
 "use client";
 
 import { adminEntry } from "@fmerp/shared/lib/admin-nav";
-import { Badge } from "@fmerp/shared/ui/badge";
-import { Button } from "@fmerp/shared/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
-import { FilePlus2, Star } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useMemo } from "react";
 import {
   useCapabilities,
   useCurrentAccount,
@@ -15,14 +8,21 @@ import {
   useMe,
   useMine,
   usePending,
-} from "@/lib/queries";
+} from "@fmerp/shared/lib/queries";
 import {
   DOC_STATUS_LABEL,
   formatDateTime,
   type MineItem,
   ROLE_LABEL,
   STEP_TYPE_LABEL,
-} from "@/lib/types";
+} from "@fmerp/shared/lib/types";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { FilePlus2, Star } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { type ReactNode, useEffect, useMemo } from "react";
 
 /** 홈에 보이는 목록의 최대 건수. 더 보려면 각 문서함으로 간다 */
 const LIST_SIZE = 5;

@@ -1,6 +1,6 @@
 // 감사 로그 조회(AUD-025)와 월간 접속 기록 점검(AUD-026). 전체 로그는 계정 범위 `audit.read` 보유자만 본다.
 import { recordAudit } from "@fmerp/audit";
-import { type Actor, can, reviewStatuses, reviewTargetPeriod } from "@fmerp/core";
+import { type Actor, can } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { ACCOUNT_TARGET, authorize } from "@fmerp/shared/authz/org-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
@@ -8,6 +8,7 @@ import { decodeCursor, encodeCursor } from "@fmerp/shared/server/cursor";
 import { ApprovalError } from "@fmerp/shared/server/errors";
 import { and, desc, eq, gte, lt, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { reviewStatuses, reviewTargetPeriod } from "../domain/audit-review";
 
 const A = schema.auditLog;
 const MAX_LIMIT = 100;

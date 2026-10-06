@@ -1,4 +1,4 @@
-import type { Department } from "./types";
+import type { Department } from "@fmerp/shared/lib/types";
 
 export interface DeptTreeNode extends Department {
   children: DeptTreeNode[];

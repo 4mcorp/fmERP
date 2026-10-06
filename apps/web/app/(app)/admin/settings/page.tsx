@@ -1,6 +1,8 @@
 "use client";
 
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
+import { useCurrentAccount, useMe } from "@fmerp/shared/lib/queries";
+import type { AccountSettings } from "@fmerp/shared/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -16,8 +18,6 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useCurrentAccount, useMe } from "@/lib/queries";
-import type { AccountSettings } from "@/lib/types";
 
 interface Exceeding {
   id: string;

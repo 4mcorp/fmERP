@@ -1,6 +1,8 @@
 "use client";
 
 import { ApiProblem, errorMessage } from "@fmerp/shared/lib/api";
+import { useDepartments, useForms, useSearch } from "@fmerp/shared/lib/queries";
+import { DOC_STATUS_LABEL } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
@@ -17,8 +19,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useState } from "react";
 import { toast } from "sonner";
 import { DocumentTable } from "@/components/approval/document-table";
-import { useDepartments, useForms, useSearch } from "@/lib/queries";
-import { DOC_STATUS_LABEL } from "@/lib/types";
 
 const FILTER_KEYS = [
   "q",

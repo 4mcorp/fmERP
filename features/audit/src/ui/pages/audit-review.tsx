@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
+import { formatDateTime } from "@fmerp/shared/lib/format";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Label } from "@fmerp/shared/ui/label";
@@ -18,9 +19,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { useAuditReviews } from "@/lib/queries";
-import { type AuditReviewMonth, formatDateTime } from "@/lib/types";
-import { AuditTabs } from "../audit-tabs";
+import { AuditTabs } from "../components/audit-tabs";
+import { type AuditReviewMonth, useAuditReviews } from "../queries";
 
 const STATE_LABEL: Record<AuditReviewMonth["state"], string> = {
   pending: "미점검",

@@ -1,5 +1,7 @@
 "use client";
 
+import { useMembers, useOrgChart } from "@fmerp/shared/lib/queries";
+import type { Member } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
@@ -8,8 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs"
 import { ChevronRight, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buildDeptTree, type DeptTreeNode, filterDeptTree, totalMembers } from "@/lib/org-tree";
-import { useMembers, useOrgChart } from "@/lib/queries";
-import type { Member } from "@/lib/types";
 
 function MemberLine({ member, departmentId }: { member: Member; departmentId: string }) {
   const a = member.assignments.find((x) => x.departmentId === departmentId);

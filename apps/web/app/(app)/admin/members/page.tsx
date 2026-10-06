@@ -1,6 +1,22 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import {
+  useBusinesses,
+  useCapabilities,
+  useDepartments,
+  useMe,
+  useMembers,
+  usePositions,
+} from "@fmerp/shared/lib/queries";
+import {
+  type Capabilities,
+  formatDateTime,
+  GRANT_ROLE_LABEL,
+  type Invitation,
+  ROLE_LABEL,
+  STATUS_LABEL,
+} from "@fmerp/shared/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
@@ -27,22 +43,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { MemberDetail } from "@/components/org/member-detail";
-import {
-  useBusinesses,
-  useCapabilities,
-  useDepartments,
-  useMe,
-  useMembers,
-  usePositions,
-} from "@/lib/queries";
-import {
-  type Capabilities,
-  formatDateTime,
-  GRANT_ROLE_LABEL,
-  type Invitation,
-  ROLE_LABEL,
-  STATUS_LABEL,
-} from "@/lib/types";
 
 const NONE = "__none";
 

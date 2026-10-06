@@ -1,13 +1,11 @@
 "use client";
 
-import { api } from "@fmerp/shared/lib/api";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { api } from "./api";
 import type {
   AccountExports,
   ApprovalView,
   AttachmentInfo,
-  AuditLogPage,
-  AuditReviewOverview,
   Business,
   Capabilities,
   CommentInfo,
@@ -24,7 +22,6 @@ import type {
   PendingItem,
   RecipientInfo,
   SystemBackups,
-  TimelineItem,
 } from "./types";
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: () => api<Me>("/api/me") });
@@ -156,37 +153,6 @@ export const useSearch = (query: string) =>
     initialPageParam: "",
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     enabled: query !== "",
-  });
-
-// ===== 감사 (M6) =====
-
-/** 감사 로그 조회 (AUD-025). `query`는 `from=...&action=...` 형태 */
-export const useAuditLogs = (query: string, enabled: boolean) =>
-  useInfiniteQuery({
-    queryKey: ["audit-logs", query],
-    queryFn: ({ pageParam }) =>
-      api<AuditLogPage>(
-        `/api/audit-logs?${query}&limit=50${pageParam ? `&cursor=${pageParam}` : ""}`,
-      ),
-    initialPageParam: "",
-    getNextPageParam: (last) => last.nextCursor ?? undefined,
-    enabled,
-  });
-
-/** 월간 접속 기록 점검 현황 (AUD-026) */
-export const useAuditReviews = (enabled: boolean) =>
-  useQuery({
-    queryKey: ["audit-reviews"],
-    queryFn: () => api<AuditReviewOverview>("/api/audit-logs/reviews"),
-    enabled,
-  });
-
-/** 문서 이력 타임라인 (AUD-011) */
-export const useTimeline = (documentId: string, enabled: boolean) =>
-  useQuery({
-    queryKey: ["timeline", documentId],
-    queryFn: () => api<TimelineItem[]>(`/api/approvals/${documentId}/timeline`),
-    enabled,
   });
 
 // ===== 덤프·내보내기 (M7) =====

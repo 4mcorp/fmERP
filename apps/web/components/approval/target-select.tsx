@@ -1,5 +1,6 @@
 "use client";
 
+import type { Department, Member } from "@fmerp/shared/lib/types";
 import {
   Select,
   SelectContent,
@@ -9,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@fmerp/shared/ui/select";
-import type { Department, Member } from "@/lib/types";
 
 export type TargetValue = { type: "member" | "department"; id: string };
 

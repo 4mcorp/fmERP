@@ -1,6 +1,8 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { useDuties, usePositions } from "@fmerp/shared/lib/queries";
+import type { MasterItem } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -17,8 +19,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { useDuties, usePositions } from "@/lib/queries";
-import type { MasterItem } from "@/lib/types";
 
 /** 직위(서열 있음)·직책 마스터 한 종류의 목록과 추가 폼 */
 function MasterSection({
