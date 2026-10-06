@@ -178,7 +178,7 @@ describe("사업자 (ORG-002~005)", () => {
     });
     // 체크섬이 맞지 않는 임의 번호일 수 있어 먼저 형식 오류를 구분한다
     if (ok.status === 400) {
-      const { makeBusinessNumber } = await import("@fmerp/shared/domain/business-number");
+      const { makeBusinessNumber } = await import("../src/domain/business-number");
       const valid = makeBusinessNumber("500123456");
       const retry = await post(owner, "/api/businesses", {
         name: "신규 사업자",

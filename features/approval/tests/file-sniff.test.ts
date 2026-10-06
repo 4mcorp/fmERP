@@ -5,7 +5,7 @@ import {
   extensionOf,
   safeFileName,
   sniffFile,
-} from "./file-sniff";
+} from "../src/domain/file-sniff";
 
 // core의 tsconfig에는 DOM·Node 타입이 없어 테스트에서만 쓰는 TextEncoder를 선언한다
 declare const TextEncoder: new () => { encode(input: string): Uint8Array };

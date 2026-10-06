@@ -8,7 +8,9 @@
     "./ui/pages/*": "./src/ui/pages/*.tsx",
     "./ui/components/*": "./src/ui/components/*.tsx",
     "./ui/queries": "./src/ui/queries.ts",
-    "./provisioning": "./src/provisioning.ts"
+    "./provisioning": "./src/provisioning.ts",
+    "./domain/business-number": "./src/domain/business-number.ts",
+    "./domain/org-defaults": "./src/domain/org-defaults.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

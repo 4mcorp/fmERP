@@ -2,16 +2,16 @@
 import { randomUUID } from "node:crypto";
 import { recordAudit } from "@fmerp/audit";
 import { schema } from "@fmerp/db";
+import type { ServiceContext } from "@fmerp/shared/server/context";
+import { ServiceError } from "@fmerp/shared/server/errors";
+import { attachmentKey, stagingKey, stagingPrefix } from "@fmerp/storage";
+import { eq } from "drizzle-orm";
 import {
   checkAttachment,
   DEFAULT_ALLOWED_EXTENSIONS,
   extensionOf,
   safeFileName,
-} from "@fmerp/shared/domain/file-sniff";
-import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ServiceError } from "@fmerp/shared/server/errors";
-import { attachmentKey, stagingKey, stagingPrefix } from "@fmerp/storage";
-import { eq } from "drizzle-orm";
+} from "../domain/file-sniff";
 import { requireView, type Viewer } from "./access";
 import { documentPrefix } from "./drafts";
 

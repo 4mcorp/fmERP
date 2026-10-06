@@ -2,10 +2,6 @@ import { randomUUID } from "node:crypto";
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
 import { schema, withTenant } from "@fmerp/db";
 import { ACCOUNT_TARGET, authorize, loadActor } from "@fmerp/shared/authz/org-access";
-import {
-  isValidBusinessNumber,
-  normalizeBusinessNumber,
-} from "@fmerp/shared/domain/business-number";
 import { type Action, can, canInAnyScope } from "@fmerp/shared/domain/permissions";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
@@ -17,6 +13,7 @@ import {
 } from "@fmerp/shared/server/http";
 import { createRoute, z } from "@hono/zod-openapi";
 import { asc, eq } from "drizzle-orm";
+import { isValidBusinessNumber, normalizeBusinessNumber } from "../domain/business-number";
 import { checkMaxDepthChange } from "../domain/department-tree";
 import { countInFlightForBusiness } from "../service/in-flight";
 

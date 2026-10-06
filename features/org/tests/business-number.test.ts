@@ -3,7 +3,7 @@ import {
   isValidBusinessNumber,
   makeBusinessNumber,
   normalizeBusinessNumber,
-} from "./business-number";
+} from "../src/domain/business-number";
 
 describe("사업자등록번호 (PRD ORG-003)", () => {
   it("하이픈과 공백을 제거해 10자리로 정규화한다", () => {

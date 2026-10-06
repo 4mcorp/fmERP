@@ -1,7 +1,7 @@
 import { type Db, schema } from "@fmerp/db";
 import { TEST_ACCOUNTS } from "@fmerp/feature-account/test-accounts";
-import { makeBusinessNumber } from "@fmerp/shared/domain/business-number";
-import { DEFAULT_POSITIONS } from "@fmerp/shared/domain/org-defaults";
+import { makeBusinessNumber } from "@fmerp/feature-org/domain/business-number";
+import { DEFAULT_POSITIONS } from "@fmerp/feature-org/domain/org-defaults";
 import { and, eq } from "drizzle-orm";
 
 /**
