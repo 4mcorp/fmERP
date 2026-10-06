@@ -90,8 +90,10 @@ beforeAll(async () => {
   const businesses = await tenant((tx) => tx.select().from(schema.business));
   businessId = businesses.find((b) => b.code === "FM")?.id ?? "";
   const departments = await tenant((tx) => tx.select().from(schema.department));
-  finDepartmentId = departments.find((d) => d.code === "FIN")?.id ?? "";
-  salesDepartmentId = departments.find((d) => d.code === "SALES")?.id ?? "";
+  finDepartmentId =
+    departments.find((d) => d.businessId === businessId && d.code === "FIN")?.id ?? "";
+  salesDepartmentId =
+    departments.find((d) => d.businessId === businessId && d.code === "SALES")?.id ?? "";
   const forms = await json<{ id: string; code: string }[]>(await req("member1", "/api/forms"));
   generalFormId = forms.find((f) => f.code === "GENERAL")?.id ?? "";
   const created = await req("admin", "/api/forms", "POST", {

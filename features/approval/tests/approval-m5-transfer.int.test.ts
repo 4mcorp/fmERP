@@ -108,7 +108,8 @@ beforeAll(async () => {
   const departments = await withTenant(appDb.db, accountId, (tx) =>
     tx.select().from(schema.department),
   );
-  finDepartmentId = departments.find((d) => d.code === "FIN")?.id ?? "";
+  finDepartmentId =
+    departments.find((d) => d.businessId === businessId && d.code === "FIN")?.id ?? "";
   const forms = await json<{ id: string; code: string }[]>(await req("member1", "/api/forms"));
   generalFormId = forms.find((f) => f.code === "GENERAL")?.id ?? "";
   // approver(결재 관리자)는 재인증이 필요하다
@@ -255,7 +256,10 @@ describe("진행 중 결재 검사 (ORG-005·015·036)", () => {
     const departments = await withTenant(appDb.db, accountId, (tx) =>
       tx.select().from(schema.department),
     );
-    const idle = departments.find((d) => d.code === "LOG");
+    const lgId = (
+      await withTenant(appDb.db, accountId, (tx) => tx.select().from(schema.business))
+    ).find((b) => b.code === "LG")?.id;
+    const idle = departments.find((d) => d.businessId === lgId && d.code === "LOG");
     const off = await req("owner", `/api/departments/${idle?.id}/deactivate`, "POST");
     expect(off.status).toBe(200);
     expect((await req("owner", `/api/departments/${idle?.id}/activate`, "POST")).status).toBe(200);

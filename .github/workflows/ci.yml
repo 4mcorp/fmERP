@@ -50,11 +50,12 @@ jobs:
       - name: 테스트 서비스 기동 (PostgreSQL 18 테스트 DB, SeaweedFS)
         run: docker compose -f docker-compose.dev.yml up -d --wait postgres-test s3
 
+      # PDF 변환 시험(features/completion/tests/render.test.ts)도 Chromium이 필요하므로 테스트보다 먼저 설치한다
+      - name: 브라우저 설치 (Playwright Chromium)
+        run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
+
       - name: 단위·통합 테스트
         run: pnpm exec tsx tools/src/cli/run-gate.ts unit-integration -- pnpm test
-
-      - name: E2E 준비 (브라우저 설치)
-        run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
 
       - name: E2E 테스트
         run: pnpm exec tsx tools/src/cli/run-gate.ts e2e -- pnpm test:e2e
