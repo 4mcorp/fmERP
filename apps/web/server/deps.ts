@@ -1,21 +1,9 @@
-import { type Auth, createAuth, resolveDevTestLogin } from "@fmerp/auth";
-import { createDatabase, type Db, pingDatabase } from "@fmerp/db";
+import { createAuth, resolveDevTestLogin } from "@fmerp/auth";
+import { createDatabase, pingDatabase } from "@fmerp/db";
+import type { ServerDeps } from "@fmerp/shared/server/deps";
+import { getEnv } from "@fmerp/shared/server/env";
+import { trustedIpHeaders } from "@fmerp/shared/server/http";
 import { ObjectStorage } from "@fmerp/storage";
-import { getEnv } from "./env";
-import { trustedIpHeaders } from "./http";
-
-/** API가 쓰는 외부 자원. 테스트에서는 필요한 것만 바꿔 넣는다. */
-export interface ServerDeps {
-  /** fmerp_app — 업무 데이터, RLS 적용 */
-  appDb: Db;
-  /** fmerp_auth — 인증·계정, RLS 우회 (ADR 0005) */
-  authDb: Db;
-  auth: Auth;
-  storage: ObjectStorage;
-  devTestLogin: boolean;
-  now: () => Date;
-  pingDatabase: () => Promise<void>;
-}
 
 let deps: ServerDeps | undefined;
 

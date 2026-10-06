@@ -1,12 +1,12 @@
 // 결재 엔진 통합 테스트 (실제 DB): 수용 기준 S3·S4, 동시성·멱등·채번·완료 후 불변·대결·테넌트 격리 (M3).
 import type { ApprovalAction, DraftLineItem } from "@fmerp/core";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { ObjectStorage } from "@fmerp/storage";
 import { and, count, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDelegation, revokeDelegation } from "./delegation";
 import { loadBody } from "./drafts";
-import { ApprovalError } from "./errors";
 import {
   actOnStep,
   allocateDocNumber,

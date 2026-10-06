@@ -1,9 +1,9 @@
 "use client";
 
+import { ApiProblem, errorMessage } from "@fmerp/shared/lib/api";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { PinDialog } from "@/components/approval/pin-dialog";
-import { ApiProblem, errorMessage } from "@/lib/api";
 
 /**
  * 백업·내보내기 동작의 PIN 재인증 흐름: 동작을 실행하다 428이 오면 PIN 창을 띄우고, 확인되면 같은 동작을 다시 실행한다.

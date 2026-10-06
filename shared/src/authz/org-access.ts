@@ -10,7 +10,7 @@ import {
 } from "@fmerp/core";
 import { schema, type Tx } from "@fmerp/db";
 import { and, eq, isNull } from "drizzle-orm";
-import { ApiError } from "./http";
+import { ApiError } from "../server/http";
 
 export interface TenantInfo {
   accountId: string;

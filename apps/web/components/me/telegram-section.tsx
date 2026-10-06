@@ -1,14 +1,14 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { api, errorMessage } from "@/lib/api";
 import { useMyTelegram } from "@/lib/queries";
 
 /** 연결 링크 유효 시간(10분)보다 조금 길게 연결 여부를 확인한다 */

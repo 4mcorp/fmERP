@@ -26,14 +26,21 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["{apps,packages}/*/{src,server}/**/*.test.ts", "tools/src/**/*.test.ts"],
+          include: [
+            "{apps,packages}/*/{src,server}/**/*.test.ts",
+            "shared/src/**/*.test.ts",
+            "tools/src/**/*.test.ts",
+          ],
           exclude: ["**/*.int.test.ts", "**/node_modules/**"],
         },
       },
       {
         test: {
           name: "integration",
-          include: ["{apps,packages}/*/{src,server}/**/*.int.test.ts"],
+          include: [
+            "{apps,packages}/*/{src,server}/**/*.int.test.ts",
+            "shared/src/**/*.int.test.ts",
+          ],
           env: integrationEnv,
           // 순서 중요: DB 초기화·마이그레이션 → 테스트 버킷 → 시드 계정
           globalSetup: [

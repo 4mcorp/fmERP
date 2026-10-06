@@ -62,6 +62,9 @@ importers:
       '@fmerp/notification':
         specifier: workspace:*
         version: link:../../packages/notification
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@fmerp/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -89,12 +92,6 @@ importers:
       archiver:
         specifier: ~8.0.0
         version: 8.0.0
-      class-variance-authority:
-        specifier: ~0.7.1
-        version: 0.7.1
-      cn:
-        specifier: ~0.4.0
-        version: 0.4.0
       dexie:
         specifier: ~4.4.6
         version: 4.4.6
@@ -110,12 +107,6 @@ importers:
       next:
         specifier: ~16.3.8
         version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      next-themes:
-        specifier: ~0.4.6
-        version: 0.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      radix-ui:
-        specifier: ~1.6.7
-        version: 1.6.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react:
         specifier: ~19.3.0
         version: 19.3.0
@@ -344,6 +335,61 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ~3.1145.0
         version: 3.1145.0
+
+  shared:
+    dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../packages/audit
+      '@fmerp/auth':
+        specifier: workspace:*
+        version: link:../packages/auth
+      '@fmerp/core':
+        specifier: workspace:*
+        version: link:../packages/core
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../packages/db
+      '@fmerp/storage':
+        specifier: workspace:*
+        version: link:../packages/storage
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      class-variance-authority:
+        specifier: ~0.7.1
+        version: 0.7.1
+      cn:
+        specifier: ~0.4.0
+        version: 0.4.0
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      hono:
+        specifier: ~4.13.12
+        version: 4.13.12
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next-themes:
+        specifier: ~0.4.6
+        version: 0.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      radix-ui:
+        specifier: ~1.6.7
+        version: 1.6.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      zod:
+        specifier: ~4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
 
   tools: {}
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
+import { Button } from "./button";
+import { Modal } from "./modal";
 
 /** 되돌리기 어려운 동작 앞의 확인 창. `window.confirm` 대신 접근 가능한 `Modal`을 쓴다 */
 export function ConfirmDialog({

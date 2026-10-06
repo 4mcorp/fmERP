@@ -1,11 +1,11 @@
 "use client";
 
+import { Button } from "@fmerp/shared/ui/button";
 import type { JSONContent } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Heading2, Italic, List, ListOrdered, Redo2, Undo2 } from "lucide-react";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
 
 const EMPTY: JSONContent = { type: "doc", content: [] };
 

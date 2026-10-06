@@ -1,6 +1,6 @@
 import { extractSearchIndex, type FormSchema } from "@fmerp/core";
 import { schema } from "@fmerp/db";
-import type { ServiceContext } from "./context";
+import type { ServiceContext } from "@fmerp/shared/server/context";
 import { getFormVersion } from "./forms";
 
 /**

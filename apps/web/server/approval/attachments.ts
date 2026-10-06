@@ -8,12 +8,12 @@ import {
   safeFileName,
 } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import type { ServiceContext } from "@fmerp/shared/server/context";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { eq } from "drizzle-orm";
 import { requireView, type Viewer } from "./access";
-import type { ServiceContext } from "./context";
 import { attachmentKey, stagingKey, stagingPrefix } from "./document-storage";
 import { documentPrefix } from "./drafts";
-import { ApprovalError } from "./errors";
 
 const MB = 1024 * 1024;
 const DEFAULT_FILE_MB = 50;

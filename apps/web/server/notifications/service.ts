@@ -1,8 +1,8 @@
 // 인앱 알림 조회·읽음 처리 (PRD NTF-002). 본인 알림만 다룬다. 호출자가 withTenant로 테넌트를 정한다.
 import { type NotificationKind, notificationPath } from "@fmerp/core";
 import { schema, type Tx } from "@fmerp/db";
+import { ApiError } from "@fmerp/shared/server/http";
 import { and, desc, eq, isNull, lt, sql } from "drizzle-orm";
-import { ApiError } from "../http";
 
 /** 현재 테넌트 안의 내 구성원 id (RLS가 계정을 좁혀 준다) */
 export async function myMembershipId(tx: Tx, userId: string): Promise<string> {

@@ -7,10 +7,10 @@ import {
   type Recipient,
 } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import { businessTarget, departmentTarget } from "@fmerp/shared/authz/org-access";
+import type { ServiceContext } from "@fmerp/shared/server/context";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
-import { businessTarget, departmentTarget } from "../org-access";
-import type { ServiceContext } from "./context";
-import { ApprovalError } from "./errors";
 
 /** 열람자: 구성원 id와 권한 판정용 Actor */
 export interface Viewer {

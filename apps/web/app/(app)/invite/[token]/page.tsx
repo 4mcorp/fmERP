@@ -1,12 +1,12 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { api, errorMessage } from "@/lib/api";
 import { ROLE_LABEL, type Role } from "@/lib/types";
 
 /** 초대 수락 (AUTH-006). 링크로 수락하므로 이메일이 일치하지 않아도 된다 */

@@ -1,14 +1,14 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { Button } from "@fmerp/shared/ui/button";
+import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { Download, Eye, Paperclip, Trash2 } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { api, errorMessage } from "@/lib/api";
 import { useAttachments } from "@/lib/queries";
 import type { AttachmentInfo } from "@/lib/types";
 

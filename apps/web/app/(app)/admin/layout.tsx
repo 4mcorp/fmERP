@@ -1,11 +1,11 @@
 "use client";
 
+import { cn } from "@fmerp/shared/lib/utils";
+import { Badge } from "@fmerp/shared/ui/badge";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { useAuditReviews, useCapabilities, useMe } from "@/lib/queries";
-import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/admin/settings", label: "계정 설정", any: ["account.settings"] },

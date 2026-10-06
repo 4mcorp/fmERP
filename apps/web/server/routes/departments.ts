@@ -7,18 +7,23 @@ import {
   planDepartmentImport,
 } from "@fmerp/core";
 import { schema, type Tx, withTenant } from "@fmerp/db";
-import { createRoute, z } from "@hono/zod-openapi";
-import { and, asc, count, eq, isNull } from "drizzle-orm";
+import {
+  authorize,
+  businessTarget,
+  departmentTarget,
+  loadActor,
+} from "@fmerp/shared/authz/org-access";
+import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
   ApiError,
   type AppRouter,
   type DepsProvider,
   requireSession,
   requireTenant,
-} from "../http";
+} from "@fmerp/shared/server/http";
+import { createRoute, z } from "@hono/zod-openapi";
+import { and, asc, count, eq, isNull } from "drizzle-orm";
 import { countInFlightForDepartment } from "../in-flight";
-import { authorize, businessTarget, departmentTarget, loadActor } from "../org-access";
-import { errorResponses, json, OkSchema } from "./common";
 
 const DepartmentSchema = z
   .object({

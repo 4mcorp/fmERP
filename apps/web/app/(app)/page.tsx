@@ -1,12 +1,12 @@
 "use client";
 
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { FilePlus2, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminEntry } from "@/lib/admin-nav";
 import {
   useCapabilities,

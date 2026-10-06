@@ -1,8 +1,8 @@
 "use client";
 
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Card, CardContent } from "@fmerp/shared/ui/card";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { usePending } from "@/lib/queries";
 import { formatDateTime, SECURITY_LABEL, STEP_TYPE_LABEL } from "@/lib/types";
 

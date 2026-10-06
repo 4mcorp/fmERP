@@ -2,12 +2,12 @@
 import { recordAudit } from "@fmerp/audit";
 import { type Actor, can, reviewStatuses, reviewTargetPeriod } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import { ACCOUNT_TARGET, authorize } from "@fmerp/shared/authz/org-access";
+import type { ServiceContext } from "@fmerp/shared/server/context";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { and, desc, eq, gte, lt, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import type { ServiceContext } from "../approval/context";
-import { ApprovalError } from "../approval/errors";
 import { decodeCursor, encodeCursor } from "../approval/mailbox";
-import { ACCOUNT_TARGET, authorize } from "../org-access";
 
 const A = schema.auditLog;
 const MAX_LIMIT = 100;

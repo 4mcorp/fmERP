@@ -10,8 +10,8 @@ import {
 import type { MembershipRole } from "@fmerp/db";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { createMiddleware } from "hono/factory";
-import { APPROVAL_ERROR_STATUS, ApprovalError } from "./approval/errors";
 import type { ServerDeps } from "./deps";
+import { APPROVAL_ERROR_STATUS, ApprovalError } from "./errors";
 import { problem } from "./problem";
 
 export interface AppEnv {

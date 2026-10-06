@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     "@fmerp/core",
     "@fmerp/db",
     "@fmerp/notification",
+    "@fmerp/shared",
     "@fmerp/storage",
   ],
 };

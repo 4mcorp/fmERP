@@ -1,7 +1,7 @@
 // 결재 대기·기안함 (PRD APV-080 일부). 나머지 문서함은 M5.
 import { schema } from "@fmerp/db";
+import type { ServiceContext } from "@fmerp/shared/server/context";
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { ServiceContext } from "./context";
 
 /** 지금 내가 처리할 차례인 문서: 처리자이거나 대결자인 ACTIVE 단계. 보류 중인 문서도 처리자에게는 보인다 */
 export async function listPending(ctx: ServiceContext, membershipId: string) {

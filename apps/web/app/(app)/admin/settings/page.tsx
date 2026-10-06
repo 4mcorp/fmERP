@@ -1,21 +1,21 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
+import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { ApiProblem, api, errorMessage } from "@/lib/api";
+} from "@fmerp/shared/ui/select";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type FormEvent, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useCurrentAccount, useMe } from "@/lib/queries";
 import type { AccountSettings } from "@/lib/types";
 

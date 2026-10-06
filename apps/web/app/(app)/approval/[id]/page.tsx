@@ -1,6 +1,22 @@
 "use client";
 
 import type { FormSchema } from "@fmerp/core";
+import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
+import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
+import { Label } from "@fmerp/shared/ui/label";
+import { Modal } from "@fmerp/shared/ui/modal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@fmerp/shared/ui/select";
+import { Textarea } from "@fmerp/shared/ui/textarea";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Pause, Play, X } from "lucide-react";
 import Link from "next/link";
@@ -14,22 +30,6 @@ import { FormValuesView } from "@/components/approval/form-view";
 import { LineEditor, type LineRow, rowsToItems } from "@/components/approval/line-editor";
 import { PinDialog } from "@/components/approval/pin-dialog";
 import { RecipientPanel } from "@/components/approval/recipient-panel";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Label } from "@/components/ui/label";
-import { Modal } from "@/components/ui/modal";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { ApiProblem, api, errorMessage } from "@/lib/api";
 import {
   useApproval,
   useApprovalBody,

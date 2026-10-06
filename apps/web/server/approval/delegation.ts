@@ -1,8 +1,8 @@
 import { recordAudit } from "@fmerp/audit";
 import { validateDelegation } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
-import { ApprovalError } from "./errors";
 import { engineContext, loadDelegationRules, type ServiceContext } from "./service";
 import { lockAndLoad } from "./store";
 

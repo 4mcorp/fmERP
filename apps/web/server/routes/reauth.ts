@@ -1,7 +1,7 @@
 import { hasApprovalPin } from "@fmerp/auth";
 import { isPinReauthFresh } from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
-import { ApiError, type DepsProvider } from "../http";
+import { ApiError, type DepsProvider } from "@fmerp/shared/server/http";
 
 /**
  * 결재 처리 재인증 (AUTH-009, APV-043): 세션의 PIN 확인 시각이 30분 안이어야 한다.

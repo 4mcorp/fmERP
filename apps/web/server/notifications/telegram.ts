@@ -16,9 +16,9 @@ import {
   verifyWebhookSecret,
   type WebhookInfo,
 } from "@fmerp/notification";
-import type { ServerDeps } from "../deps";
-import { getEnv } from "../env";
-import { ApiError } from "../http";
+import type { ServerDeps } from "@fmerp/shared/server/deps";
+import { getEnv } from "@fmerp/shared/server/env";
+import { ApiError } from "@fmerp/shared/server/http";
 
 type RequestCtx = { ip?: string | null; userAgent?: string | null; requestId?: string | null };
 

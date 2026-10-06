@@ -1,7 +1,7 @@
 "use client";
 
+import { api } from "@fmerp/shared/lib/api";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { api } from "./api";
 import type {
   AccountExports,
   ApprovalView,

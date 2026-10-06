@@ -1,5 +1,9 @@
 import { Readable } from "node:stream";
 import { withTenant } from "@fmerp/db";
+import { loadActor } from "@fmerp/shared/authz/org-access";
+import { errorResponses, json } from "@fmerp/shared/server/common";
+import type { AppRouter, DepsProvider } from "@fmerp/shared/server/http";
+import { serviceContext } from "@fmerp/shared/server/service-context";
 import { createRoute, z } from "@hono/zod-openapi";
 import {
   checkPackageDownload,
@@ -7,11 +11,7 @@ import {
   packagePdfUrl,
   packageStatus,
 } from "../approval/package-download";
-import type { AppRouter, DepsProvider } from "../http";
-import { loadActor } from "../org-access";
-import { errorResponses, json } from "./common";
 import { createRequireReauth } from "./reauth";
-import { serviceContext } from "./service-context";
 
 const idParam = z.object({ id: z.uuid() });
 

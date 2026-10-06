@@ -2,10 +2,10 @@
 import { recordAudit } from "@fmerp/audit";
 import { buildTimeline, canInAnyScope } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import type { ServiceContext } from "@fmerp/shared/server/context";
 import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireView, type Viewer } from "../approval/access";
-import type { ServiceContext } from "../approval/context";
 
 const MAX_LOGS = 500;
 /** 같은 사용자·문서의 인쇄 기록은 이 시간 안에는 한 번만 남긴다. 추가 전용 로그를 반복 호출로 부풀리지 못하게 한다 */

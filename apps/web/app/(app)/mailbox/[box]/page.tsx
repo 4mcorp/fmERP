@@ -1,12 +1,12 @@
 "use client";
 
+import { ApiProblem } from "@fmerp/shared/lib/api";
+import { cn } from "@fmerp/shared/lib/utils";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { DocumentTable } from "@/components/approval/document-table";
-import { ApiProblem } from "@/lib/api";
 import { useCapabilities, useMailbox } from "@/lib/queries";
 import { MAILBOX_TABS } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /** 개인·부서·감사 문서함 (APV-080·081). 결재 대기·기안함은 기존 화면이다 */
 export default function MailboxPage() {

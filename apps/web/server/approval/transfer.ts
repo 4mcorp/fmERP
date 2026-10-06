@@ -3,10 +3,10 @@
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
 import { type Actor, can, planTransfer } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import { businessTarget } from "@fmerp/shared/authz/org-access";
+import type { ServiceContext } from "@fmerp/shared/server/context";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { eq, sql } from "drizzle-orm";
-import { businessTarget } from "../org-access";
-import type { ServiceContext } from "./context";
-import { ApprovalError } from "./errors";
 import { loadMemberCards } from "./org-snapshot";
 import { lockAndLoad } from "./store";
 

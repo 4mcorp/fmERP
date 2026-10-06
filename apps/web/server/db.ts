@@ -1,5 +1,5 @@
 import { createDatabase, type Database } from "@fmerp/db";
-import { getEnv } from "./env";
+import { getEnv } from "@fmerp/shared/server/env";
 
 let database: Database | undefined;
 

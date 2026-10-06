@@ -2,17 +2,22 @@ import { recordAudit } from "@fmerp/audit";
 import { createInvitationToken } from "@fmerp/auth";
 import { can, canInAnyScope } from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
-import { createRoute, z } from "@hono/zod-openapi";
-import { and, desc, eq } from "drizzle-orm";
+import {
+  ACCOUNT_TARGET,
+  authorize,
+  businessTarget,
+  loadActor,
+} from "@fmerp/shared/authz/org-access";
+import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
   ApiError,
   type AppRouter,
   type DepsProvider,
   requireSession,
   requireTenant,
-} from "../http";
-import { ACCOUNT_TARGET, authorize, businessTarget, loadActor } from "../org-access";
-import { errorResponses, json, OkSchema } from "./common";
+} from "@fmerp/shared/server/http";
+import { createRoute, z } from "@hono/zod-openapi";
+import { and, desc, eq } from "drizzle-orm";
 
 const INVITATION_DAYS = 7;
 

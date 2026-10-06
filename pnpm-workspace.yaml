@@ -1,6 +1,8 @@
 packages:
   - apps/*
   - packages/*
+  - features/*
+  - shared
   - tools
 
 # pnpm 11은 프로젝트 설정을 .npmrc가 아니라 이 파일에서 읽는다 (docs/ts/2026-10-03-pnpm11-config-location.md)

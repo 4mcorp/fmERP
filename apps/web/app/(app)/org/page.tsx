@@ -1,12 +1,12 @@
 "use client";
 
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import { ChevronRight, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildDeptTree, type DeptTreeNode, filterDeptTree, totalMembers } from "@/lib/org-tree";
 import { useMembers, useOrgChart } from "@/lib/queries";
 import type { Member } from "@/lib/types";

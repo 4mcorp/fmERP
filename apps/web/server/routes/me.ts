@@ -10,9 +10,14 @@ import {
   updateProfile,
   verifyApprovalPin,
 } from "@fmerp/auth";
+import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
+import {
+  ApiError,
+  type AppRouter,
+  type DepsProvider,
+  requireSession,
+} from "@fmerp/shared/server/http";
 import { createRoute, z } from "@hono/zod-openapi";
-import { ApiError, type AppRouter, type DepsProvider, requireSession } from "../http";
-import { errorResponses, json, OkSchema } from "./common";
 
 const IMAGE_KINDS = ["signature", "stamp"] as const;
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;

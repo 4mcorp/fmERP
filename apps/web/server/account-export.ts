@@ -2,9 +2,9 @@
 import { recordAudit } from "@fmerp/audit";
 import type { ActiveSession } from "@fmerp/auth";
 import { schema, type Tx, withTenant } from "@fmerp/db";
+import type { ServerDeps } from "@fmerp/shared/server/deps";
+import { ApiError } from "@fmerp/shared/server/http";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import type { ServerDeps } from "./deps";
-import { ApiError } from "./http";
 import { requireStrictReauth } from "./system/backups";
 
 type RequestCtx = { ip?: string | null; userAgent?: string | null; requestId?: string | null };

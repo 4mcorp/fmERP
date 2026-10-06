@@ -1,14 +1,14 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Label } from "@fmerp/shared/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TargetSelect, type TargetValue } from "@/components/approval/target-select";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { api, errorMessage } from "@/lib/api";
 import { useDepartments, useMembers, useRecipients } from "@/lib/queries";
 import { RECIPIENT_KIND_LABEL, type RecipientInfo } from "@/lib/types";
 

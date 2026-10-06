@@ -1,5 +1,15 @@
 import { type ApprovalAction, can } from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
+import { businessTarget, loadActor } from "@fmerp/shared/authz/org-access";
+import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
+import { ApprovalError } from "@fmerp/shared/server/errors";
+import {
+  type AppRouter,
+  type DepsProvider,
+  requireSession,
+  requireTenant,
+} from "@fmerp/shared/server/http";
+import { serviceContext } from "@fmerp/shared/server/service-context";
 import { createRoute, z } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
 import { requireView } from "../approval/access";
@@ -12,7 +22,6 @@ import {
 } from "../approval/attachments";
 import { addComment, listComments } from "../approval/comments";
 import { loadBody, saveDraft } from "../approval/drafts";
-import { ApprovalError } from "../approval/errors";
 import { getForm, getFormVersion, versionToInput } from "../approval/forms";
 import { listMyDocuments, listPending } from "../approval/inbox";
 import { changeLine } from "../approval/line-change";
@@ -25,12 +34,8 @@ import {
   submitDocument,
   withdrawDocument,
 } from "../approval/service";
-import { type AppRouter, type DepsProvider, requireSession, requireTenant } from "../http";
-import { businessTarget, loadActor } from "../org-access";
 import { LineItem } from "./approvals";
-import { errorResponses, json, OkSchema } from "./common";
 import { createRequireReauth } from "./reauth";
-import { serviceContext } from "./service-context";
 
 const Comment = z.string().trim().max(2000);
 

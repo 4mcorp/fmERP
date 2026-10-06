@@ -1,10 +1,10 @@
 // 단계별 의견 (PRD APV-042, APV-017). 추가만 가능하며 공개 범위(결재선 전체 / 기안자만)를 따른다.
 import { recordAudit } from "@fmerp/audit";
 import { schema } from "@fmerp/db";
+import type { ServiceContext } from "@fmerp/shared/server/context";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { asc, eq } from "drizzle-orm";
 import { requireView, type Viewer } from "./access";
-import type { ServiceContext } from "./context";
-import { ApprovalError } from "./errors";
 import { isParticipant } from "./service";
 
 const MAX_COMMENT = 2000;

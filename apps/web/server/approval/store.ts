@@ -1,7 +1,7 @@
 import type { ApprovalDoc, ApprovalStep, EngineResult } from "@fmerp/core";
 import { schema, type Tx } from "@fmerp/db";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { and, asc, eq } from "drizzle-orm";
-import { ApprovalError } from "./errors";
 
 type DocRow = typeof schema.document.$inferSelect;
 type StepRow = typeof schema.approvalStep.$inferSelect;

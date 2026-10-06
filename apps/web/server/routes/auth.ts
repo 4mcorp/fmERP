@@ -1,11 +1,11 @@
 import { recordAudit } from "@fmerp/audit";
 import { DEV_TEST_PASSWORD, listMyAccounts, TEST_USERS } from "@fmerp/auth";
 import { schema } from "@fmerp/db";
+import { errorResponses, json } from "@fmerp/shared/server/common";
+import type { ServerDeps } from "@fmerp/shared/server/deps";
+import { ApiError, type AppRouter, type DepsProvider } from "@fmerp/shared/server/http";
 import { createRoute, z } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
-import type { ServerDeps } from "../deps";
-import { ApiError, type AppRouter, type DepsProvider } from "../http";
-import { errorResponses, json } from "./common";
 
 type LoginResult = { token?: string; user?: { id?: string } };
 

@@ -1,18 +1,18 @@
 "use client";
 
-import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@fmerp/shared/ui/select";
+import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
   type Business,
   type Department,

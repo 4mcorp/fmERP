@@ -1,10 +1,10 @@
 "use client";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import { PinSection } from "@/components/me/pin-section";
 import { ProfileSection } from "@/components/me/profile-section";
 import { LoginHistorySection, SessionsSection } from "@/components/me/sessions-section";
 import { TelegramSection } from "@/components/me/telegram-section";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMe } from "@/lib/queries";
 
 export default function MePage() {

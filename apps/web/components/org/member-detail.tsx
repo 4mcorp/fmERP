@@ -1,21 +1,18 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@fmerp/shared/ui/select";
 import {
   Table,
   TableBody,
@@ -23,8 +20,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { ApiProblem, api, errorMessage } from "@/lib/api";
+} from "@fmerp/shared/ui/table";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
 import { useBusinesses, useDepartments, useDuties, usePositions } from "@/lib/queries";
 import {
   type AssignmentHistoryItem,

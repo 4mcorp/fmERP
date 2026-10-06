@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Card, CardContent } from "@fmerp/shared/ui/card";
 import {
   Table,
   TableBody,
@@ -11,8 +9,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@fmerp/shared/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useMine } from "@/lib/queries";
 import { DOC_STATUS_LABEL, formatDateTime } from "@/lib/types";
 

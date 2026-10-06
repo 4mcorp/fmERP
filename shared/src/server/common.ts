@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi";
-import { ProblemSchema } from "../problem";
+import { ProblemSchema } from "./problem";
 
 const problemContent = { "application/problem+json": { schema: ProblemSchema } };
 

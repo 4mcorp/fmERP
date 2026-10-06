@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { cn } from "@fmerp/shared/lib/utils";
 import { Geist } from "next/font/google";
-import { cn } from "@/lib/utils";
 import { Providers } from "./providers";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });

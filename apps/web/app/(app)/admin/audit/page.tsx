@@ -1,21 +1,19 @@
 "use client";
 
-import { Search as SearchIcon } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, Suspense, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Modal } from "@/components/ui/modal";
+import { ApiProblem, errorMessage } from "@fmerp/shared/lib/api";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent } from "@fmerp/shared/ui/card";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
+import { Modal } from "@fmerp/shared/ui/modal";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@fmerp/shared/ui/select";
 import {
   Table,
   TableBody,
@@ -23,8 +21,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { ApiProblem, errorMessage } from "@/lib/api";
+} from "@fmerp/shared/ui/table";
+import { Search as SearchIcon } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { type FormEvent, Suspense, useState } from "react";
 import { useAuditLogs, useMembers } from "@/lib/queries";
 import {
   AUDIT_ACTION_GROUPS,

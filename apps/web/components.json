@@ -14,8 +14,8 @@
   "rtl": false,
   "aliases": {
     "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
+    "utils": "@fmerp/shared/lib/utils",
+    "ui": "@fmerp/shared/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
   },

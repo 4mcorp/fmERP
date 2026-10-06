@@ -1,5 +1,16 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { cn } from "@fmerp/shared/lib/utils";
+import { Button } from "@fmerp/shared/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@fmerp/shared/ui/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -18,17 +29,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { adminEntry } from "@/lib/admin-nav";
-import { api, errorMessage } from "@/lib/api";
 import { clearLocalDrafts } from "@/lib/local-drafts";
 import {
   useCapabilities,
@@ -39,7 +40,6 @@ import {
   useUnreadCount,
 } from "@/lib/queries";
 import { ROLE_LABEL } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();

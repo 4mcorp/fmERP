@@ -3,8 +3,8 @@
 
 import type { Actor } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import type { ServiceContext } from "@fmerp/shared/server/context";
 import { type SQL, sql } from "drizzle-orm";
-import type { ServiceContext } from "./context";
 import {
   type MailboxPage,
   pageDocuments,

@@ -1,12 +1,12 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { Button } from "@fmerp/shared/ui/button";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
+import { Modal } from "@fmerp/shared/ui/modal";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Modal } from "@/components/ui/modal";
-import { api, errorMessage } from "@/lib/api";
 
 /**
  * 결재 PIN 재인증 대화상자 (AUTH-009, APV-043). 확인에 성공하면 30분 동안 다시 묻지 않는다.

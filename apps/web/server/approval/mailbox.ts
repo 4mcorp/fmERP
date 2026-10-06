@@ -3,10 +3,10 @@
 import type { Actor } from "@fmerp/core";
 import { can } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import { businessTarget } from "@fmerp/shared/authz/org-access";
+import type { ServiceContext } from "@fmerp/shared/server/context";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import { and, eq, or, type SQL, sql } from "drizzle-orm";
-import { businessTarget } from "../org-access";
-import type { ServiceContext } from "./context";
-import { ApprovalError } from "./errors";
 
 export const MAILBOXES = [
   "mine",

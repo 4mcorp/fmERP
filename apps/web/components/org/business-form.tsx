@@ -1,12 +1,12 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { Button } from "@fmerp/shared/ui/button";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { api, errorMessage } from "@/lib/api";
 import type { Business } from "@/lib/types";
 
 const FIELDS = [

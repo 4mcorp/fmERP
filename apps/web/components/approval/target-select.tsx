@@ -8,7 +8,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@fmerp/shared/ui/select";
 import type { Department, Member } from "@/lib/types";
 
 export type TargetValue = { type: "member" | "department"; id: string };

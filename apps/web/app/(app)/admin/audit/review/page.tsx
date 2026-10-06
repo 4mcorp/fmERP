@@ -1,13 +1,10 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { type FormEvent, useState } from "react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Modal } from "@/components/ui/modal";
+import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Label } from "@fmerp/shared/ui/label";
+import { Modal } from "@fmerp/shared/ui/modal";
 import {
   Table,
   TableBody,
@@ -15,9 +12,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { ApiProblem, api, errorMessage } from "@/lib/api";
+} from "@fmerp/shared/ui/table";
+import { Textarea } from "@fmerp/shared/ui/textarea";
+import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
 import { useAuditReviews } from "@/lib/queries";
 import { type AuditReviewMonth, formatDateTime } from "@/lib/types";
 import { AuditTabs } from "../audit-tabs";

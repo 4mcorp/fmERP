@@ -1,11 +1,11 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { Badge } from "@fmerp/shared/ui/badge";
+import { Button } from "@fmerp/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { api, errorMessage } from "@/lib/api";
 import { type DevTestUser, ROLE_LABEL } from "@/lib/types";
 
 const ACCOUNT_LABEL: Record<string, string> = { main: "포엠테스트", other: "다른회사" };

@@ -1,21 +1,21 @@
 "use client";
 
 import { type FormField, type FormSchema, tableSums } from "@fmerp/core";
-import { Plus, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
-import { type Control, Controller, type UseFormReturn } from "react-hook-form";
-import { RichTextEditor, RichTextView } from "@/components/approval/rich-text";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@fmerp/shared/ui/button";
+import { Input } from "@fmerp/shared/ui/input";
+import { Label } from "@fmerp/shared/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from "@fmerp/shared/ui/select";
+import { Textarea } from "@fmerp/shared/ui/textarea";
+import { Plus, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { type Control, Controller, type UseFormReturn } from "react-hook-form";
+import { RichTextEditor, RichTextView } from "@/components/approval/rich-text";
 import type { Department, Member } from "@/lib/types";
 
 export interface FieldContext {

@@ -1,9 +1,9 @@
 // 문서 목록 내보내기 (PRD APV-083): CSV·엑셀. 열람 권한 안의 문서만 담고, 내보낸 사실은 감사 로그에 남긴다.
 import { recordAudit } from "@fmerp/audit";
 import type { Actor } from "@fmerp/core";
+import type { ServiceContext } from "@fmerp/shared/server/context";
+import { ApprovalError } from "@fmerp/shared/server/errors";
 import writeXlsxFile from "write-excel-file/node";
-import type { ServiceContext } from "./context";
-import { ApprovalError } from "./errors";
 import type { MailboxItem } from "./mailbox";
 import { type SearchInput, searchDocuments } from "./search";
 

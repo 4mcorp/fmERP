@@ -1,15 +1,15 @@
 "use client";
 
+import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { cn } from "@fmerp/shared/lib/utils";
+import { Button } from "@fmerp/shared/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { api, errorMessage } from "@/lib/api";
 import { useNotifications } from "@/lib/queries";
 import { formatDateTime } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /** 이동할 곳이 있으면 링크(새 탭 열기 지원), 없으면(홈으로만 가는 알림) 읽음 처리만 하는 버튼 */
 function Row({

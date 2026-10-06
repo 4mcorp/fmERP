@@ -7,9 +7,14 @@ import {
 } from "@fmerp/auth";
 import { DEFAULT_POSITIONS } from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
+import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
+import {
+  ApiError,
+  type AppRouter,
+  type DepsProvider,
+  requireSession,
+} from "@fmerp/shared/server/http";
 import { createRoute, z } from "@hono/zod-openapi";
-import { ApiError, type AppRouter, type DepsProvider, requireSession } from "../http";
-import { errorResponses, json, OkSchema } from "./common";
 
 /** 회사(계정) 만들기·전환, 초대 수락. 활성 계정이 없어도 쓸 수 있다 (PRD AUTH-005·006·007) */
 export function registerAccountsRoutes(app: AppRouter, deps: DepsProvider) {
