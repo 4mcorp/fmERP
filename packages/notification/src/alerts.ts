@@ -1,15 +1,8 @@
 // 운영 알림 (M8 plan 6단계): 월간 접속 기록 점검 누락(AUD-026), 덤프 실패·누락(BAK-005).
 // 결재 이벤트와 달리 사건이 DB 상태로 정해지므로 주기적으로 판정하고, 같은 사건은 dedupe_key로 한 번만 알린다.
-import {
-  type Actor,
-  backupHealth,
-  can,
-  type Grant,
-  type GrantRole,
-  isSystemAdmin,
-  reviewStatuses,
-} from "@fmerp/core";
+import { type Actor, can, type Grant, type GrantRole } from "@fmerp/core";
 import { type Db, schema, withTenant } from "@fmerp/db";
+import type { OpsAlertRules } from "@fmerp/shared/contracts/ops-alerts";
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import type { CreatedNotification } from "./consume";
 
@@ -19,6 +12,8 @@ export interface AlertDeps {
   appDb: Db;
   authDb: Db;
   now: Date;
+  /** 감사·백업 기능의 판정 규칙. 합성 루트가 주입한다 */
+  rules: OpsAlertRules;
   /** 봇 토큰이 없으면 false: 텔레그램 발송 대상으로 표시하지 않는다 */
   telegram: boolean;
 }
@@ -28,7 +23,7 @@ export interface AlertDeps {
  * 점검 대상 달이 바뀌면(매월 1일) 새 알림이 생긴다. 점검을 마치면 더 알리지 않는다.
  */
 export async function createAuditReviewAlerts(deps: AlertDeps): Promise<CreatedNotification[]> {
-  const { appDb, authDb, now } = deps;
+  const { appDb, authDb, now, rules } = deps;
   const accounts = await authDb.select({ id: schema.account.id }).from(schema.account);
   const created: CreatedNotification[] = [];
   for (const { id: accountId } of accounts) {
@@ -47,7 +42,7 @@ export async function createAuditReviewAlerts(deps: AlertDeps): Promise<CreatedN
           abnormal: schema.auditReview.abnormal,
         })
         .from(schema.auditReview);
-      const status = reviewStatuses(now, reviews, 1)[0];
+      const status = rules.reviewStatuses(now, reviews, 1)[0];
       if (!status) return [];
       if (status.state !== "pending") return [];
       const grants = await tx
@@ -107,7 +102,7 @@ export async function createBackupAlerts(
   deps: AlertDeps,
   allowList: string | undefined,
 ): Promise<CreatedNotification[]> {
-  const { appDb, authDb, now } = deps;
+  const { appDb, authDb, now, rules } = deps;
   if (!allowList) return [];
   const users = await authDb
     .select({
@@ -117,7 +112,7 @@ export async function createBackupAlerts(
     })
     .from(schema.user);
   const adminIds = users
-    .filter((u) => isSystemAdmin(u.email, u.verified, allowList))
+    .filter((u) => rules.isSystemAdmin(u.email, u.verified, allowList))
     .map((u) => u.id);
   if (adminIds.length === 0) return [];
 
@@ -127,7 +122,7 @@ export async function createBackupAlerts(
     .from(S)
     .orderBy(desc(S.requestedAt))
     .limit(50);
-  const health = backupHealth(now, records);
+  const health = rules.backupHealth(now, records);
 
   const problems: { key: string; title: string; body: string }[] = [];
   if (health.state === "overdue") {

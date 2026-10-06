@@ -171,6 +171,9 @@ importers:
       '@fmerp/notification':
         specifier: workspace:*
         version: link:../../packages/notification
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@fmerp/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -320,6 +323,9 @@ importers:
       '@fmerp/db':
         specifier: workspace:*
         version: link:../db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
       drizzle-orm:
         specifier: ~0.45.3
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)

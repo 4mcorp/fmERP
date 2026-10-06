@@ -14,12 +14,10 @@ apps/web/server/approval/package-download.ts -> apps/web/server/approval/drafts.
 apps/web/server/approval/service.ts -> apps/web/server/approval/document-storage.ts
 apps/web/server/audit/logs.ts -> apps/web/server/approval/mailbox.ts
 apps/web/server/audit/timeline.ts -> apps/web/server/approval/access.ts
-apps/web/server/notifications/telegram.ts -> packages/auth/src/session-guard.ts
 apps/web/server/routes/accounts.ts -> packages/core/src/org-defaults.ts
 apps/web/server/routes/approval-admin.ts -> apps/web/server/routes/reauth.ts
 apps/web/server/routes/documents.ts -> apps/web/server/routes/reauth.ts
 apps/web/server/routes/members.ts -> packages/auth/src/accounts.ts
-apps/web/server/routes/notifications.ts -> apps/web/server/system/backups.ts
 apps/web/server/routes/package.ts -> apps/web/server/routes/reauth.ts
 apps/web/server/system/backups.ts -> packages/auth/src/pin.ts
 apps/web/server/system/backups.ts -> packages/auth/src/session-guard.ts
@@ -37,7 +35,3 @@ packages/completion/src/pdf-html.ts -> packages/core/src/form-schema.ts
 packages/completion/src/pdf-html.ts -> packages/core/src/form-values.ts
 packages/core/src/backup.ts -> packages/core/src/completion-package.ts
 packages/core/src/doc-number-parse.ts -> packages/core/src/doc-number.ts
-packages/core/src/notification-rules.ts -> packages/core/src/approval-types.ts
-packages/notification/src/alerts.ts -> packages/core/src/audit-review.ts
-packages/notification/src/alerts.ts -> packages/core/src/backup.ts
-packages/notification/src/consume.ts -> packages/core/src/approval-types.ts

@@ -7,6 +7,7 @@ export {
   transitionDocument,
   withdraw,
 } from "./approval-engine";
+export type { ApprovalEvent } from "./approval-event";
 export {
   type DraftLineItem,
   type LineTarget,
@@ -31,7 +32,6 @@ export {
   type ApprovalAction,
   type ApprovalActor,
   type ApprovalDoc,
-  type ApprovalEvent,
   type ApprovalPolicy,
   type ApprovalStep,
   DEFAULT_POLICY,

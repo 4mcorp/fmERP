@@ -29,6 +29,9 @@ const RULES: readonly Rule[] = [
   // ── 공통 영역 (이전 후) ──
   [/^shared\//, "shared"],
 
+  // 결재 이벤트 계약: 결재가 만들고 알림이 읽는다 (해체 시 shared/contracts로)
+  [/^packages\/core\/src\/approval-event\.ts$/, "shared"],
+
   // ── 합성 루트: 기능을 모아 연결한다 ──
   [/^apps\/web\/app\/api\//, "composition"],
   [/^apps\/web\/server\/(app|create-app)\.ts$/, "composition"],

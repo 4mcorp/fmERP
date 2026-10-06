@@ -11,6 +11,7 @@ import {
   sendTelegramNotification,
   type TelegramClient,
 } from "@fmerp/notification";
+import type { OpsAlertRules } from "@fmerp/shared/contracts/ops-alerts";
 import type { PgBoss } from "pg-boss";
 
 export const NOTIFY_TELEGRAM = "notify.telegram";
@@ -25,6 +26,8 @@ interface TelegramJob {
 export interface NotificationJobDeps extends Omit<SendDeps, "client"> {
   client: TelegramClient | null;
   webhook: { url: string; secret: string } | null;
+  /** 감사·백업 기능의 판정 규칙 (운영 알림이 쓴다) */
+  rules: OpsAlertRules;
   /** 덤프 문제 알림을 받을 시스템 관리자 이메일 목록 (없으면 덤프 알림이 꺼진다) */
   systemAdminEmails?: string;
   logger: Logger;
@@ -117,6 +120,7 @@ export async function registerNotificationJobs(
         appDb,
         authDb: deps.authDb,
         now: new Date(),
+        rules: deps.rules,
         telegram: client !== null,
       };
       const created = [

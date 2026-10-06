@@ -1,4 +1,5 @@
 import { withTenant } from "@fmerp/db";
+import type { SystemGuards } from "@fmerp/shared/contracts/system-guards";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
   type AppRouter,
@@ -22,7 +23,6 @@ import {
   handleWebhook,
   unlinkMyTelegram,
 } from "../notifications/telegram";
-import { requireStrictReauth, requireSystemAdmin } from "../system/backups";
 
 const ItemSchema = z.object({
   id: z.string(),
@@ -50,7 +50,13 @@ const WebhookUpdate = z.object({
  * 알림 (PRD NTF-001·002, M8 plan): 인앱 알림 조회·읽음, 텔레그램 연결, 웹훅 수신, 수신 방식 설정.
  * 인앱 알림은 본인 것만 다루고, 텔레그램 연결과 수신 방식은 계정과 무관해 세션만 확인한다.
  */
-export function registerNotificationRoutes(app: AppRouter, deps: DepsProvider) {
+/** `guards`(시스템 관리자 확인·PIN 재인증)는 백업 기능이 제공하고 합성 루트가 주입한다 */
+export function registerNotificationRoutes(
+  app: AppRouter,
+  deps: DepsProvider,
+  guards: SystemGuards,
+) {
+  const { requireStrictReauth, requireSystemAdmin } = guards;
   app.use("/notifications", requireSession(deps), requireTenant(deps));
   app.use("/notifications/*", requireSession(deps), requireTenant(deps));
   app.use("/me/telegram", requireSession(deps));

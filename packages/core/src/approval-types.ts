@@ -1,4 +1,5 @@
 /** 결재 엔진 공통 타입 (PRD 5.4, GLOSSARY, ADR 0007). 구성원 id는 membership id다. */
+import type { ApprovalEvent } from "./approval-event";
 
 export const DOC_STATUSES = [
   "DRAFT",
@@ -102,31 +103,8 @@ export interface EngineContext {
   decideDelegate: (assigneeId: string) => DelegateDecision;
 }
 
-export type ApprovalEvent =
-  | { type: "submitted"; docId: string }
-  | {
-      type: "step_activated";
-      docId: string;
-      stepId: string;
-      assigneeIds: string[];
-      delegateIds: string[];
-    }
-  | {
-      type: "delegate_unavailable";
-      docId: string;
-      stepId: string;
-      assigneeId: string;
-      delegateId: string;
-    }
-  | { type: "reactivated"; docId: string; stepId: string }
-  | { type: "held"; docId: string; stepId: string }
-  | { type: "released"; docId: string; stepId: string }
-  | { type: "withdrawn"; docId: string; activeAssigneeIds?: string[] }
-  | { type: "rejected"; docId: string; stepId: string; comment: string }
-  | { type: "completed"; docId: string }
-  | { type: "post_pending"; docId: string; stepId: string; assigneeIds: string[] }
-  | { type: "post_approved"; docId: string; stepId: string }
-  | { type: "line_changed"; docId: string; added: string[]; removed: string[]; reason: string };
+/** 정의는 소비 기능(알림)이 결재 코드를 import하지 않도록 공통 계약에 있다 */
+export type { ApprovalEvent };
 
 /** 처리 기록(approval_action)에 저장할 내용 (APV-046). IP·기기·멱등 키는 서비스가 붙인다 */
 export interface ActionRecord {

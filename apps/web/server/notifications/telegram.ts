@@ -1,6 +1,5 @@
 // 텔레그램 연결·웹훅 수신·수신 방식 설정 (M8 plan). 연결과 수신 방식은 사용자·서버 단위라 테넌트와 무관하다.
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
-import type { ActiveSession } from "@fmerp/auth";
 import {
   createLinkToken,
   findChatId,
@@ -16,6 +15,7 @@ import {
   verifyWebhookSecret,
   type WebhookInfo,
 } from "@fmerp/notification";
+import type { SessionInfo } from "@fmerp/shared/contracts/system-guards";
 import type { ServerDeps } from "@fmerp/shared/server/deps";
 import { getEnv } from "@fmerp/shared/server/env";
 import { ApiError } from "@fmerp/shared/server/http";
@@ -52,7 +52,7 @@ export async function getMyTelegram(d: ServerDeps, userId: string): Promise<MyTe
 
 export async function createMyLink(
   d: ServerDeps,
-  session: ActiveSession,
+  session: SessionInfo,
   request: RequestCtx,
 ): Promise<{ url: string; expiresAt: string }> {
   const env = getEnv();
@@ -76,7 +76,7 @@ export async function createMyLink(
 
 export async function unlinkMyTelegram(
   d: ServerDeps,
-  session: ActiveSession,
+  session: SessionInfo,
   request: RequestCtx,
 ): Promise<void> {
   await unlinkTelegram(d.authDb, session.userId);
@@ -153,7 +153,7 @@ export async function getSystemTelegram(d: ServerDeps): Promise<SystemTelegram> 
 
 export async function changeReceiverMode(
   d: ServerDeps,
-  session: ActiveSession,
+  session: SessionInfo,
   mode: ReceiverMode,
   request: RequestCtx,
 ): Promise<void> {

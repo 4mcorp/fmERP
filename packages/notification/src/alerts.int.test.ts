@@ -2,6 +2,7 @@
 import { createDatabase } from "@fmerp/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAuditReviewAlerts, createBackupAlerts } from "./alerts";
+import { testOpsRules } from "./test-support";
 
 const need = (name: string) => {
   const v = process.env[name];
@@ -55,6 +56,7 @@ describe("월간 접속 기록 점검 누락 알림 (AUD-026)", () => {
     appDb: app.db,
     authDb: auth.db,
     now,
+    rules: testOpsRules,
     telegram,
   });
   // 점검 기록이 없는 먼 미래의 달을 쓴다 (점검 기록은 추가 전용이라 지울 수 없다)
@@ -119,7 +121,13 @@ describe("월간 접속 기록 점검 누락 알림 (AUD-026)", () => {
 });
 
 describe("덤프 문제 알림 (BAK-005)", () => {
-  const deps = () => ({ appDb: app.db, authDb: auth.db, now: new Date(), telegram: true });
+  const deps = () => ({
+    appDb: app.db,
+    authDb: auth.db,
+    now: new Date(),
+    rules: testOpsRules,
+    telegram: true,
+  });
 
   it("실패한 덤프를 시스템 관리자에게만 한 번 알린다", async () => {
     const r = await owner.pool.query<{ id: string }>(

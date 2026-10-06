@@ -1,7 +1,7 @@
 // worker 알림 통합 테스트 (실제 DB·pg-boss + 가짜 텔레그램): 결재 이벤트가 큐를 거쳐 DM이 되고, 토큰이 없으면 인앱만 만든다 (M8)
 import { createDatabase } from "@fmerp/db";
 import { createLinkToken, processUpdate, TelegramClient } from "@fmerp/notification";
-import { FakeTelegram } from "@fmerp/notification/test-support";
+import { FakeTelegram, testOpsRules } from "@fmerp/notification/test-support";
 import { PgBoss } from "pg-boss";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type NotificationJobs, registerNotificationJobs } from "./notification-jobs";
@@ -50,6 +50,7 @@ const baseDeps = () => ({
   authDb: authDb.db,
   baseUrl: "https://erp.test",
   webhook: null,
+  rules: testOpsRules,
   logger,
 });
 

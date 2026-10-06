@@ -1,3 +1,4 @@
+import { backupHealth, isSystemAdmin, reviewStatuses } from "@fmerp/core";
 import { createDatabase } from "@fmerp/db";
 import { TelegramClient } from "@fmerp/notification";
 import { ObjectStorage } from "@fmerp/storage";
@@ -73,6 +74,8 @@ const notificationJobs = await registerNotificationJobs(boss, {
       ? { url: `${publicBase}/api/telegram/webhook`, secret: env.TELEGRAM_WEBHOOK_SECRET }
       : null,
   systemAdminEmails: env.SYSTEM_ADMIN_EMAILS,
+  // 운영 알림이 쓰는 감사·백업 판정 규칙은 합성 루트에서 주입한다 (기능끼리 직접 import하지 않는다)
+  rules: { reviewStatuses, backupHealth, isSystemAdmin },
   logger: console,
 });
 

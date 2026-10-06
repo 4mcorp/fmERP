@@ -2,7 +2,33 @@
 // 실제 텔레그램처럼 웹훅이 걸려 있으면 getUpdates를 409로 거절하고, 같은 시점의 getUpdates 두 개도 거절한다.
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import type { OpsAlertRules } from "@fmerp/shared/contracts/ops-alerts";
 import type { TelegramUpdate } from "./telegram-api";
+
+/**
+ * 운영 알림 규칙의 시험용 대역. 실제 판정(감사·백업 기능)은 각 기능의 단위 시험이 확인하므로,
+ * 여기서는 알림이 계약대로 호출하고 결과를 쓰는지만 보는 최소 구현을 쓴다.
+ */
+export const testOpsRules: OpsAlertRules = {
+  reviewStatuses(now, records, months) {
+    const kst = new Date(now.getTime() + 9 * 3_600_000);
+    const base = kst.getUTCFullYear() * 12 + kst.getUTCMonth();
+    return Array.from({ length: months }, (_, i) => {
+      const index = base - 1 - i;
+      const period = `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+      const last = records.filter((r) => r.period === period).at(-1);
+      return { period, state: !last ? "pending" : last.abnormal ? "abnormal" : "done" };
+    });
+  },
+  backupHealth: (now) => ({ state: "ok", lastSuccessAt: null, expectedBy: now }),
+  isSystemAdmin: (email, verified, allowList) =>
+    verified &&
+    !!allowList &&
+    allowList
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .includes(email.trim().toLowerCase()),
+};
 
 export interface SentMessage {
   chatId: number;

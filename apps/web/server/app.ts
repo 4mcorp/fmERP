@@ -23,6 +23,7 @@ import { registerPackageRoutes } from "./routes/package";
 import { registerRecipientRoutes } from "./routes/recipients";
 import { registerSearchRoutes } from "./routes/search";
 import { registerSystemRoutes } from "./routes/system";
+import { requireStrictReauth, requireSystemAdmin } from "./system/backups";
 
 /** API 요청 본문 최대 크기. 파일은 서명 URL로 저장소에 직접 올리므로 API 본문은 작다 (보안 리뷰 SR-3) */
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -60,6 +61,6 @@ export const app = createApp({
     registerAuditRoutes(router, getServerDeps);
     registerSystemRoutes(router, getServerDeps);
     registerExportRoutes(router, getServerDeps);
-    registerNotificationRoutes(router, getServerDeps);
+    registerNotificationRoutes(router, getServerDeps, { requireSystemAdmin, requireStrictReauth });
   },
 });
