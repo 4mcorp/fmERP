@@ -145,3 +145,11 @@ export function createAuth(config: AuthConfig) {
 }
 
 export type Auth = ReturnType<typeof createAuth>;
+
+/**
+ * 합성 루트가 ServerDeps.auth에 넣은 처리기를 Better Auth 타입으로 좁힌다.
+ * 공통 영역(ServerDeps)은 계정 기능을 import할 수 없어 최소 모양(AuthHandle)만 알기 때문이다.
+ */
+export function authOf(deps: { auth: unknown }): Auth {
+  return deps.auth as Auth;
+}

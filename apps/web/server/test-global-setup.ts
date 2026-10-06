@@ -1,7 +1,8 @@
+import { seedTestAccounts } from "@fmerp/auth/seed";
+import { seedTestOrganization } from "@fmerp/auth/seed-org";
 import { createDatabase } from "@fmerp/db";
 import type { TestProject } from "vitest/node";
-import { seedTestAccounts } from "../src/seed";
-import { seedTestOrganization } from "../src/seed-org";
+import { installDefaultForms } from "./approval/forms-install";
 
 /** 통합 테스트용 시드 계정을 넣는다 (db의 global-setup이 테이블을 비운 뒤 실행된다). */
 export default async function setup(project: TestProject) {
@@ -14,7 +15,7 @@ export default async function setup(project: TestProject) {
   const migrator = createDatabase(migrationUrl);
   try {
     await seedTestAccounts(db);
-    await seedTestOrganization(migrator.db);
+    await seedTestOrganization(migrator.db, installDefaultForms);
   } finally {
     await pool.end();
     await migrator.pool.end();

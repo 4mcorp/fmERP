@@ -1,5 +1,5 @@
 import { recordAudit } from "@fmerp/audit";
-import { DEV_TEST_PASSWORD, listMyAccounts, TEST_USERS } from "@fmerp/auth";
+import { authOf, DEV_TEST_PASSWORD, listMyAccounts, TEST_USERS } from "@fmerp/auth";
 import { schema } from "@fmerp/db";
 import { errorResponses, json } from "@fmerp/shared/server/common";
 import type { ServerDeps } from "@fmerp/shared/server/deps";
@@ -70,15 +70,15 @@ export function registerAuthRoutes(app: AppRouter, deps: DepsProvider) {
         .clone()
         .json()
         .catch(() => ({}))) as { email?: unknown };
-      const res = await d.auth.handler(c.req.raw);
+      const res = await authOf(d).handler(c.req.raw);
       if (res.ok) await afterLogin(d, (await res.clone().json()) as LoginResult, request);
       else await recordLoginFailure(d, body.email, request);
       return res;
     }
 
     if (c.req.method === "POST" && path === "/sign-out") {
-      const before = await d.auth.api.getSession({ headers: c.req.raw.headers });
-      const res = await d.auth.handler(c.req.raw);
+      const before = await authOf(d).api.getSession({ headers: c.req.raw.headers });
+      const res = await authOf(d).handler(c.req.raw);
       if (res.ok && before) {
         await recordAudit(d.authDb, {
           accountId: before.session.activeOrganizationId ?? null,
@@ -92,7 +92,7 @@ export function registerAuthRoutes(app: AppRouter, deps: DepsProvider) {
       return res;
     }
 
-    return d.auth.handler(c.req.raw);
+    return authOf(d).handler(c.req.raw);
   });
 
   // ===== 개발용 테스트 로그인 (M1 계획 1장). 꺼져 있으면 404 =====
@@ -149,7 +149,7 @@ export function registerAuthRoutes(app: AppRouter, deps: DepsProvider) {
         throw new ApiError(400, "validation_error", "시드에 없는 테스트 계정입니다");
       }
       const d = deps();
-      const res = await d.auth.api.signInEmail({
+      const res = await authOf(d).api.signInEmail({
         body: { email, password: DEV_TEST_PASSWORD },
         headers: c.req.raw.headers,
         asResponse: true,

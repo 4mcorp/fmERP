@@ -49,7 +49,7 @@ export default defineConfig({
           globalSetup: [
             "packages/db/test/global-setup.ts",
             "packages/storage/test/global-setup.ts",
-            "packages/auth/test/global-setup.ts",
+            "apps/web/server/test-global-setup.ts",
           ],
           fileParallelism: false,
           testTimeout: 20_000,

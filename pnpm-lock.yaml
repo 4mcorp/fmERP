@@ -441,6 +441,9 @@ importers:
       '@fmerp/db':
         specifier: workspace:*
         version: link:../db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@node-rs/argon2':
         specifier: ~2.2.1
         version: 2.2.1
@@ -486,9 +489,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../packages/audit
-      '@fmerp/auth':
-        specifier: workspace:*
-        version: link:../packages/auth
       '@fmerp/core':
         specifier: workspace:*
         version: link:../packages/core

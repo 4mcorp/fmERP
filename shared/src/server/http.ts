@@ -1,15 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { AuditRequestContext } from "@fmerp/audit";
-import {
-  type ActiveSession,
-  AuthDomainError,
-  type AuthErrorCode,
-  enforceSessionPolicy,
-  requireActiveMembership,
-} from "@fmerp/auth";
 import type { MembershipRole } from "@fmerp/db";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { createMiddleware } from "hono/factory";
+import { AuthDomainError, type AuthErrorCode } from "../authz/errors";
+import { requireActiveMembership } from "../authz/membership";
+import { type ActiveSession, enforceSessionPolicy } from "../authz/session-guard";
 import type { ServerDeps } from "./deps";
 import { APPROVAL_ERROR_STATUS, ApprovalError } from "./errors";
 import { problem } from "./problem";

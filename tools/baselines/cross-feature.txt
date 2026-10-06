@@ -1,6 +1,0 @@
-apps/web/app/(app)/onboarding/page.tsx -> apps/web/components/org/business-form.tsx
-apps/web/server/routes/accounts.ts -> packages/core/src/org-defaults.ts
-apps/web/server/routes/members.ts -> packages/auth/src/accounts.ts
-packages/auth/src/forms-install.ts -> packages/core/src/form-defaults.ts
-packages/auth/src/seed-org.ts -> packages/core/src/business-number.ts
-packages/auth/src/seed-org.ts -> packages/core/src/org-defaults.ts

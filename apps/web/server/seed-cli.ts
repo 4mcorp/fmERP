@@ -1,6 +1,7 @@
+import { seedTestAccounts } from "@fmerp/auth/seed";
+import { seedTestOrganization } from "@fmerp/auth/seed-org";
 import { createDatabase } from "@fmerp/db";
-import { seedTestAccounts } from "./seed";
-import { seedTestOrganization } from "./seed-org";
+import { installDefaultForms } from "./approval/forms-install";
 
 if (process.env.NODE_ENV === "production") {
   console.error("운영 환경에서는 테스트 계정 시드를 실행할 수 없습니다.");
@@ -22,7 +23,7 @@ const { db, pool } = createDatabase(url);
 const migrator = createDatabase(migrationUrl);
 try {
   const result = await seedTestAccounts(db);
-  await seedTestOrganization(migrator.db);
+  await seedTestOrganization(migrator.db, installDefaultForms);
   console.log(`테스트 계정 시드 완료: 사용자 ${result.users}명, 회사 ${result.accounts}개`);
 } finally {
   await pool.end();

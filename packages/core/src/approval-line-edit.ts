@@ -19,12 +19,7 @@ export interface NewStep {
 
 export type LineEdit = { kind: "add"; step: NewStep } | { kind: "remove"; stepId: string };
 
-export type LineEditErrorCode =
-  | "invalid_state"
-  | "not_assignee"
-  | "reason_required"
-  | "line_edit_not_allowed"
-  | "invalid_edit";
+import type { LineEditErrorCode } from "./engine-error-code";
 
 export type LineEditResult =
   | {

@@ -116,16 +116,9 @@ export interface ActionRecord {
   at: Date;
 }
 
-export type EngineErrorCode =
-  | "invalid_state"
-  | "step_not_found"
-  | "step_not_active"
-  | "not_assignee"
-  | "action_not_allowed"
-  | "comment_required"
-  | "version_conflict"
-  | "cannot_withdraw"
-  | "nothing_to_submit";
+import type { EngineErrorCode } from "./engine-error-code";
+
+export type { EngineErrorCode };
 
 export type EngineResult =
   | {

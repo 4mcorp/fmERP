@@ -1,12 +1,12 @@
 import {
   acceptInvitation,
+  authOf,
   createAccount,
-  installDefaultForms,
   previewInvitation,
   switchActiveAccount,
 } from "@fmerp/auth";
 import { DEFAULT_POSITIONS } from "@fmerp/core";
-import { schema, withTenant } from "@fmerp/db";
+import { type Executor, schema, withTenant } from "@fmerp/db";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
   ApiError,
@@ -17,7 +17,16 @@ import {
 import { createRoute, z } from "@hono/zod-openapi";
 
 /** 회사(계정) 만들기·전환, 초대 수락. 활성 계정이 없어도 쓸 수 있다 (PRD AUTH-005·006·007) */
-export function registerAccountsRoutes(app: AppRouter, deps: DepsProvider) {
+/** 새 회사에 기본 양식을 설치하는 함수는 결재 기능의 것이라 합성 루트가 주입한다 */
+export interface AccountProvisioning {
+  installDefaultForms(tx: Executor, accountId: string): Promise<unknown>;
+}
+
+export function registerAccountsRoutes(
+  app: AppRouter,
+  deps: DepsProvider,
+  provisioning: AccountProvisioning,
+) {
   app.use("/accounts", requireSession(deps));
   app.use("/accounts/*", requireSession(deps));
   app.use("/invitations/*", requireSession(deps));
@@ -46,7 +55,7 @@ export function registerAccountsRoutes(app: AppRouter, deps: DepsProvider) {
       const d = deps();
       const session = c.get("session");
       const created = await createAccount(
-        { db: d.authDb, auth: d.auth },
+        { db: d.authDb, auth: authOf(d) },
         {
           userId: session.userId,
           sessionId: session.sessionId,
@@ -60,7 +69,7 @@ export function registerAccountsRoutes(app: AppRouter, deps: DepsProvider) {
           .insert(schema.position)
           .values(DEFAULT_POSITIONS.map((p) => ({ accountId: created.accountId, ...p })));
         // 기본 양식 7종 (APV-003)
-        await installDefaultForms(tx, created.accountId);
+        await provisioning.installDefaultForms(tx, created.accountId);
       });
       return c.json(created, 201);
     },
@@ -128,7 +137,7 @@ export function registerAccountsRoutes(app: AppRouter, deps: DepsProvider) {
       const d = deps();
       const session = c.get("session");
       const result = await acceptInvitation(
-        { db: d.authDb, auth: d.auth },
+        { db: d.authDb, auth: authOf(d) },
         {
           token: c.req.valid("json").token,
           userId: session.userId,

@@ -1,6 +1,7 @@
 "use client";
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
+import { BusinessForm } from "@fmerp/shared/ui/business-form";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
@@ -9,7 +10,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { BusinessForm } from "@/components/org/business-form";
 
 /** 초대 링크 전체 또는 토큰만 붙여넣어도 토큰을 꺼낸다 */
 function extractToken(value: string): string {

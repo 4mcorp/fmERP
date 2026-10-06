@@ -1,7 +1,6 @@
 import { DEFAULT_POSITIONS, makeBusinessNumber } from "@fmerp/core";
 import { type Db, schema } from "@fmerp/db";
 import { and, eq } from "drizzle-orm";
-import { installDefaultForms } from "./forms-install";
 import { TEST_ACCOUNTS } from "./test-accounts";
 
 /**
@@ -111,8 +110,12 @@ const GRANTS: Record<string, SeedGrant[]> = {
   "approver@example.com": [{ role: "approval_admin", scope: { type: "account" } }],
 };
 
+/** 새 회사에 기본 양식을 설치하는 함수. 양식은 결재 기능의 것이라 호출하는 쪽(합성 루트)이 넘긴다 */
+export type InstallDefaultForms = (db: Db, accountId: string) => Promise<unknown>;
+
 async function seedAccountOrg(
   db: Db,
+  installDefaultForms: InstallDefaultForms,
   accountId: string,
   maxDeptDepth: number,
   businesses: BusinessDef[],
@@ -181,7 +184,10 @@ async function seedAccountOrg(
   return { positionIds, dutyIds, businessIds, departmentIds };
 }
 
-export async function seedTestOrganization(db: Db): Promise<void> {
+export async function seedTestOrganization(
+  db: Db,
+  installDefaultForms: InstallDefaultForms,
+): Promise<void> {
   const accounts = await db
     .select({ id: schema.account.id, slug: schema.account.slug })
     .from(schema.account);
@@ -191,8 +197,8 @@ export async function seedTestOrganization(db: Db): Promise<void> {
     throw new Error("테스트 계정이 없습니다. 먼저 seedTestAccounts를 실행하세요");
   }
 
-  const mainOrg = await seedAccountOrg(db, mainId, 3, MAIN_BUSINESSES);
-  const otherOrg = await seedAccountOrg(db, otherId, 2, OTHER_BUSINESSES);
+  const mainOrg = await seedAccountOrg(db, installDefaultForms, mainId, 3, MAIN_BUSINESSES);
+  const otherOrg = await seedAccountOrg(db, installDefaultForms, otherId, 2, OTHER_BUSINESSES);
 
   const members = await db
     .select({

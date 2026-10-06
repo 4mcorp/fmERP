@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "next typegen && tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "seed": "tsx --env-file-if-exists=../../.env server/seed-cli.ts"
   },
   "dependencies": {
     "@fmerp/audit": "workspace:*",

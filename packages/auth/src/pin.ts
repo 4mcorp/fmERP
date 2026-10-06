@@ -1,9 +1,9 @@
 import { type AuditRequestContext, recordAudit } from "@fmerp/audit";
 import { isPinFormatValid, pinLockState, recordPinFailure } from "@fmerp/core";
 import { type Db, schema } from "@fmerp/db";
+import { AuthDomainError } from "@fmerp/shared/authz/errors";
 import { hash, verify } from "@node-rs/argon2";
 import { eq } from "drizzle-orm";
-import { AuthDomainError } from "./errors";
 
 /** 결재 PIN을 설정·변경한다. 이미 있으면 현재 PIN을 확인한다 (PRD AUTH-009). */
 export async function setApprovalPin(

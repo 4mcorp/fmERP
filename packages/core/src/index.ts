@@ -22,7 +22,6 @@ export {
 export {
   editLine,
   type LineEdit,
-  type LineEditErrorCode,
   type LineEditResult,
   type NewStep,
 } from "./approval-line-edit";
@@ -39,7 +38,6 @@ export {
   DOC_STATUSES,
   type DocStatus,
   type EngineContext,
-  type EngineErrorCode,
   type EngineResult,
   STEP_STATUSES,
   STEP_TYPES,
@@ -121,6 +119,7 @@ export {
   type RecipientTarget,
   type SecurityLevel,
 } from "./document-access";
+export type { EngineErrorCode, LineEditErrorCode } from "./engine-error-code";
 export {
   type AttachmentCheck,
   checkAttachment,

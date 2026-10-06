@@ -1,9 +1,10 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { type AuditRequestContext, recordAudit } from "@fmerp/audit";
-import { type Db, type MembershipRole, schema } from "@fmerp/db";
+import { type Db, schema } from "@fmerp/db";
+import { AuthDomainError } from "@fmerp/shared/authz/errors";
+import { requireActiveMembership } from "@fmerp/shared/authz/membership";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Auth } from "./auth";
-import { AuthDomainError } from "./errors";
 
 /** 초대할 때 미리 지정하는 소속 (PRD AUTH-006). 수락 시 구성원의 주소속으로 만든다 */
 export interface InvitationPreset {
@@ -32,18 +33,6 @@ export function listMyAccounts(db: Db, userId: string) {
     .innerJoin(schema.account, eq(schema.account.id, schema.membership.accountId))
     .where(eq(schema.membership.userId, userId))
     .orderBy(schema.account.name);
-}
-
-/** 활성 계정의 재직 중인 구성원인지 확인한다. 아니면 진입을 막는다 (PRD AUTH-015). */
-export async function requireActiveMembership(db: Db, accountId: string, userId: string) {
-  const [member] = await db
-    .select({ role: schema.membership.role, status: schema.membership.status })
-    .from(schema.membership)
-    .where(and(eq(schema.membership.accountId, accountId), eq(schema.membership.userId, userId)));
-  if (member?.status !== "active") {
-    throw new AuthDomainError("membership_inactive", "이 회사에 접근할 수 없습니다");
-  }
-  return { role: member.role as MembershipRole };
 }
 
 export async function switchActiveAccount(
@@ -273,13 +262,4 @@ async function applyInvitationPreset(
     reason: "초대 수락",
     actorUserId: input.createdBy,
   });
-}
-
-/** 비활성화된 구성원이 그 계정으로 쓰던 세션을 종료한다 (PRD AUTH-015). */
-export async function revokeSessionsInAccount(db: Db, userId: string, accountId: string) {
-  const deleted = await db
-    .delete(schema.session)
-    .where(and(eq(schema.session.userId, userId), eq(schema.session.activeAccountId, accountId)))
-    .returning({ id: schema.session.id });
-  return deleted.length;
 }

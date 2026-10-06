@@ -9,6 +9,7 @@ import { requireSameOrigin } from "@fmerp/shared/server/http";
 import { problem } from "@fmerp/shared/server/problem";
 import { bodyLimit } from "hono/body-limit";
 import { requireView } from "./approval/access";
+import { installDefaultForms } from "./approval/forms-install";
 import { createApp } from "./create-app";
 import { getServerDeps } from "./deps";
 import { registerAccountRoutes } from "./routes/account";
@@ -45,7 +46,7 @@ export const app = createApp({
     );
     registerAuthRoutes(router, getServerDeps);
     registerMeRoutes(router, getServerDeps);
-    registerAccountsRoutes(router, getServerDeps);
+    registerAccountsRoutes(router, getServerDeps, { installDefaultForms });
     registerAccountRoutes(router, getServerDeps);
     // /account/* 인증·테넌트 미들웨어가 먼저 등록된 뒤에 추가한다
     registerMemberRoutes(router, getServerDeps);

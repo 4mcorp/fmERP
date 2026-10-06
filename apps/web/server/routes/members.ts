@@ -1,5 +1,4 @@
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
-import { revokeSessionsInAccount } from "@fmerp/auth";
 import {
   type AssignmentInput,
   assignmentChanges,
@@ -11,6 +10,7 @@ import {
   validateAssignments,
 } from "@fmerp/core";
 import { schema, type Tx, withTenant } from "@fmerp/db";
+import { revokeSessionsInAccount } from "@fmerp/shared/authz/membership";
 import {
   ACCOUNT_TARGET,
   authorize,

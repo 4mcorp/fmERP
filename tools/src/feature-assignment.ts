@@ -30,15 +30,16 @@ const RULES: readonly Rule[] = [
   [/^shared\//, "shared"],
 
   // 둘 이상의 기능이 같은 이유로 쓰는 도메인 규칙·계약 (해체 시 shared/{domain,contracts}로 옮긴다):
-  // 결재 이벤트(결재→알림), 양식 스키마·값·색인(결재·완료·백업), 문서번호(결재·백업), 완료 패키지 형식(완료·백업), PIN 정책(계정·공통 재인증)
+  // 결재 이벤트(결재→알림), 양식 스키마·값·색인(결재·완료·백업), 문서번호(결재·백업), 완료 패키지 형식(완료·백업), PIN 정책(계정·공통 재인증),
+  // 결재 엔진 오류 코드(공통 오류 매핑), 조직 기본값·사업자번호(계정 시드·조직), 기본 양식(계정이 새 회사에 설치)
   [
-    /^packages\/core\/src\/(approval-event|form-schema|form-values|form-index|doc-number|completion-package|pin-policy)\.ts$/,
+    /^packages\/core\/src\/(approval-event|engine-error-code|form-schema|form-values|form-index|doc-number|completion-package|pin-policy|session-policy|org-defaults|business-number)\.ts$/,
     "shared",
   ],
 
   // ── 합성 루트: 기능을 모아 연결한다 ──
   [/^apps\/web\/app\/api\//, "composition"],
-  [/^apps\/web\/server\/(app|create-app)\.ts$/, "composition"],
+  [/^apps\/web\/server\/(app|create-app|seed-cli|test-global-setup)\.ts$/, "composition"],
   [/^apps\/worker\/src\/main\.ts$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/layout\.tsx$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],
