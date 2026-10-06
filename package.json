@@ -34,7 +34,11 @@
     "verify:all": "pnpm verify && pnpm test && pnpm test:e2e",
     "arch:boundaries": "tsx tools/src/cli/boundaries.ts",
     "arch:move": "tsx tools/src/cli/move.ts",
-    "feature:check": "tsx tools/src/cli/feature-check.ts"
+    "feature:check": "tsx tools/src/cli/feature-check.ts",
+    "feature:index": "tsx tools/src/cli/feature-map.ts index",
+    "feature:find": "tsx tools/src/cli/feature-map.ts find",
+    "feature:map-check": "tsx tools/src/cli/feature-map.ts check",
+    "feature:impact": "tsx tools/src/cli/feature-map.ts impact"
   },
   "devDependencies": {
     "@biomejs/biome": "~2.5.15",

@@ -5,5 +5,8 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "yaml": "~2.9.1"
   }
 }

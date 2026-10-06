@@ -193,6 +193,7 @@
 ---
 
 ## 9. 코드 위치
+> 기능별 위치(화면·API·표·시험)는 **생성된 기능 지도 [feature-map/INDEX.md](feature-map/INDEX.md)** 가 기준이다(`pnpm feature:find`). 아래 표는 공통 영역과 도구 위주로 남긴다.
 | 대상 | 경로 |
 |---|---|
 | 웹 화면 (App Router) | `apps/web/app/` — 로그인 필요 영역 `app/(app)/`(홈, `me`, `admin/members`, `onboarding`, `invite/[token]`), 테스트 로그인 `app/dev-login` |

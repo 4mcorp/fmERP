@@ -1,0 +1,1329 @@
+{
+  "features": [
+    {
+      "id": "account",
+      "summary": "로그인(개발용 시드 로그인·Better Auth)·세션, 회사 만들기·전환, 초대 수락, 내 정보(프로필·결재 PIN·세션·로그인 이력)",
+      "keywords": [
+        "로그인",
+        "계정",
+        "세션",
+        "초대",
+        "온보딩",
+        "회사 전환",
+        "PIN",
+        "프로필",
+        "서명",
+        "도장",
+        "로그인 이력"
+      ],
+      "access": [
+        {
+          "who": "누구나",
+          "path": "/login, /dev-login(개발 전용)",
+          "entry": "ui/pages/login"
+        },
+        {
+          "who": "초대받은 사용자",
+          "path": "/invite/{token}",
+          "entry": "ui/pages/invite"
+        },
+        {
+          "who": "소속 없는 사용자",
+          "path": "/onboarding (회사 만들기·초대 수락)",
+          "entry": "ui/pages/onboarding"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "사용자 메뉴 → 내 정보 → /me",
+          "entry": "ui/components/me-page"
+        }
+      ],
+      "screens": [
+        {
+          "route": "/login",
+          "file": "src/ui/pages/login.tsx"
+        },
+        {
+          "route": "/dev-login",
+          "file": "src/ui/pages/dev-login.tsx"
+        },
+        {
+          "route": "/invite/[token]",
+          "file": "src/ui/pages/invite.tsx"
+        },
+        {
+          "route": "/onboarding",
+          "file": "src/ui/pages/onboarding.tsx"
+        },
+        {
+          "route": "/me",
+          "file": "src/ui/components/me-page.tsx"
+        }
+      ],
+      "adapters": [
+        "apps/web/app/login/page.tsx",
+        "apps/web/app/dev-login/page.tsx",
+        "apps/web/app/(app)/invite/[token]/page.tsx",
+        "apps/web/app/(app)/onboarding/page.tsx",
+        "apps/web/app/(app)/me/page.tsx"
+      ],
+      "api": {
+        "generated": true,
+        "entry": "api/routes"
+      },
+      "auth_setup": "auth-setup",
+      "seed": "apps/web/server/seed/",
+      "tables": {
+        "owns": ["invitation"],
+        "reads": ["assignment", "business", "department", "duty", "position"],
+        "writes": []
+      },
+      "events": {
+        "publishes": [],
+        "consumes": []
+      },
+      "contracts": [
+        "shared/authz",
+        "shared/server/deps (AuthHandle)",
+        "shared/contracts/system-guards"
+      ],
+      "tests": {
+        "unit": "tests/*.test.ts",
+        "int": "tests/account.int.test.ts",
+        "e2e": "apps/web/e2e/m1.spec.ts"
+      },
+      "invariants": [
+        "세션은 유휴·절대 만료 정책을 적용하고 만료된 세션은 지운다",
+        "PIN은 해시로만 저장하고 5회 실패 시 15분 잠근다",
+        "초대 토큰은 해시만 저장하고 한 번만 쓴다"
+      ],
+      "folder": "account",
+      "routes": [
+        {
+          "method": "get",
+          "path": "/account",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/account/invitations",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/invitations",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/account/invitations/{id}",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/accounts",
+          "file": "features/account/src/api/accounts-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/accounts/active",
+          "file": "features/account/src/api/accounts-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/dev/login",
+          "file": "features/account/src/api/auth-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/dev/test-accounts",
+          "file": "features/account/src/api/auth-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/invitations/{token}",
+          "file": "features/account/src/api/accounts-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/invitations/accept",
+          "file": "features/account/src/api/accounts-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/me",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "patch",
+          "path": "/me",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/me/images/{kind}",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/me/images/{kind}",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/me/images/{kind}/upload-url",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/me/login-history",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/me/pin",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/me/pin/verify",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/me/sessions",
+          "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/me/sessions/{id}",
+          "file": "features/account/src/api/me-routes.ts"
+        }
+      ]
+    },
+    {
+      "id": "approval",
+      "summary": "기안·결재선·결재 처리(승인·반려·합의·보류·회수), 위임·부재, 양식 관리, 문서함·검색·수신(참조), 일괄 이관, 문서 내보내기",
+      "keywords": [
+        "결재",
+        "기안",
+        "결재선",
+        "승인",
+        "반려",
+        "합의",
+        "보류",
+        "회수",
+        "대결",
+        "부재",
+        "양식",
+        "문서번호",
+        "문서함",
+        "수신",
+        "참조",
+        "검색",
+        "이관",
+        "첨부",
+        "임시저장"
+      ],
+      "access": [
+        {
+          "who": "모든 구성원",
+          "path": "새 결재 → /approval/new",
+          "entry": "ui/pages/new-approval"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "임시저장 → /approval/draft/{id}",
+          "entry": "ui/pages/draft"
+        },
+        {
+          "who": "결재자",
+          "path": "결재 대기 → /approval/pending",
+          "entry": "ui/pages/pending"
+        },
+        {
+          "who": "기안자",
+          "path": "기안함 → /approval/mine",
+          "entry": "ui/pages/mine"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "문서함 → /mailbox, /mailbox/{box}",
+          "entry": "ui/pages/mailbox"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "검색 → /search",
+          "entry": "ui/pages/search"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "내 정보 → 부재 설정 → /me/absence",
+          "entry": "ui/pages/absence"
+        },
+        {
+          "who": "결재 관리자",
+          "path": "관리 콘솔 → 결재 관리 /admin/approvals, 양식 /admin/forms",
+          "entry": "ui/pages/admin-approvals"
+        }
+      ],
+      "screens": [
+        {
+          "route": "/approval/new",
+          "file": "src/ui/pages/new-approval.tsx"
+        },
+        {
+          "route": "/approval/draft/[id]",
+          "file": "src/ui/pages/draft.tsx"
+        },
+        {
+          "route": "/approval/[id]",
+          "file": "src/ui/components/approval-detail.tsx"
+        },
+        {
+          "route": "/approval/pending",
+          "file": "src/ui/pages/pending.tsx"
+        },
+        {
+          "route": "/approval/mine",
+          "file": "src/ui/pages/mine.tsx"
+        },
+        {
+          "route": "/mailbox",
+          "file": "src/ui/pages/mailbox-index.tsx"
+        },
+        {
+          "route": "/mailbox/[box]",
+          "file": "src/ui/pages/mailbox.tsx"
+        },
+        {
+          "route": "/search",
+          "file": "src/ui/pages/search.tsx"
+        },
+        {
+          "route": "/me/absence",
+          "file": "src/ui/pages/absence.tsx"
+        },
+        {
+          "route": "/admin/approvals",
+          "file": "src/ui/pages/admin-approvals.tsx"
+        },
+        {
+          "route": "/admin/forms",
+          "file": "src/ui/pages/admin-forms.tsx"
+        },
+        {
+          "route": "/admin/forms/[id]",
+          "file": "src/ui/pages/admin-form-edit.tsx"
+        }
+      ],
+      "adapters": [
+        "apps/web/app/(app)/approval/{new,pending,mine}/page.tsx",
+        "apps/web/app/(app)/approval/draft/[id]/page.tsx",
+        "apps/web/app/(app)/approval/[id]/page.tsx",
+        "apps/web/app/(app)/mailbox/page.tsx",
+        "apps/web/app/(app)/mailbox/[box]/page.tsx",
+        "apps/web/app/(app)/search/page.tsx",
+        "apps/web/app/(app)/me/absence/page.tsx",
+        "apps/web/app/(app)/admin/{approvals,forms,forms/[id]}/page.tsx"
+      ],
+      "api": {
+        "generated": true,
+        "entry": "api/routes"
+      },
+      "provisioning": "provisioning",
+      "guards": "api/guards",
+      "tables": {
+        "owns": [
+          "approval_action",
+          "approval_comment",
+          "approval_event",
+          "approval_line_template",
+          "approval_step",
+          "attachment",
+          "delegation",
+          "doc_number_series",
+          "document",
+          "document_distribution",
+          "document_link",
+          "document_recipient",
+          "document_recipient_read",
+          "document_revision",
+          "document_search",
+          "form",
+          "form_version",
+          "user_form_pref"
+        ],
+        "reads": ["assignment", "business", "department", "duty", "position", "role_grant"],
+        "writes": []
+      },
+      "events": {
+        "publishes": ["approval_event"],
+        "consumes": []
+      },
+      "contracts": [
+        "core/approval-event",
+        "core/{form-schema,form-values,form-index,doc-number}",
+        "shared/contracts/document-access"
+      ],
+      "tests": {
+        "unit": "tests/*.test.ts",
+        "int": "tests/*.int.test.ts",
+        "e2e": "apps/web/e2e/m4.spec.ts, apps/web/e2e/m5.spec.ts"
+      },
+      "invariants": [
+        "상신 이후 본문·첨부가 바뀌면 거부한다 (content_changed)",
+        "열람할 수 없는 문서는 존재도 알리지 않는다 (404)",
+        "결재 처리·이관·내려받기는 PIN 재인증을 요구한다",
+        "처리 기록·문서번호 채번은 한 트랜잭션에서 낙관적 잠금과 함께 처리한다"
+      ],
+      "folder": "approval",
+      "routes": [
+        {
+          "method": "get",
+          "path": "/approval-admin/overdue",
+          "file": "features/approval/src/api/approval-admin-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approval-admin/transfer",
+          "file": "features/approval/src/api/approval-admin-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approval-line-templates",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approval-line-templates",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/approval-line-templates/{id}",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approvals",
+          "file": "features/approval/src/api/approvals-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}",
+          "file": "features/approval/src/api/approvals-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/attachments",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approvals/{id}/attachments",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/approvals/{id}/attachments/{attachmentId}",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/attachments/{attachmentId}/url",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approvals/{id}/attachments/upload-url",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/body",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approvals/{id}/circulate",
+          "file": "features/approval/src/api/recipients-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/comments",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approvals/{id}/comments",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/approvals/{id}/draft",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/approvals/{id}/draft-line",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/form",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/approvals/{id}/line",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/recipients",
+          "file": "features/approval/src/api/recipients-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/approvals/{id}/recipients",
+          "file": "features/approval/src/api/recipients-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approvals/{id}/redraft",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/approvals/{id}/steps/{stepId}/act",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/delegations",
+          "file": "features/approval/src/api/approvals-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/delegations",
+          "file": "features/approval/src/api/approvals-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/delegations/{id}",
+          "file": "features/approval/src/api/approvals-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/forms",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/forms",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/forms/{id}",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/forms/{id}/duplicate",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/forms/{id}/export",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/forms/{id}/favorite",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/forms/{id}/versions",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/forms/import",
+          "file": "features/approval/src/api/forms-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/inbox/mine",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/inbox/pending",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/mailbox/{box}",
+          "file": "features/approval/src/api/mailbox-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/recipients/{recipientId}/distribute",
+          "file": "features/approval/src/api/recipients-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/recipients/{recipientId}/receive",
+          "file": "features/approval/src/api/recipients-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/search",
+          "file": "features/approval/src/api/search-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/search/export",
+          "file": "features/approval/src/api/search-routes.ts"
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "summary": "감사 로그 조회, 문서 이력 타임라인·인쇄 기록, 월간 접속 기록 점검(AUD-026)",
+      "keywords": ["감사", "로그", "접속 기록", "타임라인", "이력", "인쇄", "월간 점검", "감사인"],
+      "access": [
+        {
+          "who": "감사 권한 보유자",
+          "path": "관리 콘솔 → 감사 로그 → /admin/audit",
+          "entry": "ui/pages/audit-logs"
+        },
+        {
+          "who": "감사 권한 보유자",
+          "path": "감사 로그 → 월간 점검 → /admin/audit/review",
+          "entry": "ui/pages/audit-review"
+        },
+        {
+          "who": "문서 열람자",
+          "path": "결재 문서 상세 하단 이력·인쇄 버튼",
+          "entry": "ui/components/audit-trail"
+        }
+      ],
+      "screens": [
+        {
+          "route": "/admin/audit",
+          "file": "src/ui/pages/audit-logs.tsx"
+        },
+        {
+          "route": "/admin/audit/review",
+          "file": "src/ui/pages/audit-review.tsx"
+        }
+      ],
+      "adapters": [
+        "apps/web/app/(app)/admin/audit/page.tsx",
+        "apps/web/app/(app)/admin/audit/review/page.tsx",
+        "apps/web/app/(app)/approval/[id]/page.tsx",
+        "apps/web/app/(app)/admin/layout.tsx"
+      ],
+      "api": {
+        "generated": true,
+        "entry": "api/routes"
+      },
+      "tables": {
+        "owns": ["audit_review"],
+        "reads": ["approval_action", "approval_event", "document"],
+        "writes": []
+      },
+      "events": {
+        "publishes": [],
+        "consumes": []
+      },
+      "contracts": ["shared/contracts/document-access", "shared/contracts/ops-alerts"],
+      "tests": {
+        "unit": "tests/*.test.ts",
+        "int": "tests/audit.int.test.ts",
+        "e2e": "apps/web/e2e/m6.spec.ts"
+      },
+      "invariants": [
+        "audit_log는 INSERT만 한다 (수정·삭제 코드 금지)",
+        "열람할 수 없는 문서는 존재도 알리지 않는다 (404)"
+      ],
+      "folder": "audit",
+      "routes": [
+        {
+          "method": "post",
+          "path": "/approvals/{id}/print-log",
+          "file": "features/audit/src/api/routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/timeline",
+          "file": "features/audit/src/api/routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/audit-logs",
+          "file": "features/audit/src/api/routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/audit-logs/reviews",
+          "file": "features/audit/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/audit-logs/reviews",
+          "file": "features/audit/src/api/routes.ts"
+        }
+      ]
+    },
+    {
+      "id": "backup",
+      "summary": "시스템 DB 덤프(암호화·S3), 계정 데이터 내보내기, 복구 리허설·DB 색인 재구성 도구",
+      "keywords": [
+        "백업",
+        "덤프",
+        "복구",
+        "리허설",
+        "재색인",
+        "내보내기",
+        "엑셀",
+        "CSV",
+        "시스템 관리자",
+        "age"
+      ],
+      "access": [
+        {
+          "who": "시스템 관리자",
+          "path": "/system/backups",
+          "entry": "ui/pages/system-backups"
+        },
+        {
+          "who": "계정 관리자",
+          "path": "관리 콘솔 → 백업·내보내기 → /admin/backups",
+          "entry": "ui/pages/admin-backups"
+        },
+        {
+          "who": "운영자",
+          "path": "pnpm backup:dump|restore|rehearse|reindex (apps/worker/src/cli)",
+          "entry": "operator"
+        }
+      ],
+      "screens": [
+        {
+          "route": "/system/backups",
+          "file": "src/ui/pages/system-backups.tsx"
+        },
+        {
+          "route": "/admin/backups",
+          "file": "src/ui/pages/admin-backups.tsx"
+        }
+      ],
+      "adapters": [
+        "apps/web/app/(app)/system/backups/page.tsx",
+        "apps/web/app/(app)/admin/backups/page.tsx",
+        "apps/worker/src/cli/{dump,restore,rehearse,reindex}.ts"
+      ],
+      "api": {
+        "generated": true,
+        "entry": "api/routes"
+      },
+      "jobs": {
+        "entry": "jobs/jobs",
+        "queues": ["backup.*"]
+      },
+      "tables": {
+        "owns": ["backup_job", "system_backup"],
+        "reads": [
+          "approval_line_template",
+          "approval_step",
+          "assignment",
+          "assignment_history",
+          "attachment",
+          "audit_review",
+          "business",
+          "department",
+          "doc_number_series",
+          "document",
+          "document_package",
+          "duty",
+          "form",
+          "form_version",
+          "position",
+          "role_grant"
+        ],
+        "writes": [
+          "approval_action",
+          "approval_step",
+          "attachment",
+          "doc_number_series",
+          "document",
+          "document_package",
+          "document_revision",
+          "document_search"
+        ]
+      },
+      "events": {
+        "publishes": [],
+        "consumes": []
+      },
+      "contracts": [
+        "shared/contracts/system-guards",
+        "shared/contracts/ops-alerts",
+        "core/completion-package"
+      ],
+      "tests": {
+        "unit": "tests/*.test.ts",
+        "int": "tests/*.int.test.ts",
+        "e2e": "apps/web/e2e/m7.spec.ts"
+      },
+      "invariants": [
+        "덤프는 항상 age로 암호화해 올리고 올라간 객체를 다시 해시해 검증한다",
+        "시스템 관리자 외에는 덤프를 다루지 못한다 (404, PIN 재인증)",
+        "세션·인증 토큰은 덤프에서 제외한다"
+      ],
+      "folder": "backup",
+      "routes": [
+        {
+          "method": "get",
+          "path": "/account/exports",
+          "file": "features/backup/src/api/export-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/exports",
+          "file": "features/backup/src/api/export-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/account/exports/{id}/download",
+          "file": "features/backup/src/api/export-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/system/backups",
+          "file": "features/backup/src/api/system-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/system/backups",
+          "file": "features/backup/src/api/system-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/system/backups/{id}/delete",
+          "file": "features/backup/src/api/system-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/system/backups/{id}/download",
+          "file": "features/backup/src/api/system-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/system/me",
+          "file": "features/backup/src/api/system-routes.ts"
+        }
+      ]
+    },
+    {
+      "id": "completion",
+      "summary": "완료된 결재 문서의 PDF·패키지(final/)를 한 번만 만들어 S3에 쓰고, 열람 권한자에게 내려받게 한다",
+      "keywords": ["완료", "PDF", "패키지", "내려받기", "ZIP", "인쇄", "final", "해시", "manifest"],
+      "access": [
+        {
+          "who": "문서 열람자",
+          "path": "완료된 결재 문서 상세 → 완료 파일",
+          "entry": "ui/components/completion-files"
+        }
+      ],
+      "screens": [],
+      "adapters": ["apps/web/app/(app)/approval/[id]/page.tsx"],
+      "api": {
+        "generated": true,
+        "entry": "api/routes"
+      },
+      "jobs": {
+        "entry": "jobs/jobs",
+        "queues": ["package.generate", "package.sweep"]
+      },
+      "tables": {
+        "owns": ["document_package"],
+        "reads": [
+          "approval_action",
+          "approval_step",
+          "attachment",
+          "business",
+          "department",
+          "document",
+          "document_revision",
+          "form",
+          "form_version"
+        ],
+        "writes": []
+      },
+      "events": {
+        "publishes": [],
+        "consumes": ["approval_event"]
+      },
+      "contracts": [
+        "shared/contracts/document-access",
+        "core/completion-package",
+        "core/form-schema"
+      ],
+      "tests": {
+        "unit": "tests/*.test.ts",
+        "int": "tests/*.int.test.ts",
+        "e2e": "apps/web/e2e (m5.spec.ts가 완료 파일을 거친다)"
+      },
+      "invariants": [
+        "final/ 객체는 한 번만 쓴다 (이미 있으면 해시가 같을 때만 성공, 다르면 사람이 확인)",
+        "열람할 수 없는 문서의 패키지는 존재도 알리지 않는다",
+        "내려받기는 재인증을 요구하고 감사 로그에 남긴다"
+      ],
+      "folder": "completion",
+      "routes": [
+        {
+          "method": "get",
+          "path": "/approvals/{id}/package",
+          "file": "features/completion/src/api/routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/package/pdf",
+          "file": "features/completion/src/api/routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/package/zip",
+          "file": "features/completion/src/api/routes.ts"
+        }
+      ]
+    },
+    {
+      "id": "home",
+      "summary": "로그인 후 첫 화면 — 내 결재 대기·기안 현황과 양식 바로가기",
+      "keywords": ["홈", "대시보드", "첫 화면", "바로가기", "결재 대기"],
+      "access": [
+        {
+          "who": "모든 구성원",
+          "path": "/ (로그인 직후)",
+          "entry": "ui/pages/home"
+        }
+      ],
+      "screens": [
+        {
+          "route": "/",
+          "file": "src/ui/pages/home.tsx"
+        }
+      ],
+      "adapters": ["apps/web/app/(app)/page.tsx"],
+      "api": {
+        "generated": true
+      },
+      "tables": {
+        "owns": [],
+        "reads": [],
+        "writes": []
+      },
+      "events": {
+        "publishes": [],
+        "consumes": []
+      },
+      "contracts": [],
+      "tests": {
+        "e2e": "apps/web/e2e (smoke·m1~m8이 홈을 거친다)"
+      },
+      "invariants": [],
+      "folder": "home",
+      "routes": []
+    },
+    {
+      "id": "notification",
+      "summary": "결재 이벤트를 인앱·텔레그램 알림으로 바꾸고, 월간 점검 누락·덤프 문제 같은 운영 알림을 보낸다",
+      "keywords": [
+        "알림",
+        "벨",
+        "읽음",
+        "텔레그램",
+        "연결",
+        "수신 방식",
+        "웹훅",
+        "폴링",
+        "운영 알림"
+      ],
+      "access": [
+        {
+          "who": "모든 구성원",
+          "path": "앱 헤더 알림 → /notifications",
+          "entry": "ui/pages/notifications"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "내 정보 → 알림 탭",
+          "entry": "ui/components/telegram-section"
+        },
+        {
+          "who": "시스템 관리자",
+          "path": "/system/telegram",
+          "entry": "ui/pages/system-telegram"
+        }
+      ],
+      "screens": [
+        {
+          "route": "/notifications",
+          "file": "src/ui/pages/notifications.tsx",
+          "dom": [
+            {
+              "role": "heading",
+              "name": "알림",
+              "where": "페이지 제목"
+            }
+          ]
+        },
+        {
+          "route": "/system/telegram",
+          "file": "src/ui/pages/system-telegram.tsx"
+        }
+      ],
+      "adapters": [
+        "apps/web/app/(app)/notifications/page.tsx",
+        "apps/web/app/(app)/system/telegram/page.tsx",
+        "apps/web/app/(app)/me/page.tsx"
+      ],
+      "api": {
+        "generated": true,
+        "entry": "api/routes"
+      },
+      "jobs": {
+        "entry": "jobs/jobs",
+        "queues": ["notify.telegram"]
+      },
+      "tables": {
+        "owns": [
+          "event_notified",
+          "notification",
+          "system_setting",
+          "telegram_link",
+          "telegram_link_token"
+        ],
+        "reads": [
+          "approval_event",
+          "approval_step",
+          "audit_review",
+          "document",
+          "document_recipient",
+          "role_grant",
+          "system_backup"
+        ],
+        "writes": []
+      },
+      "events": {
+        "publishes": [],
+        "consumes": ["approval_event"]
+      },
+      "contracts": [
+        "core/approval-event",
+        "shared/contracts/ops-alerts",
+        "shared/contracts/system-guards"
+      ],
+      "tests": {
+        "unit": "tests/*.test.ts",
+        "int": "tests/*.int.test.ts",
+        "e2e": "apps/web/e2e/m8.spec.ts"
+      },
+      "invariants": [
+        "외부 채널(텔레그램) 문구에 문서 제목·내용·의견을 넣지 않는다",
+        "연결 토큰은 해시만 저장하고 한 번만 쓴다",
+        "같은 사건은 dedupe_key로 한 번만 알린다"
+      ],
+      "folder": "notification",
+      "routes": [
+        {
+          "method": "get",
+          "path": "/me/telegram",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/me/telegram/link",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/me/telegram/unlink",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/notifications",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/notifications/{id}/read",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/notifications/read-all",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/notifications/unread-count",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/system/telegram",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/system/telegram/mode",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/telegram/webhook",
+          "file": "features/notification/src/api/routes.ts"
+        }
+      ]
+    },
+    {
+      "id": "org",
+      "summary": "사업자·부서·직위·직책·구성원·소속(겸직)·역할 부여, 조직도, 부서 CSV 가져오기·내보내기",
+      "keywords": [
+        "조직",
+        "조직도",
+        "부서",
+        "사업자",
+        "직위",
+        "직책",
+        "구성원",
+        "겸직",
+        "발령",
+        "역할",
+        "권한",
+        "초대",
+        "부서 CSV"
+      ],
+      "access": [
+        {
+          "who": "모든 구성원",
+          "path": "조직도 → /org",
+          "entry": "ui/pages/org"
+        },
+        {
+          "who": "관리 권한 보유자",
+          "path": "관리 콘솔 → 회사 설정 /admin/settings",
+          "entry": "ui/pages/admin-settings"
+        },
+        {
+          "who": "관리 권한 보유자",
+          "path": "관리 콘솔 → 사업자 /admin/businesses",
+          "entry": "ui/pages/admin-businesses"
+        },
+        {
+          "who": "관리 권한 보유자",
+          "path": "관리 콘솔 → 조직 /admin/org",
+          "entry": "ui/pages/admin-org"
+        },
+        {
+          "who": "관리 권한 보유자",
+          "path": "관리 콘솔 → 구성원 /admin/members",
+          "entry": "ui/pages/admin-members"
+        },
+        {
+          "who": "관리 권한 보유자",
+          "path": "관리 콘솔 → 직위·직책 /admin/positions",
+          "entry": "ui/pages/admin-positions"
+        }
+      ],
+      "screens": [
+        {
+          "route": "/org",
+          "file": "src/ui/pages/org.tsx"
+        },
+        {
+          "route": "/admin/settings",
+          "file": "src/ui/pages/admin-settings.tsx"
+        },
+        {
+          "route": "/admin/businesses",
+          "file": "src/ui/pages/admin-businesses.tsx"
+        },
+        {
+          "route": "/admin/org",
+          "file": "src/ui/pages/admin-org.tsx"
+        },
+        {
+          "route": "/admin/members",
+          "file": "src/ui/pages/admin-members.tsx"
+        },
+        {
+          "route": "/admin/positions",
+          "file": "src/ui/pages/admin-positions.tsx"
+        }
+      ],
+      "adapters": [
+        "apps/web/app/(app)/org/page.tsx",
+        "apps/web/app/(app)/admin/{settings,businesses,org,members,positions}/page.tsx"
+      ],
+      "api": {
+        "generated": true,
+        "entry": "api/routes"
+      },
+      "tables": {
+        "owns": [
+          "assignment",
+          "assignment_history",
+          "business",
+          "department",
+          "duty",
+          "position",
+          "role_grant"
+        ],
+        "reads": ["approval_step", "document"],
+        "writes": []
+      },
+      "events": {
+        "publishes": [],
+        "consumes": []
+      },
+      "contracts": ["shared/authz/org-access", "core/{org-defaults,business-number}"],
+      "tests": {
+        "unit": "tests/*.test.ts",
+        "int": "tests/org.int.test.ts, tests/org-db.int.test.ts",
+        "e2e": "apps/web/e2e/m2.spec.ts"
+      },
+      "invariants": [
+        "부서 뎁스는 계정 설정(maxDeptDepth)을 넘지 못한다",
+        "소유자는 항상 한 명 이상 남는다 (동시 비활성화도 한 명은 남음)",
+        "진행 중 결재가 있는 구성원은 비활성화 전에 이관해야 한다"
+      ],
+      "folder": "org",
+      "routes": [
+        {
+          "method": "get",
+          "path": "/account/capabilities",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/account/members",
+          "file": "features/org/src/api/members-routes.ts"
+        },
+        {
+          "method": "patch",
+          "path": "/account/members/{userId}",
+          "file": "features/org/src/api/members-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/account/members/{userId}/assignment-history",
+          "file": "features/org/src/api/members-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/account/members/{userId}/assignments",
+          "file": "features/org/src/api/members-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/members/{userId}/roles",
+          "file": "features/org/src/api/members-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/account/members/{userId}/roles/{grantId}",
+          "file": "features/org/src/api/members-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/account/settings",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "patch",
+          "path": "/account/settings",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/businesses",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/businesses",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "patch",
+          "path": "/businesses/{id}",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/businesses/{id}/seal",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "put",
+          "path": "/businesses/{id}/seal",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/businesses/{id}/seal/upload-url",
+          "file": "features/org/src/api/org-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/departments",
+          "file": "features/org/src/api/departments-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/departments",
+          "file": "features/org/src/api/departments-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/departments/{id}",
+          "file": "features/org/src/api/departments-routes.ts"
+        },
+        {
+          "method": "patch",
+          "path": "/departments/{id}",
+          "file": "features/org/src/api/departments-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/departments/{id}/move",
+          "file": "features/org/src/api/departments-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/departments/export",
+          "file": "features/org/src/api/departments-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/departments/import",
+          "file": "features/org/src/api/departments-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/org-chart",
+          "file": "features/org/src/api/departments-routes.ts"
+        }
+      ]
+    }
+  ]
+}

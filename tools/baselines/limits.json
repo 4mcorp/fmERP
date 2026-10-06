@@ -1,6 +1,7 @@
 {
   "cross-feature": 0,
   "depcruise": 1,
+  "feature-map": 0,
   "knip": 11,
   "shared-to-feature": 0,
   "suppressions": 10,

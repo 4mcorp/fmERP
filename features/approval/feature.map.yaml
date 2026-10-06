@@ -28,7 +28,10 @@ adapters:
   - apps/web/app/(app)/approval/{new,pending,mine}/page.tsx
   - apps/web/app/(app)/approval/draft/[id]/page.tsx
   - apps/web/app/(app)/approval/[id]/page.tsx    # PrintButton·DocumentTimeline(audit)·CompletionFiles(completion) 슬롯 주입
-  - apps/web/app/(app)/mailbox/page.tsx, mailbox/[box]/page.tsx, search/page.tsx, me/absence/page.tsx
+  - apps/web/app/(app)/mailbox/page.tsx
+  - apps/web/app/(app)/mailbox/[box]/page.tsx
+  - apps/web/app/(app)/search/page.tsx
+  - apps/web/app/(app)/me/absence/page.tsx
   - apps/web/app/(app)/admin/{approvals,forms,forms/[id]}/page.tsx
 api: { generated: true, entry: api/routes }       # registerApprovalApi, registerApprovalSupportApi(검색·결재 관리) — 완료 패키지 라우트가 둘 사이에 등록된다
 provisioning: provisioning                        # installDefaultForms — 계정 생성·시드가 주입받는다
@@ -44,7 +47,7 @@ contracts:
 tests:
   unit: tests/*.test.ts
   int: tests/*.int.test.ts
-  e2e: apps/web/e2e/m4.spec.ts, m5.spec.ts       # E2E는 합성 루트(apps/web/e2e)에 둔다 — 12장 S8 결정
+  e2e: apps/web/e2e/m4.spec.ts, apps/web/e2e/m5.spec.ts       # E2E는 합성 루트(apps/web/e2e)에 둔다 — 12장 S8 결정
 invariants:
   - 상신 이후 본문·첨부가 바뀌면 거부한다 (content_changed)
   - 열람할 수 없는 문서는 존재도 알리지 않는다 (404)

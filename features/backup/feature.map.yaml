@@ -12,7 +12,7 @@ screens:
 adapters:
   - apps/web/app/(app)/system/backups/page.tsx
   - apps/web/app/(app)/admin/backups/page.tsx
-  - apps/worker/src/cli/*.ts                    # 운영자 CLI (합성 루트)
+  - apps/worker/src/cli/{dump,restore,rehearse,reindex}.ts   # 운영자 CLI (합성 루트)
 api: { generated: true, entry: api/routes }       # registerBackupRoutes(router, deps); api/guards는 알림 라우트에 주입
 jobs:
   entry: jobs/jobs                                # registerBackupJobs(boss, deps, exportDeps); jobs/config가 환경 변수에서 deps를 만든다

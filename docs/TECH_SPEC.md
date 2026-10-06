@@ -79,6 +79,7 @@
 | 미사용 코드·의존성 검사 | knip | ~6.39.0 (ISC) |
 | 중복 코드 탐지 (공용 코드 정리) | jscpd | ~5.4.0 (MIT) |
 | 커버리지 | @vitest/coverage-v8 | ~4.1.11 (vitest와 같은 버전) |
+| 기능 지도 파서 (`tools`) | yaml | ~2.9.1 (ISC, feature.map.yaml 읽기) |
 | UI 보조 (shadcn 설치) | shadcn, class-variance-authority, cn, tw-animate-css, sonner(알림), next-themes | ~4.21.1, ~0.7.1, ~0.4.0, ~1.4.0, ~2.0.8, ~0.4.6 |
 | 로컬 개발 서비스 (Docker) | `postgres:18-bookworm`, `chrislusf/seaweedfs:4.47`(로컬 S3, MinIO 대체), `axllent/mailpit:v1.31`(개발 메일함) | docker-compose.dev.yml |
 | 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |
