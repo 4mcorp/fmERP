@@ -1,14 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
-import {
-  type Action,
-  can,
-  canInAnyScope,
-  isValidBusinessNumber,
-  normalizeBusinessNumber,
-} from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
 import { ACCOUNT_TARGET, authorize, loadActor } from "@fmerp/shared/authz/org-access";
+import {
+  isValidBusinessNumber,
+  normalizeBusinessNumber,
+} from "@fmerp/shared/domain/business-number";
+import { type Action, can, canInAnyScope } from "@fmerp/shared/domain/permissions";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
   ApiError,

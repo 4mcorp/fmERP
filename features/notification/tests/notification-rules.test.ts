@@ -1,4 +1,4 @@
-import type { ApprovalEvent } from "@fmerp/core";
+import type { ApprovalEvent } from "@fmerp/shared/domain/approval-event";
 import { describe, expect, it } from "vitest";
 import {
   type NotificationContext,

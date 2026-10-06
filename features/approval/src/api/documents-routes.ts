@@ -1,7 +1,7 @@
-import { can } from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
 import { businessTarget, loadActor } from "@fmerp/shared/authz/org-access";
 import { createRequireReauth } from "@fmerp/shared/authz/reauth";
+import { can } from "@fmerp/shared/domain/permissions";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import { ServiceError } from "@fmerp/shared/server/errors";
 import {

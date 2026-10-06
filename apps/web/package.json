@@ -12,7 +12,6 @@
     "seed": "tsx --env-file-if-exists=../../.env server/seed-cli.ts"
   },
   "dependencies": {
-    "@fmerp/core": "workspace:*",
     "@fmerp/db": "workspace:*",
     "@fmerp/feature-account": "workspace:*",
     "@fmerp/feature-approval": "workspace:*",

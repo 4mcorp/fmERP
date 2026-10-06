@@ -1,5 +1,5 @@
 // 덤프·내보내기의 순수 규칙 (PRD BAK-005·009, M7 plan). DB·S3·프레임워크를 import하지 않는다.
-import { canonicalJson } from "@fmerp/core";
+import { canonicalJson } from "@fmerp/shared/domain/completion-package";
 
 // ===== 백업 상태 (BAK-005: 매일 03:00 KST 실행, 03:30까지 성공 신호가 없으면 누락) =====
 const KST_OFFSET_MS = 9 * 3_600_000;

@@ -1,7 +1,7 @@
 /** 결재 PIN 정책 (PRD AUTH-009) */
-export const PIN_MAX_FAILURES = 5;
-export const PIN_LOCK_MINUTES = 15;
-export const PIN_REAUTH_MINUTES = 30;
+const PIN_MAX_FAILURES = 5;
+const PIN_LOCK_MINUTES = 15;
+const PIN_REAUTH_MINUTES = 30;
 
 export interface PinAttemptState {
   failedCount: number;

@@ -1,13 +1,13 @@
 // 첨부 (PRD APV-013, FILE-002·004·005, ADR 0008): 크기 고정 서명 업로드 → staging → 서버 검증 → 최종 키로 복사
 import { randomUUID } from "node:crypto";
 import { recordAudit } from "@fmerp/audit";
+import { schema } from "@fmerp/db";
 import {
   checkAttachment,
   DEFAULT_ALLOWED_EXTENSIONS,
   extensionOf,
   safeFileName,
-} from "@fmerp/core";
-import { schema } from "@fmerp/db";
+} from "@fmerp/shared/domain/file-sniff";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ServiceError } from "@fmerp/shared/server/errors";
 import { attachmentKey, stagingKey, stagingPrefix } from "@fmerp/storage";

@@ -17,8 +17,8 @@ tables:
 events: { publishes: [], consumes: [approval_event] }
 contracts:
   - shared/contracts/document-access              # 문서 열람 확인 (결재가 제공, app.ts가 주입)
-  - core/completion-package                       # 패키지 형식·manifest (공통 소유, 백업도 읽는다)
-  - core/form-schema                              # 양식 스키마·값 (공통 소유)
+  - shared/domain/completion-package                       # 패키지 형식·manifest (공통 소유, 백업도 읽는다)
+  - shared/domain/form-schema                              # 양식 스키마·값 (공통 소유)
 tests:
   unit: tests/*.test.ts
   int: tests/*.int.test.ts

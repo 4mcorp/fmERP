@@ -1,4 +1,4 @@
-import { makeBusinessNumber } from "@fmerp/core";
+import { makeBusinessNumber } from "@fmerp/shared/domain/business-number";
 import { expect, type Page, test } from "@playwright/test";
 
 async function loginAs(page: Page, name: string) {

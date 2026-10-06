@@ -1,6 +1,7 @@
 "use client";
 
-import { type FormField, type FormSchema, tableSums } from "@fmerp/core";
+import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
+import { tableSums } from "@fmerp/shared/domain/form-values";
 import type { ReactNode } from "react";
 import { type FieldContext, formatWon } from "./form-fields";
 import { RichTextView } from "./rich-text";

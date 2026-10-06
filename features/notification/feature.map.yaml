@@ -27,7 +27,7 @@ tables:
   reads: [approval_event, approval_step, audit_review, document, document_recipient, role_grant, system_backup]
 events: { publishes: [], consumes: [approval_event] }
 contracts:                                  # 이 기능이 쓰는 공통 계약
-  - core/approval-event                     # 결재가 만들고 알림이 읽는 이벤트 형식
+  - shared/domain/approval-event                     # 결재가 만들고 알림이 읽는 이벤트 형식
   - shared/contracts/ops-alerts             # 감사·백업 판정 규칙 (합성 루트가 주입)
   - shared/contracts/system-guards          # 시스템 관리자·PIN 재인증 가드 (합성 루트가 주입)
 tests:

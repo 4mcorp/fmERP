@@ -207,7 +207,7 @@ export const STATUS_LABEL: Record<MemberStatus, string> = {
 export { formatDateTime } from "./format";
 
 // ===== 전자결재 (M4) =====
-import type { FormSchema } from "@fmerp/core";
+import type { FormSchema } from "../domain/form-schema";
 
 export type StepType = "approve" | "agree" | "cooperate" | "audit" | "post";
 export type SecurityLevel = "normal" | "confidential" | "secret";

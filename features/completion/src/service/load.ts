@@ -1,13 +1,14 @@
 // 완료 패키지에 담을 데이터를 DB·S3에서 읽는다 (PRD BAK-003, APV-063). 호출자가 withTenant 트랜잭션을 연다.
+
+import { type Db, schema, type Tx } from "@fmerp/db";
 import type {
   AttachmentRef,
-  FormSchema,
   PersonCard,
   RecordAction,
   RecordStep,
   RestoreInfo,
-} from "@fmerp/core";
-import { type Db, schema, type Tx } from "@fmerp/db";
+} from "@fmerp/shared/domain/completion-package";
+import type { FormSchema } from "@fmerp/shared/domain/form-schema";
 import { sha256Hex } from "@fmerp/shared/server/hash";
 import { docPrefix, type ObjectStorage } from "@fmerp/storage";
 import { asc, eq, inArray } from "drizzle-orm";

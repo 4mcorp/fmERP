@@ -9,7 +9,7 @@
  * 패키지 형식 버전. 2부터 `approval.json`에 DB 색인을 다시 만드는 데 필요한 `restore` 블록이 있다 (BAK-010, ADR 0011).
  * 1은 그 정보가 없어 색인 재구성에서 건너뛴다.
  */
-export const PACKAGE_SCHEMA_VERSION = 2;
+const PACKAGE_SCHEMA_VERSION = 2;
 
 /** 키를 정렬하고 2칸 들여쓴 JSON. undefined는 뺀다. 끝에 줄바꿈 한 개 */
 export function canonicalJson(value: unknown): string {
@@ -70,7 +70,7 @@ export interface RecordAction {
 }
 
 /** 색인 재구성용: 결재 단계의 DB 값 중 `RecordStep`에 없는 것 */
-export interface RestoreStep {
+interface RestoreStep {
   id: string;
   assigneeIds: string[];
   /** 활성화 때 정해진 대결자: 처리자 id → 대결자 id */

@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@fmerp/audit": "workspace:*",
-    "@fmerp/core": "workspace:*",
     "@fmerp/db": "workspace:*",
     "@fmerp/shared": "workspace:*",
     "@fmerp/storage": "workspace:*",

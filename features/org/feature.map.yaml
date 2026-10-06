@@ -26,7 +26,7 @@ tables:
 events: { publishes: [], consumes: [] }
 contracts:
   - shared/authz/org-access                       # 범위 판정 (공통)
-  - core/{org-defaults,business-number}           # 공통 소유 (계정 시드·회사 만들기도 씀)
+  - shared/domain/{org-defaults,business-number}           # 공통 소유 (계정 시드·회사 만들기도 씀)
 tests:
   unit: tests/*.test.ts
   int: tests/org.int.test.ts, tests/org-db.int.test.ts

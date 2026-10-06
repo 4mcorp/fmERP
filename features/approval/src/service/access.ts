@@ -1,8 +1,8 @@
 import { recordAudit } from "@fmerp/audit";
-import { can } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { businessTarget, departmentTarget } from "@fmerp/shared/authz/org-access";
 import type { Viewer } from "@fmerp/shared/contracts/document-access";
+import { can } from "@fmerp/shared/domain/permissions";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";

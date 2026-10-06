@@ -2,14 +2,14 @@
 // 호출자는 withTenant 트랜잭션 안에서 부른다. 권한(누가 이 문서를 볼 수 있나)은 호출 쪽 라우트가 확인한다.
 import { randomUUID } from "node:crypto";
 import { recordAudit } from "@fmerp/audit";
+import { schema, type Tx } from "@fmerp/db";
 import {
   type DocNumberContext,
   type ResetCycle,
   renderDocNumber,
   seriesKey,
   validateDocNumberRule,
-} from "@fmerp/core";
-import { schema, type Tx } from "@fmerp/db";
+} from "@fmerp/shared/domain/doc-number";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ServiceError } from "@fmerp/shared/server/errors";
 import { attachmentKey } from "@fmerp/storage";

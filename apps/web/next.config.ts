@@ -13,7 +13,6 @@ const nextConfig: NextConfig = {
   turbopack: { root: repoRoot },
   transpilePackages: [
     "@fmerp/audit",
-    "@fmerp/core",
     "@fmerp/db",
     "@fmerp/feature-account",
     "@fmerp/feature-approval",

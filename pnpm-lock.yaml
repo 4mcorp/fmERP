@@ -47,9 +47,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -193,9 +190,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -236,9 +230,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -303,9 +294,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -343,9 +331,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -401,9 +386,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -478,9 +460,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -521,9 +500,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../../packages/audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -568,8 +544,6 @@ importers:
         specifier: ~1.6.0
         version: 1.6.0
 
-  packages/core: {}
-
   packages/db:
     dependencies:
       drizzle-orm:
@@ -603,9 +577,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../packages/audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../packages/db

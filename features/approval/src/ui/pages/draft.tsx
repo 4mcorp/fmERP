@@ -1,6 +1,7 @@
 "use client";
 
-import { type FormSchema, validateFormValues } from "@fmerp/core";
+import type { FormSchema } from "@fmerp/shared/domain/form-schema";
+import { validateFormValues } from "@fmerp/shared/domain/form-values";
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import {
   useBusinesses,

@@ -2,7 +2,7 @@ import type { FormField, FormSchema, TableColumn, TableField } from "./form-sche
 
 /** 양식 입력값 검증과 정규화 (PRD APV-001·015). 서버와 화면이 같은 함수를 쓴다. */
 
-export interface FieldError {
+interface FieldError {
   /** 필드 키. 표 셀은 `items[0].price` 형식 */
   field: string;
   message: string;

@@ -4,8 +4,11 @@
 
 import { createHash } from "node:crypto";
 import { recordAudit } from "@fmerp/audit";
-import { extractSearchIndex, type FormSchema, type RestoreInfo, seriesKey } from "@fmerp/core";
 import { type Db, schema, type Tx, withTenant } from "@fmerp/db";
+import type { RestoreInfo } from "@fmerp/shared/domain/completion-package";
+import { seriesKey } from "@fmerp/shared/domain/doc-number";
+import { extractSearchIndex } from "@fmerp/shared/domain/form-index";
+import type { FormSchema } from "@fmerp/shared/domain/form-schema";
 import type { ObjectStorage } from "@fmerp/storage";
 import { eq, inArray, sql } from "drizzle-orm";
 import { parseDocNumberSeq } from "../domain/doc-number-parse";

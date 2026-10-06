@@ -1,4 +1,4 @@
-import type { FormField, FormSchema } from "@fmerp/core";
+import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
 import type { DraftLineItem } from "./approval-line";
 import type { ApprovalPolicy } from "./approval-types";
 

@@ -1,22 +1,5 @@
 /** 양식 필드 스키마 (PRD APV-001, D8: 필드 나열 + 표 + 리치 텍스트). 순수 데이터와 검증이며 외부 의존성이 없다. */
 
-export const FIELD_TYPES = [
-  "text",
-  "textarea",
-  "number",
-  "money",
-  "date",
-  "daterange",
-  "select",
-  "multiselect",
-  "user",
-  "dept",
-  "table",
-  "richtext",
-  "attachment",
-] as const;
-export type FieldType = (typeof FIELD_TYPES)[number];
-
 interface Base {
   key: string;
   label: string;
@@ -24,14 +7,14 @@ interface Base {
   help?: string;
 }
 
-export interface TextField extends Base {
+interface TextField extends Base {
   type: "text" | "textarea";
   minLength?: number;
   maxLength?: number;
   pattern?: string;
   default?: string;
 }
-export interface NumberField extends Base {
+interface NumberField extends Base {
   type: "number";
   min?: number;
   max?: number;
@@ -39,7 +22,7 @@ export interface NumberField extends Base {
   default?: number;
 }
 /** 금액: 원 단위 정수 (ADR 0002) */
-export interface MoneyField extends Base {
+interface MoneyField extends Base {
   type: "money";
   min?: number;
   max?: number;
@@ -47,19 +30,19 @@ export interface MoneyField extends Base {
   /** 금액 범위 검색의 기준 필드 (APV-082). 양식에 하나만 지정할 수 있다 */
   searchAmount?: boolean;
 }
-export interface DateField extends Base {
+interface DateField extends Base {
   type: "date" | "daterange";
 }
-export interface SelectOption {
+interface SelectOption {
   value: string;
   label: string;
 }
-export interface SelectField extends Base {
+interface SelectField extends Base {
   type: "select" | "multiselect";
   options: SelectOption[];
   default?: string | string[];
 }
-export interface RefField extends Base {
+interface RefField extends Base {
   type: "user" | "dept";
   multiple?: boolean;
 }
@@ -77,10 +60,10 @@ export interface TableField extends Base {
   minRows?: number;
   maxRows?: number;
 }
-export interface RichTextField extends Base {
+interface RichTextField extends Base {
   type: "richtext";
 }
-export interface AttachmentField extends Base {
+interface AttachmentField extends Base {
   type: "attachment";
   maxFiles?: number;
 }
@@ -100,7 +83,7 @@ export interface FormSchema {
   fields: FormField[];
 }
 
-export const MAX_FIELDS = 100;
+const MAX_FIELDS = 100;
 const KEY = /^[a-z][a-zA-Z0-9_]{0,39}$/;
 const MAX_PATTERN_LENGTH = 200;
 /** (a+)+ 처럼 괄호 안의 반복이 다시 반복되는 정규식은 처리 시간이 폭증할 수 있어 막는다 */

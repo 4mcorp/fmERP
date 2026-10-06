@@ -1,6 +1,7 @@
 // 새 회사의 조직 기본값 설치. 계정 생성 API가 호출자(합성 루트)에게서 주입받는다
-import { DEFAULT_POSITIONS } from "@fmerp/core";
+
 import { type Db, type Executor, schema } from "@fmerp/db";
+import { DEFAULT_POSITIONS } from "@fmerp/shared/domain/org-defaults";
 import { and, eq } from "drizzle-orm";
 
 /** 직위 마스터 기본값 (ORG-030). 첫 사업자 등록은 온보딩 화면이 안내한다 (ORG-002) */

@@ -1,6 +1,9 @@
 // 결재 완료 PDF용 HTML (PRD APV-063·APV-007). 순수 함수이며 사용자 입력은 모두 이스케이프한다.
 // 실제 PDF 변환(Playwright)은 worker가 이 HTML을 받아 한다.
-import { type FormField, type FormSchema, type PersonCard, tableSums } from "@fmerp/core";
+
+import type { PersonCard } from "@fmerp/shared/domain/completion-package";
+import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
+import { tableSums } from "@fmerp/shared/domain/form-values";
 
 export interface PdfApprover {
   stepId: string;

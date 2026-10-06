@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormSchema } from "@fmerp/core";
+import type { FormSchema } from "@fmerp/shared/domain/form-schema";
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import {
   useBusinesses,

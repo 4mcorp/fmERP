@@ -1,8 +1,8 @@
 // 문서 검색 (PRD APV-082): 제목·문서번호·본문·첨부 파일명 글자 검색과 기안자·부서·양식·기간·상태·금액 조건.
 // 결과는 열람 권한으로 거른다 (PERM-003). 부분 일치는 pg_trgm GIN 인덱스를 쓴다.
 
-import type { Actor } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import type { Actor } from "@fmerp/shared/domain/permissions";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { type SQL, sql } from "drizzle-orm";
 import {

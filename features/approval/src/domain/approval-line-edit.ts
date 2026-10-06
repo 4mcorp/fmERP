@@ -19,7 +19,7 @@ interface NewStep {
 
 export type LineEdit = { kind: "add"; step: NewStep } | { kind: "remove"; stepId: string };
 
-import type { LineEditErrorCode } from "@fmerp/core";
+import type { LineEditErrorCode } from "@fmerp/shared/domain/engine-error-code";
 
 export type LineEditResult =
   | {

@@ -1,6 +1,7 @@
 "use client";
 
-import { type FormField, type FormSchema, tableSums } from "@fmerp/core";
+import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
+import { tableSums } from "@fmerp/shared/domain/form-values";
 import type { Department, Member } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
 import { Input } from "@fmerp/shared/ui/input";

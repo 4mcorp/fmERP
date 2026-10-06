@@ -1,7 +1,8 @@
 // PIN 재인증 판정 (AUTH-009, APV-043). 결재·백업·완료 패키지·알림이 같은 이유로 쓰는 공통 규칙이다.
-import { isPinReauthFresh } from "@fmerp/core";
+
 import { type Db, schema, withTenant } from "@fmerp/db";
 import { eq } from "drizzle-orm";
+import { isPinReauthFresh } from "../domain/pin-policy";
 import type { ServerDeps } from "../server/deps";
 import { ApiError, type DepsProvider } from "../server/http";
 

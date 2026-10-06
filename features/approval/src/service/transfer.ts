@@ -1,9 +1,9 @@
 // 결재자 일괄 이관과 장기 미처리 목록 (PRD ADM-005, ORG-036)
 
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
-import { type Actor, can } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { businessTarget } from "@fmerp/shared/authz/org-access";
+import { type Actor, can } from "@fmerp/shared/domain/permissions";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ServiceError } from "@fmerp/shared/server/errors";
 import { eq, sql } from "drizzle-orm";

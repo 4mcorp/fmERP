@@ -1,6 +1,6 @@
-import { can } from "@fmerp/core";
 import { schema, type Tx, withTenant } from "@fmerp/db";
 import { ACCOUNT_TARGET, loadActor } from "@fmerp/shared/authz/org-access";
+import { can } from "@fmerp/shared/domain/permissions";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import { ServiceError } from "@fmerp/shared/server/errors";
 import {

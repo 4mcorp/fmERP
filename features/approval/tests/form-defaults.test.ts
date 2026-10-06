@@ -1,4 +1,6 @@
-import { validateDocNumberRule, validateFormSchema, validateFormValues } from "@fmerp/core";
+import { validateDocNumberRule } from "@fmerp/shared/domain/doc-number";
+import { validateFormSchema } from "@fmerp/shared/domain/form-schema";
+import { validateFormValues } from "@fmerp/shared/domain/form-values";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_FORMS } from "../src/domain/form-defaults";
 

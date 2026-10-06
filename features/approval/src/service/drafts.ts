@@ -1,8 +1,9 @@
 // 기안 본문(S3 리비전)·내용 해시·무결성 확인 (PRD BAK-002, APV-011·016, ADR 0008)
 import { createHash } from "node:crypto";
 import { recordAudit } from "@fmerp/audit";
-import { type FormSchema, validateFormValues } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import type { FormSchema } from "@fmerp/shared/domain/form-schema";
+import { validateFormValues } from "@fmerp/shared/domain/form-values";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { documentPrefix } from "@fmerp/shared/server/document-prefix";
 import { ServiceError } from "@fmerp/shared/server/errors";

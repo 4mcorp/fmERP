@@ -1,11 +1,4 @@
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
-import {
-  GRANT_ROLES,
-  type GrantRole,
-  grantScopeAllowed,
-  SCOPE_TYPES,
-  type ScopeType,
-} from "@fmerp/core";
 import { schema, type Tx, withTenant } from "@fmerp/db";
 import { revokeSessionsInAccount } from "@fmerp/shared/authz/membership";
 import {
@@ -15,6 +8,13 @@ import {
   businessTarget,
   loadActor,
 } from "@fmerp/shared/authz/org-access";
+import {
+  GRANT_ROLES,
+  type GrantRole,
+  grantScopeAllowed,
+  SCOPE_TYPES,
+  type ScopeType,
+} from "@fmerp/shared/domain/permissions";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import { ApiError, type AppRouter, type DepsProvider } from "@fmerp/shared/server/http";
 import { createRoute, z } from "@hono/zod-openapi";

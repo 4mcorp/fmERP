@@ -1,7 +1,11 @@
 import { type AuditRequestContext, recordAudit } from "@fmerp/audit";
-import { evaluateSession, resolveSessionPolicy, shouldTouchSession } from "@fmerp/core";
 import { type Db, schema } from "@fmerp/db";
 import { eq } from "drizzle-orm";
+import {
+  evaluateSession,
+  resolveSessionPolicy,
+  shouldTouchSession,
+} from "../domain/session-policy";
 import { AuthDomainError } from "./errors";
 
 export interface ActiveSession {

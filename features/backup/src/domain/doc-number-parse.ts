@@ -1,4 +1,4 @@
-import { type DocNumberContext, renderForParse } from "@fmerp/core";
+import { type DocNumberContext, renderForParse } from "@fmerp/shared/domain/doc-number";
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

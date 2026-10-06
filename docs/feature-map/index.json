@@ -362,8 +362,8 @@
         "consumes": []
       },
       "contracts": [
-        "core/approval-event",
-        "core/{form-schema,form-values,form-index,doc-number}",
+        "shared/domain/approval-event",
+        "shared/domain/{form-schema,form-values,form-index,doc-number}",
         "shared/contracts/document-access"
       ],
       "tests": {
@@ -773,7 +773,7 @@
       "contracts": [
         "shared/contracts/system-guards",
         "shared/contracts/ops-alerts",
-        "core/completion-package"
+        "shared/domain/completion-package"
       ],
       "tests": {
         "unit": "tests/*.test.ts",
@@ -871,8 +871,8 @@
       },
       "contracts": [
         "shared/contracts/document-access",
-        "core/completion-package",
-        "core/form-schema"
+        "shared/domain/completion-package",
+        "shared/domain/form-schema"
       ],
       "tests": {
         "unit": "tests/*.test.ts",
@@ -1026,7 +1026,7 @@
         "consumes": ["approval_event"]
       },
       "contracts": [
-        "core/approval-event",
+        "shared/domain/approval-event",
         "shared/contracts/ops-alerts",
         "shared/contracts/system-guards"
       ],
@@ -1195,7 +1195,7 @@
         "publishes": [],
         "consumes": []
       },
-      "contracts": ["shared/authz/org-access", "core/{org-defaults,business-number}"],
+      "contracts": ["shared/authz/org-access", "shared/domain/{org-defaults,business-number}"],
       "tests": {
         "unit": "tests/*.test.ts",
         "int": "tests/org.int.test.ts, tests/org-db.int.test.ts",

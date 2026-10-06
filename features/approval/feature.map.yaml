@@ -39,10 +39,10 @@ guards: api/guards                                # requireView — 감사·완�
 tables:
   owns: { generated: true }                       # document·approval_step·form·form_version·attachment·approval_event 등 (P7에서 @owner로 채움)
   reads: [assignment, business, department, duty, position, role_grant]
-events: { publishes: [approval_event], consumes: [] }   # 알림이 읽는다 (core/approval-event 계약)
+events: { publishes: [approval_event], consumes: [] }   # 알림이 읽는다 (shared/domain/approval-event 계약)
 contracts:
-  - core/approval-event                           # 이벤트 형식 (공통 소유)
-  - core/{form-schema,form-values,form-index,doc-number}  # 양식·문서번호 규칙 (공통 소유, 완료·백업도 씀)
+  - shared/domain/approval-event                           # 이벤트 형식 (공통 소유)
+  - shared/domain/{form-schema,form-values,form-index,doc-number}  # 양식·문서번호 규칙 (공통 소유, 완료·백업도 씀)
   - shared/contracts/document-access              # 열람 확인 구현 제공
 tests:
   unit: tests/*.test.ts

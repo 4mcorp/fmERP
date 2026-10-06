@@ -1,5 +1,5 @@
 /** 결재 엔진 공통 타입 (PRD 5.4, GLOSSARY, ADR 0007). 구성원 id는 membership id다. */
-import type { ApprovalEvent } from "@fmerp/core";
+import type { ApprovalEvent } from "@fmerp/shared/domain/approval-event";
 
 export const DOC_STATUSES = [
   "DRAFT",
@@ -116,7 +116,7 @@ export interface ActionRecord {
   at: Date;
 }
 
-import type { EngineErrorCode } from "@fmerp/core";
+import type { EngineErrorCode } from "@fmerp/shared/domain/engine-error-code";
 
 export type { EngineErrorCode };
 

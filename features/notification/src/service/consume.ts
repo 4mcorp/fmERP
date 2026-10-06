@@ -1,7 +1,8 @@
 // 결재 이벤트(outbox) → 인앱 알림 (M8 plan). 이벤트마다 한 트랜잭션에서 알림을 만들고 처리 표시를 남긴다.
 // 같은 이벤트를 두 번 처리해도 알림은 한 번만 생긴다(수신자·dedupe_key 유니크).
-import type { ApprovalEvent } from "@fmerp/core";
+
 import { type Db, schema, withTenant } from "@fmerp/db";
+import type { ApprovalEvent } from "@fmerp/shared/domain/approval-event";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { notificationsForEvent } from "../domain/notification-rules";
 

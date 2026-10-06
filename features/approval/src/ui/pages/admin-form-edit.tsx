@@ -1,6 +1,10 @@
 "use client";
 
-import { type FormField, type FormSchema, validateFormSchema } from "@fmerp/core";
+import {
+  type FormField,
+  type FormSchema,
+  validateFormSchema,
+} from "@fmerp/shared/domain/form-schema";
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { useBusinesses, useDepartments, useMembers } from "@fmerp/shared/lib/queries";
 import type { FormDefinition, SecurityLevel } from "@fmerp/shared/lib/types";

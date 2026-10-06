@@ -1,7 +1,7 @@
 import { type AuditRequestContext, recordAudit } from "@fmerp/audit";
-import { isPinFormatValid, pinLockState, recordPinFailure } from "@fmerp/core";
 import { type Db, schema } from "@fmerp/db";
 import { AuthDomainError } from "@fmerp/shared/authz/errors";
+import { isPinFormatValid, pinLockState, recordPinFailure } from "@fmerp/shared/domain/pin-policy";
 import { hash, verify } from "@node-rs/argon2";
 import { eq } from "drizzle-orm";
 

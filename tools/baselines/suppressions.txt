@@ -6,5 +6,5 @@ features/audit/src/ui/components/audit-trail.tsx:biome-ignore:1
 features/backup/src/domain/backup.ts:biome-ignore:1
 features/org/src/ui/pages/admin-businesses.tsx:biome-ignore:1
 features/org/src/ui/pages/admin-org.tsx:biome-ignore:2
-packages/core/src/file-sniff.ts:biome-ignore:1
+shared/src/domain/file-sniff.ts:biome-ignore:1
 shared/src/ui/modal.tsx:biome-ignore:1

@@ -1,9 +1,10 @@
 // 개인·부서·감사 문서함 (PRD APV-080·081). 결재 대기는 inbox.ts의 listPending이 맡는다.
 // 각 함의 조건은 PERM-003의 열람 범위를 넘지 않는다: 문서함에 보이는 문서는 열 수 있는 문서다.
-import type { Actor } from "@fmerp/core";
-import { can } from "@fmerp/core";
+
 import { schema } from "@fmerp/db";
 import { businessTarget } from "@fmerp/shared/authz/org-access";
+import type { Actor } from "@fmerp/shared/domain/permissions";
+import { can } from "@fmerp/shared/domain/permissions";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { decodeCursor, encodeCursor } from "@fmerp/shared/server/cursor";
 import { ServiceError } from "@fmerp/shared/server/errors";

@@ -1,4 +1,4 @@
-import type { EngineErrorCode, LineEditErrorCode } from "@fmerp/core";
+import type { EngineErrorCode, LineEditErrorCode } from "../domain/engine-error-code";
 
 export type ServiceErrorCode =
   | EngineErrorCode

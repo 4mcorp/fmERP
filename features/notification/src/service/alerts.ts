@@ -1,8 +1,9 @@
 // 운영 알림 (M8 plan 6단계): 월간 접속 기록 점검 누락(AUD-026), 덤프 실패·누락(BAK-005).
 // 결재 이벤트와 달리 사건이 DB 상태로 정해지므로 주기적으로 판정하고, 같은 사건은 dedupe_key로 한 번만 알린다.
-import { type Actor, can, type Grant, type GrantRole } from "@fmerp/core";
+
 import { type Db, schema, withTenant } from "@fmerp/db";
 import type { OpsAlertRules } from "@fmerp/shared/contracts/ops-alerts";
+import { type Actor, can, type Grant, type GrantRole } from "@fmerp/shared/domain/permissions";
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import type { CreatedNotification } from "./consume";
 

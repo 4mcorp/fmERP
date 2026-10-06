@@ -25,7 +25,7 @@ events: { publishes: [], consumes: [] }
 contracts:
   - shared/contracts/system-guards                # requireSystemAdmin은 이 기능이 제공
   - shared/contracts/ops-alerts                   # backupHealth·isSystemAdmin을 운영 알림에 공급 (worker가 주입)
-  - core/completion-package                       # 완료 패키지 형식 (공통 소유)
+  - shared/domain/completion-package                       # 완료 패키지 형식 (공통 소유)
 tests:
   unit: tests/*.test.ts
   int: tests/*.int.test.ts

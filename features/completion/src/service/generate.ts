@@ -1,13 +1,13 @@
 // 완료 패키지 생성 (PRD BAK-003·APV-063, ADR 0009). worker가 호출하고, PDF 변환은 renderPdf로 주입받는다.
 import { recordAudit } from "@fmerp/audit";
+import { type Db, schema, withTenant } from "@fmerp/db";
 import {
   buildApprovalJson,
   buildDocumentJson,
   buildManifest,
   canonicalJson,
-  type FormSchema,
-} from "@fmerp/core";
-import { type Db, schema, withTenant } from "@fmerp/db";
+} from "@fmerp/shared/domain/completion-package";
+import type { FormSchema } from "@fmerp/shared/domain/form-schema";
 import { sha256Hex } from "@fmerp/shared/server/hash";
 import {
   type FinalFile,

@@ -1,7 +1,8 @@
 // 양식 서비스 (PRD APV-001·003~006, ADM-004). 양식 버전은 불변이고 수정은 새 버전이다 (ADR 0008).
 import { recordAudit } from "@fmerp/audit";
-import { type FormSchema, validateDocNumberRule, validateFormSchema } from "@fmerp/core";
 import { schema, type Tx } from "@fmerp/db";
+import { validateDocNumberRule } from "@fmerp/shared/domain/doc-number";
+import { type FormSchema, validateFormSchema } from "@fmerp/shared/domain/form-schema";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, desc, eq, inArray } from "drizzle-orm";

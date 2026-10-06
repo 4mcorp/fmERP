@@ -1,8 +1,8 @@
 // 감사 로그 조회(AUD-025)와 월간 접속 기록 점검(AUD-026). 전체 로그는 계정 범위 `audit.read` 보유자만 본다.
 import { recordAudit } from "@fmerp/audit";
-import { type Actor, can } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { ACCOUNT_TARGET, authorize } from "@fmerp/shared/authz/org-access";
+import { type Actor, can } from "@fmerp/shared/domain/permissions";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { decodeCursor, encodeCursor } from "@fmerp/shared/server/cursor";
 import { ServiceError } from "@fmerp/shared/server/errors";
