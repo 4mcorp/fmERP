@@ -786,6 +786,11 @@ describe("구성원 상태 (FU-3 경쟁 조건, AUTH-015)", () => {
       patch(multiOwner, `/api/account/members/${a?.userId}`, { status: "left" }),
     ]);
     const statuses = [r1.status, r2.status].sort();
+    // 이 회사는 시험용이다. 다른 시험이 owner-b·multi의 활성 회사로 이 회사를 만나지 않도록 모든 소속을 비활성화해 둔다
+    await authDb.db
+      .update(schema.membership)
+      .set({ status: "left" })
+      .where(eq(schema.membership.accountId, accountId));
     expect(statuses).toEqual([200, 409]);
   });
 });
