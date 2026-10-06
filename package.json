@@ -33,7 +33,8 @@
     "verify": "pnpm lint && pnpm typecheck && pnpm arch:check && pnpm arch:guard",
     "verify:all": "pnpm verify && pnpm test && pnpm test:e2e",
     "arch:boundaries": "tsx tools/src/cli/boundaries.ts",
-    "arch:move": "tsx tools/src/cli/move.ts"
+    "arch:move": "tsx tools/src/cli/move.ts",
+    "feature:check": "tsx tools/src/cli/feature-check.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "~2.5.15",

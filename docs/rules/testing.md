@@ -15,7 +15,7 @@
 - DB 관련 테스트는 목(mock) 대신 실제 PostgreSQL로 실행한다. 테스트 파일 이름은 단위 `*.test.ts`, 통합 `*.int.test.ts`(Vitest `integration` 프로젝트, 먼저 `pnpm env:up`), E2E `apps/web/e2e/*.spec.ts`.
 - globalSetup에서는 `process.env`가 아니라 `project.config.env`를 읽는다 ([ts](../ts/2026-10-03-vitest-globalsetup-env.md)).
 - **통합·E2E 테스트는 테스트 DB(55433)만 쓴다.** 실행마다 초기화(`@fmerp/db/test/reset`)하고 시드 계정을 넣는다. 개발 DB(55432)는 건드리지 않는다 ([ts](../ts/2026-10-03-e2e-dev-server.md)).
-- 로그인이 필요한 테스트는 시드 계정을 쓴다: 통합 테스트는 `apps/web/server/test-client.ts`의 `loginAs(email)`, E2E는 `/dev-login` 화면.
+- 로그인이 필요한 테스트는 시드 계정을 쓴다: 통합 테스트는 `@fmerp/shared/testing/test-client`의 `loginAs(email)`(앱은 `apps/web/server/test-support.ts`가 주입), E2E는 `/dev-login` 화면.
 - DB 오류(권한, RLS)를 확인할 때 drizzle은 PostgreSQL 오류를 `cause`에 감싸므로 `cause.message`로 비교한다 (`m1.int.test.ts`의 `expectPgError`).
 - DB 상태를 바꾸는 E2E에는 `@stateful` 태그를 단다 (모바일 프로젝트에서 제외되어 한 번만 실행됨).
 - 통합 테스트는 파일 실행 순서와 다른 테스트가 남긴 데이터에 의존하지 않는다(같은 코드·같은 구성원의 데이터가 섞일 수 있다). 조회는 자기 데이터로 좁히고, 상태를 바꾸는 테스트는 고유한 코드·사유를 쓴다.

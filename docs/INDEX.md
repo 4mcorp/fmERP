@@ -224,14 +224,14 @@
 | DB 권한·RLS | `packages/db/migrations/0002_grants_rls.sql` |
 | 로컬 개발·테스트 서비스 | `docker-compose.dev.yml`, DB 계정 생성 `docker/postgres/initdb/01-roles.sh` |
 | 테스트 설정 | `vitest.config.ts`(unit·integration 프로젝트), `packages/*/test/global-setup.ts`, 테스트 DB 초기화 `packages/db/test/reset-test-db.ts`, `apps/web/playwright.config.ts`, `apps/web/e2e/`(`test-env.ts`, `global-setup.ts`) |
-| 통합 테스트 로그인 헬퍼 / M1 통합 테스트 | `apps/web/server/test-client.ts` / `apps/web/server/m1.int.test.ts` |
+| 통합 테스트 로그인 헬퍼 / M1 통합 테스트 | `shared/src/testing/test-client.ts`(앱은 `apps/web/server/test-support.ts`가 vitest setupFiles로 주입) / `apps/web/server/m1.int.test.ts` |
 | 린트·Git hook·커밋 규칙 | `biome.json`(core import 제한 포함), `lefthook.yml`, `commitlint.config.mjs` |
 | CI | `.github/workflows/ci.yml` |
 | Claude hook·권한 | `.claude/settings.json`, `.claude/hooks/format-file.mjs` |
 | 덤프·내보내기·복구 (M7) | `packages/backup/src/`(`dump.ts` 덤프, `export.ts` 계정 ZIP, `reindex.ts` 색인 재구성, `rehearse.ts` 복원·리허설, `age.ts` 암호화, `verify.ts` 패키지 검증), 순수 규칙 `packages/core/src/backup.ts`·`doc-number-parse.ts` |
 | 덤프·내보내기 API·화면 | `apps/web/server/system/backups.ts`·`routes/system.ts`(시스템 관리자), `server/account-export.ts`·`routes/exports.ts`(계정 내보내기), 화면 `app/(app)/system/backups`, `app/(app)/admin/backups` |
 | 백업 worker·운영자 CLI | `apps/worker/src/backup-jobs.ts`(스케줄·요청 처리), `backup-config.ts`, `cli/{dump,restore,rehearse,reindex}.ts` (`pnpm backup:*`) |
-| 알림 (M8) | `packages/core/src/notification-rules.ts`(이벤트→수신자·문구), `packages/notification/src/`(`consume.ts` 이벤트→알림, `send.ts` 텔레그램 발송, `link.ts` 연결 토큰·`/start`, `receiver.ts` 폴링·웹훅 어댑터, `telegram-api.ts`), worker `apps/worker/src/notification-jobs.ts`, API `apps/web/server/routes/notifications.ts`·`server/notifications/`, 화면 `app/(app)/notifications`·`components/me/telegram-section.tsx`·`app/(app)/system/telegram`, 스키마 `packages/db/src/schema/notification.ts`, `migrations/0018~0020` |
+| 알림 (M8) — **`features/notification/`** (기능 구조 시범, [계획 12장](plan/2026-10-06-feature-architecture-refactor.md)) | `src/domain/notification-rules.ts`(이벤트→수신자·문구), `src/service/`(`consume.ts` 이벤트→알림, `send.ts` 텔레그램 발송, `link.ts` 연결 토큰·`/start`, `receiver.ts` 폴링·웹훅 어댑터, `telegram-api.ts`, `alerts.ts` 운영 알림, `in-app.ts`·`telegram.ts` API 서비스), `src/api/routes.ts`, `src/jobs/jobs.ts`, `src/ui/{pages,components,queries.ts}`, 테스트 `tests/`, 지도 `feature.map.yaml`. Next 어댑터 `apps/web/app/(app)/{notifications,system/telegram,me}/page.tsx`, 스키마 `packages/db/src/schema/notification.ts`, `migrations/0018~0021`. 검사 `pnpm feature:check notification` |
 | 구조 검사 도구 (기능 구조 전환) | `tools/src/`(`feature-assignment.ts` 배정표, `gates/` 래칫 게이트, `cli/arch-check·guard·boundaries·run-gate·quality-report`), 설정 `.dependency-cruiser.cjs`·`knip.json`·`tsconfig.depcruise.json`·`biome.boundaries.json`(생성), 기준선 `tools/baselines/`, 명령 `pnpm arch:check`·`arch:guard`·`verify`, 파일 이동+import 자동 수정 `pnpm arch:move` |
 | 공통 영역 (기능 구조 전환) | `shared/src/`(`server/` 기반, `authz/`, `ui/`, `lib/`) — 이용 `@fmerp/shared/*`. `packages/db·audit·storage`도 공통 영역으로 취급 |
 | 덤프·내보내기 스키마 | `packages/db/src/schema/backup.ts`, `migrations/0015_backup_tables.sql`, `0016_backup_rls_roles.sql` |
