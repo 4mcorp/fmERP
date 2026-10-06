@@ -1,4 +1,7 @@
 import { registerAuditRoutes } from "@fmerp/feature-audit/api/routes";
+import { requireSystemAdmin } from "@fmerp/feature-backup/api/guards";
+import { registerBackupRoutes } from "@fmerp/feature-backup/api/routes";
+import { registerPackageRoutes } from "@fmerp/feature-completion/api/routes";
 import { registerNotificationRoutes } from "@fmerp/feature-notification/api/routes";
 import { requireStrictReauth } from "@fmerp/shared/authz/reauth";
 import { getEnv } from "@fmerp/shared/server/env";
@@ -15,17 +18,13 @@ import { registerApprovalRoutes } from "./routes/approvals";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerDepartmentRoutes } from "./routes/departments";
 import { registerDocumentRoutes } from "./routes/documents";
-import { registerExportRoutes } from "./routes/exports";
 import { registerFormRoutes } from "./routes/forms";
 import { registerMailboxRoutes } from "./routes/mailbox";
 import { registerMeRoutes } from "./routes/me";
 import { registerMemberRoutes } from "./routes/members";
 import { registerOrgRoutes } from "./routes/org";
-import { registerPackageRoutes } from "./routes/package";
 import { registerRecipientRoutes } from "./routes/recipients";
 import { registerSearchRoutes } from "./routes/search";
-import { registerSystemRoutes } from "./routes/system";
-import { requireSystemAdmin } from "./system/backups";
 
 /** API 요청 본문 최대 크기. 파일은 서명 URL로 저장소에 직접 올리므로 API 본문은 작다 (보안 리뷰 SR-3) */
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -61,8 +60,7 @@ export const app = createApp({
     registerSearchRoutes(router, getServerDeps);
     registerApprovalAdminRoutes(router, getServerDeps);
     registerAuditRoutes(router, getServerDeps, { requireView });
-    registerSystemRoutes(router, getServerDeps);
-    registerExportRoutes(router, getServerDeps);
+    registerBackupRoutes(router, getServerDeps);
     registerNotificationRoutes(router, getServerDeps, { requireSystemAdmin, requireStrictReauth });
   },
 });

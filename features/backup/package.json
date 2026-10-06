@@ -1,0 +1,42 @@
+{
+  "name": "@fmerp/feature-backup",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api/routes": "./src/api/routes.ts",
+    "./api/guards": "./src/api/guards.ts",
+    "./domain/backup": "./src/domain/backup.ts",
+    "./jobs/jobs": "./src/jobs/jobs.ts",
+    "./jobs/config": "./src/jobs/config.ts",
+    "./operator": "./src/operator.ts",
+    "./ui/pages/*": "./src/ui/pages/*.tsx",
+    "./ui/components/*": "./src/ui/components/*.tsx",
+    "./ui/queries": "./src/ui/queries.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fmerp/audit": "workspace:*",
+    "@fmerp/core": "workspace:*",
+    "@fmerp/db": "workspace:*",
+    "@fmerp/shared": "workspace:*",
+    "@fmerp/storage": "workspace:*",
+    "@hono/zod-openapi": "~1.6.3",
+    "@tanstack/react-query": "~5.104.1",
+    "age-encryption": "~0.3.1",
+    "archiver": "~8.0.0",
+    "drizzle-orm": "~0.45.3",
+    "lucide-react": "~1.49.0",
+    "pg": "~8.23.1",
+    "pg-boss": "~12.35.1",
+    "react": "~19.3.0",
+    "sonner": "~2.0.8"
+  },
+  "devDependencies": {
+    "@types/archiver": "~8.0.0",
+    "@types/pg": "~8.23.1",
+    "@types/react": "~19.3.0"
+  }
+}

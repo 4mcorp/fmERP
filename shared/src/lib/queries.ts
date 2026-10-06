@@ -3,7 +3,6 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 import type {
-  AccountExports,
   ApprovalView,
   AttachmentInfo,
   Business,
@@ -21,7 +20,6 @@ import type {
   OrgChart,
   PendingItem,
   RecipientInfo,
-  SystemBackups,
 } from "./types";
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: () => api<Me>("/api/me") });
@@ -110,18 +108,6 @@ export const usePending = (enabled = true) =>
     enabled,
   });
 
-/** 완료 PDF·패키지 생성 상태. 만드는 중이면 몇 초마다 다시 확인한다 (APV-063) */
-export const usePackageStatus = (id: string | undefined, enabled: boolean) =>
-  useQuery({
-    queryKey: ["approval-package", id],
-    queryFn: () =>
-      api<{ status: "NONE" | "PENDING" | "READY" | "FAILED"; readyAt: string | null }>(
-        `/api/approvals/${id}/package`,
-      ),
-    enabled: Boolean(id) && enabled,
-    refetchInterval: (q) => (q.state.data?.status === "PENDING" ? 4000 : false),
-  });
-
 /** 참조·수신·공람 대상과 열람·접수·배부 상태 */
 export const useRecipients = (id: string | undefined) =>
   useQuery({
@@ -162,24 +148,4 @@ export const useSystemMe = () =>
   useQuery({
     queryKey: ["system-me"],
     queryFn: () => api<{ systemAdmin: boolean }>("/api/system/me"),
-  });
-
-const ACTIVE = new Set(["QUEUED", "RUNNING"]);
-
-/** DB 덤프 이력. 대기·실행 중인 덤프가 있으면 5초마다 다시 읽는다 */
-export const useSystemBackups = (enabled: boolean) =>
-  useQuery({
-    queryKey: ["system-backups"],
-    queryFn: () => api<SystemBackups>("/api/system/backups"),
-    enabled,
-    refetchInterval: (q) => (q.state.data?.items.some((i) => ACTIVE.has(i.status)) ? 5000 : false),
-  });
-
-/** 계정 내보내기 이력. 만드는 중인 것이 있으면 5초마다 다시 읽는다 */
-export const useAccountExports = (enabled: boolean) =>
-  useQuery({
-    queryKey: ["account-exports"],
-    queryFn: () => api<AccountExports>("/api/account/exports"),
-    enabled,
-    refetchInterval: (q) => (q.state.data?.items.some((i) => ACTIVE.has(i.status)) ? 5000 : false),
   });

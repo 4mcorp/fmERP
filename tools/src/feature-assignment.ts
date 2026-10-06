@@ -44,7 +44,7 @@ const RULES: readonly Rule[] = [
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],
   // Next 페이지 어댑터: 기능의 화면 진입점을 한 줄로 내보낸다 (내 정보는 계정 화면에 알림 조각을 끼운다)
   [
-    /^apps\/web\/app\/\(app\)\/(me|notifications|system\/telegram|admin\/audit|admin\/audit\/review|approval\/\[id\])\/page\.tsx$/,
+    /^apps\/web\/app\/\(app\)\/(me|notifications|system\/telegram|system\/backups|admin\/backups|admin\/audit|admin\/audit\/review|approval\/\[id\])\/page\.tsx$/,
     "composition",
   ],
   [/^apps\/web\/components\/app-shell\.tsx$/, "composition"],
@@ -52,31 +52,16 @@ const RULES: readonly Rule[] = [
   // ── 알림 ── (코드는 features/notification/으로 이동 완료: 경로가 소유자를 알려 준다. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m8\.spec\.ts$/, "notification"],
 
-  // ── 백업·내보내기 ──
-  [/^packages\/backup\//, "backup"],
-  [/^packages\/core\/src\/(backup|doc-number-parse)/, "backup"],
-  [/^apps\/worker\/src\/(backup-|cli\/)/, "backup"],
-  [/^apps\/web\/server\/(system\/|account-export|routes\/(system|exports)\.ts)/, "backup"],
-  [/^apps\/web\/components\/backup\//, "backup"],
-  [/^apps\/web\/app\/\(app\)\/(system\/backups|admin\/backups)\//, "backup"],
+  // ── 백업·내보내기 ── (코드는 features/backup/으로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m7\.spec\.ts$/, "backup"],
 
-  // ── 완료 패키지 ──
-  [/^packages\/completion\//, "completion"],
-  [/^packages\/core\/src\/completion-package/, "completion"],
-  [/^apps\/worker\/src\/(package-jobs|render|fonts|health)/, "completion"],
-  [
-    /^apps\/web\/server\/(routes\/package\.ts|approval\/(package-download|document-storage))/,
-    "completion",
-  ],
-  [/^apps\/web\/components\/approval\/completion-files\.tsx$/, "completion"],
+  // ── 완료 패키지 ── (코드는 features/completion/으로 이동 완료)
 
   // ── 감사 ── (코드는 features/audit/으로 이동 완료. E2E만 남아 있다)
-  [/^packages\/core\/src\/audit-/, "audit"],
-  [/^apps\/web\/server\/(audit\/|routes\/audit\.ts)/, "audit"],
-  [/^apps\/web\/components\/approval\/audit-trail\.tsx$/, "audit"],
-  [/^apps\/web\/app\/\(app\)\/admin\/audit\//, "audit"],
   [/^apps\/web\/e2e\/m6\.spec\.ts$/, "audit"],
+
+  // worker 운영자 CLI·상태 확인 서버: 기능의 진입점을 엮는 합성 루트
+  [/^apps\/worker\/src\/(cli\/|health\.ts$)/, "composition"],
 
   // ── 결재 (엔진 + 양식 + 문서함·검색·수신, 하나의 스코프 — 결정 Q2) ──
   [

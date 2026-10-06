@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { parseDocNumberSeq } from "../../../features/backup/src/domain/doc-number-parse";
 import { renderDocNumber, seriesKey, validateDocNumberRule } from "./doc-number";
-import { parseDocNumberSeq } from "./doc-number-parse";
 
 const ctx = {
   businessCode: "4M",

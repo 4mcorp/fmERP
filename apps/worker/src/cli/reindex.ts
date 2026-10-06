@@ -2,8 +2,9 @@
 //   pnpm backup:reindex --account=<계정 ID> | --all   [--dry-run]
 // 먼저 --dry-run으로 어떤 문서가 되살려지고 어떤 문서가 건너뛰어지는지 확인하세요.
 // 종료 코드: 0 정상, 3 건너뛴 문서가 있음(사람이 확인), 2 인자 오류
-import { reindexAccount } from "@fmerp/backup";
+
 import { createDatabase, schema } from "@fmerp/db";
+import { reindexAccount } from "@fmerp/feature-backup/operator";
 import { ObjectStorage } from "@fmerp/storage";
 import { env } from "../env";
 import { parseArgs } from "./args";

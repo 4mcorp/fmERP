@@ -1,0 +1,38 @@
+{
+  "name": "@fmerp/feature-completion",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api/routes": "./src/api/routes.ts",
+    "./jobs/jobs": "./src/jobs/jobs.ts",
+    "./jobs/render": "./src/jobs/render.ts",
+    "./jobs/fonts": "./src/jobs/fonts.ts",
+    "./ui/components/*": "./src/ui/components/*.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fmerp/audit": "workspace:*",
+    "@fmerp/core": "workspace:*",
+    "@fmerp/db": "workspace:*",
+    "@fmerp/shared": "workspace:*",
+    "@fmerp/storage": "workspace:*",
+    "@hono/zod-openapi": "~1.6.3",
+    "@playwright/test": "~1.63.0",
+    "@tanstack/react-query": "~5.104.1",
+    "archiver": "~8.0.0",
+    "drizzle-orm": "~0.45.3",
+    "lucide-react": "~1.49.0",
+    "pg": "~8.23.1",
+    "pg-boss": "~12.35.1",
+    "react": "~19.3.0",
+    "sonner": "~2.0.8"
+  },
+  "devDependencies": {
+    "@types/archiver": "~8.0.0",
+    "@types/pg": "~8.23.1",
+    "@types/react": "~19.3.0"
+  }
+}

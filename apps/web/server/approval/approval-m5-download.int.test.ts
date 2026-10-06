@@ -1,11 +1,12 @@
 // M5-B3 통합 테스트: 완료 PDF·패키지 다운로드 (BAK-008), 열람 권한·재인증·감사 로그 (실제 DB·S3)
-import { generatePackage } from "@fmerp/completion";
+
+import { createDatabase, schema, withTenant } from "@fmerp/db";
 import {
   loadSeedContext,
   type SeedContext,
   seedCompletedDocument,
-} from "@fmerp/completion/test-support";
-import { createDatabase, schema, withTenant } from "@fmerp/db";
+} from "@fmerp/shared/testing/completed-document";
+import { generateCompletedPackage as generatePackage } from "@fmerp/shared/testing/package-generator";
 import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { ObjectStorage } from "@fmerp/storage";
 import { eq } from "drizzle-orm";

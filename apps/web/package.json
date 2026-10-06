@@ -16,6 +16,8 @@
     "@fmerp/core": "workspace:*",
     "@fmerp/db": "workspace:*",
     "@fmerp/feature-audit": "workspace:*",
+    "@fmerp/feature-backup": "workspace:*",
+    "@fmerp/feature-completion": "workspace:*",
     "@fmerp/feature-home": "workspace:*",
     "@fmerp/feature-notification": "workspace:*",
     "@fmerp/shared": "workspace:*",
@@ -27,7 +29,6 @@
     "@tiptap/pm": "~3.31.4",
     "@tiptap/react": "~3.31.4",
     "@tiptap/starter-kit": "~3.31.4",
-    "archiver": "~8.0.0",
     "dexie": "~4.4.6",
     "drizzle-orm": "~0.45.3",
     "hono": "~4.13.12",
@@ -43,10 +44,8 @@
     "zod": "~4.6.5"
   },
   "devDependencies": {
-    "@fmerp/completion": "workspace:*",
     "@playwright/test": "~1.63.0",
     "@tailwindcss/postcss": "~4.3.3",
-    "@types/archiver": "~8.0.0",
     "@types/react": "~19.3.0",
     "@types/react-dom": "~19.3.0",
     "tailwindcss": "~4.3.3"
