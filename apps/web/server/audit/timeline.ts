@@ -2,18 +2,23 @@
 import { recordAudit } from "@fmerp/audit";
 import { buildTimeline, canInAnyScope } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import type { DocumentAccess, Viewer } from "@fmerp/shared/contracts/document-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { requireView, type Viewer } from "../approval/access";
 
 const MAX_LOGS = 500;
 /** 같은 사용자·문서의 인쇄 기록은 이 시간 안에는 한 번만 남긴다. 추가 전용 로그를 반복 호출로 부풀리지 못하게 한다 */
 const PRINT_LOG_GAP_SECONDS = 5;
 
 /** 문서 이력 타임라인. 열람 권한은 문서 열람과 같다 (감사인·소유자의 열람이면 열람 기록이 남는다) */
-export async function documentTimeline(ctx: ServiceContext, documentId: string, viewer: Viewer) {
-  await requireView(ctx, documentId, viewer);
+export async function documentTimeline(
+  ctx: ServiceContext,
+  documentId: string,
+  viewer: Viewer,
+  access: DocumentAccess,
+) {
+  await access.requireView(ctx, documentId, viewer);
   const { tx } = ctx;
 
   const actorMembership = alias(schema.membership, "actor_membership");
@@ -75,8 +80,13 @@ export async function documentTimeline(ctx: ServiceContext, documentId: string, 
 }
 
 /** 인쇄 기록. 브라우저 인쇄는 서버가 알 수 없어 화면의 인쇄 버튼이 이 호출을 한 뒤 인쇄한다 (AUD-020) */
-export async function recordPrint(ctx: ServiceContext, documentId: string, viewer: Viewer) {
-  await requireView(ctx, documentId, viewer);
+export async function recordPrint(
+  ctx: ServiceContext,
+  documentId: string,
+  viewer: Viewer,
+  access: DocumentAccess,
+) {
+  await access.requireView(ctx, documentId, viewer);
   if (!ctx.userId) return;
   // 동시 요청도 한 번만 통과하도록 직렬화한 뒤 최근 기록을 확인한다
   await ctx.tx.execute(

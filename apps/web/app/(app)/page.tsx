@@ -1,5 +1,6 @@
 "use client";
 
+import { adminEntry } from "@fmerp/shared/lib/admin-nav";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -7,7 +8,6 @@ import { FilePlus2, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useMemo } from "react";
-import { adminEntry } from "@/lib/admin-nav";
 import {
   useCapabilities,
   useCurrentAccount,

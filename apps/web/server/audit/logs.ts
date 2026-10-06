@@ -4,10 +4,10 @@ import { type Actor, can, reviewStatuses, reviewTargetPeriod } from "@fmerp/core
 import { schema } from "@fmerp/db";
 import { ACCOUNT_TARGET, authorize } from "@fmerp/shared/authz/org-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
+import { decodeCursor, encodeCursor } from "@fmerp/shared/server/cursor";
 import { ApprovalError } from "@fmerp/shared/server/errors";
 import { and, desc, eq, gte, lt, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { decodeCursor, encodeCursor } from "../approval/mailbox";
 
 const A = schema.auditLog;
 const MAX_LIMIT = 100;

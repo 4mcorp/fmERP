@@ -1,6 +1,7 @@
 "use client";
 
 import { useUnreadCount } from "@fmerp/feature-notification/ui/queries";
+import { adminEntry } from "@fmerp/shared/lib/admin-nav";
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { cn } from "@fmerp/shared/lib/utils";
 import { Button } from "@fmerp/shared/ui/button";
@@ -30,7 +31,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { adminEntry } from "@/lib/admin-nav";
 import { clearLocalDrafts } from "@/lib/local-drafts";
 import { useCapabilities, useCurrentAccount, useMe, usePending, useSystemMe } from "@/lib/queries";
 import { ROLE_LABEL } from "@/lib/types";

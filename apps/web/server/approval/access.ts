@@ -1,22 +1,13 @@
 import { recordAudit } from "@fmerp/audit";
-import {
-  type Actor,
-  can,
-  canViewDocument,
-  type DocumentViewFacts,
-  type Recipient,
-} from "@fmerp/core";
+import { can, canViewDocument, type DocumentViewFacts, type Recipient } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { businessTarget, departmentTarget } from "@fmerp/shared/authz/org-access";
+import type { Viewer } from "@fmerp/shared/contracts/document-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ApprovalError } from "@fmerp/shared/server/errors";
 import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 
-/** 열람자: 구성원 id와 권한 판정용 Actor */
-export interface Viewer {
-  membershipId: string;
-  actor: Actor;
-}
+export type { Viewer };
 
 /** 양식 버전의 `recipients` 설정에서 참조자가 보기 시작하는 시점을 읽는다. 지정이 없으면 상신 즉시다 */
 function ccVisibleFrom(recipients: unknown): "submit" | "complete" {

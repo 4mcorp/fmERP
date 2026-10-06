@@ -3,6 +3,7 @@ import { getEnv } from "@fmerp/shared/server/env";
 import { requireSameOrigin } from "@fmerp/shared/server/http";
 import { problem } from "@fmerp/shared/server/problem";
 import { bodyLimit } from "hono/body-limit";
+import { requireView } from "./approval/access";
 import { createApp } from "./create-app";
 import { getServerDeps } from "./deps";
 import { registerAccountRoutes } from "./routes/account";
@@ -58,7 +59,7 @@ export const app = createApp({
     registerPackageRoutes(router, getServerDeps);
     registerSearchRoutes(router, getServerDeps);
     registerApprovalAdminRoutes(router, getServerDeps);
-    registerAuditRoutes(router, getServerDeps);
+    registerAuditRoutes(router, getServerDeps, { requireView });
     registerSystemRoutes(router, getServerDeps);
     registerExportRoutes(router, getServerDeps);
     registerNotificationRoutes(router, getServerDeps, { requireSystemAdmin, requireStrictReauth });

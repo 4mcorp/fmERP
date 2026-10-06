@@ -1,5 +1,6 @@
 import { withTenant } from "@fmerp/db";
 import { loadActor } from "@fmerp/shared/authz/org-access";
+import type { DocumentAccess } from "@fmerp/shared/contracts/document-access";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
   type AppRouter,
@@ -60,7 +61,8 @@ const ReviewMonthSchema = z.object({
 });
 
 /** 감사 기능: 문서 이력 타임라인·인쇄 기록, 감사 로그 조회, 월간 점검 (PRD AUD-011·020·025·026) */
-export function registerAuditRoutes(app: AppRouter, deps: DepsProvider) {
+/** `access`(문서 열람 확인)는 결재 기능이 제공하고 합성 루트가 주입한다 */
+export function registerAuditRoutes(app: AppRouter, deps: DepsProvider, access: DocumentAccess) {
   app.use("/audit-logs", requireSession(deps), requireTenant(deps));
   app.use("/audit-logs/*", requireSession(deps), requireTenant(deps));
 
@@ -79,7 +81,7 @@ export function registerAuditRoutes(app: AppRouter, deps: DepsProvider) {
       const { id } = c.req.valid("param");
       const items = await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
-        return documentTimeline(serviceContext(c, d, tx), id, { membershipId, actor });
+        return documentTimeline(serviceContext(c, d, tx), id, { membershipId, actor }, access);
       });
       return c.json(
         items.map((i) => ({ ...i, at: i.at.toISOString() })),
@@ -103,7 +105,7 @@ export function registerAuditRoutes(app: AppRouter, deps: DepsProvider) {
       const { id } = c.req.valid("param");
       await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
-        await recordPrint(serviceContext(c, d, tx), id, { membershipId, actor });
+        await recordPrint(serviceContext(c, d, tx), id, { membershipId, actor }, access);
       });
       return c.json({ ok: true as const }, 200);
     },
