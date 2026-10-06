@@ -30,6 +30,10 @@ export function readBaseline(name: string): string[] {
   }
 }
 
+export function removeBaseline(name: string): void {
+  fs.rmSync(baselineFile(name), { force: true });
+}
+
 export function writeBaseline(name: string, keys: string[]): void {
   fs.mkdirSync(BASELINE_DIR, { recursive: true });
   fs.writeFileSync(baselineFile(name), keys.length > 0 ? `${keys.join("\n")}\n` : "");
@@ -54,6 +58,25 @@ export interface Evaluation {
   errors: string[];
   added: string[];
   removed: string[];
+}
+
+/**
+ * 엄격 게이트의 평가 (순수 함수): 위반이 하나라도 있으면 실패하고, 남아 있는 기준선 파일이나 0이 아닌 한도도 실패다.
+ * 기준선을 두는 방식으로 위반을 숨길 수 없다.
+ */
+export function evaluateStrict(
+  name: string,
+  baseline: string[],
+  current: string[],
+  limit: number | undefined,
+): Evaluation {
+  const errors: string[] = [];
+  if (current.length > 0)
+    errors.push(`${name}: 위반 ${current.length}건 (엄격 게이트: 0건이어야 합니다. 고치세요)`);
+  if (baseline.length > 0)
+    errors.push(`${name}: 엄격 게이트에 기준선 파일이 있습니다. 삭제하고 위반을 고치세요`);
+  if (limit !== 0) errors.push(`${name}: 한도는 0으로 고정입니다 (현재 ${limit ?? "없음"})`);
+  return { errors, added: current, removed: [] };
 }
 
 /** 한 게이트의 현재 위반을 기준선·한도와 비교한다 (순수 함수) */

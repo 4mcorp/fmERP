@@ -4,6 +4,7 @@ import type { Gate } from "./types";
 /** `.dependency-cruiser.cjs`의 error 규칙 위반 */
 export const depcruiseGate: Gate = {
   name: "depcruise",
+  strict: true,
   description: "dependency-cruiser 규칙 위반 (순환, 경계, 순수성 등)",
   async collect() {
     const { summary } = await cruise();

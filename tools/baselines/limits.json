@@ -1,8 +1,8 @@
 {
   "cross-feature": 0,
-  "depcruise": 1,
+  "depcruise": 0,
   "feature-map": 0,
-  "knip": 11,
+  "knip": 0,
   "shared-to-feature": 0,
   "suppressions": 10,
   "table-ownership": 0,

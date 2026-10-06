@@ -8,6 +8,7 @@ import type { Gate } from "./types";
 
 export const featureMapGate: Gate = {
   name: "feature-map",
+  strict: true,
   description:
     "feature.map.yaml 정합성(파일·화면·어댑터·표 선언)과 docs/feature-map 색인 최신 여부",
   async collect() {

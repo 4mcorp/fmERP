@@ -21,6 +21,7 @@ const CATEGORIES = [
 
 export const knipGate: Gate = {
   name: "knip",
+  strict: true,
   description: "사용되지 않는 파일·export·의존성, 선언되지 않은 의존성 (Knip)",
   async collect() {
     const { stdout, stderr } = await runNode("node_modules/knip/bin/knip.js", [

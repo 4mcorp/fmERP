@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluate, limitRegressions, normalize } from "../ratchet";
+import { evaluate, evaluateStrict, limitRegressions, normalize } from "../ratchet";
 
 describe("래칫 평가", () => {
   const base = ["a -> b", "c -> d"];
@@ -40,5 +40,30 @@ describe("규칙 약화 감지", () => {
 
   it("새 게이트 추가는 허용한다", () => {
     expect(limitRegressions({ a: 5 }, { a: 5, z: 100 })).toEqual([]);
+  });
+});
+
+describe("엄격 게이트 평가 (P10 하드 전환)", () => {
+  it("위반이 0건이고 기준선이 없고 한도가 0이면 통과한다", () => {
+    expect(evaluateStrict("g", [], [], 0).errors).toEqual([]);
+  });
+
+  it("위반이 하나라도 있으면 실패한다 (기준선·한도로 숨길 수 없다)", () => {
+    expect(evaluateStrict("g", ["a"], ["a"], 1).errors.join()).toContain("엄격 게이트");
+    expect(evaluateStrict("g", [], ["a"], 0).errors.join()).toContain("위반 1건");
+  });
+
+  it("남아 있는 기준선 파일은 위반이 없어도 실패한다", () => {
+    expect(evaluateStrict("g", ["a"], [], 0).errors.join()).toContain("기준선 파일이 있습니다");
+  });
+
+  it("한도가 0이 아니거나 없으면 실패한다 (한도를 올려 우회할 수 없다)", () => {
+    expect(evaluateStrict("g", [], [], 3).errors.join()).toContain("0으로 고정");
+    expect(evaluateStrict("g", [], [], undefined).errors.join()).toContain("0으로 고정");
+  });
+
+  it("규칙 약화 감지: 엄격 게이트의 한도가 0에서 오르면 guard가 잡는다", () => {
+    expect(limitRegressions({ knip: 0 }, { knip: 1 }).join()).toContain("늘었습니다");
+    expect(limitRegressions({ knip: 0 }, {}).join()).toContain("사라졌습니다");
   });
 });

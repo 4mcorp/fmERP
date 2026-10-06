@@ -19,6 +19,7 @@ const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 
 export const tableOwnershipGate: Gate = {
   name: "table-ownership",
+  strict: true,
   description:
     "테이블 @owner 주석·기능의 표 접근(쓰기는 소유 표만, 읽기는 선언)·새 마이그레이션 feature 태그",
   async collect() {
