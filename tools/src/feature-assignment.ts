@@ -38,6 +38,7 @@ const RULES: readonly Rule[] = [
   [/^apps\/worker\/src\/main\.ts$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/layout\.tsx$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],
+  [/^apps\/web\/app\/\(app\)\/me\/page\.tsx$/, "composition"], // 내 정보: 계정 화면에 알림 조각을 끼운다
   [/^apps\/web\/components\/app-shell\.tsx$/, "composition"],
 
   // ── 알림 ──
