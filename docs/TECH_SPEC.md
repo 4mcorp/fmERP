@@ -75,6 +75,10 @@
 | 린트·포맷 | @biomejs/biome | ~2.5.15 |
 | Git hook·커밋 규칙 | lefthook / @commitlint/cli·config-conventional | ~2.1.16 / ~21.2.3 |
 | TS 실행 (worker·스크립트) | tsx | ~4.23.15 |
+| 구조 검사 (기능 경계·순환·순수성) | dependency-cruiser | ~18.5.0 (MIT, [기능 구조 전환 계획](plan/2026-10-06-feature-architecture-refactor.md)) |
+| 미사용 코드·의존성 검사 | knip | ~6.39.0 (ISC) |
+| 중복 코드 탐지 (공용 코드 정리) | jscpd | ~5.4.0 (MIT) |
+| 커버리지 | @vitest/coverage-v8 | ~4.1.11 (vitest와 같은 버전) |
 | UI 보조 (shadcn 설치) | shadcn, class-variance-authority, cn, tw-animate-css, sonner(알림), next-themes | ~4.21.1, ~0.7.1, ~0.4.0, ~1.4.0, ~2.0.8, ~0.4.6 |
 | 로컬 개발 서비스 (Docker) | `postgres:18-bookworm`, `chrislusf/seaweedfs:4.47`(로컬 S3, MinIO 대체), `axllent/mailpit:v1.31`(개발 메일함) | docker-compose.dev.yml |
 | 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |

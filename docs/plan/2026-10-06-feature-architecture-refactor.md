@@ -1,12 +1,12 @@
 ---
 title: 기능(feature) 단위 구조 전환과 정적 분석 강제 체계
 date: 2026-10-06
-status: draft
+status: accepted
 tags: [architecture, lint, ci, refactor, feature-map, eval]
 related: [rules/architecture.md, rules/dependencies.md, TECH_SPEC 4장, M8 plan]
 ---
 
-> 상태: **초안 — 사용자 승인 전.** 이 문서는 계획과 도구 지정만 담는다. 코드는 아직 옮기지 않았고 새 패키지도 설치하지 않았다. 도구 추가는 [rules/dependencies.md](../rules/dependencies.md)에 따라 승인이 필요하다(8장).
+> 상태: **확정(2026-10-06, 사용자가 10장 질문 Q1~Q9에 답함).** 도구 4종은 설치했고(8장) 코드 이전은 아직 시작하지 않았다. 이전은 **세션을 나눠** 진행한다(12장). 세션이 바뀌어도 이 문서 12장의 "다음 세션 시작 지침"만 읽으면 이어갈 수 있게 유지한다.
 
 ## 1. 목적과 원칙
 에이전트의 작업 품질이 흔들려도 **산출물이 동작한다는 믿음이 규칙·스킬이 아니라 실패하는 검사에서 나오게** 한다. 이후 제3의 평가 에이전트가 점수를 매기는 반복 개발 루프(9장)를 얹을 수 있는 바탕이기도 하다.
@@ -57,19 +57,18 @@ features/                         # pnpm 워크스페이스 (기능마다 패키
       api/                        # Hono 라우트 + zod 스키마. routes.ts 가 register 함수를 내보낸다
       ui/                         # pages/ (Next 페이지 본체), components/, queries.ts
       jobs/                       # worker 작업 (있을 때). jobs.ts 가 register 함수를 내보낸다
-      db/schema.ts                # 이 기능의 Drizzle 테이블 조각
     tests/                        # 단위(*.test.ts)·통합(*.int.test.ts)·E2E(*.spec.ts)
 shared/                           # 공통 영역 (@fmerp/shared). 기능이 참조할 수 있는 유일한 외부
-  db/ (client, withTenant, 공통 테이블: account·user·membership·business·audit_log)
+  db/ (= 현 packages/db: Drizzle 스키마 **전체**, client, withTenant, 마이그레이션 — 결정 Q6)
   authz/ (can(), 세션 컨텍스트)  http/ (Hono 공통, problem+json)  audit/ (recordAudit)
   storage/  env/  ui/ (shadcn 기본 컴포넌트)  contracts/ (기능 사이 계약 타입·포트)  testing/
 apps/web/                         # 합성 루트 ①: app/ 은 얇은 어댑터, server/app.ts 가 각 기능의 routes 를 등록
 apps/worker/                      # 합성 루트 ②: main.ts 가 각 기능의 jobs 를 등록
-packages/db/                      # 합성 루트 ③: migrations/ 와 각 기능의 db/schema.ts 를 모은 스키마 색인
+packages/db/                      # 공통 영역의 일부(이름 유지). 스키마·마이그레이션 전부가 여기에 있다
 tools/                            # 자체 검사 도구 (arch-check, feature-map, guard)
 ```
 - Next.js의 `app/` 폴더는 라우트 파일이 있어야 하므로 남기되, `page.tsx`는 `export { default } from "@fmerp/feature-x/ui/pages/…"` 한 줄짜리 어댑터로 만든다. 실제 화면 코드는 기능 폴더에 있다.
-- **합성 루트만** 여러 기능을 import할 수 있다(`apps/web/app`, `apps/web/server/app.ts`, `apps/worker/src/main.ts`, `packages/db` 스키마 색인). 이 파일들은 `features/*`의 지정된 진입점(`routes`, `jobs`, `ui/pages/*`, `db/schema`)만 import한다.
+- **합성 루트만** 여러 기능을 import할 수 있다(`apps/web/app`, `apps/web/server/app.ts`, `apps/worker/src/main.ts`). 이 파일들은 `features/*`의 지정된 진입점(`routes`, `jobs`, `ui/pages/*`)만 import한다.
 
 ### 3.2 의존 방향 (이 표가 곧 검사 규칙이다)
 | from \ to | 같은 기능 | 다른 기능 | `shared` | 합성 루트 | 외부 라이브러리 |
@@ -97,12 +96,17 @@ tools/                            # 자체 검사 도구 (arch-check, feature-ma
 | `approval` | 기안·결재 엔진·양식·문서함·검색·수신 | `server/approval`, `routes/{approvals,documents,forms,mailbox,search,recipients}`, `core/approval-*`, `components/approval`, `app/{approval,mailbox,search}` | 62 | L (**마지막**) |
 | `home` | 홈 대시보드, 앱 셸 | `app/(app)/page.tsx`, `app-shell` | 4 | S |
 
-`approval` 안의 양식·문서함은 서로 얽혀(34건) 한 기능으로 시작하고, 내부는 `approval/src/{engine,forms,mailbox}/`로 폴더를 나누되 내부 경계는 2차 목표로 둔다(10장 Q2).
+`approval` 안의 양식·문서함은 서로 얽혀(34건) **한 기능으로 두고, 하위 영역이 한 스코프를 공유한다**(결정 Q2). 내부는 `approval/src/{engine,forms,mailbox}/`로 폴더를 나눌 수 있지만 이는 읽기 편하라는 뜻일 뿐, 하위 영역 사이에는 경계 검사를 두지 않는다. 분리는 필요가 생길 때 별도 계획으로 한다.
 
-### 3.4 DB와 마이그레이션
-- Drizzle 스키마를 기능별 `db/schema.ts`로 나누고, `packages/db`의 색인이 모아서 `drizzle-kit`에 준다. 마이그레이션 SQL은 **선형 하나**로 유지한다(순서가 의미를 갖기 때문). 새 마이그레이션 첫 줄에 `-- feature: <이름>` 주석을 요구하고 구조 검사기가 확인한다.
-- 여러 기능이 쓰는 테이블(`account`, `user`, `membership`, `business`, `audit_log`)은 `shared/db`에 둔다. 한 기능이 다른 기능의 테이블을 가리키는 외래 키(`document` 등)는 Drizzle 객체 참조 대신 **`uuid` 열 + 마이그레이션 SQL의 `FOREIGN KEY`** 로 정의한다(Q6).
-- 테넌트 격리 테스트(`rules/database.md`)는 기능 폴더의 `tests/`로 옮기고, 새 `account_id` 테이블을 만든 기능에 테스트가 없으면 구조 검사기가 실패시킨다.
+### 3.4 DB와 마이그레이션 (결정 Q6: Drizzle 선언은 공통 영역에 한 번에)
+- Drizzle 스키마(테이블 정의)와 마이그레이션은 **기능별로 나누지 않고 공통 영역(`packages/db`)에 그대로 둔다.** 기능 폴더에 `schema.ts`가 없으므로 기능 간 외래 키도 평소처럼 Drizzle 코드로 선언한다(SQL로 따로 빼는 예외가 없다). 복잡도를 늘리지 않는 방향이다.
+- **대가와 보완:** 스키마가 공통 영역에 있으면 어느 기능이든 다른 기능의 테이블을 `schema.document`처럼 바로 읽고 쓸 수 있다. 파일 import 경계만으로는 이 **데이터 수준의 결합**을 못 막는다. 그래서 **테이블 소유권 검사**를 `tools/arch-check`에 추가한다.
+  1. 스키마의 모든 테이블 정의에 `@owner <기능|shared>` 주석을 단다(없으면 실패).
+  2. 기능 코드가 `schema.<테이블>`로 접근하는 것을 정적으로 모아(AST) **쓰기**(insert·update·delete)는 소유 테이블과 `shared` 테이블에만 허용한다.
+  3. **읽기**는 소유 테이블, `shared` 테이블, 그리고 `feature.map.yaml`의 `tables.reads`에 **선언한** 다른 기능의 테이블에만 허용한다. 선언하면 지도에 남아 "누가 누구의 데이터를 읽는가"가 드러난다.
+  4. 읽기 선언이 많은 기능은 계약(`shared/contracts`)으로 바꿀 후보로 보고한다.
+- 마이그레이션은 선형 하나로 유지하고, 새 마이그레이션 첫 줄에 `-- feature: <이름>` 주석을 요구한다(영향 범위 추적용, 구조 검사기가 확인).
+- 테넌트 격리 테스트(`rules/database.md`)는 기능 폴더의 `tests/`로 옮기고, 새 `account_id` 테이블의 소유 기능에 격리 테스트가 없으면 구조 검사기가 실패시킨다.
 
 ### 3.5 보존해야 하는 불변 조건
 CLAUDE.md의 불변 조건은 구조가 바뀌어도 같은 강도로 유지한다: 테넌트 격리(`account_id`+RLS), `audit_log` INSERT 전용, `final/` 한 번만 쓰기, **`domain/` 순수성**(지금의 `packages/core` 규칙을 `features/*/src/domain/**`과 `shared/domain/**`에 적용), 비밀정보 금지. 이를 지키는 기존 테스트(통합 418건 중 해당 부분)가 이전 단계마다 그대로 통과해야 한다.
@@ -153,14 +157,16 @@ screens:
       - { role: button, name: "모두 읽음", where: "페이지 우상단 도구줄" }
       - { role: link, name: "알림", where: "앱 헤더 우측 벨", testid: null }
 api: { generated: true }                  # 라우트·핸들러는 코드(OpenAPI)에서 채운다
-tables: { generated: true }               # 이 기능의 db/schema.ts 에서 채운다
+tables:                                   # owns 는 스키마의 @owner 주석에서 채우고, reads 는 사람이 선언한다 (3.4)
+  owns: { generated: true }
+  reads: []
 events: { publishes: [], consumes: [approval_event] }
 contracts: [approval-events]              # 사용하는 shared/contracts
 jobs: [notify.telegram]
 tests: { unit: src/domain, int: tests/*.int.test.ts, e2e: tests/e2e/notification.spec.ts }
 invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토큰은 해시만 저장·1회용"]
 ```
-- `generated: true` 항목은 `pnpm feature:index`가 채우고 사람은 손대지 않는다. 사람이 쓰는 것은 `summary`, `keywords`, `access`, `dom.where` 같은 **의도**뿐이다.
+- `generated: true` 항목(`owns` 포함)은 `pnpm feature:index`가 채우고 사람은 손대지 않는다. 사람이 쓰는 것은 `summary`, `keywords`, `access`, `dom.where` 같은 **의도**뿐이다.
 - 모든 사용자 노출 요소는 `role + 접근 가능한 이름`을 우선 식별자로 쓴다(이미 E2E가 쓰는 방식). 필요할 때만 `data-testid`.
 
 ### 5.2 흐름
@@ -177,13 +183,13 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 | 단계 | 내용 | 완료 기준 (측정 가능) | 크기 |
 |---|---|---|---|
 | P0 기준선 | 결합 측정 스크립트를 `tools/`로 정식화, 기능 배정표 확정, 현재 지표 기록(기능 간 import 수, 파일 수, 억제 주석 수) | 지표가 `docs/`에 기록됨. 이 문서의 1차 추정 대체 | S |
-| P1 도구 골격 | 8장 도구 설치(승인 후), dependency-cruiser·Knip·Biome 오버라이드 생성기 설정, **기준선 래칫으로 CI 연결**, `quality-report.json` 뼈대, CODEOWNERS | CI에서 새 위반이 실패함을 일부러 만든 위반으로 확인. 기준선 = 현재 위반 수 | M |
-| P2 공통 영역 1차 | 이미 공유 성격인 것 이동: `http`·`problem`·`env`·`deps`·`db client/withTenant`·`audit(recordAudit)`·`storage`·`ui/*`·`authz(can)`·`testing`. 이름은 `@fmerp/shared` | `shared` 이외의 어디에도 이 코드의 사본이 없음. 위반 약 30% 감소 예상 | M |
+| P1 도구 골격 | (도구 4종은 설치 완료 — 8장) dependency-cruiser·Knip·Biome 오버라이드 생성기 설정, **기준선 래칫으로 CI 연결**, `quality-report.json` 뼈대, CODEOWNERS | CI에서 새 위반이 실패함을 일부러 만든 위반으로 확인. 기준선 = 현재 위반 수 | M |
+| P2 공통 영역 1차 | 이미 공유 성격인 것 이동: `http`·`problem`·`env`·`deps`·`audit(recordAudit)`·`storage`·`ui/*`·`authz(can)`·`testing`을 `@fmerp/shared`로, `packages/db`는 그대로 공통 영역으로 취급 | `shared` 이외의 어디에도 이 코드의 사본이 없음. 위반 약 30% 감소 예상 | M |
 | P3 시범: `notification` | 기능 패키지 구조 확립: 폴더 이동, Next 어댑터, 합성 루트 등록, `feature.map.yaml`, 테스트 이동. **구조의 템플릿을 여기서 확정** | `notification`의 위반 0건, 기능 격리 검사 통과, 지도 검증 통과 | M |
 | P4 작은 기능 | `audit` → `home` → `backup` → `completion` 순. 기능 간 import는 공통 승격·계약+주입·이벤트로 해소 | 각 기능 위반 0건, 격리 검사 통과 | M×4 |
 | P5 인증·조직 | `account` → `org`. `shared/authz`(역할·권한·세션 컨텍스트)를 먼저 확정해 둘의 상호 import 제거 | 두 기능 위반 0건 | M×2 |
 | P6 `approval` | 가장 큰 덩어리. 내부 `engine/forms/mailbox` 폴더로 나누고, `completion`·`audit`·`notification`이 읽는 문서 구조를 `shared/contracts`로 노출 | `approval` 위반 0건, 전체 기준선 0 | L |
-| P7 DB 스키마 분할 | 기능별 `db/schema.ts`로 분할, 색인, 마이그레이션 `-- feature:` 태그, FK 정책 적용 | `drizzle-kit generate`가 변경 없음을 보고(스키마 동일) | M |
+| P7 테이블 소유권 | 스키마는 그대로 두고 모든 테이블에 `@owner` 주석, 소유권 검사(3.4)와 `tables.reads` 선언, 마이그레이션 `-- feature:` 태그 규칙 | 소유권 위반 0건, `drizzle-kit generate`가 변경 없음을 보고(스키마 동일) | M |
 | P8 지도·스킬 | `feature-map` 도구, `feature:find/index/check/impact`, 스킬, `CLAUDE.md` 압축본 삽입, INDEX 9장 대체 | 지도 검사 CI 통과, 이전 지도와 INDEX 9장 내용 일치 확인 | M |
 | P9 공용 코드 사후 정리 | 7장 절차: 중복·재사용 탐지로 공통 후보를 분류해 `shared`로 승격, 단독 사용 모듈은 역승격 | 7장 기준 충족, 격리 검사 전 기능 통과 | M |
 | P10 하드 전환 | 기준선 파일 삭제, 모든 규칙 `error` 고정, 억제 주석 상한 고정, 규칙 파일 보호 활성화 | 위반 0건, `guard`가 규칙 약화 PR을 막는지 시험으로 확인 | S |
@@ -210,7 +216,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 ### 7.3 "자기 폴더 + 공통 영역만으로 개발 가능" 검증 — 기능 격리 검사
 기능마다 CI에서 **그 기능과 `shared`만 남긴 상태**로 확인한다: (1) 해당 기능 패키지의 `tsc --noEmit`, (2) 단위·통합 테스트. 구현은 기능별 `tsconfig.isolated.json`(`include`가 기능+shared뿐)과 `pnpm --filter @fmerp/feature-x...` 필터이며, 다른 기능이 없어도 통과해야 한다. 이것이 원칙 R2("짧은 경로")의 기계적 증명이다.
 
-## 8. 필요한 도구 (승인 요청)
+## 8. 필요한 도구 (승인됨, 설치 완료)
 [rules/dependencies.md](../rules/dependencies.md) 2장 기준(최근 12개월 배포, 허용 라이선스, peer)으로 2026-10-06에 `npm view`로 확인한 값이다. **TypeScript 6.0과의 호환은 설치 시점에 확인한다(미검증).**
 
 | 도구 | 용도 | 종류 | 버전 | 라이선스 | 마지막 갱신 | 비고 |
@@ -226,6 +232,16 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 | 프로젝트 스킬 `feature-map` | 지도 사용 절차 안내 | 스킬 | – | – | – | 보조 수단 |
 | GitHub CODEOWNERS / 브랜치 보호 | L6 규칙 파일 변경 승인 | 설정 | – | – | – | 저장소 설정은 사람이 한다 |
 
+**설치 결과(2026-10-06, 루트 `devDependencies`, `~` 범위로 고정):** dependency-cruiser ~18.5.0, knip ~6.39.0, jscpd ~5.4.0, @vitest/coverage-v8 ~4.1.11. `strictPeerDependencies`로 peer 충돌 없이 설치됐다. Stryker는 결정 Q4에 따라 P6 이후로 미룬다(설치하지 않음).
+
+**스모크 검증 (TypeScript 6.0.3):**
+| 도구 | 결과 | 메모 |
+|---|---|---|
+| dependency-cruiser | 동작. `apps/web`·`packages` 일부 214모듈·1,090의존을 분석 | ① `tsConfig`에 `apps/web/tsconfig.json`을 주면 `extends: ../../tsconfig.base.json`을 잘못 읽어 실패한다 → **루트에 `@/*` 별칭을 담은 전용 tsconfig**(`extends: ./tsconfig.base.json`)를 두고 쓴다(P1). ② 시험 중 **실제 순환 의존 1건**을 이미 찾았다(`apps/web/server/deps.ts` ↔ `http.ts`; 타입 import 순환일 가능성이 커서 P1에서 `type-only`를 구분한다) |
+| Knip | 동작(설정 없이도). 미사용 파일 3, 미사용 의존성 2, 미사용 export 20, 미사용 타입 8을 보고 | 첫 결과가 곧 P0 기준선 후보. Next 진입점·shadcn 컴포넌트(`components/ui`)의 미사용 export는 오탐이라 설정으로 제외한다. 새로 설치한 `dependency-cruiser`·`jscpd`는 아직 설정 파일이 없어 "미사용"으로 보인다(P1에서 해소) |
+| jscpd | 버전 확인만(`5.4.0`). 본 실행은 P9 | |
+| @vitest/coverage-v8 | 설치만. 기능별 하한은 P1에서 설정 | Vitest ~4.1.11과 같은 버전 |
+
 **검토 후 제외:** `eslint-plugin-boundaries`(7.2.0, MIT) — ESLint 도입이 필요해 Biome 단일 린터 방침과 충돌하고 dependency-cruiser가 같은 역할을 한다. Nx `enforce-module-boundaries` — Nx 도입이 과하다. Steiger/Feature-Sliced Design — 고정된 계층 규칙이 "평평한 기능 + 공통"이라는 요구와 맞지 않아 개념만 참고한다. `ts-arch` — `npm view`로 정보를 얻지 못해 판단 보류.
 
 **승인 후 같이 바꿀 문서:** TECH_SPEC 4장(저장소 구조)·3장(도구 표), [rules/architecture.md](../rules/architecture.md)(의존 방향, 이 문서 3장으로 대체), INDEX(구조·지도), CLAUDE.md(압축 지도, 검증 명령 `pnpm verify`), 새 ADR(구조 결정).
@@ -236,20 +252,48 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 - **반복 루프(개요):** 구현 에이전트 → `pnpm verify:all`(하드 게이트 실패 시 점수 계산 없이 실패 사유만 반환) → 평가 에이전트(지도로 변경 범위 파악 → 사용자 지표 기준 채점) → 임계 점수 미만이면 피드백과 함께 재작업. 루프 상한과 비용 제한, 평가 에이전트 자신의 편향 점검(고정 기준 샘플로 보정)은 별도 계획 문서에서 다룬다.
 - 사용자가 제시할 "성과지표"는 가능한 한 **측정 가능한 값**(테스트 통과율, 커버리지, 변이 점수, 응답 시간, 번들 크기, 접근성 위반 수 등)으로 바꿔 `metrics`에 넣는다. 주관적 항목(가독성 등)은 평가 에이전트의 루브릭으로 분리한다.
 
-## 10. 위험과 결정이 필요한 질문
-| # | 질문 | 제안 |
+## 10. 결정 사항(2026-10-06)과 위험
+| # | 질문 | 결정 |
 |---|---|---|
-| Q1 | 물리 구조: ① 기능별 pnpm 패키지(`features/*`) ② 단일 패키지 안의 폴더 | **① 권장.** 다른 기능을 선언하지 않으면 컴파일에서 막혀 가장 강하다. 대가는 `package.json`·`tsconfig` 8세트와 Next `transpilePackages`·Tailwind `@source`·Vitest 프로젝트 glob 설정. 폴더만으로 하면 린트·dependency-cruiser로만 막힌다 |
-| Q2 | `approval`을 처음부터 `forms`/`mailbox`로 나눌까 | 나누지 않는다(결합 34건). 내부 폴더만 나누고 2차 목표로 분리 |
-| Q3 | ESLint 없이 Biome + dependency-cruiser만 쓴다 | 그렇게 한다 |
-| Q4 | 변이 테스트(Stryker)를 지금 도입할까 | `domain/`이 안정된 P6 이후로 미룬다. Vitest 4.1 호환부터 확인 |
-| Q5 | 기준선 래칫 vs 즉시 error | 래칫 권장(이전 도중에도 후퇴 방지, 마지막에 0으로) |
-| Q6 | 기능 간 FK를 Drizzle 객체 대신 SQL로 정의해도 되는가 | 허용한다. 대신 마이그레이션 SQL에 FK가 있음을 통합 테스트가 확인 |
-| Q7 | Next `app/`의 한 줄 어댑터(`export { default } from …`) 방식 | 허용. `use client`는 기능 쪽 파일에 둔다 |
-| Q8 | M9와의 순서 | M9 전에 P0~P5까지 |
-| Q9 | 이전 규모 | 파일 이동·수정이 대략 300개 규모(추정)라 한 번에 하지 않고 단계별 커밋 |
+| Q1 | 물리 구조 | **기능별 pnpm 패키지(`features/*`)** — 제안대로 |
+| Q2 | `approval` 분할 | **분할하지 않고** 결재의 하위 영역(엔진·양식·문서함)이 **한 스코프를 공유**한다 (3.3) |
+| Q3 | ESLint 도입 | 도입하지 않는다. Biome + dependency-cruiser |
+| Q4 | 변이 테스트 | P6 이후로 보류, Vitest 4.1 호환부터 확인 |
+| Q5 | 기준선 | **래칫** — 현재 위반을 기준선으로 고정하고 단계마다 줄여 마지막에 0 |
+| Q6 | 스키마 | **Drizzle 선언은 공통 영역에서 한 번에**(기능별 분할·SQL 외래 키 예외 없음). 데이터 수준 결합은 **테이블 소유권 검사**로 보완 (3.4) |
+| Q7 | Next `app/` 어댑터 | 한 줄 어댑터 허용 |
+| Q8 | M9와의 순서 | **M9 전에** P0~P5 |
+| Q9 | 진행 방식 | 이전·리팩토링 계획을 완성하고 **단계별로 커밋하며 세션을 나눠** 진행한다 (12장) |
 
-**위험:** ① Next 16 + 워크스페이스 패키지 조합의 빌드 시간·HMR 영향(P3 시범에서 측정) ② 기능 격리 검사가 의존 공유 테스트 데이터(시드)에 막힐 수 있음 → `shared/testing`의 시드 도우미 승격 필요 ③ 계약+주입이 늘면 간접 호출이 많아져 "짧은 경로"가 길어질 수 있음 → 계약은 타입·포트만, 구현은 한 곳에 두고 지도에 기록 ④ 이 문서의 결합 수치는 추정 매핑 기준.
+**위험:** ① Next 16 + 워크스페이스 패키지 조합의 빌드 시간·HMR 영향(P3 시범에서 측정) ② 스키마가 공통 영역에 있으므로 기능이 다른 기능의 테이블을 직접 다룰 위험 → 소유권 검사(3.4)가 막는다. 또 기능 격리 검사가 의존 공유 테스트 데이터(시드)에 막힐 수 있음 → `shared/testing`의 시드 도우미 승격 필요 ③ 계약+주입이 늘면 간접 호출이 많아져 "짧은 경로"가 길어질 수 있음 → 계약은 타입·포트만, 구현은 한 곳에 두고 지도에 기록 ④ 이 문서의 결합 수치는 추정 매핑 기준.
 
 ## 11. 결정·변경 기록
 - 2026-10-06: 초안 작성. 코드·설정·의존성은 바꾸지 않았다. 결합 측정은 임시 스크립트로 했고(저장소에 넣지 않음) P0에서 `tools/`로 정식화한다.
+- 2026-10-06: Q1~Q9 결정 반영. Q6은 제안(SQL 외래 키)과 달리 "스키마를 공통 영역에 한 번에 선언"으로 정해졌고, 그 대가로 테이블 소유권 검사(3.4)를 추가했다. 도구 4종(dependency-cruiser, knip, jscpd, @vitest/coverage-v8) 설치와 스모크 검증을 마쳤다(8장).
+
+## 12. 세션 진행 계획
+한 세션에서는 **완결된 단계만** 끝낸다. 기능 이동이 반쯤 된 채로 세션을 끝내지 않는다(끝내지 못하면 마지막 정상 커밋으로 되돌리고 원인을 기록한다).
+
+| 세션 | 범위 | 끝나는 조건 | 상태 |
+|---|---|---|---|
+| S1 | 계획 확정, 도구 설치·스모크 | 문서·도구 커밋 | **완료 (2026-10-06)** |
+| S2 | P0 기준선 + P1 도구 골격 (+ ADR 0012 작성) | 래칫 기준선으로 CI 연결, 의도적 위반이 CI에서 실패함을 확인, `quality-report.json` 뼈대 | 대기 |
+| S3 | P2 공통 영역 1차 (+ `features/*`·`shared` 워크스페이스 골격) | 공통 코드 사본 0, 기준선 감소 | 대기 |
+| S4 | P3 시범 `notification` | 구조 템플릿 확정, 격리 검사 통과, 빌드 시간·HMR 영향 측정 기록 | 대기 |
+| S5 | P4 `audit`·`home` | 두 기능 위반 0건 | 대기 |
+| S6 | P4 `backup`·`completion` (계약+주입 첫 적용) | 두 기능 위반 0건 | 대기 |
+| S7 | P5 `account`·`org` (`shared/authz` 확정) | **M9 착수 전 완료 목표** | 대기 |
+| S8–S9 | P6 `approval` (가장 큼, 두 세션까지 허용) | `approval` 위반 0건, 전체 기준선 0 | 대기 |
+| S10 | P7 테이블 소유권 + P8 feature map·스킬 | 소유권·지도 검사 CI 통과 | 대기 |
+| S11 | P9 공용 코드 사후 정리 + P10 하드 전환 + 문서 정리(TECH_SPEC 4장·rules/architecture.md·INDEX·CLAUDE.md) | 기준선 파일 삭제, 위반 0, 규칙 우회 방지 확인 | 대기 |
+
+**모든 세션의 공통 규칙**
+1. 시작: 이 12장의 "다음 세션 시작 지침"을 읽고, `git status`가 깨끗한지, `pnpm verify`(P1 이후) 또는 린트·타입·단위가 통과하는지 먼저 확인한다.
+2. 진행: 논리 단위마다 커밋한다. 파일 이동은 `git mv`로 하고 이동과 수정을 **별도 커밋**으로 나눈다(이력 추적).
+3. 종료: ① 공통 완료 조건(6장)을 모두 통과 ② 진행 기록(11장)에 지표(기준선 위반 수, 파일 수, 억제 주석 수)와 결정·발견을 추가 ③ 아래 "다음 세션 시작 지침"을 갱신 ④ 세션 표의 상태를 갱신하고 커밋.
+4. 어떤 세션도 규칙을 약화하지 않는다(기준선 증가, 억제 주석 추가, 규칙 파일 완화 금지). 필요하면 사용자에게 묻는다.
+
+**다음 세션 시작 지침 (S2)**
+- 읽을 것: 이 문서 2·4·6장과 8장의 스모크 메모, `docs/rules/architecture.md`.
+- 할 일: ① `tools/`에 결합 측정 스크립트를 정식화해 P0 지표를 기록한다(로직은 2장 "측정 방법"을 따른다: 경로 규칙으로 기능 배정 → import 해석 → 기능 간 건수) ② 루트에 `@/*` 별칭을 담은 depcruise 전용 tsconfig를 만들고 4.1의 규칙을 `.dependency-cruiser.cjs`로 작성한다(`type-only` 순환 구분 포함) ③ `knip.json`(Next 진입점·shadcn `components/ui` 오탐 제외, 워크스페이스 진입점) ④ 래칫 기준선 파일 생성과 CI 단계 추가 ⑤ `pnpm verify`·`verify:all` 스크립트 ⑥ ADR 0012(구조 결정) 작성.
+- 주의: 이 단계에서는 코드를 옮기지 않는다. 설정과 도구만 추가하고, 기존 위반은 기준선에 고정한다.
