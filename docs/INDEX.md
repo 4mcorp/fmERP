@@ -162,6 +162,7 @@
 | [2026-10-05-m7-security-review.md](plan/2026-10-05-m7-security-review.md) | done | M7 보안 리뷰: 앱 역할이 완료 상태·키를 직접 쓰는 문제(S1~S3)·덤프 멈춤(S4) 수정, 후속 FU-M7-1~3 |
 | [2026-10-05-m8-notifications-home.md](plan/2026-10-05-m8-notifications-home.md) | done | M8 알림·홈·통합 검증: outbox 소비 알림(인앱·이메일), 홈 대시보드, E2E S2~S7, 스테이징 초안 |
 | [2026-10-06-m8-security-review.md](plan/2026-10-06-m8-security-review.md) | done | M8 보안 리뷰: 계정 교차 조회의 이벤트 내용 노출(S1)·연결 완료 미감사(S2)·오류 문구의 매개변수(S3) 수정, 후속 FU-M8-1~5 |
+| [2026-10-06-feature-architecture-refactor.md](plan/2026-10-06-feature-architecture-refactor.md) | draft | 기능(feature) 단위 구조 전환 + 정적 분석 강제 체계(경계 4겹, Knip, feature map, 우회 방지) 계획과 도구 지정. **사용자 승인 대기** |
 
 ---
 
