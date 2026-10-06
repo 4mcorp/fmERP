@@ -35,6 +35,7 @@ export default {
         "ui",
         "worker",
         "infra",
+        "shared",
         "deps",
         "docs",
         "claude",

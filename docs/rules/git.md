@@ -5,7 +5,7 @@
 ## 1. 커밋 메시지
 - 형식: `<type>(<scope>): <한국어 설명>` — 예: `feat(approval): 병렬 합의 완료 조건 추가`
 - type: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
-- scope: `approval`, `org`, `auth`, `audit`, `storage`, `backup`, `notify`, `admin`, `db`, `ui`, `worker`, `infra`, `deps`, `docs`, `claude` (해당 없으면 생략)
+- scope: `approval`, `org`, `auth`, `audit`, `storage`, `backup`, `notify`, `admin`, `db`, `ui`, `worker`, `infra`, `shared`, `deps`, `docs`, `claude` (해당 없으면 생략)
 - 설명은 72자 이내로 쓴다. 본문에는 "왜" 바꿨는지 적고, 관련 PRD ID(예: APV-061)와 ts·plan 파일이 있으면 적는다.
 - 하나의 논리적 변경 = 하나의 커밋.
 
