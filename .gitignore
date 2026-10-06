@@ -46,3 +46,6 @@ Thumbs.db
 
 # Next.js 자동 생성 파일
 next-env.d.ts
+
+# 품질 게이트 결과 (CI가 만든다)
+artifacts/

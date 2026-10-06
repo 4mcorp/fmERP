@@ -25,7 +25,13 @@
     "backup:dump": "pnpm --filter @fmerp/worker backup:dump",
     "backup:restore": "pnpm --filter @fmerp/worker backup:restore",
     "backup:rehearse": "pnpm --filter @fmerp/worker backup:rehearse",
-    "backup:reindex": "pnpm --filter @fmerp/worker backup:reindex"
+    "backup:reindex": "pnpm --filter @fmerp/worker backup:reindex",
+    "arch:check": "tsx tools/src/cli/arch-check.ts",
+    "arch:baseline": "tsx tools/src/cli/arch-check.ts --write",
+    "arch:guard": "tsx tools/src/cli/guard.ts",
+    "quality:report": "tsx tools/src/cli/quality-report.ts",
+    "verify": "pnpm lint && pnpm typecheck && pnpm arch:check && pnpm arch:guard",
+    "verify:all": "pnpm verify && pnpm test && pnpm test:e2e"
   },
   "devDependencies": {
     "@biomejs/biome": "~2.5.15",

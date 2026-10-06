@@ -1,0 +1,20 @@
+{
+  "//": "dependency-cruiser 전용. apps/web/tsconfig.json은 extends 경로를 잘못 읽어서(docs/plan/2026-10-06-feature-architecture-refactor.md 8장) 루트에 따로 둔다. 별칭은 apps/web/tsconfig.json과 같게 유지한다.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ES2024"],
+    "paths": { "@/*": ["apps/web/*"] }
+  },
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "packages/**/*.ts",
+    "tools/**/*.ts",
+    "features/**/*.ts",
+    "features/**/*.tsx",
+    "shared/**/*.ts",
+    "shared/**/*.tsx"
+  ],
+  "exclude": ["**/node_modules", "**/.next"]
+}

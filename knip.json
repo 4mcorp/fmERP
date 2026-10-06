@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "ignore": [".claude/**"],
+  "ignoreDependencies": [
+    "dependency-cruiser",
+    "jscpd",
+    "@vitest/coverage-v8",
+    "@commitlint/config-conventional"
+  ],
+  "ignoreIssues": {
+    "apps/web/components/ui/**": ["files", "exports", "types"]
+  },
+  "workspaces": {
+    ".": {
+      "entry": ["vitest.config.ts", "commitlint.config.mjs"]
+    },
+    "apps/web": {
+      "entry": ["server/test-client.ts", "e2e/**/*.ts", "playwright.config.ts"]
+    },
+    "apps/worker": {
+      "entry": ["src/main.ts", "src/cli/*.ts"]
+    },
+    "tools": {
+      "entry": ["src/cli/*.ts", "src/**/*.test.ts"]
+    }
+  }
+}

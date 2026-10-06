@@ -1,0 +1,10 @@
+apps/web/app/(app)/admin/businesses/page.tsx:biome-ignore:1
+apps/web/app/(app)/admin/forms/[id]/page.tsx:biome-ignore:3
+apps/web/app/(app)/admin/org/page.tsx:biome-ignore:2
+apps/web/components/approval/audit-trail.tsx:biome-ignore:1
+apps/web/components/approval/form-fields.tsx:biome-ignore:4
+apps/web/components/approval/form-view.tsx:biome-ignore:1
+apps/web/components/me/profile-section.tsx:biome-ignore:1
+apps/web/components/ui/modal.tsx:biome-ignore:1
+packages/core/src/backup.ts:biome-ignore:1
+packages/core/src/file-sniff.ts:biome-ignore:1

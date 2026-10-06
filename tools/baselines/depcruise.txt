@@ -1,0 +1,1 @@
+no-circular: packages/db/src/schema/auth.ts -> packages/db/src/schema/tenant.ts -> packages/db/src/schema/auth.ts
