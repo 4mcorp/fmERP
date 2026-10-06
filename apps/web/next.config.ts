@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     "@fmerp/core",
     "@fmerp/db",
     "@fmerp/feature-account",
+    "@fmerp/feature-approval",
     "@fmerp/feature-audit",
     "@fmerp/feature-backup",
     "@fmerp/feature-completion",

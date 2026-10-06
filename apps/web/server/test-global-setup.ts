@@ -1,8 +1,8 @@
 import { createDatabase } from "@fmerp/db";
 import { seedTestAccounts } from "@fmerp/feature-account/seed";
 import { seedTestOrganization } from "@fmerp/feature-account/seed-org";
+import { installDefaultForms } from "@fmerp/feature-approval/provisioning";
 import type { TestProject } from "vitest/node";
-import { installDefaultForms } from "./approval/forms-install";
 
 /** 통합 테스트용 시드 계정을 넣는다 (db의 global-setup이 테이블을 비운 뒤 실행된다). */
 export default async function setup(project: TestProject) {

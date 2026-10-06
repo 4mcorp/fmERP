@@ -1,0 +1,52 @@
+# 기능 지도 초안 (계획 5장). P8에서 형식을 확정하고 CI가 정합성을 검사한다.
+id: approval
+summary: 기안·결재선·결재 처리(승인·반려·합의·보류·회수), 위임·부재, 양식 관리, 문서함·검색·수신(참조), 일괄 이관, 문서 내보내기
+keywords: [결재, 기안, 결재선, 승인, 반려, 합의, 보류, 회수, 대결, 부재, 양식, 문서번호, 문서함, 수신, 참조, 검색, 이관, 첨부, 임시저장]
+access:
+  - { who: 모든 구성원, path: "새 결재 → /approval/new", entry: ui/pages/new-approval }
+  - { who: 모든 구성원, path: "임시저장 → /approval/draft/{id}", entry: ui/pages/draft }
+  - { who: 결재자, path: "결재 대기 → /approval/pending", entry: ui/pages/pending }
+  - { who: 기안자, path: "기안함 → /approval/mine", entry: ui/pages/mine }
+  - { who: 모든 구성원, path: "문서함 → /mailbox, /mailbox/{box}", entry: ui/pages/mailbox }
+  - { who: 모든 구성원, path: "검색 → /search", entry: ui/pages/search }
+  - { who: 모든 구성원, path: "내 정보 → 부재 설정 → /me/absence", entry: ui/pages/absence }
+  - { who: 결재 관리자, path: "관리 콘솔 → 결재 관리 /admin/approvals, 양식 /admin/forms", entry: ui/pages/admin-approvals }
+screens:
+  - { route: /approval/new, file: src/ui/pages/new-approval.tsx }
+  - { route: "/approval/draft/[id]", file: src/ui/pages/draft.tsx }
+  - { route: "/approval/[id]", file: src/ui/components/approval-detail.tsx }   # 감사·완료 파일 조각은 합성 루트가 슬롯으로 끼운다
+  - { route: /approval/pending, file: src/ui/pages/pending.tsx }
+  - { route: /approval/mine, file: src/ui/pages/mine.tsx }
+  - { route: /mailbox, file: src/ui/pages/mailbox-index.tsx }
+  - { route: "/mailbox/[box]", file: src/ui/pages/mailbox.tsx }
+  - { route: /search, file: src/ui/pages/search.tsx }
+  - { route: /me/absence, file: src/ui/pages/absence.tsx }
+  - { route: /admin/approvals, file: src/ui/pages/admin-approvals.tsx }
+  - { route: /admin/forms, file: src/ui/pages/admin-forms.tsx }
+  - { route: "/admin/forms/[id]", file: src/ui/pages/admin-form-edit.tsx }
+adapters:
+  - apps/web/app/(app)/approval/{new,pending,mine}/page.tsx
+  - apps/web/app/(app)/approval/draft/[id]/page.tsx
+  - apps/web/app/(app)/approval/[id]/page.tsx    # PrintButton·DocumentTimeline(audit)·CompletionFiles(completion) 슬롯 주입
+  - apps/web/app/(app)/mailbox/page.tsx, mailbox/[box]/page.tsx, search/page.tsx, me/absence/page.tsx
+  - apps/web/app/(app)/admin/{approvals,forms,forms/[id]}/page.tsx
+api: { generated: true, entry: api/routes }       # registerApprovalApi, registerApprovalSupportApi(검색·결재 관리) — 완료 패키지 라우트가 둘 사이에 등록된다
+provisioning: provisioning                        # installDefaultForms — 계정 생성·시드가 주입받는다
+guards: api/guards                                # requireView — 감사·완료 라우트에 주입 (DocumentAccess 구현)
+tables:
+  owns: { generated: true }                       # document·approval_step·form·form_version·attachment·approval_event 등 (P7에서 @owner로 채움)
+  reads: []
+events: { publishes: [approval_event], consumes: [] }   # 알림이 읽는다 (core/approval-event 계약)
+contracts:
+  - core/approval-event                           # 이벤트 형식 (공통 소유)
+  - core/{form-schema,form-values,form-index,doc-number}  # 양식·문서번호 규칙 (공통 소유, 완료·백업도 씀)
+  - shared/contracts/document-access              # 열람 확인 구현 제공
+tests:
+  unit: tests/*.test.ts
+  int: tests/*.int.test.ts
+  e2e: apps/web/e2e/m4.spec.ts, m5.spec.ts       # E2E는 합성 루트(apps/web/e2e)에 둔다 — 12장 S8 결정
+invariants:
+  - 상신 이후 본문·첨부가 바뀌면 거부한다 (content_changed)
+  - 열람할 수 없는 문서는 존재도 알리지 않는다 (404)
+  - 결재 처리·이관·내려받기는 PIN 재인증을 요구한다
+  - 처리 기록·문서번호 채번은 한 트랜잭션에서 낙관적 잠금과 함께 처리한다

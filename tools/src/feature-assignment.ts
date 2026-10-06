@@ -49,6 +49,10 @@ const RULES: readonly Rule[] = [
     "composition",
   ],
   [/^apps\/web\/app\/(login|dev-login)\/page\.tsx$/, "composition"],
+  [
+    /^apps\/web\/app\/\(app\)\/(approval\/(draft\/\[id\]|mine|new|pending)|mailbox|mailbox\/\[box\]|me\/absence|search|admin\/(approvals|forms|forms\/\[id\]))\/page\.tsx$/,
+    "composition",
+  ],
   [/^apps\/web\/components\/app-shell\.tsx$/, "composition"],
 
   // ── 알림 ── (코드는 features/notification/으로 이동 완료: 경로가 소유자를 알려 준다. E2E만 남아 있다)
@@ -66,19 +70,7 @@ const RULES: readonly Rule[] = [
   [/^apps\/worker\/src\/(cli\/|health\.ts$)/, "composition"],
 
   // ── 결재 (엔진 + 양식 + 문서함·검색·수신, 하나의 스코프 — 결정 Q2) ──
-  [
-    /^packages\/core\/src\/(approval-|delegation|doc-number|step-transfer|document-access|form-)/,
-    "approval",
-  ],
-  [/^apps\/web\/server\/approval\//, "approval"],
-  [
-    /^apps\/web\/server\/routes\/(approvals|approval-admin|documents|forms|mailbox|search|recipients)\.ts$/,
-    "approval",
-  ],
-  [/^apps\/web\/components\/approval\//, "approval"],
-  [/^apps\/web\/lib\/local-drafts\.ts$/, "approval"],
-  [/^apps\/web\/app\/\(app\)\/(approval|mailbox|search|me\/absence)\//, "approval"],
-  [/^apps\/web\/app\/\(app\)\/admin\/(approvals|forms)\//, "approval"],
+  // (코드는 features/approval/로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m(4|5)\.spec\.ts$/, "approval"],
 
   // ── 공통 영역 ──

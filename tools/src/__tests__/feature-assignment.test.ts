@@ -3,12 +3,12 @@ import { isTestFile, ownerOf } from "../feature-assignment";
 
 describe("기능 배정표", () => {
   it.each([
-    ["apps/web/server/approval/service.ts", "approval"],
-    ["apps/web/server/routes/forms.ts", "approval"],
-    ["apps/web/components/approval/line-editor.tsx", "approval"],
-    ["packages/core/src/approval-engine.ts", "approval"],
+    ["features/approval/src/service/service.ts", "approval"],
+    ["features/approval/src/api/forms-routes.ts", "approval"],
+    ["features/approval/src/ui/components/line-editor.tsx", "approval"],
+    ["features/approval/src/domain/approval-engine.ts", "approval"],
     ["packages/core/src/form-schema.ts", "shared"],
-    ["packages/core/src/form-defaults.ts", "approval"],
+    ["features/approval/src/domain/form-defaults.ts", "approval"],
     ["packages/core/src/completion-package.ts", "shared"],
     ["features/notification/src/service/send.ts", "notification"],
     ["apps/web/app/(app)/notifications/page.tsx", "composition"],

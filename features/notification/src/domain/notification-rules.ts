@@ -5,7 +5,7 @@
  * 문서 제목·내용·의견을 넣지 않는다. 고객 데이터가 외부 서비스로 나가지 않게 하기 위함이다.
  * 구성원 id는 membership id다.
  */
-import type { ApprovalEvent } from "../../../../packages/core/src/approval-event";
+import type { ApprovalEvent } from "@fmerp/core";
 
 /** DB의 `notification.kind`(packages/db/src/schema/notification.ts)와 같은 목록이다. 바꾸면 양쪽을 함께 고친다 */
 export const NOTIFICATION_KINDS = [

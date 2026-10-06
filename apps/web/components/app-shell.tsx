@@ -1,5 +1,6 @@
 "use client";
 
+import { clearLocalDrafts } from "@fmerp/feature-approval/ui/local-drafts";
 import { useUnreadCount } from "@fmerp/feature-notification/ui/queries";
 import { adminEntry } from "@fmerp/shared/lib/admin-nav";
 import { api, errorMessage } from "@fmerp/shared/lib/api";
@@ -39,7 +40,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { clearLocalDrafts } from "@/lib/local-drafts";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();

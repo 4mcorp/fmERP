@@ -2,7 +2,7 @@ import { createDatabase } from "@fmerp/db";
 import { resetTestDatabase } from "@fmerp/db/test/reset";
 import { seedTestAccounts } from "@fmerp/feature-account/seed";
 import { seedTestOrganization } from "@fmerp/feature-account/seed-org";
-import { installDefaultForms } from "../server/approval/forms-install";
+import { installDefaultForms } from "@fmerp/feature-approval/provisioning";
 import { e2eEnv } from "./test-env";
 
 /** E2E 전에 테스트 DB를 비우고 시드 계정을 넣는다 (실행마다 같은 상태에서 시작) */

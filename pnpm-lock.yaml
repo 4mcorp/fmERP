@@ -47,9 +47,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@fmerp/audit':
-        specifier: workspace:*
-        version: link:../../packages/audit
       '@fmerp/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -59,6 +56,9 @@ importers:
       '@fmerp/feature-account':
         specifier: workspace:*
         version: link:../../features/account
+      '@fmerp/feature-approval':
+        specifier: workspace:*
+        version: link:../../features/approval
       '@fmerp/feature-audit':
         specifier: workspace:*
         version: link:../../features/audit
@@ -95,21 +95,6 @@ importers:
       '@tanstack/react-query':
         specifier: ~5.104.1
         version: 5.104.1(react@19.3.0)
-      '@tiptap/pm':
-        specifier: ~3.31.4
-        version: 3.31.4
-      '@tiptap/react':
-        specifier: ~3.31.4
-        version: 3.31.4(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.4(@tiptap/pm@3.31.4))(@tiptap/pm@3.31.4)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@tiptap/starter-kit':
-        specifier: ~3.31.4
-        version: 3.31.4
-      dexie:
-        specifier: ~4.4.6
-        version: 4.4.6
-      drizzle-orm:
-        specifier: ~0.45.3
-        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
       hono:
         specifier: ~4.13.12
         version: 4.13.12
@@ -125,9 +110,6 @@ importers:
       react-dom:
         specifier: ~19.3.0
         version: 19.3.0(react@19.3.0)
-      react-hook-form:
-        specifier: ~7.89.0
-        version: 7.89.0(@types/react@19.3.0)(react@19.3.0)
       shadcn:
         specifier: ~4.21.1
         version: 4.21.1(supports-color@7.2.0)(typescript@6.0.3)
@@ -137,9 +119,6 @@ importers:
       tw-animate-css:
         specifier: ~1.4.0
         version: 1.4.0
-      write-excel-file:
-        specifier: ~4.1.1
-        version: 4.1.1
       zod:
         specifier: ~4.6.5
         version: 4.6.5
@@ -241,6 +220,73 @@ importers:
       sonner:
         specifier: ~2.0.8
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
+
+  features/approval:
+    dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../../packages/audit
+      '@fmerp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@fmerp/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
+      '@tiptap/pm':
+        specifier: ~3.31.4
+        version: 3.31.4
+      '@tiptap/react':
+        specifier: ~3.31.4
+        version: 3.31.4(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.4(@tiptap/pm@3.31.4))(@tiptap/pm@3.31.4)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tiptap/starter-kit':
+        specifier: ~3.31.4
+        version: 3.31.4
+      dexie:
+        specifier: ~4.4.6
+        version: 4.4.6
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      hono:
+        specifier: ~4.13.12
+        version: 4.13.12
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      react-hook-form:
+        specifier: ~7.89.0
+        version: 7.89.0(@types/react@19.3.0)(react@19.3.0)
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      write-excel-file:
+        specifier: ~4.1.1
+        version: 4.1.1
+      zod:
+        specifier: ~4.6.5
+        version: 4.6.5
     devDependencies:
       '@types/react':
         specifier: ~19.3.0

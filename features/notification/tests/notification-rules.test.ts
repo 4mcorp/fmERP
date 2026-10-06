@@ -1,5 +1,5 @@
+import type { ApprovalEvent } from "@fmerp/core";
 import { describe, expect, it } from "vitest";
-import type { ApprovalEvent } from "../../../packages/core/src/approval-types";
 import {
   type NotificationContext,
   notificationPath,

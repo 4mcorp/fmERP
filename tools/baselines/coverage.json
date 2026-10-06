@@ -34,5 +34,11 @@
     "statements": 37,
     "functions": 41,
     "branches": 23
+  },
+  "approval": {
+    "lines": 57,
+    "statements": 56,
+    "functions": 42,
+    "branches": 42
   }
 }
