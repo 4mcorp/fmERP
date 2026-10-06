@@ -1,0 +1,37 @@
+# 기능 지도 초안 (계획 5장). P8에서 형식을 확정하고 CI가 정합성을 검사한다.
+id: org
+summary: 사업자·부서·직위·직책·구성원·소속(겸직)·역할 부여, 조직도, 부서 CSV 가져오기·내보내기
+keywords: [조직, 조직도, 부서, 사업자, 직위, 직책, 구성원, 겸직, 발령, 역할, 권한, 초대, 부서 CSV]
+access:
+  - { who: 모든 구성원, path: "조직도 → /org", entry: ui/pages/org }
+  - { who: 관리 권한 보유자, path: "관리 콘솔 → 회사 설정 /admin/settings", entry: ui/pages/admin-settings }
+  - { who: 관리 권한 보유자, path: "관리 콘솔 → 사업자 /admin/businesses", entry: ui/pages/admin-businesses }
+  - { who: 관리 권한 보유자, path: "관리 콘솔 → 조직 /admin/org", entry: ui/pages/admin-org }
+  - { who: 관리 권한 보유자, path: "관리 콘솔 → 구성원 /admin/members", entry: ui/pages/admin-members }
+  - { who: 관리 권한 보유자, path: "관리 콘솔 → 직위·직책 /admin/positions", entry: ui/pages/admin-positions }
+screens:
+  - { route: /org, file: src/ui/pages/org.tsx }
+  - { route: /admin/settings, file: src/ui/pages/admin-settings.tsx }
+  - { route: /admin/businesses, file: src/ui/pages/admin-businesses.tsx }
+  - { route: /admin/org, file: src/ui/pages/admin-org.tsx }
+  - { route: /admin/members, file: src/ui/pages/admin-members.tsx }
+  - { route: /admin/positions, file: src/ui/pages/admin-positions.tsx }
+adapters:
+  - apps/web/app/(app)/org/page.tsx
+  - apps/web/app/(app)/admin/{settings,businesses,org,members,positions}/page.tsx
+api: { generated: true, entry: api/routes }       # registerOrgApi(router, deps) — 계정의 registerAccountApi 뒤에 호출
+tables:
+  owns: { generated: true }                       # business·department·position·duty·assignment 등 (P7에서 @owner로 채움)
+  reads: []
+events: { publishes: [], consumes: [] }
+contracts:
+  - shared/authz/org-access                       # 범위 판정 (공통)
+  - core/{org-defaults,business-number}           # 공통 소유 (계정 시드·회사 만들기도 씀)
+tests:
+  unit: tests/*.test.ts
+  int: tests/org.int.test.ts, tests/org-db.int.test.ts
+  e2e: apps/web/e2e/m2.spec.ts
+invariants:
+  - 부서 뎁스는 계정 설정(maxDeptDepth)을 넘지 못한다
+  - 소유자는 항상 한 명 이상 남는다 (동시 비활성화도 한 명은 남음)
+  - 진행 중 결재가 있는 구성원은 비활성화 전에 이관해야 한다

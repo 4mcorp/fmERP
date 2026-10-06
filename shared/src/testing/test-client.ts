@@ -10,6 +10,11 @@ export function setTestApp(target: TestApp): void {
   app = target;
 }
 
+/** 주입된 시험 앱을 그대로 돌려준다 (loginAs 도우미가 없는 시험이 직접 요청할 때) */
+export function getTestApp(): TestApp {
+  return target();
+}
+
 function target(): TestApp {
   if (!app)
     throw new Error(

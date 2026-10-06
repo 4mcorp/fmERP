@@ -13,11 +13,9 @@ import type {
   DocumentPage,
   FormDetail,
   FormSummary,
-  MasterItem,
   Me,
   Member,
   MineItem,
-  OrgChart,
   PendingItem,
   RecipientInfo,
 } from "./types";
@@ -40,9 +38,6 @@ export const useCapabilities = (enabled: boolean) =>
     enabled,
   });
 
-export const useOrgChart = () =>
-  useQuery({ queryKey: ["org-chart"], queryFn: () => api<OrgChart>("/api/org-chart") });
-
 export const useBusinesses = () =>
   useQuery({ queryKey: ["businesses"], queryFn: () => api<Business[]>("/api/businesses") });
 
@@ -51,12 +46,6 @@ export const useDepartments = () =>
 
 export const useMembers = () =>
   useQuery({ queryKey: ["members"], queryFn: () => api<Member[]>("/api/account/members") });
-
-export const usePositions = () =>
-  useQuery({ queryKey: ["positions"], queryFn: () => api<MasterItem[]>("/api/positions") });
-
-export const useDuties = () =>
-  useQuery({ queryKey: ["duties"], queryFn: () => api<MasterItem[]>("/api/duties") });
 
 // ===== 전자결재 (M4) =====
 export const useForms = (all = false) =>

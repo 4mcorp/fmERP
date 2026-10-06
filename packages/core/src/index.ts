@@ -45,16 +45,6 @@ export {
   type StepType,
 } from "./approval-types";
 export {
-  type AssignmentInput,
-  type AssignmentSnapshot,
-  type AssignmentsCheck,
-  assignmentChanges,
-  isAssignmentActive,
-  pickDraftAssignment,
-  snapshotAssignment,
-  validateAssignments,
-} from "./assignment";
-export {
   isValidBusinessNumber,
   makeBusinessNumber,
   normalizeBusinessNumber,
@@ -81,25 +71,6 @@ export {
   decideDelegate,
   validateDelegation,
 } from "./delegation";
-export {
-  type DepartmentCsvRow,
-  departmentsToCsv,
-  type ImportPlan,
-  MAX_IMPORT_ROWS,
-  type PlannedDepartment,
-  parseCsv,
-  planDepartmentImport,
-} from "./department-csv";
-export {
-  type CreateDepartmentCheck,
-  checkCreateDepartment,
-  checkMaxDepthChange,
-  checkMoveDepartment,
-  type DeptNode,
-  departmentPath,
-  type MaxDepthCheck,
-  type MoveCheck,
-} from "./department-tree";
 export {
   type DocNumberContext,
   type ResetCycle,

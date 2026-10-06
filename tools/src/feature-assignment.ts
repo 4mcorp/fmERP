@@ -45,9 +45,10 @@ const RULES: readonly Rule[] = [
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],
   // Next 페이지 어댑터: 기능의 화면 진입점을 한 줄로 내보낸다 (내 정보는 계정 화면에 알림 조각을 끼운다)
   [
-    /^apps\/web\/app\/\(app\)\/(me|notifications|system\/telegram|system\/backups|admin\/backups|admin\/audit|admin\/audit\/review|approval\/\[id\])\/page\.tsx$/,
+    /^apps\/web\/app\/\(app\)\/(me|notifications|system\/telegram|system\/backups|admin\/backups|admin\/audit|admin\/audit\/review|approval\/\[id\]|invite\/\[token\]|onboarding|org|admin\/(settings|businesses|org|members|positions))\/page\.tsx$/,
     "composition",
   ],
+  [/^apps\/web\/app\/(login|dev-login)\/page\.tsx$/, "composition"],
   [/^apps\/web\/components\/app-shell\.tsx$/, "composition"],
 
   // ── 알림 ── (코드는 features/notification/으로 이동 완료: 경로가 소유자를 알려 준다. E2E만 남아 있다)
@@ -76,7 +77,7 @@ const RULES: readonly Rule[] = [
   ],
   [/^apps\/web\/components\/approval\//, "approval"],
   [/^apps\/web\/lib\/local-drafts\.ts$/, "approval"],
-  [/^apps\/web\/app\/\(app\)\/(approval|mailbox|search)\//, "approval"],
+  [/^apps\/web\/app\/\(app\)\/(approval|mailbox|search|me\/absence)\//, "approval"],
   [/^apps\/web\/app\/\(app\)\/admin\/(approvals|forms)\//, "approval"],
   [/^apps\/web\/e2e\/m(4|5)\.spec\.ts$/, "approval"],
 
@@ -97,22 +98,10 @@ const RULES: readonly Rule[] = [
   [/^tools\//, "shared"],
   [/\.(css|d\.ts)$|^apps\/web\/postcss\.config\.mjs$/, "shared"],
 
-  // ── 계정(로그인·세션·PIN·초대·내 정보) ──
-  [/^packages\/auth\//, "account"],
-  [/^packages\/core\/src\/(session-policy|pin-policy)/, "account"],
-  [/^apps\/web\/server\/routes\/(auth|me|accounts|account|reauth)\.ts$/, "account"],
-  [/^apps\/web\/components\/me\//, "account"],
-  [/^apps\/web\/app\/(login|dev-login)\//, "account"],
-  [/^apps\/web\/app\/\(app\)\/(me|invite|onboarding)\//, "account"],
+  // ── 계정(로그인·세션·PIN·초대·내 정보) ── (코드는 features/account/로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m1\.spec\.ts$/, "account"],
 
-  // ── 조직·권한 ──
-  [/^packages\/core\/src\/(assignment|department-|org-defaults|business-number)/, "org"],
-  [/^apps\/web\/server\/(routes\/(org|departments|members)\.ts|in-flight\.ts)/, "org"],
-  [/^apps\/web\/components\/org\//, "org"],
-  [/^apps\/web\/lib\/(admin-nav|org-tree)\.ts$/, "org"],
-  [/^apps\/web\/app\/\(app\)\/org\//, "org"],
-  [/^apps\/web\/app\/\(app\)\/admin\/(settings|businesses|org|members|positions)\//, "org"],
+  // ── 조직·권한 ── (코드는 features/org/로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m2\.spec\.ts$/, "org"],
 
   // ── 홈 ── (코드는 features/home/으로 이동 완료. app/(app)/page.tsx는 한 줄 어댑터)

@@ -1,6 +1,6 @@
-import { seedTestAccounts } from "@fmerp/auth/seed";
-import { seedTestOrganization } from "@fmerp/auth/seed-org";
 import { createDatabase } from "@fmerp/db";
+import { seedTestAccounts } from "@fmerp/feature-account/seed";
+import { seedTestOrganization } from "@fmerp/feature-account/seed-org";
 import { installDefaultForms } from "./approval/forms-install";
 
 if (process.env.NODE_ENV === "production") {

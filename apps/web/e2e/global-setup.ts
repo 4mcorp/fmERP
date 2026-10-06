@@ -1,7 +1,7 @@
-import { seedTestAccounts } from "@fmerp/auth/seed";
-import { seedTestOrganization } from "@fmerp/auth/seed-org";
 import { createDatabase } from "@fmerp/db";
 import { resetTestDatabase } from "@fmerp/db/test/reset";
+import { seedTestAccounts } from "@fmerp/feature-account/seed";
+import { seedTestOrganization } from "@fmerp/feature-account/seed-org";
 import { installDefaultForms } from "../server/approval/forms-install";
 import { e2eEnv } from "./test-env";
 

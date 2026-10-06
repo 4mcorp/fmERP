@@ -1,0 +1,31 @@
+{
+  "name": "@fmerp/feature-org",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api/routes": "./src/api/routes.ts",
+    "./ui/pages/*": "./src/ui/pages/*.tsx",
+    "./ui/components/*": "./src/ui/components/*.tsx",
+    "./ui/queries": "./src/ui/queries.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fmerp/audit": "workspace:*",
+    "@fmerp/core": "workspace:*",
+    "@fmerp/db": "workspace:*",
+    "@fmerp/shared": "workspace:*",
+    "@hono/zod-openapi": "~1.6.3",
+    "drizzle-orm": "~0.45.3",
+    "@tanstack/react-query": "~5.104.1",
+    "lucide-react": "~1.49.0",
+    "next": "~16.3.8",
+    "react": "~19.3.0",
+    "sonner": "~2.0.8"
+  },
+  "devDependencies": {
+    "@types/react": "~19.3.0"
+  }
+}

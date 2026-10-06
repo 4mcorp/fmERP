@@ -8,7 +8,6 @@ exports:apps/web/server/approval/drafts.ts:sha256Hex
 exports:apps/web/server/approval/export.ts:EXPORT_LIMIT
 exports:apps/web/server/approval/export.ts:toCsv
 exports:apps/web/server/approval/forms.ts:RETENTION_YEARS
-exports:packages/auth/src/auth.ts:SESSION_ABSOLUTE_SECONDS
 exports:shared/src/authz/org-access.ts:memberBusinessTargets
 exports:shared/src/server/http.ts:requireRole
 files:apps/web/server/db.ts:apps/web/server/db.ts

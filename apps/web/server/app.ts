@@ -1,8 +1,10 @@
+import { registerAccountApi } from "@fmerp/feature-account/api/routes";
 import { registerAuditRoutes } from "@fmerp/feature-audit/api/routes";
 import { requireSystemAdmin } from "@fmerp/feature-backup/api/guards";
 import { registerBackupRoutes } from "@fmerp/feature-backup/api/routes";
 import { registerPackageRoutes } from "@fmerp/feature-completion/api/routes";
 import { registerNotificationRoutes } from "@fmerp/feature-notification/api/routes";
+import { registerOrgApi } from "@fmerp/feature-org/api/routes";
 import { requireStrictReauth } from "@fmerp/shared/authz/reauth";
 import { getEnv } from "@fmerp/shared/server/env";
 import { requireSameOrigin } from "@fmerp/shared/server/http";
@@ -12,18 +14,11 @@ import { requireView } from "./approval/access";
 import { installDefaultForms } from "./approval/forms-install";
 import { createApp } from "./create-app";
 import { getServerDeps } from "./deps";
-import { registerAccountRoutes } from "./routes/account";
-import { registerAccountsRoutes } from "./routes/accounts";
 import { registerApprovalAdminRoutes } from "./routes/approval-admin";
 import { registerApprovalRoutes } from "./routes/approvals";
-import { registerAuthRoutes } from "./routes/auth";
-import { registerDepartmentRoutes } from "./routes/departments";
 import { registerDocumentRoutes } from "./routes/documents";
 import { registerFormRoutes } from "./routes/forms";
 import { registerMailboxRoutes } from "./routes/mailbox";
-import { registerMeRoutes } from "./routes/me";
-import { registerMemberRoutes } from "./routes/members";
-import { registerOrgRoutes } from "./routes/org";
 import { registerRecipientRoutes } from "./routes/recipients";
 import { registerSearchRoutes } from "./routes/search";
 
@@ -44,14 +39,9 @@ export const app = createApp({
       "*",
       requireSameOrigin(() => getEnv().BETTER_AUTH_URL),
     );
-    registerAuthRoutes(router, getServerDeps);
-    registerMeRoutes(router, getServerDeps);
-    registerAccountsRoutes(router, getServerDeps, { installDefaultForms });
-    registerAccountRoutes(router, getServerDeps);
+    registerAccountApi(router, getServerDeps, { installDefaultForms });
     // /account/* 인증·테넌트 미들웨어가 먼저 등록된 뒤에 추가한다
-    registerMemberRoutes(router, getServerDeps);
-    registerOrgRoutes(router, getServerDeps);
-    registerDepartmentRoutes(router, getServerDeps);
+    registerOrgApi(router, getServerDeps);
     registerApprovalRoutes(router, getServerDeps);
     registerFormRoutes(router, getServerDeps);
     registerDocumentRoutes(router, getServerDeps);
