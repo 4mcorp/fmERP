@@ -8,3 +8,4 @@ export * from "./mailbox";
 export * from "./notification";
 export * from "./org";
 export * from "./tenant";
+export * from "./user";

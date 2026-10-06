@@ -69,7 +69,7 @@ export async function departmentTarget(tx: Tx, departmentId: string): Promise<Ta
 }
 
 /** 구성원이 소속된 사업자들(유효 소속 기준). 구성원 대상 행위는 이 중 하나라도 권한 범위에 있으면 허용한다 */
-export async function memberBusinessTargets(tx: Tx, membershipId: string): Promise<Target[]> {
+async function memberBusinessTargets(tx: Tx, membershipId: string): Promise<Target[]> {
   const rows = await tx
     .selectDistinct({ businessId: schema.assignment.businessId })
     .from(schema.assignment)

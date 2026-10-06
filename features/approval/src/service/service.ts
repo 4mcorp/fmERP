@@ -24,7 +24,6 @@ import {
 import {
   type ApprovalAction,
   type ApprovalActor,
-  type ApprovalDoc,
   type ApprovalPolicy,
   DEFAULT_POLICY,
   type EngineContext,
@@ -658,5 +657,3 @@ export async function redraftDocument(
   });
   return { documentId: copy.id, supersedes: row.id };
 }
-
-export type { ApprovalDoc };

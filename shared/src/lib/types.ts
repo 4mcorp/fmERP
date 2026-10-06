@@ -3,7 +3,7 @@
 export type Role = "owner" | "admin" | "member";
 export type MemberStatus = "active" | "leave" | "left";
 
-export interface MyAccount {
+interface MyAccount {
   accountId: string;
   name: string;
   role: Role;
@@ -31,7 +31,7 @@ export interface CurrentAccount {
 export type GrantRole = "business_admin" | "approval_admin" | "auditor" | "hr_admin";
 export type ScopeType = "account" | "business" | "department";
 
-export interface MemberAssignment {
+interface MemberAssignment {
   id: string;
   businessId: string;
   businessName: string;
@@ -44,7 +44,7 @@ export interface MemberAssignment {
   isPrimary: boolean;
 }
 
-export interface MemberGrant {
+interface MemberGrant {
   id: string;
   role: GrantRole;
   scopeType: ScopeType;
@@ -269,7 +269,7 @@ export interface FormDetail {
   definition: FormDefinition;
 }
 
-export interface StepAssignee {
+interface StepAssignee {
   membershipId?: string;
   name?: string;
   departmentName?: string | null;

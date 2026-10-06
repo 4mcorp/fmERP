@@ -16,9 +16,9 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth";
 import { createdAt, primaryId, updatedAt } from "./columns";
 import { account, membership } from "./tenant";
+import { user } from "./user";
 
 const accountRef = () =>
   uuid()

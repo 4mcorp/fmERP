@@ -164,12 +164,3 @@ export const requireTenant = (deps: DepsProvider) =>
     c.set("tenant", { accountId: session.activeAccountId, role });
     await next();
   });
-
-export function requireRole(...roles: MembershipRole[]) {
-  return createMiddleware<AppEnv>(async (c, next) => {
-    if (!roles.includes(c.get("tenant").role)) {
-      throw new ApiError(403, "forbidden", "권한이 없습니다");
-    }
-    await next();
-  });
-}

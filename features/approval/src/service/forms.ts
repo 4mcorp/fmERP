@@ -9,7 +9,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import type { DraftLineItem } from "../domain/approval-line";
 import type { ApprovalPolicy } from "../domain/approval-types";
 
-export interface FormNumbering {
+interface FormNumbering {
   rule: string;
   cycle: "year" | "month" | "none";
   at: "submit" | "complete";

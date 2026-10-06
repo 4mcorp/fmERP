@@ -13,8 +13,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth";
 import { createdAt, primaryId } from "./columns";
+import { user } from "./user";
 
 /** 계정별 보안 정책. 비어 있으면 기본값을 쓴다 (PRD AUTH-008) */
 export interface SecurityPolicy {
