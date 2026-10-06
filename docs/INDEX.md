@@ -69,7 +69,7 @@
 | 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
 | 스테이징 구축·배포·Access 절차 (초안, 미검증) | [ops/staging.md](ops/staging.md), `docker-compose.staging.yml`, `apps/web/Dockerfile`, `.env.staging.example` |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
-| 개발용 테스트 계정 목록·비밀번호 | `packages/auth/src/test-accounts.ts` (시드: `pnpm db:seed`) |
+| 개발용 테스트 계정 목록·비밀번호 | `features/account/src/service/test-accounts.ts` (시드: `pnpm db:seed` → `apps/web/server/seed-cli.ts`) |
 | 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
 | M1 보안 리뷰 결과·후속 과제 | plan/2026-10-03-m1-security-review.md |
 | 결재 엔진 규칙(그룹·정족수·반려·후결·대결), 보안 리뷰·후속 과제 | ADR 0007, GLOSSARY.md, plan/2026-10-03-m3-approval-engine.md, plan/2026-10-03-m3-security-review.md |
@@ -211,13 +211,13 @@
 | 결재 엔진 (순수 함수) | `packages/core/src/approval-*.ts`(상태·엔진·결재선 해석·검증), `delegation.ts`, `doc-number.ts` |
 | 결재 서비스·API | `apps/web/server/approval/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `delegation.ts`, `org-snapshot.ts`), `server/routes/approvals.ts` |
 | 결재 스키마·트리거 | `packages/db/src/schema/approval.ts`, `migrations/0005_approval_engine.sql`, `0006_approval_rls_triggers.sql` |
-| 조직·권한 API | `apps/web/server/routes/org.ts`(설정·사업자·직위·직책), `departments.ts`(부서·조직도·CSV), `members.ts`(구성원·소속·발령·역할), `account.ts`(초대·프리셋), 권한 헬퍼 `server/org-access.ts`, 진행 중 결재 검사 지점 `server/in-flight.ts` |
-| 조직 화면 | `apps/web/app/(app)/org`(조직도), `admin/`(settings·businesses·org·members·positions), `components/org/` |
-| 조직 스키마·트리거 | `packages/db/src/schema/org.ts`, `migrations/0003_org_permission.sql`, `0004_org_rls_triggers.sql`, 시드 `packages/auth/src/seed-org.ts` |
+| 조직·권한 — **`features/org/`** | API `src/api/`(`routes.ts` 진입점, `org-routes.ts` 설정·사업자·직위·직책, `departments-routes.ts` 부서·조직도·CSV, `members-routes.ts` 구성원·소속·발령·역할), `src/domain/`(`assignment`·`department-csv`·`department-tree`), `src/service/in-flight.ts`, 화면 `src/ui/{pages,components,queries.ts}`, 테스트 `tests/`. 검사 `pnpm feature:check org` |
+| 조직 화면 어댑터 | `apps/web/app/(app)/org`, `admin/{settings,businesses,org,members,positions}`는 `features/org/src/ui/pages/`를 내보내는 한 줄 어댑터 |
+| 조직 스키마·트리거 | `packages/db/src/schema/org.ts`, `migrations/0003_org_permission.sql`, `0004_org_rls_triggers.sql`, 시드 `features/account/src/seed/seed-org.ts` |
 | DB 스키마·클라이언트 | `packages/db/src/schema/`, `src/client.ts` |
 | 마이그레이션 SQL / 실행 | `packages/db/migrations/`, `src/migrate.ts`(import 경로 `@fmerp/db/migrate`) |
 | S3 어댑터 (write-once 포함) | `packages/storage/src/object-storage.ts` |
-| 인증·계정 | `packages/auth/src/` — `auth.ts`(Better Auth 설정), `session-guard.ts`, `accounts.ts`(계정·초대), `pin.ts`, `me.ts`, `test-accounts.ts`·`seed.ts` |
+| 인증·계정 — **`features/account/`** | `src/service/`(`auth.ts` Better Auth 설정·`authOf`, `accounts.ts` 계정·초대, `pin.ts`, `me.ts`, `dev-login.ts`, `test-accounts.ts`), `src/seed/`(시드 계정·시험 조직), `src/api/`(`routes.ts` 진입점), `src/ui/`(로그인·초대·온보딩·내 정보), 공통 세션 기본기는 `shared/src/authz/`(`errors`·`session-guard`·`membership`·`reauth`). 검사 `pnpm feature:check account` |
 | 감사 로그 기록 | `packages/audit/src/` (`recordAudit`, `computeAuditDiff`) |
 | 감사 조회·타임라인·월간 점검 (M6) — **`features/audit/`** | `src/domain/`(`audit-review.ts`·`audit-timeline.ts`), `src/service/`(`logs.ts`·`timeline.ts`), `src/api/routes.ts`, `src/ui/{pages,components,queries.ts}`(`audit-trail.tsx`는 결재 상세에 슬롯으로 끼움), 테스트 `tests/`, `feature.map.yaml`. 검사 `pnpm feature:check audit` |
 | 세션·PIN 정책 (순수 함수) | `packages/core/src/session-policy.ts`, `pin-policy.ts` |

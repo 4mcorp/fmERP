@@ -44,7 +44,7 @@
 | `pnpm test` | 단위 + 통합 |
 | `pnpm test:e2e` | E2E (Playwright, 최초 1회 `pnpm --filter @fmerp/web exec playwright install chromium`) |
 | `pnpm db:generate` / `pnpm db:migrate` | 마이그레이션 생성 / 적용 |
-| `pnpm db:seed` | 개발용 테스트 계정·회사 생성 (계정 목록: `packages/auth/src/test-accounts.ts`). 소셜 로그인은 마지막 단계(M9)에서 연결 |
+| `pnpm db:seed` | 개발용 테스트 계정·회사 생성 (계정 목록: `features/account/src/service/test-accounts.ts`). 소셜 로그인은 마지막 단계(M9)에서 연결 |
 | `pnpm env:up` / `pnpm env:down` | 로컬 PostgreSQL·SeaweedFS·Mailpit 기동 / 종료 |
 
 커밋하면 lefthook이 변경 파일을 Biome로 검사하고, 커밋 메시지를 commitlint로 검사합니다 ([docs/rules/git.md](docs/rules/git.md)).
