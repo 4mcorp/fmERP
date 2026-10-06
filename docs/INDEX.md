@@ -198,13 +198,14 @@
 | 웹 화면 (App Router) | `apps/web/app/` — 로그인 필요 영역 `app/(app)/`(홈, `me`, `admin/members`, `onboarding`, `invite/[token]`), 테스트 로그인 `app/dev-login` |
 | 홈 대시보드 (M8) | `apps/web/app/(app)/page.tsx` — 결재 대기·진행 중·최근 완료·자주 쓰는 양식 |
 | 앱 공통 레이아웃·계정 전환 메뉴 | `apps/web/components/app-shell.tsx` |
-| 화면 쪽 API 호출·타입 | `apps/web/lib/api.ts`, `lib/types.ts`, `lib/queries.ts` |
-| shadcn 컴포넌트 / 유틸 | `apps/web/components/ui/`, `apps/web/lib/utils.ts` |
+| 화면 쪽 API 호출·타입 | `shared/src/lib/api.ts`, `apps/web/lib/types.ts`, `lib/queries.ts` |
+| shadcn 컴포넌트 / 유틸 | `shared/src/ui/`, `shared/src/lib/utils.ts` (`@fmerp/shared/ui/*`) |
 | API (Hono, `/api/*`) | `apps/web/server/create-app.ts`(기본·헬스), `server/app.ts`(라우트 등록), `server/routes/*.ts`(auth·dev, me, accounts·invitations, account), Next 마운트 `app/api/[[...route]]/route.ts` |
-| API 미들웨어 (세션·테넌트·역할·Origin·IP) | `apps/web/server/http.ts` |
-| 서버 의존성(DB 연결 2개·Better Auth·저장소) | `apps/web/server/deps.ts` |
-| API 에러 형식 (RFC 9457) | `apps/web/server/problem.ts` |
-| 환경 변수 검증 | `apps/web/server/env.ts`, `apps/worker/src/env.ts` |
+| API 미들웨어 (세션·테넌트·역할·Origin·IP) | `shared/src/server/http.ts` |
+| 서버 의존성(DB 연결 2개·Better Auth·저장소) | 타입 `shared/src/server/deps.ts`, 실제 연결(합성 루트) `apps/web/server/deps.ts` |
+| API 에러 형식 (RFC 9457) | `shared/src/server/problem.ts` |
+| 환경 변수 검증 | `shared/src/server/env.ts`, `apps/worker/src/env.ts` |
+| 권한 판정 어댑터(`loadActor`·`authorize`), 서비스 컨텍스트·오류 | `shared/src/authz/org-access.ts`, `shared/src/server/{context,errors,service-context,common}.ts` |
 | worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
 | 도메인 규칙 (결재 엔진 예정) | `packages/core/src/` — 금액 `money.ts`, 사업자번호 `business-number.ts`, 부서 트리 `department-tree.ts`·`department-csv.ts`, 권한 `permissions.ts`(`can()`), 소속 `assignment.ts` |
 | 결재 엔진 (순수 함수) | `packages/core/src/approval-*.ts`(상태·엔진·결재선 해석·검증), `delegation.ts`, `doc-number.ts` |
@@ -231,5 +232,6 @@
 | 덤프·내보내기 API·화면 | `apps/web/server/system/backups.ts`·`routes/system.ts`(시스템 관리자), `server/account-export.ts`·`routes/exports.ts`(계정 내보내기), 화면 `app/(app)/system/backups`, `app/(app)/admin/backups` |
 | 백업 worker·운영자 CLI | `apps/worker/src/backup-jobs.ts`(스케줄·요청 처리), `backup-config.ts`, `cli/{dump,restore,rehearse,reindex}.ts` (`pnpm backup:*`) |
 | 알림 (M8) | `packages/core/src/notification-rules.ts`(이벤트→수신자·문구), `packages/notification/src/`(`consume.ts` 이벤트→알림, `send.ts` 텔레그램 발송, `link.ts` 연결 토큰·`/start`, `receiver.ts` 폴링·웹훅 어댑터, `telegram-api.ts`), worker `apps/worker/src/notification-jobs.ts`, API `apps/web/server/routes/notifications.ts`·`server/notifications/`, 화면 `app/(app)/notifications`·`components/me/telegram-section.tsx`·`app/(app)/system/telegram`, 스키마 `packages/db/src/schema/notification.ts`, `migrations/0018~0020` |
-| 구조 검사 도구 (기능 구조 전환) | `tools/src/`(`feature-assignment.ts` 배정표, `gates/` 래칫 게이트, `cli/arch-check·guard·boundaries·run-gate·quality-report`), 설정 `.dependency-cruiser.cjs`·`knip.json`·`tsconfig.depcruise.json`·`biome.boundaries.json`(생성), 기준선 `tools/baselines/`, 명령 `pnpm arch:check`·`arch:guard`·`verify` |
+| 구조 검사 도구 (기능 구조 전환) | `tools/src/`(`feature-assignment.ts` 배정표, `gates/` 래칫 게이트, `cli/arch-check·guard·boundaries·run-gate·quality-report`), 설정 `.dependency-cruiser.cjs`·`knip.json`·`tsconfig.depcruise.json`·`biome.boundaries.json`(생성), 기준선 `tools/baselines/`, 명령 `pnpm arch:check`·`arch:guard`·`verify`, 파일 이동+import 자동 수정 `pnpm arch:move` |
+| 공통 영역 (기능 구조 전환) | `shared/src/`(`server/` 기반, `authz/`, `ui/`, `lib/`) — 이용 `@fmerp/shared/*`. `packages/db·audit·storage`도 공통 영역으로 취급 |
 | 덤프·내보내기 스키마 | `packages/db/src/schema/backup.ts`, `migrations/0015_backup_tables.sql`, `0016_backup_rls_roles.sql` |

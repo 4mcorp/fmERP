@@ -269,6 +269,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 
 ## 11. 결정·변경 기록
 - 2026-10-06: 초안 작성. 코드·설정·의존성은 바꾸지 않았다. 결합 측정은 임시 스크립트로 했고(저장소에 넣지 않음) P0에서 `tools/`로 정식화한다.
+- 2026-10-06: S3 완료(12장 기록): 공통 영역 1차 이동, arch:move 도구, shared-to-feature 게이트.
 - 2026-10-06: S2 완료(12장 기록): 도구 골격·래칫 기준선·CI 연결·ADR 0012. 이 문서 2장의 임시 수치는 정식 측정으로 대체되었다.
 - 2026-10-06: Q1~Q9 결정 반영. Q6은 제안(SQL 외래 키)과 달리 "스키마를 공통 영역에 한 번에 선언"으로 정해졌고, 그 대가로 테이블 소유권 검사(3.4)를 추가했다. 도구 4종(dependency-cruiser, knip, jscpd, @vitest/coverage-v8) 설치와 스모크 검증을 마쳤다(8장).
 
@@ -279,7 +280,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 |---|---|---|---|
 | S1 | 계획 확정, 도구 설치·스모크 | 문서·도구 커밋 | **완료 (2026-10-06)** |
 | S2 | P0 기준선 + P1 도구 골격 (+ ADR 0012 작성) | 래칫 기준선으로 CI 연결, 의도적 위반이 CI에서 실패함을 확인, `quality-report.json` 뼈대 | **완료 (2026-10-06)** |
-| S3 | P2 공통 영역 1차 (+ `features/*`·`shared` 워크스페이스 골격) | 공통 코드 사본 0, 기준선 감소 | 대기 |
+| S3 | P2 공통 영역 1차 (+ `features/*`·`shared` 워크스페이스 골격) | 공통 코드 사본 0, 기준선 감소 | **완료 (2026-10-06)** |
 | S4 | P3 시범 `notification` | 구조 템플릿 확정, 격리 검사 통과, 빌드 시간·HMR 영향 측정 기록 | 대기 |
 | S5 | P4 `audit`·`home` | 두 기능 위반 0건 | 대기 |
 | S6 | P4 `backup`·`completion` (계약+주입 첫 적용) | 두 기능 위반 0건 | 대기 |
@@ -309,7 +310,14 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 - **검증:** 위반 주입 시험 — 다른 기능을 import하는 새 파일에 `@ts-ignore`를 넣었더니 `cross-feature`(새 위반 1·한도 초과)·`knip`(미사용 파일)·`suppressions`가 모두 실패했다(파일은 되돌림). 한도를 올린 작업 트리는 `arch:guard`가 실패시켰다. `features/`·`shared/`·`apps`·`packages` 경계 규칙 7종과 값/타입 순환 구분은 임시 저장소 시험으로 확인했다. 린트(경고 6건 유지)·타입·단위 372건 통과(기존 327 + tools 45).
 - **계획과 달라진 점·이월:** ① 기능별 **커버리지 하한**은 기능 폴더가 생긴 뒤에야 의미가 있어 S4(시범)로 넘겼다(도구는 설치됨). ② dependency-cruiser가 `apps/web/tsconfig.json`의 `extends`를 못 읽는 문제는 루트 전용 tsconfig로 우회했다(별칭을 두 곳에서 같게 유지해야 한다). ③ `pnpm` 명령을 PATH 없이 쓰는 환경(Windows)에서는 `run-gate`로 감싼 `pnpm …` 명령이 실패한다 — CI(Ubuntu)에서만 쓰는 래퍼다. ④ 부분 스키마 `@owner` 소유권 검사·`feature-map` 도구는 계획대로 P7·P8. ⑤ CI 변경(`.github/workflows/ci.yml`)은 이 PC에서 실행해 보지 못했다(문법과 로컬 명령만 확인) — 첫 push에서 확인한다.
 
-**다음 세션 시작 지침 (S3)**
-- 읽을 것: 이 문서 3.1·3.2·6장 P2·7.2, [ADR 0012](../adr/0012-feature-structure-and-static-enforcement.md), `tools/src/feature-assignment.ts`, 12장 S2 기록. 시작 전 `git status` 깨끗, `pnpm arch:check`·`pnpm arch:guard`·린트·타입·단위 통과 확인(Windows에서 `pnpm`이 없으면 `corepack pnpm@11.28.3`).
-- 할 일(P2 공통 영역 1차 + 워크스페이스 골격): ① `shared/` 패키지(`@fmerp/shared`)와 `features/` 워크스페이스(`pnpm-workspace.yaml`에 `features/*`, `shared`)를 만든다 — 빈 `features/`는 아직 만들지 않는다(S4 시범에서 생성) ② 이미 공통 성격인 것을 옮긴다: `apps/web/server`의 `http`·`problem`·`env`·`deps`·`org-access`(→ `shared/authz`)·`routes/common`·`routes/service-context`, `apps/web/components/ui`, `apps/web/lib`의 `api`·`utils`·`queries` 기반 부분, 시험 도우미(`test-client`) 등. 정확한 목록은 `feature-assignment.ts`의 `shared` 규칙과 7.2의 후보 표를 기준으로 하고, `packages/db`·`packages/audit`·`packages/storage`는 **제자리에 두고** 공통 영역으로 취급한다(`.dependency-cruiser.cjs`의 `shared-must-not-import-features`·`domain-is-pure`가 이들도 shared로 보도록 경로를 확장) ③ 이동은 `git mv` 커밋과 수정 커밋을 분리한다. 옮길 때마다 `feature-assignment.ts`의 경로 규칙을 맞춘다 ④ 끝나면 `pnpm arch:baseline`으로 줄어든 기준선(특히 `knip`·`cross-feature`)을 커밋한다.
-- 주의: 동작은 바꾸지 않는다(통합 418·E2E 53이 안전망). 기준선을 늘리거나 규칙을 느슨하게 바꾸지 않는다. 이동 중 경계가 흐려지는 항목(예: `org-access`가 `approval`·`org` 모두에서 쓰임)은 `shared/authz`로 올리되 계약이 필요한지 기록한다.
+**S3 진행 기록 (2026-10-06)**
+- **만든 것:** `shared/` 워크스페이스(`@fmerp/shared`, `exports`: `./ui/*`→`src/ui/*.tsx`, `./*`→`src/*.ts`)와 `features/*` 워크스페이스 패턴. **이동 도구 `pnpm arch:move`**(`--map 옛=새`, `--dir-map`, `--dry`): 이동 전 위치로 모든 import를 해석해 두고 `git mv` 뒤 새 위치 기준으로 지정자를 다시 쓴다(상대·`@/` 별칭·`@fmerp/shared/*`, 동적 import, `vi.mock`, `import()` 타입 처리, 공통→apps import는 경고). 시험 5건.
+- **옮긴 것 (동작 변경 없음):** `shared/src/server/{http,problem,env,common,service-context,context(←approval/context),errors(←approval/errors),deps(타입)}`, `shared/src/authz/org-access`, `shared/src/ui/*`(shadcn 15개), `shared/src/lib/{api,utils}`. 실제 연결을 만드는 `getServerDeps`는 합성 루트(`apps/web/server/deps.ts`)에 남겼다. UI 의존성(radix-ui·cva·cn·next-themes)은 apps/web에서 shared로 옮겼고 Tailwind `@source`·Next `transpilePackages`·vitest include·`components.json` 별칭을 맞췄다. `packages/db·audit·storage`는 제자리에 두고 공통 영역으로 취급한다.
+- **지표 변화:** 기능 간 import 48→**43**(결재 context/errors를 공통으로 올려 감사·완료→결재 5건 해소), 순환 1, Knip 34(이름 변경만), 억제 주석 10(경로만 변경), 미배정 0. **새 게이트 `shared-to-feature` = 7** — 공통 영역이 기능 코드를 import하는 경계 부채를 따로 센다(배럴은 이름 단위로 풀어 센다): `http.ts`→`@fmerp/auth` 세션 처리 3(`accounts`·`errors`·`session-guard`), `deps.ts`→`auth` 타입 1, `errors.ts`→결재 엔진 오류 코드 2(`ApprovalErrorCode`가 `EngineErrorCode`를 포함), `lib/types.ts`→`form-schema` 1. 해소 방향: 세션·멤버십 기본기는 S7의 `shared/authz`로, 오류는 일반 `ServiceError` + 결재 전용 코드 분리(S8~9), `lib/types.ts`는 기능별로 쪼개 이동.
+- **검증:** 린트(경고 6)·타입(`shared` 포함)·단위 377·`next build`·통합 418 연속 2회·E2E 53(3 건너뜀) 통과, 개발 서버로 홈 화면 확인(스타일 유지), Tailwind가 shared의 클래스를 만드는 것 확인. 위반 한도는 늘지 않았다(`arch:guard`).
+- **발견·이월:** ① `ApprovalError`·`ServiceContext`라는 이름이 결재 특화라 공통 영역에 있는 것이 어색하다 → 이름 일반화(`ServiceError`, `ServiceContext`)는 결재 이전(S8~9)에서 한꺼번에. ② `apps/web/lib/queries.ts`·`types.ts`는 기능별 훅·타입이 섞여 있어 아직 `shared`로 분류만 되어 있다 — 기능을 옮길 때 각 기능으로 쪼갠다(`shared-to-feature` 1건). ③ 커밋 scope에 `shared`를 추가했다(commitlint·git.md). ④ 이 PC에서 `pnpm install --offline`은 공급망 정책 검사 때문에 실패하므로 온라인 설치를 쓴다.
+
+**다음 세션 시작 지침 (S4)**
+- 읽을 것: 이 문서 3.1~3.3·6장 P3·7.3, [ADR 0012](../adr/0012-feature-structure-and-static-enforcement.md), S3 진행 기록, `tools/src/move.ts`. 시작 전 `git status` 깨끗, `pnpm arch:check`·`pnpm arch:guard`·린트·타입·단위 통과 확인(Windows에서 `pnpm`이 없으면 `corepack pnpm@11.28.3`). 새 소스 파일은 `tools/src/feature-assignment.ts`에 규칙이 있어야 한다.
+- 할 일(P3 시범 `notification`): ① `features/notification/`을 만든다 — `package.json`(`@fmerp/feature-notification`, 의존은 `@fmerp/shared`와 외부 라이브러리뿐), `tsconfig.json`, `src/{domain,service,api,ui,jobs}`, `tests/`, `feature.map.yaml` 초안(P8에서 검사). `arch:boundaries`로 `biome.boundaries.json`을 갱신한다 ② `arch:move --dry`로 범위를 확인한 뒤 알림 코드를 옮긴다: `packages/notification`(consume·send·link·receiver·settings·telegram-api·alerts·test-support), `core/notification-rules`(→ `domain`), `worker/notification-jobs`(→ `jobs`), `server/{notifications,routes/notifications.ts}`(→ `service`·`api`), `components/me/telegram-section`·`app/(app)/{notifications,system/telegram}`(→ `ui`, Next `page.tsx`는 한 줄 어댑터) ③ 합성 루트(`apps/web/server/app.ts`, `apps/worker/src/main.ts`, `app/` 어댑터)가 기능의 진입점만 import하게 한다 ④ 기능 간 import(알림→백업·계정·결재·감사, 계정→알림 등)는 공통 승격·계약+주입·이벤트로 푼다 — 어떤 방법을 썼는지 진행 기록에 남긴다(템플릿이 된다) ⑤ **기능 격리 검사**(`tsconfig.isolated.json`로 기능+shared만 타입 검사, 기능 테스트 단독 실행)와 **기능별 커버리지 하한**(`@vitest/coverage-v8`)을 이 기능에서 처음 만든다 ⑥ 빌드 시간·HMR 영향을 측정해 기록한다(S3 전후 `next build` 시간 비교) ⑦ `feature-assignment.ts`에서 `notification` 규칙을 `features/notification/` 경로 규칙으로 정리하고 `pnpm arch:baseline`으로 줄어든 기준선을 커밋한다.
+- 주의: 동작은 바꾸지 않는다(통합 418·E2E 53). 기능 간 호출을 풀면서 **새 공통 코드가 필요하면 shared로 올리되** `shared-to-feature`가 늘지 않게 한다. 이 기능의 구조가 이후 7개 기능의 틀이므로 이름·폴더 규칙을 흔들지 않는다.

@@ -11,7 +11,7 @@
 - 세션 쿠키는 HttpOnly·Secure·SameSite를 쓴다. 비활성화된 구성원의 세션은 즉시 끊는다 (PRD AUTH-008·015).
 - Better Auth가 여는 HTTP 경로 중 감사 로그·업무 규칙을 우회하는 것은 `disabledPaths`로 막고, 같은 기능은 감사 로그를 남기는 자체 API로 제공한다.
 
-## 1-1. API 요청 처리 (apps/web/server/http.ts)
+## 1-1. API 요청 처리 (shared/src/server/http.ts)
 - 미들웨어 순서: 요청 정보 → 본문 크기 제한(1MB) → 동일 출처 검사 → 세션(유휴·절대 만료) → 테넌트(재직 구성원 확인) → 역할 → 핸들러.
 - 감사 로그의 접속 IP는 `trustedIpHeaders()`만 믿는다. 운영은 `CF-Connecting-IP`만 쓰고, 클라이언트가 위조할 수 있는 `X-Forwarded-For`는 개발·테스트에서만 쓴다.
 - 오류는 `AuthDomainError`·`ApiError`를 던지고, 응답은 `onError`가 RFC 9457 형식으로 만든다. 내부 오류 내용은 응답에 넣지 않는다.
