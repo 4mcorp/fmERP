@@ -186,6 +186,7 @@
 | [0009-completion-package-and-document-search.md](adr/0009-completion-package-and-document-search.md) | 완료 패키지는 manifest를 마지막에 쓰는 한 번만 쓰기, 후결은 `post-approvals/`, 상태는 `document_package`, 열람 판정 통합, 검색은 상신 시 본문 텍스트 색인 |
 | [0010-audit-view-log-and-timeline.md](adr/0010-audit-view-log-and-timeline.md) | 감사인 열람은 `read_all` 단독일 때만 10분 중복 억제로 기록(advisory lock), 타임라인은 `approval_action` 정본 병합, 월간 점검은 추가 전용 `audit_review` |
 | [0011-backup-export-and-recovery.md](adr/0011-backup-export-and-recovery.md) | DB 덤프는 시스템 관리자만·서버에는 age 공개키만, 계정 내보내기는 소유자(허용 시 관리자)·worker 스트리밍, 복구는 패키지 형식 v2 `restore` 블록으로 색인 재구성 |
+| [0012-feature-structure-and-static-enforcement.md](adr/0012-feature-structure-and-static-enforcement.md) | 기능 단위 폴더(기능별 패키지)+공통 영역, 기능 간 import 금지를 Biome·dependency-cruiser·Knip·자체 도구로 강제, 래칫 기준선·한도·CODEOWNERS, 스키마는 공통 영역에 한 번에(테이블 소유권 검사) |
 | [0007-approval-engine-rules.md](adr/0007-approval-engine-rules.md) | 결재 엔진은 core 순수 함수, 낙관적 잠금·추가 전용·outbox 저장, 그룹·정족수·반려·후결·대결 규칙 |
 | [0006-org-permission-model.md](adr/0006-org-permission-model.md) | 부서 트리는 구체화 경로+트리거, 역할은 `membership.role` + 범위 있는 `role_grant`, `can()` 한 곳 판정 |
 
@@ -230,4 +231,5 @@
 | 덤프·내보내기 API·화면 | `apps/web/server/system/backups.ts`·`routes/system.ts`(시스템 관리자), `server/account-export.ts`·`routes/exports.ts`(계정 내보내기), 화면 `app/(app)/system/backups`, `app/(app)/admin/backups` |
 | 백업 worker·운영자 CLI | `apps/worker/src/backup-jobs.ts`(스케줄·요청 처리), `backup-config.ts`, `cli/{dump,restore,rehearse,reindex}.ts` (`pnpm backup:*`) |
 | 알림 (M8) | `packages/core/src/notification-rules.ts`(이벤트→수신자·문구), `packages/notification/src/`(`consume.ts` 이벤트→알림, `send.ts` 텔레그램 발송, `link.ts` 연결 토큰·`/start`, `receiver.ts` 폴링·웹훅 어댑터, `telegram-api.ts`), worker `apps/worker/src/notification-jobs.ts`, API `apps/web/server/routes/notifications.ts`·`server/notifications/`, 화면 `app/(app)/notifications`·`components/me/telegram-section.tsx`·`app/(app)/system/telegram`, 스키마 `packages/db/src/schema/notification.ts`, `migrations/0018~0020` |
+| 구조 검사 도구 (기능 구조 전환) | `tools/src/`(`feature-assignment.ts` 배정표, `gates/` 래칫 게이트, `cli/arch-check·guard·boundaries·run-gate·quality-report`), 설정 `.dependency-cruiser.cjs`·`knip.json`·`tsconfig.depcruise.json`·`biome.boundaries.json`(생성), 기준선 `tools/baselines/`, 명령 `pnpm arch:check`·`arch:guard`·`verify` |
 | 덤프·내보내기 스키마 | `packages/db/src/schema/backup.ts`, `migrations/0015_backup_tables.sql`, `0016_backup_rls_roles.sql` |

@@ -31,7 +31,7 @@ related: [rules/architecture.md, rules/dependencies.md, TECH_SPEC 4장, M8 plan]
 | `packages/core` | 30 | 7,374 |
 | 그 밖의 `packages/*`, `apps/worker` | 약 75 | 약 12,000 |
 
-**기능 간 결합(1차 추정):** 97개 import가 33쌍의 기능을 건넌다.
+**기능 간 결합(1차 추정):** 97개 import 문이 33쌍의 기능을 건넌다. (S2에서 `tools/`로 정식화한 측정은 배럴을 이름 단위로 풀고 파일 쌍으로 세어 **48쌍**이 나온다. 아래 표는 처음 추정이고, 정식 기준선은 12장 S2 기록을 따른다.)
 
 | 쌍 (건수) | 해석 |
 |---|---|
@@ -269,6 +269,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 
 ## 11. 결정·변경 기록
 - 2026-10-06: 초안 작성. 코드·설정·의존성은 바꾸지 않았다. 결합 측정은 임시 스크립트로 했고(저장소에 넣지 않음) P0에서 `tools/`로 정식화한다.
+- 2026-10-06: S2 완료(12장 기록): 도구 골격·래칫 기준선·CI 연결·ADR 0012. 이 문서 2장의 임시 수치는 정식 측정으로 대체되었다.
 - 2026-10-06: Q1~Q9 결정 반영. Q6은 제안(SQL 외래 키)과 달리 "스키마를 공통 영역에 한 번에 선언"으로 정해졌고, 그 대가로 테이블 소유권 검사(3.4)를 추가했다. 도구 4종(dependency-cruiser, knip, jscpd, @vitest/coverage-v8) 설치와 스모크 검증을 마쳤다(8장).
 
 ## 12. 세션 진행 계획
@@ -277,7 +278,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 | 세션 | 범위 | 끝나는 조건 | 상태 |
 |---|---|---|---|
 | S1 | 계획 확정, 도구 설치·스모크 | 문서·도구 커밋 | **완료 (2026-10-06)** |
-| S2 | P0 기준선 + P1 도구 골격 (+ ADR 0012 작성) | 래칫 기준선으로 CI 연결, 의도적 위반이 CI에서 실패함을 확인, `quality-report.json` 뼈대 | 대기 |
+| S2 | P0 기준선 + P1 도구 골격 (+ ADR 0012 작성) | 래칫 기준선으로 CI 연결, 의도적 위반이 CI에서 실패함을 확인, `quality-report.json` 뼈대 | **완료 (2026-10-06)** |
 | S3 | P2 공통 영역 1차 (+ `features/*`·`shared` 워크스페이스 골격) | 공통 코드 사본 0, 기준선 감소 | 대기 |
 | S4 | P3 시범 `notification` | 구조 템플릿 확정, 격리 검사 통과, 빌드 시간·HMR 영향 측정 기록 | 대기 |
 | S5 | P4 `audit`·`home` | 두 기능 위반 0건 | 대기 |
@@ -293,7 +294,22 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 3. 종료: ① 공통 완료 조건(6장)을 모두 통과 ② 진행 기록(11장)에 지표(기준선 위반 수, 파일 수, 억제 주석 수)와 결정·발견을 추가 ③ 아래 "다음 세션 시작 지침"을 갱신 ④ 세션 표의 상태를 갱신하고 커밋.
 4. 어떤 세션도 규칙을 약화하지 않는다(기준선 증가, 억제 주석 추가, 규칙 파일 완화 금지). 필요하면 사용자에게 묻는다.
 
-**다음 세션 시작 지침 (S2)**
-- 읽을 것: 이 문서 2·4·6장과 8장의 스모크 메모, `docs/rules/architecture.md`.
-- 할 일: ① `tools/`에 결합 측정 스크립트를 정식화해 P0 지표를 기록한다(로직은 2장 "측정 방법"을 따른다: 경로 규칙으로 기능 배정 → import 해석 → 기능 간 건수) ② 루트에 `@/*` 별칭을 담은 depcruise 전용 tsconfig를 만들고 4.1의 규칙을 `.dependency-cruiser.cjs`로 작성한다(`type-only` 순환 구분 포함) ③ `knip.json`(Next 진입점·shadcn `components/ui` 오탐 제외, 워크스페이스 진입점) ④ 래칫 기준선 파일 생성과 CI 단계 추가 ⑤ `pnpm verify`·`verify:all` 스크립트 ⑥ ADR 0012(구조 결정) 작성.
-- 주의: 이 단계에서는 코드를 옮기지 않는다. 설정과 도구만 추가하고, 기존 위반은 기준선에 고정한다.
+**S2 진행 기록 (2026-10-06)**
+- **만든 것:** `tools/`(워크스페이스 `@fmerp/tools`): 기능 배정표(`feature-assignment.ts`), 래칫 게이트 5종(`unassigned-files`·`cross-feature`·`depcruise`·`knip`·`suppressions`), `arch-check`·`guard`·`run-gate`·`quality-report`·`boundaries` CLI, 시험 3벌(`tools/src/__tests__`: 래칫 평가, 배정표, dependency-cruiser 규칙 임시 저장소 시험, Biome 경계 생성 시험). 설정: `.dependency-cruiser.cjs`, `tsconfig.depcruise.json`, `knip.json`, `biome.boundaries.json`(생성), `.github/CODEOWNERS`, CI(정적 게이트를 앞에 두고 `artifacts/quality-report.json` 항상 생성), lefthook pre-push, 루트 스크립트 `arch:check`·`arch:baseline`·`arch:guard`·`arch:boundaries`·`quality:report`·`verify`·`verify:all`.
+- **P0 기준선 (래칫에 고정한 값):**
+
+| 게이트 | 건수(=한도) | 내용 |
+|---|---|---|
+| `cross-feature` | **48** | 기능 사이 import 파일 쌍. 큰 순: 완료→결재 9, 백업→결재 5, 감사→결재 5, 결재→완료 4, 계정→조직 4, 백업→계정 4, 알림→백업 3, 나머지 1~2 |
+| `depcruise` | **1** | 값 순환 1건: `packages/db/src/schema/auth.ts` ↔ `tenant.ts` (타입 전용 순환은 제외) |
+| `knip` | **34** | 미사용 파일 1, 미사용 의존성 2, 미사용 export 15, 미사용 타입 10 등. 첫 측정(40)에서 shadcn `components/ui`·Next 진입점 오탐을 설정으로 제외하고, 내 도구의 미사용 export를 고쳐 6건을 줄였다 |
+| `suppressions` | **10** | `biome-ignore` 10건(파일 10개) |
+| `unassigned-files` | **0** | 배정표에 규칙이 없는 소스 파일. 새 파일이 생기면 실패 |
+
+- **검증:** 위반 주입 시험 — 다른 기능을 import하는 새 파일에 `@ts-ignore`를 넣었더니 `cross-feature`(새 위반 1·한도 초과)·`knip`(미사용 파일)·`suppressions`가 모두 실패했다(파일은 되돌림). 한도를 올린 작업 트리는 `arch:guard`가 실패시켰다. `features/`·`shared/`·`apps`·`packages` 경계 규칙 7종과 값/타입 순환 구분은 임시 저장소 시험으로 확인했다. 린트(경고 6건 유지)·타입·단위 372건 통과(기존 327 + tools 45).
+- **계획과 달라진 점·이월:** ① 기능별 **커버리지 하한**은 기능 폴더가 생긴 뒤에야 의미가 있어 S4(시범)로 넘겼다(도구는 설치됨). ② dependency-cruiser가 `apps/web/tsconfig.json`의 `extends`를 못 읽는 문제는 루트 전용 tsconfig로 우회했다(별칭을 두 곳에서 같게 유지해야 한다). ③ `pnpm` 명령을 PATH 없이 쓰는 환경(Windows)에서는 `run-gate`로 감싼 `pnpm …` 명령이 실패한다 — CI(Ubuntu)에서만 쓰는 래퍼다. ④ 부분 스키마 `@owner` 소유권 검사·`feature-map` 도구는 계획대로 P7·P8. ⑤ CI 변경(`.github/workflows/ci.yml`)은 이 PC에서 실행해 보지 못했다(문법과 로컬 명령만 확인) — 첫 push에서 확인한다.
+
+**다음 세션 시작 지침 (S3)**
+- 읽을 것: 이 문서 3.1·3.2·6장 P2·7.2, [ADR 0012](../adr/0012-feature-structure-and-static-enforcement.md), `tools/src/feature-assignment.ts`, 12장 S2 기록. 시작 전 `git status` 깨끗, `pnpm arch:check`·`pnpm arch:guard`·린트·타입·단위 통과 확인(Windows에서 `pnpm`이 없으면 `corepack pnpm@11.28.3`).
+- 할 일(P2 공통 영역 1차 + 워크스페이스 골격): ① `shared/` 패키지(`@fmerp/shared`)와 `features/` 워크스페이스(`pnpm-workspace.yaml`에 `features/*`, `shared`)를 만든다 — 빈 `features/`는 아직 만들지 않는다(S4 시범에서 생성) ② 이미 공통 성격인 것을 옮긴다: `apps/web/server`의 `http`·`problem`·`env`·`deps`·`org-access`(→ `shared/authz`)·`routes/common`·`routes/service-context`, `apps/web/components/ui`, `apps/web/lib`의 `api`·`utils`·`queries` 기반 부분, 시험 도우미(`test-client`) 등. 정확한 목록은 `feature-assignment.ts`의 `shared` 규칙과 7.2의 후보 표를 기준으로 하고, `packages/db`·`packages/audit`·`packages/storage`는 **제자리에 두고** 공통 영역으로 취급한다(`.dependency-cruiser.cjs`의 `shared-must-not-import-features`·`domain-is-pure`가 이들도 shared로 보도록 경로를 확장) ③ 이동은 `git mv` 커밋과 수정 커밋을 분리한다. 옮길 때마다 `feature-assignment.ts`의 경로 규칙을 맞춘다 ④ 끝나면 `pnpm arch:baseline`으로 줄어든 기준선(특히 `knip`·`cross-feature`)을 커밋한다.
+- 주의: 동작은 바꾸지 않는다(통합 418·E2E 53이 안전망). 기준선을 늘리거나 규칙을 느슨하게 바꾸지 않는다. 이동 중 경계가 흐려지는 항목(예: `org-access`가 `approval`·`org` 모두에서 쓰임)은 `shared/authz`로 올리되 계약이 필요한지 기록한다.
