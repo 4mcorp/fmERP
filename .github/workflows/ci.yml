@@ -12,9 +12,14 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
+    env:
+      # arch:guard가 한도(tools/baselines/limits.json)를 비교할 기준 커밋. 한도를 올리는 PR은 여기서 실패한다
+      GUARD_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # 기준 커밋과 비교하려면 이력이 필요하다
 
       - uses: pnpm/action-setup@v6 # package.json의 packageManager(pnpm@11.28.3) 사용
 
@@ -25,24 +30,47 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # ── 1단계: 정적 게이트 (빠르고 싼 것부터. 각 게이트의 결과는 artifacts/gates에 남는다) ──
       - name: 린트 (Biome)
-        run: pnpm exec biome ci .
+        run: pnpm exec tsx tools/src/cli/run-gate.ts biome -- pnpm exec biome ci .
 
       - name: 타입 검사
-        run: pnpm typecheck
+        run: pnpm exec tsx tools/src/cli/run-gate.ts typecheck -- pnpm typecheck
 
+      # 기능 경계·순환·미사용 코드·억제 주석을 기준선(tools/baselines)과 비교한다 (래칫: 새 위반 실패, 줄었는데 기준선을 안 줄여도 실패)
+      - name: 구조 검사 (arch:check)
+        run: pnpm exec tsx tools/src/cli/run-gate.ts arch-check -- pnpm arch:check
+
+      # 규칙 약화 감지: 한도가 기준 커밋보다 늘었거나 게이트가 사라졌으면 실패
+      - name: 규칙 약화 감지 (arch:guard)
+        run: pnpm exec tsx tools/src/cli/run-gate.ts arch-guard -- pnpm arch:guard
+
+      # ── 2단계: 동작 증거 ──
       # 통합·E2E 테스트는 테스트 DB(55433)를 매번 초기화·시드해서 쓴다 (vitest.config.ts, apps/web/e2e/test-env.ts)
       - name: 테스트 서비스 기동 (PostgreSQL 18 테스트 DB, SeaweedFS)
         run: docker compose -f docker-compose.dev.yml up -d --wait postgres-test s3
 
       - name: 단위·통합 테스트
-        run: pnpm test
+        run: pnpm exec tsx tools/src/cli/run-gate.ts unit-integration -- pnpm test
 
       - name: E2E 준비 (브라우저 설치)
         run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
 
       - name: E2E 테스트
-        run: pnpm test:e2e
+        run: pnpm exec tsx tools/src/cli/run-gate.ts e2e -- pnpm test:e2e
+
+      # 게이트가 실패해도 품질 리포트는 항상 만든다 (이후 평가 단계의 입력)
+      - name: 품질 리포트
+        if: always()
+        run: pnpm quality:report
+
+      - name: 품질 리포트 보관
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-report
+          path: artifacts
+          retention-days: 30
 
       - name: 실패 시 Playwright 리포트 보관
         if: failure()

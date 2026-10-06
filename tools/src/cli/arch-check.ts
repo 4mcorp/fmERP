@@ -1,6 +1,8 @@
 // pnpm arch:check          — 모든 래칫 게이트를 기준선·한도와 비교한다 (CI·pre-push)
 // pnpm arch:baseline       — 기준선을 현재 상태로 다시 쓴다. 위반이 **줄었을 때만** 쓸 수 있고 한도도 함께 낮춘다
 // pnpm arch:baseline --init — 처음 만들 때만: 현재 위반 수로 한도를 정한다 (이미 한도가 있는 게이트는 그대로 둔다)
+import fs from "node:fs";
+import { BOUNDARIES_FILE, expectedBoundaries } from "../boundaries";
 import { GATES } from "../gates";
 import {
   evaluate,
@@ -47,6 +49,14 @@ for (const gate of GATES.filter((g) => !only || g.name === only)) {
   for (const k of result.removed.slice(0, 10)) console.error(`      - ${k}`);
   if (result.errors.length === 0)
     console.log(`  ✓ ${current.length}건 (기준선과 같음, 한도 ${limit})`);
+}
+
+// Biome 경계 규칙이 features/*와 맞는지 (손으로 고쳤거나 기능을 추가하고 생성기를 안 돌렸으면 실패)
+if (!write && !init && !only) {
+  const actual = fs.existsSync(BOUNDARIES_FILE) ? fs.readFileSync(BOUNDARIES_FILE, "utf8") : "";
+  if (actual !== expectedBoundaries())
+    fail("biome.boundaries.json이 최신이 아닙니다 → pnpm arch:boundaries");
+  else console.log("biome-boundaries — ✓ 최신");
 }
 
 if (write || init) writeLimits(limits);

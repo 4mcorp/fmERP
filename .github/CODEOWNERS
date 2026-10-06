@@ -1,0 +1,18 @@
+# 품질 게이트를 약화시킬 수 있는 파일은 사람(소유자)의 승인 없이 병합되지 않게 한다.
+# 에이전트가 린트·검사 규칙이나 기준선을 고쳐서 "통과"하는 일을 막기 위한 것이다.
+# GitHub 저장소 설정에서 "Require review from Code Owners"(브랜치 보호)를 켜야 효력이 있다.
+/biome.json                      @dyoun12
+/biome.boundaries.json           @dyoun12
+/.dependency-cruiser.cjs         @dyoun12
+/knip.json                       @dyoun12
+/tsconfig.base.json              @dyoun12
+/tsconfig.depcruise.json         @dyoun12
+/tools/                          @dyoun12
+/tools/baselines/                @dyoun12
+/.github/                        @dyoun12
+/lefthook.yml                    @dyoun12
+/commitlint.config.mjs           @dyoun12
+/pnpm-workspace.yaml             @dyoun12
+/vitest.config.ts                @dyoun12
+/docs/rules/                     @dyoun12
+/CLAUDE.md                       @dyoun12

@@ -31,7 +31,8 @@
     "arch:guard": "tsx tools/src/cli/guard.ts",
     "quality:report": "tsx tools/src/cli/quality-report.ts",
     "verify": "pnpm lint && pnpm typecheck && pnpm arch:check && pnpm arch:guard",
-    "verify:all": "pnpm verify && pnpm test && pnpm test:e2e"
+    "verify:all": "pnpm verify && pnpm test && pnpm test:e2e",
+    "arch:boundaries": "tsx tools/src/cli/boundaries.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "~2.5.15",

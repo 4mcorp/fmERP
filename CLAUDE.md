@@ -39,3 +39,4 @@ Node 24 LTS · pnpm 11 · TypeScript ~6.0 · Next 16.3 + Hono 4.13(`/api`) · Po
 - **개발 서버를 켜기 전, 또는 `packages/db/migrations`에 새 파일이 생겼을 때는 `pnpm db:migrate`(필요하면 `pnpm db:seed`)를 먼저 실행한다.** 개발 DB는 자동 갱신되지 않아, 놓치면 화면이 비고 API가 500이 된다 ([ts](docs/ts/2026-10-04-dev-db-not-migrated.md)).
 - `pnpm`이 PATH에 없으면 `corepack pnpm@11.28.3 <명령>`을 쓴다 ([ts](docs/ts/2026-10-03-windows-pnpm-not-on-path.md)).
 - 테스트 파일: 단위 `*.test.ts`, 통합 `*.int.test.ts`(실제 DB·S3), E2E `apps/web/e2e/*.spec.ts`.
+- **구조 검사:** `pnpm arch:check`(기능 간 import·순환·미사용 코드·억제 주석을 기준선과 비교), `pnpm arch:guard`(한도 증가 감지), 한꺼번에 `pnpm verify`. 새 위반은 기준선에 넣지 말고 **고친다.** `tools/baselines/`·`.dependency-cruiser.cjs`·`knip.json`·`biome.json`은 사람의 승인 없이 느슨하게 바꾸지 않는다. `pnpm arch:baseline`은 위반을 **줄였을 때만** 쓴다. 새 소스 파일은 `tools/src/feature-assignment.ts`에 배정되어야 한다. 구조 전환은 [계획](docs/plan/2026-10-06-feature-architecture-refactor.md) 12장의 세션 순서를 따른다.

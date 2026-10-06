@@ -1,11 +1,13 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["./biome.boundaries.json"],
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "includes": [
       "**",
       "!**/.claude/skills",
       "!**/migrations/meta",
+      "!biome.boundaries.json",
       "!**/next-env.d.ts",
       "!**/skills-lock.json"
     ]
