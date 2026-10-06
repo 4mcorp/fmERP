@@ -8,7 +8,7 @@
     "@commitlint/config-conventional"
   ],
   "ignoreIssues": {
-    "apps/web/components/ui/**": ["files", "exports", "types"]
+    "shared/src/ui/**": ["files", "exports", "types"]
   },
   "workspaces": {
     ".": {
@@ -16,6 +16,9 @@
     },
     "apps/web": {
       "entry": ["server/test-client.ts", "e2e/**/*.ts", "playwright.config.ts"]
+    },
+    "shared": {
+      "includeEntryExports": true
     },
     "apps/worker": {
       "entry": ["src/main.ts", "src/cli/*.ts"]

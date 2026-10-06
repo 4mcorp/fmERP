@@ -5,6 +5,6 @@ apps/web/components/approval/audit-trail.tsx:biome-ignore:1
 apps/web/components/approval/form-fields.tsx:biome-ignore:4
 apps/web/components/approval/form-view.tsx:biome-ignore:1
 apps/web/components/me/profile-section.tsx:biome-ignore:1
-apps/web/components/ui/modal.tsx:biome-ignore:1
 packages/core/src/backup.ts:biome-ignore:1
 packages/core/src/file-sniff.ts:biome-ignore:1
+shared/src/ui/modal.tsx:biome-ignore:1

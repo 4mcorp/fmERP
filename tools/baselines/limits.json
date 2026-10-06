@@ -1,7 +1,8 @@
 {
-  "cross-feature": 48,
+  "cross-feature": 43,
   "depcruise": 1,
   "knip": 34,
+  "shared-to-feature": 7,
   "suppressions": 10,
   "unassigned-files": 0
 }

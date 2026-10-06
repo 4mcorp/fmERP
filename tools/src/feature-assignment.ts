@@ -26,6 +26,9 @@ export type Owner = Feature | "shared" | "composition";
 type Rule = readonly [pattern: RegExp, owner: Owner];
 
 const RULES: readonly Rule[] = [
+  // ── 공통 영역 (이전 후) ──
+  [/^shared\//, "shared"],
+
   // ── 합성 루트: 기능을 모아 연결한다 ──
   [/^apps\/web\/app\/api\//, "composition"],
   [/^apps\/web\/server\/(app|create-app)\.ts$/, "composition"],
@@ -88,11 +91,8 @@ const RULES: readonly Rule[] = [
   // ── 공통 영역 ──
   [/^packages\/(db|audit|storage)\//, "shared"],
   [/^packages\/core\/src\/(index|money|file-sniff|permissions)/, "shared"],
-  [
-    /^apps\/web\/server\/(db|deps|env|http|problem|test-client|routes\/(common|service-context))\.ts$/,
-    "shared",
-  ],
-  [/^apps\/web\/server\/org-access\.ts$/, "shared"], // 권한 판정 어댑터 → shared/authz 후보
+  [/^apps\/web\/server\/(db|test-client)\.ts$/, "shared"],
+  [/^apps\/web\/server\/deps\.ts$/, "composition"], // 실제 연결(DB·인증·저장소)을 만드는 합성 루트
   [/^apps\/web\/lib\/(api|utils|queries|types)\.ts$/, "shared"],
   [/^apps\/web\/components\/ui\//, "shared"],
   [/^apps\/web\/app\/(layout|providers)\.tsx$/, "shared"],
@@ -137,4 +137,4 @@ export function ownerOf(path: string): Owner | null {
 
 /** 시험·도구 파일 (결합 측정에서 제외) */
 export const isTestFile = (path: string) =>
-  /(\.test\.|\.int\.test\.|\.spec\.|\/test-support\.|\/test-client\.|\/test\/)/.test(path);
+  /(\.test\.|\.int\.test\.|\.spec\.|\/test-support\.|\/test-client\.|\/test\/|\/e2e\/)/.test(path);

@@ -8,15 +8,15 @@ exports:apps/web/server/approval/drafts.ts:sha256Hex
 exports:apps/web/server/approval/export.ts:EXPORT_LIMIT
 exports:apps/web/server/approval/export.ts:toCsv
 exports:apps/web/server/approval/forms.ts:RETENTION_YEARS
-exports:apps/web/server/http.ts:requireRole
 exports:apps/web/server/notifications/telegram.ts:telegramClient
 exports:apps/web/server/notifications/telegram.ts:webhookReady
-exports:apps/web/server/org-access.ts:memberBusinessTargets
 exports:apps/worker/src/notification-jobs.ts:NOTIFY_TELEGRAM
 exports:apps/worker/src/notification-jobs.ts:TELEGRAM_RETRY_LIMIT
 exports:apps/worker/src/package-jobs.ts:PACKAGE_GENERATE
 exports:apps/worker/src/package-jobs.ts:PACKAGE_SWEEP
 exports:packages/auth/src/auth.ts:SESSION_ABSOLUTE_SECONDS
+exports:shared/src/authz/org-access.ts:memberBusinessTargets
+exports:shared/src/server/http.ts:requireRole
 files:apps/web/server/db.ts:apps/web/server/db.ts
 types:apps/web/lib/types.ts:MemberAssignment
 types:apps/web/lib/types.ts:MemberGrant

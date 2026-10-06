@@ -48,11 +48,11 @@ module.exports = {
       severity: "error",
       comment:
         "도메인 규칙(packages/core, 이전 후 features/*/src/domain·shared/domain)은 DB·저장소·프레임워크·네트워크를 import하지 않는다 (CLAUDE.md 불변 조건).",
-      from: { path: "^(packages/core/src|features/[^/]+/src/domain|shared/domain)/" },
+      from: { path: "^(packages/core/src|features/[^/]+/src/domain|shared/(src/)?domain)/" },
       to: {
         path: [
           "^packages/(db|storage|auth|audit|completion|backup|notification)/",
-          "^shared/(db|storage|http|env)/",
+          "^shared/(src/)?(server|authz|db|storage|http|env|ui)/",
           "node_modules/(drizzle-orm|pg|pg-boss|hono|@hono|next|react|react-dom|@aws-sdk)/",
         ],
       },
@@ -78,7 +78,7 @@ module.exports = {
       severity: "error",
       comment:
         "공통 영역은 기능을 import하지 않는다 (공통이 기능에 의존하면 모든 사용처가 그 기능에 의존하게 된다).",
-      from: { path: "^shared/" },
+      from: { path: "^(shared|packages/(db|audit|storage))/" },
       to: { path: "^(features|apps)/" },
     },
     {
