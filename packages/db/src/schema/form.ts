@@ -27,7 +27,11 @@ export interface FormScope {
   departmentIds?: string[];
 }
 
-/** 양식 (APV-004). 내용은 form_version에 불변으로 저장하고, 현재 버전은 가장 큰 version이다 */
+/**
+ * 양식 (APV-004). 내용은 form_version에 불변으로 저장하고, 현재 버전은 가장 큰 version이다
+ *
+ * @owner approval
+ */
 export const form = pgTable(
   "form",
   {
@@ -45,7 +49,11 @@ export const form = pgTable(
   (t) => [unique().on(t.accountId, t.code), unique("form_id_account_unique").on(t.id, t.accountId)],
 );
 
-/** 양식 버전 (APV-005). 추가만 가능하다(UPDATE·DELETE 권한 없음) */
+/**
+ * 양식 버전 (APV-005). 추가만 가능하다(UPDATE·DELETE 권한 없음)
+ *
+ * @owner approval
+ */
 export const formVersion = pgTable(
   "form_version",
   {
@@ -77,7 +85,11 @@ export const formVersion = pgTable(
   ],
 );
 
-/** 결재선 템플릿: 공용(양식별 기본) 또는 개인 즐겨찾기(owner 지정) (APV-033) */
+/**
+ * 결재선 템플릿: 공용(양식별 기본) 또는 개인 즐겨찾기(owner 지정) (APV-033)
+ *
+ * @owner approval
+ */
 export const approvalLineTemplate = pgTable(
   "approval_line_template",
   {
@@ -101,7 +113,11 @@ export const approvalLineTemplate = pgTable(
   ],
 );
 
-/** 사용자별 양식 즐겨찾기·최근 사용 (APV-010) */
+/**
+ * 사용자별 양식 즐겨찾기·최근 사용 (APV-010)
+ *
+ * @owner approval
+ */
 export const userFormPref = pgTable(
   "user_form_pref",
   {
@@ -125,7 +141,11 @@ export const userFormPref = pgTable(
   ],
 );
 
-/** 본문 저장본 색인. 본문 자체는 S3 revisions/{n}.json (BAK-002). 추가만 가능 */
+/**
+ * 본문 저장본 색인. 본문 자체는 S3 revisions/{n}.json (BAK-002). 추가만 가능
+ *
+ * @owner approval
+ */
 export const documentRevision = pgTable(
   "document_revision",
   {
@@ -152,7 +172,11 @@ export const documentRevision = pgTable(
   ],
 );
 
-/** 첨부 (APV-013, FILE-002). 파일 자체는 S3 */
+/**
+ * 첨부 (APV-013, FILE-002). 파일 자체는 S3
+ *
+ * @owner approval
+ */
 export const attachment = pgTable(
   "attachment",
   {
@@ -182,7 +206,11 @@ export const attachment = pgTable(
   ],
 );
 
-/** 단계별 의견 (APV-042). 추가만 가능 */
+/**
+ * 단계별 의견 (APV-042). 추가만 가능
+ *
+ * @owner approval
+ */
 export const approvalComment = pgTable(
   "approval_comment",
   {
@@ -211,7 +239,11 @@ export const approvalComment = pgTable(
   ],
 );
 
-/** 관련 문서 링크 (APV-014) */
+/**
+ * 관련 문서 링크 (APV-014)
+ *
+ * @owner approval
+ */
 export const documentLink = pgTable(
   "document_link",
   {

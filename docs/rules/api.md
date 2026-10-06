@@ -25,7 +25,7 @@
 | 이메일 링크만으로 결재가 승인되면 안 된다. 반드시 로그인과 재인증을 거친다 | NTF-006 |
 
 ## 3-1. 권한 판정
-- 역할·범위 판정은 `packages/core`의 `can(actor, action, target)` 한 곳에서 한다(ADR 0006). 라우트는 `shared/src/authz/org-access.ts`의 `loadActor`·`authorize`로 호출하고, 역할 미들웨어에서 권한을 직접 비교하지 않는다.
+- 역할·범위 판정은 `shared/src/domain/permissions.ts`의 `can(actor, action, target)` 한 곳에서 한다(ADR 0006). 라우트는 `shared/src/authz/org-access.ts`의 `loadActor`·`authorize`로 호출하고, 역할 미들웨어에서 권한을 직접 비교하지 않는다.
 - 구성원 대상 행위는 `authorizeForMember`(계정 범위 권한 또는 구성원의 소속 사업자 중 하나에 대한 권한)를 쓴다. 관리자 역할 초대·역할 부여는 계정 관리자 이상만 한다.
 - 새 `account_id` 테이블의 API는 테넌트 격리 테스트(타 계정 id로 접근 시 404)를 함께 쓴다.
 

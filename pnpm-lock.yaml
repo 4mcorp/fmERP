@@ -47,21 +47,33 @@ importers:
 
   apps/web:
     dependencies:
-      '@fmerp/audit':
-        specifier: workspace:*
-        version: link:../../packages/audit
-      '@fmerp/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@fmerp/notification':
+      '@fmerp/feature-account':
         specifier: workspace:*
-        version: link:../../packages/notification
+        version: link:../../features/account
+      '@fmerp/feature-approval':
+        specifier: workspace:*
+        version: link:../../features/approval
+      '@fmerp/feature-audit':
+        specifier: workspace:*
+        version: link:../../features/audit
+      '@fmerp/feature-backup':
+        specifier: workspace:*
+        version: link:../../features/backup
+      '@fmerp/feature-completion':
+        specifier: workspace:*
+        version: link:../../features/completion
+      '@fmerp/feature-home':
+        specifier: workspace:*
+        version: link:../../features/home
+      '@fmerp/feature-notification':
+        specifier: workspace:*
+        version: link:../../features/notification
+      '@fmerp/feature-org':
+        specifier: workspace:*
+        version: link:../../features/org
       '@fmerp/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -71,30 +83,15 @@ importers:
       '@hono/zod-openapi':
         specifier: ~1.6.3
         version: 1.6.3(hono@4.13.12)(zod@4.6.5)
-      '@hookform/resolvers':
-        specifier: ~5.9.1
-        version: 5.9.1(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1)(ajv@8.20.0)(react-hook-form@7.89.0(@types/react@19.3.0)(react@19.3.0))(zod@4.6.5)
       '@next/env':
         specifier: ~16.3.8
         version: 16.3.8
       '@tanstack/react-query':
         specifier: ~5.104.1
         version: 5.104.1(react@19.3.0)
-      '@tiptap/pm':
-        specifier: ~3.31.4
-        version: 3.31.4
-      '@tiptap/react':
-        specifier: ~3.31.4
-        version: 3.31.4(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.4(@tiptap/pm@3.31.4))(@tiptap/pm@3.31.4)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@tiptap/starter-kit':
-        specifier: ~3.31.4
-        version: 3.31.4
-      archiver:
-        specifier: ~8.0.0
-        version: 8.0.0
-      dexie:
-        specifier: ~4.4.6
-        version: 4.4.6
+      better-auth:
+        specifier: ~1.7.7
+        version: 1.7.7(drizzle-kit@0.31.11)(drizzle-orm@0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1))(next@16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@4.1.11)
       drizzle-orm:
         specifier: ~0.45.3
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
@@ -113,9 +110,6 @@ importers:
       react-dom:
         specifier: ~19.3.0
         version: 19.3.0(react@19.3.0)
-      react-hook-form:
-        specifier: ~7.89.0
-        version: 7.89.0(@types/react@19.3.0)(react@19.3.0)
       shadcn:
         specifier: ~4.21.1
         version: 4.21.1(supports-color@7.2.0)(typescript@6.0.3)
@@ -125,25 +119,16 @@ importers:
       tw-animate-css:
         specifier: ~1.4.0
         version: 1.4.0
-      write-excel-file:
-        specifier: ~4.1.1
-        version: 4.1.1
       zod:
         specifier: ~4.6.5
         version: 4.6.5
     devDependencies:
-      '@fmerp/completion':
-        specifier: workspace:*
-        version: link:../../packages/completion
       '@playwright/test':
         specifier: ~1.63.0
         version: 1.63.0
       '@tailwindcss/postcss':
         specifier: ~4.3.3
         version: 4.3.3
-      '@types/archiver':
-        specifier: ~8.0.0
-        version: 8.0.0
       '@types/react':
         specifier: ~19.3.0
         version: 19.3.0
@@ -156,30 +141,27 @@ importers:
 
   apps/worker:
     dependencies:
-      '@fmerp/backup':
-        specifier: workspace:*
-        version: link:../../packages/backup
-      '@fmerp/completion':
-        specifier: workspace:*
-        version: link:../../packages/completion
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@fmerp/notification':
+      '@fmerp/feature-audit':
         specifier: workspace:*
-        version: link:../../packages/notification
+        version: link:../../features/audit
+      '@fmerp/feature-backup':
+        specifier: workspace:*
+        version: link:../../features/backup
+      '@fmerp/feature-completion':
+        specifier: workspace:*
+        version: link:../../features/completion
+      '@fmerp/feature-notification':
+        specifier: workspace:*
+        version: link:../../features/notification
       '@fmerp/storage':
         specifier: workspace:*
         version: link:../../packages/storage
       '@hono/node-server':
         specifier: ~2.1.3
         version: 2.1.3(hono@4.13.12)
-      '@playwright/test':
-        specifier: ~1.63.0
-        version: 1.63.0
       hono:
         specifier: ~4.13.12
         version: 4.13.12
@@ -199,57 +181,168 @@ importers:
       '@types/pg':
         specifier: ~8.23.1
         version: 8.23.1
-      drizzle-orm:
-        specifier: ~0.45.3
-        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
 
-  packages/audit:
-    dependencies:
-      '@fmerp/db':
-        specifier: workspace:*
-        version: link:../db
-      drizzle-orm:
-        specifier: ~0.45.3
-        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
-      microdiff:
-        specifier: ~1.6.0
-        version: 1.6.0
-
-  packages/auth:
+  features/account:
     dependencies:
       '@fmerp/audit':
         specifier: workspace:*
-        version: link:../audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../core
+        version: link:../../packages/audit
       '@fmerp/db':
         specifier: workspace:*
-        version: link:../db
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
       '@node-rs/argon2':
         specifier: ~2.2.1
         version: 2.2.1
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
       better-auth:
         specifier: ~1.7.7
         version: 1.7.7(drizzle-kit@0.31.11)(drizzle-orm@0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1))(next@16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@4.1.11)
       drizzle-orm:
         specifier: ~0.45.3
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
 
-  packages/backup:
+  features/approval:
     dependencies:
       '@fmerp/audit':
         specifier: workspace:*
-        version: link:../audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../core
+        version: link:../../packages/audit
       '@fmerp/db':
         specifier: workspace:*
-        version: link:../db
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@fmerp/storage':
         specifier: workspace:*
-        version: link:../storage
+        version: link:../../packages/storage
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
+      '@tiptap/pm':
+        specifier: ~3.31.4
+        version: 3.31.4
+      '@tiptap/react':
+        specifier: ~3.31.4
+        version: 3.31.4(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.4(@tiptap/pm@3.31.4))(@tiptap/pm@3.31.4)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tiptap/starter-kit':
+        specifier: ~3.31.4
+        version: 3.31.4
+      dexie:
+        specifier: ~4.4.6
+        version: 4.4.6
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      hono:
+        specifier: ~4.13.12
+        version: 4.13.12
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      react-hook-form:
+        specifier: ~7.89.0
+        version: 7.89.0(@types/react@19.3.0)(react@19.3.0)
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      write-excel-file:
+        specifier: ~4.1.1
+        version: 4.1.1
+      zod:
+        specifier: ~4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
+
+  features/audit:
+    dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../../packages/audit
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
+
+  features/backup:
+    dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../../packages/audit
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@fmerp/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
       age-encryption:
         specifier: ~0.3.1
         version: 0.3.1
@@ -259,39 +352,191 @@ importers:
       drizzle-orm:
         specifier: ~0.45.3
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
       pg:
         specifier: ~8.23.1
         version: 8.23.1
+      pg-boss:
+        specifier: ~12.35.1
+        version: 12.35.1
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
     devDependencies:
-      '@fmerp/completion':
-        specifier: workspace:*
-        version: link:../completion
       '@types/archiver':
         specifier: ~8.0.0
         version: 8.0.0
       '@types/pg':
         specifier: ~8.23.1
         version: 8.23.1
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
 
-  packages/completion:
+  features/completion:
     dependencies:
       '@fmerp/audit':
         specifier: workspace:*
-        version: link:../audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../core
+        version: link:../../packages/audit
       '@fmerp/db':
         specifier: workspace:*
-        version: link:../db
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@fmerp/storage':
         specifier: workspace:*
-        version: link:../storage
+        version: link:../../packages/storage
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@playwright/test':
+        specifier: ~1.63.0
+        version: 1.63.0
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
+      archiver:
+        specifier: ~8.0.0
+        version: 8.0.0
       drizzle-orm:
         specifier: ~0.45.3
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      pg:
+        specifier: ~8.23.1
+        version: 8.23.1
+      pg-boss:
+        specifier: ~12.35.1
+        version: 12.35.1
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@types/archiver':
+        specifier: ~8.0.0
+        version: 8.0.0
+      '@types/pg':
+        specifier: ~8.23.1
+        version: 8.23.1
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
 
-  packages/core: {}
+  features/home:
+    dependencies:
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
+
+  features/notification:
+    dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../../packages/audit
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      pg-boss:
+        specifier: ~12.35.1
+        version: 12.35.1
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
+
+  features/org:
+    dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../../packages/audit
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
+
+  packages/audit:
+    dependencies:
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../db
+      microdiff:
+        specifier: ~1.6.0
+        version: 1.6.0
 
   packages/db:
     dependencies:
@@ -308,21 +553,6 @@ importers:
       drizzle-kit:
         specifier: ~0.31.11
         version: 0.31.11
-
-  packages/notification:
-    dependencies:
-      '@fmerp/audit':
-        specifier: workspace:*
-        version: link:../audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../core
-      '@fmerp/db':
-        specifier: workspace:*
-        version: link:../db
-      drizzle-orm:
-        specifier: ~0.45.3
-        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
 
   packages/storage:
     dependencies:
@@ -341,12 +571,6 @@ importers:
       '@fmerp/audit':
         specifier: workspace:*
         version: link:../packages/audit
-      '@fmerp/auth':
-        specifier: workspace:*
-        version: link:../packages/auth
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../packages/core
       '@fmerp/db':
         specifier: workspace:*
         version: link:../packages/db
@@ -356,6 +580,9 @@ importers:
       '@hono/zod-openapi':
         specifier: ~1.6.3
         version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
       class-variance-authority:
         specifier: ~0.7.1
         version: 0.7.1
@@ -371,6 +598,9 @@ importers:
       lucide-react:
         specifier: ~1.49.0
         version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       next-themes:
         specifier: ~0.4.6
         version: 0.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -391,7 +621,11 @@ importers:
         specifier: ~19.3.0
         version: 19.3.0
 
-  tools: {}
+  tools:
+    devDependencies:
+      yaml:
+        specifier: ~2.9.1
+        version: 2.9.1
 
 packages:
 
@@ -1347,84 +1581,6 @@ packages:
     peerDependencies:
       hono: '>=4.11.2'
       zod: ^3.25.0 || ^4.0.0
-
-  '@hookform/resolvers@5.9.1':
-    resolution: {integrity: sha512-7b7vsbraJxKgjVSA1Nur9tLwj539WGJUBLA7QNvXnFoT2pM5Z7G+6rlukk4B2/QrTZy6huRtH6wKeESPKuIr6w==}
-    peerDependencies:
-      '@sinclair/typebox': '>=0.25.24'
-      '@standard-schema/spec': ^1.0.0
-      '@typeschema/main': '>=0.13.7'
-      '@vinejs/vine': ^2.0.0 || ^3.0.0 || ^4.0.0
-      ajv: ^8.12.0
-      ajv-errors: ^3.0.0
-      ajv-formats: ^2.1.1
-      arktype: ^2.0.0
-      ata-validator: ^1.2.0
-      class-transformer: '>=0.4.0'
-      class-validator: '>=0.12.0'
-      computed-types: ^1.0.0
-      effect: ^3.10.3
-      fluentvalidation-ts: ^3.0.0
-      fp-ts: ^2.7.0
-      io-ts: ^2.0.0
-      joi: ^17.0.0 || ^18.0.0
-      nope-validator: '>=0.12.0'
-      react-hook-form: ^7.55.0
-      superstruct: '>=0.12.0'
-      typanion: ^3.3.2
-      valibot: '>=0.31.0 || ^1.0.0-beta.4 || ^1.0.0-rc'
-      vest: '>=6.0.0'
-      yup: ^1.0.0
-      zod: ^3.25.0 || ^4.0.0
-    peerDependenciesMeta:
-      '@sinclair/typebox':
-        optional: true
-      '@standard-schema/spec':
-        optional: true
-      '@typeschema/main':
-        optional: true
-      '@vinejs/vine':
-        optional: true
-      ajv:
-        optional: true
-      ajv-errors:
-        optional: true
-      ajv-formats:
-        optional: true
-      arktype:
-        optional: true
-      ata-validator:
-        optional: true
-      class-transformer:
-        optional: true
-      class-validator:
-        optional: true
-      computed-types:
-        optional: true
-      effect:
-        optional: true
-      fluentvalidation-ts:
-        optional: true
-      fp-ts:
-        optional: true
-      io-ts:
-        optional: true
-      joi:
-        optional: true
-      nope-validator:
-        optional: true
-      superstruct:
-        optional: true
-      typanion:
-        optional: true
-      valibot:
-        optional: true
-      vest:
-        optional: true
-      yup:
-        optional: true
-      zod:
-        optional: true
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -2875,9 +3031,6 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
-
-  '@standard-schema/utils@0.3.0':
-    resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
 
   '@swc/helpers@0.5.23':
     resolution: {integrity: sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw==}
@@ -6614,16 +6767,6 @@ snapshots:
       hono: 4.13.12
       zod: 4.6.5
 
-  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1)(ajv@8.20.0)(react-hook-form@7.89.0(@types/react@19.3.0)(react@19.3.0))(zod@4.6.5)':
-    dependencies:
-      '@standard-schema/utils': 0.3.0
-      react-hook-form: 7.89.0(@types/react@19.3.0)(react@19.3.0)
-    optionalDependencies:
-      '@standard-schema/spec': 1.1.0
-      ajv: 8.20.0
-      ajv-formats: 2.1.1
-      zod: 4.6.5
-
   '@img/colour@1.1.0':
     optional: true
 
@@ -7889,8 +8032,6 @@ snapshots:
       tslib: 2.8.1
 
   '@standard-schema/spec@1.1.0': {}
-
-  '@standard-schema/utils@0.3.0': {}
 
   '@swc/helpers@0.5.23':
     dependencies:

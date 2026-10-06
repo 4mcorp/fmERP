@@ -1,10 +1,11 @@
 // 운영자 CLI: DB 덤프를 지금 실행한다 (운영 배포 직전 등, PRD BAK-006).
 //   pnpm backup:dump [--note="배포 직전"]
 // worker와 같은 설정(.env)을 쓰고, 결과를 JSON 한 줄로 출력한다. 실패하면 종료 코드 1.
-import { runManualDumpNow } from "@fmerp/backup";
+
 import { createDatabase } from "@fmerp/db";
+import { createBackupContext } from "@fmerp/feature-backup/jobs/config";
+import { runManualDumpNow } from "@fmerp/feature-backup/operator";
 import { ObjectStorage } from "@fmerp/storage";
-import { createBackupContext } from "../backup-config";
 import { env } from "../env";
 
 const note = process.argv.find((a) => a.startsWith("--note="))?.slice("--note=".length);

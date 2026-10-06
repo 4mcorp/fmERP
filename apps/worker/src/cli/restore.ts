@@ -2,7 +2,7 @@
 //   pnpm backup:restore --from=<S3 키 또는 파일> --identity=<age 개인키 파일> --target=<DB URL> [--force]
 // 개인키는 서버 밖에 보관한 파일이다. 대상 DB에 이미 테이블이 있으면 --force 없이는 거부한다.
 import { existsSync, readFileSync } from "node:fs";
-import { COUNTED_TABLES, restoreFromDump } from "@fmerp/backup";
+import { COUNTED_TABLES, restoreFromDump } from "@fmerp/feature-backup/operator";
 import { ObjectStorage } from "@fmerp/storage";
 import { Client } from "pg";
 import { env } from "../env";

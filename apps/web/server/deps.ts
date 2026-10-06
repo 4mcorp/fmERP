@@ -1,5 +1,5 @@
-import { createAuth, resolveDevTestLogin } from "@fmerp/auth";
 import { createDatabase, pingDatabase } from "@fmerp/db";
+import { createAuth, resolveDevTestLogin } from "@fmerp/feature-account/auth-setup";
 import type { ServerDeps } from "@fmerp/shared/server/deps";
 import { getEnv } from "@fmerp/shared/server/env";
 import { trustedIpHeaders } from "@fmerp/shared/server/http";

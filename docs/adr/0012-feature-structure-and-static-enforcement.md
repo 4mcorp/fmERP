@@ -19,3 +19,12 @@ status: accepted
 **알려진 한계와 후속:** ① 기능 이동 전에는 `features/`·`shared/` 규칙이 실제 코드에 걸리지 않아 임시 폴더 시험(`tools/src/__tests__`)이 그 규칙의 증거다. ② 기능 간 결합 측정은 경로 규칙(배정표)과 import 해석에 기대는 근사이며, 배럴은 이름 단위로 풀지만 `import *`·기본 export는 풀지 못한다. ③ 기능별 커버리지 하한과 변이 테스트(Stryker, 결정 Q4)는 기능 폴더가 생긴 뒤로 미뤘다. ④ CODEOWNERS는 저장소의 "Code Owners 승인 필수" 설정을 사람이 켜야 효력이 있다. ⑤ `APP_ENV=staging` 테스트 로그인 예외(ADR 없음, M8 보안 리뷰 FU-M8-1)와 마찬가지로 규칙 약화는 항상 사람의 결정이어야 한다.
 
 **Considered Options:** 기능을 단일 패키지 안의 폴더로만 나눔(컴파일 단계 방어 없이 린트에만 의존), `eslint-plugin-boundaries`(ESLint 도입이 필요해 린터가 둘이 됨), Nx `enforce-module-boundaries`(Nx 도입이 과함), Feature-Sliced Design/Steiger(고정된 계층 규칙이 "평평한 기능 + 공통"과 맞지 않음), 기능별 Drizzle 스키마 분할(외래 키가 다른 기능의 테이블 정의를 import해야 해서 경계 예외가 생기거나 SQL 외래 키로 빼야 함), 처음부터 모든 규칙을 error로(이전 도중 위반 수천 건으로 CI 마비 — 래칫이 대안), 규칙을 문서·스킬로만 안내(에이전트 품질이 낮아지면 지켜지지 않음).
+
+## 결과 (2026-10-06, 계획 완료)
+- 8개 기능이 `features/*`로 옮겨졌고 `packages/core`·`auth`·`backup`·`completion`·`notification`은 없어졌다. 기능 간 import 48→0, 공통→기능 import 0, 값 순환 0, 미사용 코드 0.
+- **래칫은 이전 도구였고 최종 상태는 엄격이다:** `Gate.strict`로 7개 게이트를 위반 0건 고정(기준선 파일 삭제), `arch:guard`가 한도 상향·게이트 제거를 막는다. 남은 것은 이유가 적힌 억제 주석의 허용 목록(줄어들기만 함)뿐이다.
+- 결정 Q6의 보완(표 소유권)은 `table-ownership` 게이트로 구현했다: `@owner` 주석, 쓰기는 소유·shared 표만, 읽기는 `tables.reads` 선언, 선언된 쓰기 예외는 `tables.writes`(백업 재색인 1곳), 새 마이그레이션 `-- feature:` 태그.
+- 기능 협력은 실제로 쓴 형태가 정해졌다: **공통 승격**, **함수·계약 주입**(`OpsAlertRules`·`SystemGuards`·`DocumentAccess`·provisioning), **UI 슬롯(prop)**, **시험용 접점 주입**(`setTestApp`·`setPackageGenerator`). 이벤트(`approval_event`)는 알림이 소비한다.
+- E2E는 합성 루트(`apps/web/e2e`)에 둔다(여러 기능을 거치는 것이 본질이고 Playwright 서버·전역 설정이 합성 루트에 묶임).
+- 기능 지도 도구(`feature:index·find·impact`, `feature-map` 게이트, 스킬)를 만들었다. 도구가 쓰는 `yaml` 패키지는 승인을 받아 추가했다.
+- 정정: 위 "알려진 한계" ③ 중 기능별 커버리지 하한은 구현했다(`tools/baselines/coverage.json`, `pnpm feature:check`). 변이 테스트는 여전히 미도입이다.

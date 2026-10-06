@@ -1,8 +1,10 @@
 {
-  "cross-feature": 43,
-  "depcruise": 1,
-  "knip": 34,
-  "shared-to-feature": 7,
+  "cross-feature": 0,
+  "depcruise": 0,
+  "feature-map": 0,
+  "knip": 0,
+  "shared-to-feature": 0,
   "suppressions": 10,
+  "table-ownership": 0,
   "unassigned-files": 0
 }

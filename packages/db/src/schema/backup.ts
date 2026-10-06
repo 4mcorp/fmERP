@@ -27,6 +27,8 @@ export const SYSTEM_BACKUP_STATUSES = [
  * DB 덤프 이력. **모든 계정의 데이터가 들어 있는 덤프**라 계정 소속이 없고 RLS 대상도 아니다.
  * 앱 역할은 시스템 관리자 경로에서만 읽고(SELECT)·요청하며(INSERT)·삭제 표시(delete_requested_at)만 바꾼다.
  * 덤프를 실행하는 worker의 백업 역할(fmerp_backup)이 나머지 열을 갱신한다. 삭제 권한은 누구에게도 없다.
+ *
+ * @owner backup
  */
 export const systemBackup = pgTable(
   "system_backup",
@@ -68,7 +70,11 @@ export const systemBackup = pgTable(
 export const BACKUP_JOB_TYPES = ["account_export"] as const;
 export const BACKUP_JOB_STATUSES = ["QUEUED", "RUNNING", "READY", "FAILED", "EXPIRED"] as const;
 
-/** 계정 전체 내보내기 작업 (PRD BAK-009). 모든 행은 account_id + RLS */
+/**
+ * 계정 전체 내보내기 작업 (PRD BAK-009). 모든 행은 account_id + RLS
+ *
+ * @owner backup
+ */
 export const backupJob = pgTable(
   "backup_job",
   {

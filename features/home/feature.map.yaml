@@ -1,0 +1,18 @@
+# 기능 지도 초안 (계획 5장). P8에서 형식을 확정하고 CI가 정합성을 검사한다.
+id: home
+summary: 로그인 후 첫 화면 — 내 결재 대기·기안 현황과 양식 바로가기
+keywords: [홈, 대시보드, 첫 화면, 바로가기, 결재 대기]
+access:
+  - { who: 모든 구성원, path: "/ (로그인 직후)", entry: ui/pages/home }
+screens:
+  - { route: /, file: src/ui/pages/home.tsx }
+adapters:
+  - apps/web/app/(app)/page.tsx
+api: { generated: true }                          # 자체 API 없음. 결재·조직 데이터는 shared/lib/queries 훅으로 읽는다
+tables: { owns: [], reads: [] }
+events: { publishes: [], consumes: [] }
+contracts: []
+tests:
+  e2e: apps/web/e2e (smoke·m1~m8이 홈을 거친다)
+invariants: []
+# 부채: 홈이 쓰는 useMine·usePending·useForms는 결재 데이터라 결재 이전(S8~9) 때 계약 훅으로 바꾼다

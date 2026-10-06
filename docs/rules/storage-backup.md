@@ -26,4 +26,4 @@
 ## 4. 이관·복구 도구
 운영자 CLI(`pnpm backup:*`, 절차는 [docs/ops/migration.md](../ops/migration.md)): `backup:dump`, `backup:restore`, `backup:rehearse`(복구 리허설), `backup:reindex`(S3 패키지로 DB 색인 재구성).
 
-**패키지 형식을 바꾸면 색인 재구성 코드(`packages/backup/src/reindex.ts`)와 그 테스트를 같은 커밋에서 바꾼다.** `approval.json`(schemaVersion 2)의 `restore` 블록이 재구성의 입력이다. 형식 버전을 올릴 때는 이전 버전 패키지를 건너뛰고 이유를 보고하는지(옛 형식) 함께 확인한다.
+**패키지 형식을 바꾸면 색인 재구성 코드(`features/backup/src/service/reindex.ts`)와 그 테스트를 같은 커밋에서 바꾼다.** `approval.json`(schemaVersion 2)의 `restore` 블록이 재구성의 입력이다. 형식 버전을 올릴 때는 이전 버전 패키지를 건너뛰고 이유를 보고하는지(옛 형식) 함께 확인한다.

@@ -31,67 +31,44 @@ const RULES: readonly Rule[] = [
 
   // ── 합성 루트: 기능을 모아 연결한다 ──
   [/^apps\/web\/app\/api\//, "composition"],
-  [/^apps\/web\/server\/(app|create-app)\.ts$/, "composition"],
+  [/^apps\/web\/server\/(app|create-app|seed-cli|test-global-setup)\.ts$/, "composition"],
+  [/^apps\/web\/server\/seed\//, "composition"], // 시험·개발 시드: 계정·조직·양식 표를 함께 채운다
   [/^apps\/worker\/src\/main\.ts$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/layout\.tsx$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],
+  // Next 페이지 어댑터: 기능의 화면 진입점을 한 줄로 내보낸다 (내 정보는 계정 화면에 알림 조각을 끼운다)
+  [
+    /^apps\/web\/app\/\(app\)\/(me|notifications|system\/telegram|system\/backups|admin\/backups|admin\/audit|admin\/audit\/review|approval\/\[id\]|invite\/\[token\]|onboarding|org|admin\/(settings|businesses|org|members|positions))\/page\.tsx$/,
+    "composition",
+  ],
+  [/^apps\/web\/app\/(login|dev-login)\/page\.tsx$/, "composition"],
+  [
+    /^apps\/web\/app\/\(app\)\/(approval\/(draft\/\[id\]|mine|new|pending)|mailbox|mailbox\/\[box\]|me\/absence|search|admin\/(approvals|forms|forms\/\[id\]))\/page\.tsx$/,
+    "composition",
+  ],
   [/^apps\/web\/components\/app-shell\.tsx$/, "composition"],
 
-  // ── 알림 ──
-  [/^packages\/notification\//, "notification"],
-  [/^packages\/core\/src\/notification-rules/, "notification"],
-  [/^apps\/worker\/src\/notification-/, "notification"],
-  [/^apps\/web\/server\/(notifications\/|routes\/notifications\.ts)/, "notification"],
-  [/^apps\/web\/components\/me\/telegram-section\.tsx$/, "notification"],
-  [/^apps\/web\/app\/\(app\)\/(notifications|system\/telegram)\//, "notification"],
+  // ── 알림 ── (코드는 features/notification/으로 이동 완료: 경로가 소유자를 알려 준다. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m8\.spec\.ts$/, "notification"],
 
-  // ── 백업·내보내기 ──
-  [/^packages\/backup\//, "backup"],
-  [/^packages\/core\/src\/(backup|doc-number-parse)/, "backup"],
-  [/^apps\/worker\/src\/(backup-|cli\/)/, "backup"],
-  [/^apps\/web\/server\/(system\/|account-export|routes\/(system|exports)\.ts)/, "backup"],
-  [/^apps\/web\/components\/backup\//, "backup"],
-  [/^apps\/web\/app\/\(app\)\/(system\/backups|admin\/backups)\//, "backup"],
+  // ── 백업·내보내기 ── (코드는 features/backup/으로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m7\.spec\.ts$/, "backup"],
 
-  // ── 완료 패키지 ──
-  [/^packages\/completion\//, "completion"],
-  [/^packages\/core\/src\/completion-package/, "completion"],
-  [/^apps\/worker\/src\/(package-jobs|render|fonts|health)/, "completion"],
-  [
-    /^apps\/web\/server\/(routes\/package\.ts|approval\/(package-download|document-storage))/,
-    "completion",
-  ],
-  [/^apps\/web\/components\/approval\/completion-files\.tsx$/, "completion"],
+  // ── 완료 패키지 ── (코드는 features/completion/으로 이동 완료)
 
-  // ── 감사 ──
-  [/^packages\/core\/src\/audit-/, "audit"],
-  [/^apps\/web\/server\/(audit\/|routes\/audit\.ts)/, "audit"],
-  [/^apps\/web\/components\/approval\/audit-trail\.tsx$/, "audit"],
-  [/^apps\/web\/app\/\(app\)\/admin\/audit\//, "audit"],
+  // ── 감사 ── (코드는 features/audit/으로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m6\.spec\.ts$/, "audit"],
 
+  // worker 운영자 CLI·상태 확인 서버: 기능의 진입점을 엮는 합성 루트
+  [/^apps\/worker\/src\/(cli\/|health\.ts$)/, "composition"],
+
   // ── 결재 (엔진 + 양식 + 문서함·검색·수신, 하나의 스코프 — 결정 Q2) ──
-  [
-    /^packages\/core\/src\/(approval-|delegation|doc-number|step-transfer|document-access|form-)/,
-    "approval",
-  ],
-  [/^apps\/web\/server\/approval\//, "approval"],
-  [
-    /^apps\/web\/server\/routes\/(approvals|approval-admin|documents|forms|mailbox|search|recipients)\.ts$/,
-    "approval",
-  ],
-  [/^apps\/web\/components\/approval\//, "approval"],
-  [/^apps\/web\/lib\/local-drafts\.ts$/, "approval"],
-  [/^apps\/web\/app\/\(app\)\/(approval|mailbox|search)\//, "approval"],
-  [/^apps\/web\/app\/\(app\)\/admin\/(approvals|forms)\//, "approval"],
+  // (코드는 features/approval/로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m(4|5)\.spec\.ts$/, "approval"],
 
   // ── 공통 영역 ──
   [/^packages\/(db|audit|storage)\//, "shared"],
-  [/^packages\/core\/src\/(index|money|file-sniff|permissions)/, "shared"],
-  [/^apps\/web\/server\/(db|test-client)\.ts$/, "shared"],
+  [/^apps\/web\/server\/(db)\.ts$/, "shared"],
   [/^apps\/web\/server\/deps\.ts$/, "composition"], // 실제 연결(DB·인증·저장소)을 만드는 합성 루트
   [/^apps\/web\/lib\/(api|utils|queries|types)\.ts$/, "shared"],
   [/^apps\/web\/components\/ui\//, "shared"],
@@ -105,26 +82,14 @@ const RULES: readonly Rule[] = [
   [/^tools\//, "shared"],
   [/\.(css|d\.ts)$|^apps\/web\/postcss\.config\.mjs$/, "shared"],
 
-  // ── 계정(로그인·세션·PIN·초대·내 정보) ──
-  [/^packages\/auth\//, "account"],
-  [/^packages\/core\/src\/(session-policy|pin-policy)/, "account"],
-  [/^apps\/web\/server\/routes\/(auth|me|accounts|account|reauth)\.ts$/, "account"],
-  [/^apps\/web\/components\/me\//, "account"],
-  [/^apps\/web\/app\/(login|dev-login)\//, "account"],
-  [/^apps\/web\/app\/\(app\)\/(me|invite|onboarding)\//, "account"],
+  // ── 계정(로그인·세션·PIN·초대·내 정보) ── (코드는 features/account/로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m1\.spec\.ts$/, "account"],
 
-  // ── 조직·권한 ──
-  [/^packages\/core\/src\/(assignment|department-|org-defaults|business-number)/, "org"],
-  [/^apps\/web\/server\/(routes\/(org|departments|members)\.ts|in-flight\.ts)/, "org"],
-  [/^apps\/web\/components\/org\//, "org"],
-  [/^apps\/web\/lib\/(admin-nav|org-tree)\.ts$/, "org"],
-  [/^apps\/web\/app\/\(app\)\/org\//, "org"],
-  [/^apps\/web\/app\/\(app\)\/admin\/(settings|businesses|org|members|positions)\//, "org"],
+  // ── 조직·권한 ── (코드는 features/org/로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m2\.spec\.ts$/, "org"],
 
-  // ── 홈 ──
-  [/^apps\/web\/app\/\(app\)\/page\.tsx$/, "home"],
+  // ── 홈 ── (코드는 features/home/으로 이동 완료. app/(app)/page.tsx는 한 줄 어댑터)
+  [/^apps\/web\/app\/\(app\)\/page\.tsx$/, "composition"],
 ];
 
 /** 파일의 소유자. 배정되지 않은 파일이면 `null` */

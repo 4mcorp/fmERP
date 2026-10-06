@@ -79,6 +79,7 @@
 | 미사용 코드·의존성 검사 | knip | ~6.39.0 (ISC) |
 | 중복 코드 탐지 (공용 코드 정리) | jscpd | ~5.4.0 (MIT) |
 | 커버리지 | @vitest/coverage-v8 | ~4.1.11 (vitest와 같은 버전) |
+| 기능 지도 파서 (`tools`) | yaml | ~2.9.1 (ISC, feature.map.yaml 읽기) |
 | UI 보조 (shadcn 설치) | shadcn, class-variance-authority, cn, tw-animate-css, sonner(알림), next-themes | ~4.21.1, ~0.7.1, ~0.4.0, ~1.4.0, ~2.0.8, ~0.4.6 |
 | 로컬 개발 서비스 (Docker) | `postgres:18-bookworm`, `chrislusf/seaweedfs:4.47`(로컬 S3, MinIO 대체), `axllent/mailpit:v1.31`(개발 메일함) | docker-compose.dev.yml |
 | 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |
@@ -97,26 +98,28 @@
 ```
 4mERP/
 ├─ apps/
-│  ├─ web/                    # Next.js 16 (UI + /api/* = Hono)
-│  │  ├─ app/api/[[...route]]/route.ts   # Hono 앱 마운트
-│  │  ├─ components/ui/       # shadcn 컴포넌트 (코드 소유)
-│  │  └─ server/              # Hono 라우트, 미들웨어(인증·테넌트·감사 로그)
-│  └─ worker/                 # pg-boss 작업: PDF·완료 패키지, 내보내기, 일일 DB 덤프, 알림, 예약 작업
+│  ├─ web/                    # 합성 루트 ①: Next.js 16 (app/ = 기능 화면의 한 줄 어댑터, server/app.ts = 기능 라우트 등록, 시드·시험 설정)
+│  └─ worker/                 # 합성 루트 ②: pg-boss 작업 등록(main.ts), 운영자 CLI(cli/)
+├─ features/                  # 기능 = pnpm 패키지(@fmerp/feature-<이름>). 다른 기능을 import할 수 없다
+│  ├─ account/ org/ approval/ completion/ audit/ backup/ notification/ home/
+│  │   ├─ feature.map.yaml    # 기능 지도(화면·접근·표·시험). 정합성은 CI가 검사
+│  │   ├─ src/{domain,service,api,jobs,ui}/   # 순수 규칙 · 업무 로직 · Hono 라우트 · worker 작업 · 화면
+│  │   └─ tests/              # 단위·통합 시험 (E2E는 apps/web/e2e)
+├─ shared/                    # 공통 영역(@fmerp/shared): authz·server(http·env·오류)·contracts·domain(순수 규칙)·lib·ui(shadcn)·testing
 ├─ packages/
-│  ├─ core/                   # 결재 엔진·도메인 규칙 (프레임워크 비의존, 순수 TS, 단위 테스트 중심)
-│  ├─ db/                     # Drizzle 스키마, 마이그레이션(권한·RLS 포함), withTenant
+│  ├─ db/                     # Drizzle 스키마 전체(모든 표에 @owner), 마이그레이션(권한·RLS 포함), withTenant
 │  ├─ audit/                  # 감사 로그 기록(recordAudit)·변경 비교(마스킹)
-│  ├─ auth/                   # Better Auth 설정, 테스트 계정 로그인·시드, 세션 정책, 계정·초대, 결재 PIN
 │  └─ storage/                # S3 호환 어댑터 (R2·S3·NCP·로컬 SeaweedFS)
-├─ docs/                      # 기준 문서(루트), INDEX.md, rules/, plan/, ts/, idea/, adr/
+├─ tools/                     # 구조 검사 도구(arch:check·guard·feature:*), 기준선(suppressions 허용 목록·커버리지 하한)
+├─ docs/                      # 기준 문서(루트), INDEX.md, feature-map/(생성), rules/, plan/, ts/, idea/, adr/
 ├─ GLOSSARY.md                # 도메인 용어집 (domain-modeling 스킬이 관리)
 ├─ CLAUDE.md                  # 에이전트 작업 규칙
-├─ .claude/skills/            # 프로젝트 스킬 (git으로 공유)
+├─ .claude/skills/            # 프로젝트 스킬 (git으로 공유, feature-map 포함)
 ├─ skills-lock.json           # 스킬 출처·해시 고정
 └─ .mcp.json                  # shadcn MCP
 ```
 
-**의존 방향:** `apps/*` → `packages/auth` → `packages/audit` → `packages/db`, `packages/auth` → `packages/core`, `apps/*` → `packages/storage`. `core`는 다른 패키지를 import하지 않습니다(결재 엔진을 프레임워크와 분리).
+**의존 방향:** 기능 → `shared`(+ `packages/{db,audit,storage}`)만. 기능끼리·`shared`→기능은 없다. 합성 루트(`apps/*`)만 여러 기능을 import하며 기능이 내보낸 진입점(`api/routes`, `jobs/jobs`, `ui/pages/*` 등)만 쓴다. 기능이 다른 기능을 필요로 하면 ① `shared`로 승격 ② `shared/contracts`의 타입·포트 + 합성 루트 주입(함수·슬롯·provisioning) ③ 이벤트(`approval_event`). `shared/domain`과 기능의 `domain/`은 DB·프레임워크·네트워크를 import하지 않는 순수 TypeScript다. 다른 기능의 표는 소유자만 쓰고, 읽으려면 읽는 쪽 `feature.map.yaml`의 `tables.reads`에 선언한다. 근거: [ADR 0012](adr/0012-feature-structure-and-static-enforcement.md), 규칙: [rules/architecture.md](rules/architecture.md).
 
 ---
 

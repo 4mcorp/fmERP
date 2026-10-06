@@ -9,6 +9,7 @@
 - 테넌트 데이터 테이블은 `account_id NOT NULL`을 갖고 **RLS 정책**을 적용한다. 정책 형식은 마이그레이션 0002를 따른다: `TO fmerp_app USING (account_id = app_current_account()) WITH CHECK (같음)`.
 - 테넌트 데이터는 반드시 `withTenant(appDb, accountId, tx => …)` 안에서 조회·변경한다. 테넌트를 지정하지 않으면 RLS 때문에 0행이 나온다(안전한 기본값).
 - 새 테넌트 테이블을 만들면 **테넌트 격리 테스트**(다른 계정 데이터가 조회되지 않음, 다른 계정으로 쓰기 거부)를 함께 작성한다.
+- **모든 테이블 선언에 `@owner <기능|shared>` 주석을 단다**(스키마 파일의 JSDoc). 기능 코드는 자기 소유 표와 `shared` 표에만 쓰고, 다른 기능의 표를 읽으려면 그 기능의 `feature.map.yaml` `tables.reads`에 선언한다(정말 필요한 쓰기 예외는 `tables.writes`에 이유와 함께 선언). `pnpm arch:check`의 `table-ownership` 게이트가 `schema.<표>` 접근을 AST로 검사한다(한도 0). 원시 SQL 문자열은 검사하지 못하므로 쓰지 않는다. 계정 생성처럼 다른 기능의 표를 채워야 하면 소유 기능이 함수(provisioning)를 내고 합성 루트가 주입한다.
 - 외래 키에는 인덱스를 둔다.
 - 결재 문서에는 기안·결재 시점의 부서명·직위·직책을 **스냅샷 컬럼(jsonb)** 으로 저장한다 (PRD ORG-017).
 
@@ -24,6 +25,7 @@
 | 검색 | 한국어 부분 일치는 `pg_trgm` GIN 인덱스 사용 (기본 전문 검색은 한국어 형태소를 지원하지 않음) | APV-082 |
 
 ## 3. 마이그레이션
+- **새 마이그레이션 첫 줄에 `-- feature: <기능|shared>`를 쓴다**(영향 범위 추적, 0022부터 `table-ownership` 게이트가 확인한다. 이전 마이그레이션은 소급하지 않는다). 새 테넌트 테이블의 격리 시험은 소유 기능의 `tests/`에 둔다.
 - `drizzle-kit generate`로 만든 SQL을 커밋한다. **이미 적용된 마이그레이션 파일은 수정하지 않는다.**
 - 하위 호환 원칙(expand → migrate → contract)을 따른다. 컬럼 삭제·이름 변경은 두 번의 배포로 나눈다.
 - RLS 정책, 권한(GRANT), 트리거도 마이그레이션에 포함한다. 확장·권한·RLS처럼 drizzle-kit이 만들지 않는 SQL은 `drizzle-kit generate --custom --name=<이름>`으로 빈 마이그레이션을 만든 뒤 작성한다.

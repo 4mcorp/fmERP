@@ -1,0 +1,36 @@
+# 기능 지도 초안 (계획 5장). P8에서 형식을 확정하고 CI가 정합성을 검사한다.
+id: backup
+summary: 시스템 DB 덤프(암호화·S3), 계정 데이터 내보내기, 복구 리허설·DB 색인 재구성 도구
+keywords: [백업, 덤프, 복구, 리허설, 재색인, 내보내기, 엑셀, CSV, 시스템 관리자, age]
+access:
+  - { who: 시스템 관리자, path: "/system/backups", entry: ui/pages/system-backups }
+  - { who: 계정 관리자, path: "관리 콘솔 → 백업·내보내기 → /admin/backups", entry: ui/pages/admin-backups }
+  - { who: 운영자, path: "pnpm backup:dump|restore|rehearse|reindex (apps/worker/src/cli)", entry: operator }
+screens:
+  - { route: /system/backups, file: src/ui/pages/system-backups.tsx }
+  - { route: /admin/backups, file: src/ui/pages/admin-backups.tsx }
+adapters:
+  - apps/web/app/(app)/system/backups/page.tsx
+  - apps/web/app/(app)/admin/backups/page.tsx
+  - apps/worker/src/cli/{dump,restore,rehearse,reindex}.ts   # 운영자 CLI (합성 루트)
+api: { generated: true, entry: api/routes }       # registerBackupRoutes(router, deps); api/guards는 알림 라우트에 주입
+jobs:
+  entry: jobs/jobs                                # registerBackupJobs(boss, deps, exportDeps); jobs/config가 환경 변수에서 deps를 만든다
+  queues: [backup.*]
+tables:
+  owns: { generated: true }                       # system_backup, account_export 등 (P7에서 @owner로 채움)
+  reads: [approval_line_template, approval_step, assignment, assignment_history, attachment, audit_review, business, department, doc_number_series, document, document_package, duty, form, form_version, position, role_grant]                                       # 재색인(reindex)이 문서·양식 표를 쓴다 → P7에서 reads 선언 또는 계약화
+  writes: [approval_action, approval_step, attachment, doc_number_series, document, document_package, document_revision, document_search]   # 재색인(reindex)이 S3 완료 패키지로 결재 색인 표를 되살린다 — 선언된 예외
+events: { publishes: [], consumes: [] }
+contracts:
+  - shared/contracts/system-guards                # requireSystemAdmin은 이 기능이 제공
+  - shared/contracts/ops-alerts                   # backupHealth·isSystemAdmin을 운영 알림에 공급 (worker가 주입)
+  - shared/domain/completion-package                       # 완료 패키지 형식 (공통 소유)
+tests:
+  unit: tests/*.test.ts
+  int: tests/*.int.test.ts
+  e2e: apps/web/e2e/m7.spec.ts
+invariants:
+  - 덤프는 항상 age로 암호화해 올리고 올라간 객체를 다시 해시해 검증한다
+  - 시스템 관리자 외에는 덤프를 다루지 못한다 (404, PIN 재인증)
+  - 세션·인증 토큰은 덤프에서 제외한다

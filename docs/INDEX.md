@@ -69,7 +69,7 @@
 | 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
 | 스테이징 구축·배포·Access 절차 (초안, 미검증) | [ops/staging.md](ops/staging.md), `docker-compose.staging.yml`, `apps/web/Dockerfile`, `.env.staging.example` |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
-| 개발용 테스트 계정 목록·비밀번호 | `packages/auth/src/test-accounts.ts` (시드: `pnpm db:seed`) |
+| 개발용 테스트 계정 목록·비밀번호 | `features/account/src/service/test-accounts.ts` (시드: `pnpm db:seed` → `apps/web/server/seed-cli.ts`) |
 | 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
 | M1 보안 리뷰 결과·후속 과제 | plan/2026-10-03-m1-security-review.md |
 | 결재 엔진 규칙(그룹·정족수·반려·후결·대결), 보안 리뷰·후속 과제 | ADR 0007, GLOSSARY.md, plan/2026-10-03-m3-approval-engine.md, plan/2026-10-03-m3-security-review.md |
@@ -162,7 +162,7 @@
 | [2026-10-05-m7-security-review.md](plan/2026-10-05-m7-security-review.md) | done | M7 보안 리뷰: 앱 역할이 완료 상태·키를 직접 쓰는 문제(S1~S3)·덤프 멈춤(S4) 수정, 후속 FU-M7-1~3 |
 | [2026-10-05-m8-notifications-home.md](plan/2026-10-05-m8-notifications-home.md) | done | M8 알림·홈·통합 검증: outbox 소비 알림(인앱·이메일), 홈 대시보드, E2E S2~S7, 스테이징 초안 |
 | [2026-10-06-m8-security-review.md](plan/2026-10-06-m8-security-review.md) | done | M8 보안 리뷰: 계정 교차 조회의 이벤트 내용 노출(S1)·연결 완료 미감사(S2)·오류 문구의 매개변수(S3) 수정, 후속 FU-M8-1~5 |
-| [2026-10-06-feature-architecture-refactor.md](plan/2026-10-06-feature-architecture-refactor.md) | draft | 기능(feature) 단위 구조 전환 + 정적 분석 강제 체계(경계 4겹, Knip, feature map, 우회 방지) 계획과 도구 지정. **사용자 승인 대기** |
+| [2026-10-06-feature-architecture-refactor.md](plan/2026-10-06-feature-architecture-refactor.md) | done | 기능(feature) 단위 구조 전환 + 정적 분석 강제 체계(경계 4겹, Knip, feature map, 우회 방지) 계획과 도구 지정. **사용자 승인 대기** |
 
 ---
 
@@ -193,12 +193,13 @@
 ---
 
 ## 9. 코드 위치
+> 기능별 위치(화면·API·표·시험)는 **생성된 기능 지도 [feature-map/INDEX.md](feature-map/INDEX.md)** 가 기준이다(`pnpm feature:find`). 아래 표는 공통 영역과 도구 위주로 남긴다.
 | 대상 | 경로 |
 |---|---|
 | 웹 화면 (App Router) | `apps/web/app/` — 로그인 필요 영역 `app/(app)/`(홈, `me`, `admin/members`, `onboarding`, `invite/[token]`), 테스트 로그인 `app/dev-login` |
-| 홈 대시보드 (M8) | `apps/web/app/(app)/page.tsx` — 결재 대기·진행 중·최근 완료·자주 쓰는 양식 |
+| 홈 대시보드 (M8) — **`features/home/`** | `src/ui/pages/home.tsx` — 결재 대기·진행 중·최근 완료·자주 쓰는 양식 (`apps/web/app/(app)/page.tsx`는 어댑터), `feature.map.yaml` |
 | 앱 공통 레이아웃·계정 전환 메뉴 | `apps/web/components/app-shell.tsx` |
-| 화면 쪽 API 호출·타입 | `shared/src/lib/api.ts`, `apps/web/lib/types.ts`, `lib/queries.ts` |
+| 화면 쪽 API 호출·타입 | `shared/src/lib/api.ts`, `shared/src/lib/types.ts`, `shared/src/lib/queries.ts` (기능 전용 훅·타입은 해당 기능의 `ui/queries.ts`) |
 | shadcn 컴포넌트 / 유틸 | `shared/src/ui/`, `shared/src/lib/utils.ts` (`@fmerp/shared/ui/*`) |
 | API (Hono, `/api/*`) | `apps/web/server/create-app.ts`(기본·헬스), `server/app.ts`(라우트 등록), `server/routes/*.ts`(auth·dev, me, accounts·invitations, account), Next 마운트 `app/api/[[...route]]/route.ts` |
 | API 미들웨어 (세션·테넌트·역할·Origin·IP) | `shared/src/server/http.ts` |
@@ -207,31 +208,33 @@
 | 환경 변수 검증 | `shared/src/server/env.ts`, `apps/worker/src/env.ts` |
 | 권한 판정 어댑터(`loadActor`·`authorize`), 서비스 컨텍스트·오류 | `shared/src/authz/org-access.ts`, `shared/src/server/{context,errors,service-context,common}.ts` |
 | worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
-| 도메인 규칙 (결재 엔진 예정) | `packages/core/src/` — 금액 `money.ts`, 사업자번호 `business-number.ts`, 부서 트리 `department-tree.ts`·`department-csv.ts`, 권한 `permissions.ts`(`can()`), 소속 `assignment.ts` |
-| 결재 엔진 (순수 함수) | `packages/core/src/approval-*.ts`(상태·엔진·결재선 해석·검증), `delegation.ts`, `doc-number.ts` |
-| 결재 서비스·API | `apps/web/server/approval/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `delegation.ts`, `org-snapshot.ts`), `server/routes/approvals.ts` |
+| 공통 도메인 규칙 (순수 함수) | `shared/src/domain/` — 권한 `permissions.ts`(`can()`), 양식 `form-{schema,values,index}.ts`, `doc-number.ts`, `completion-package.ts`, `approval-event.ts`, `engine-error-code.ts`, `pin-policy.ts`, `session-policy.ts` (시험은 같은 폴더). 기능 전용 규칙은 각 `features/*/src/domain/` |
+| 결재 — **`features/approval/`** (엔진) | `src/domain/`(`approval-engine·state·line·line-edit·types`, `delegation`, `document-access`, `step-transfer`, `form-defaults`) — 순수 함수, 시험 `tests/` |
+| 결재 서비스·API·화면 | `src/service/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `drafts·attachments·comments·mailbox·search·transfer·recipients·forms·export` 등), `src/api/`(`routes.ts` 진입점, `*-routes.ts`, `guards.ts`), `src/provisioning.ts`(기본 양식 설치), `src/ui/{pages,components,queries.ts,local-drafts.ts}`, `feature.map.yaml`. 검사 `pnpm feature:check approval`. 어댑터 페이지는 `apps/web/app/(app)/{approval,mailbox,search,me/absence,admin/{approvals,forms}}` |
 | 결재 스키마·트리거 | `packages/db/src/schema/approval.ts`, `migrations/0005_approval_engine.sql`, `0006_approval_rls_triggers.sql` |
-| 조직·권한 API | `apps/web/server/routes/org.ts`(설정·사업자·직위·직책), `departments.ts`(부서·조직도·CSV), `members.ts`(구성원·소속·발령·역할), `account.ts`(초대·프리셋), 권한 헬퍼 `server/org-access.ts`, 진행 중 결재 검사 지점 `server/in-flight.ts` |
-| 조직 화면 | `apps/web/app/(app)/org`(조직도), `admin/`(settings·businesses·org·members·positions), `components/org/` |
-| 조직 스키마·트리거 | `packages/db/src/schema/org.ts`, `migrations/0003_org_permission.sql`, `0004_org_rls_triggers.sql`, 시드 `packages/auth/src/seed-org.ts` |
+| 조직·권한 — **`features/org/`** | API `src/api/`(`routes.ts` 진입점, `org-routes.ts` 설정·사업자·직위·직책, `departments-routes.ts` 부서·조직도·CSV, `members-routes.ts` 구성원·소속·발령·역할), `src/domain/`(`assignment`·`department-csv`·`department-tree`), `src/service/in-flight.ts`, 화면 `src/ui/{pages,components,queries.ts}`, 테스트 `tests/`. 검사 `pnpm feature:check org` |
+| 조직 화면 어댑터 | `apps/web/app/(app)/org`, `admin/{settings,businesses,org,members,positions}`는 `features/org/src/ui/pages/`를 내보내는 한 줄 어댑터 |
+| 조직 스키마·트리거 | `packages/db/src/schema/org.ts`, `migrations/0003_org_permission.sql`, `0004_org_rls_triggers.sql`, 시드 `features/account/src/seed/seed-org.ts` |
 | DB 스키마·클라이언트 | `packages/db/src/schema/`, `src/client.ts` |
 | 마이그레이션 SQL / 실행 | `packages/db/migrations/`, `src/migrate.ts`(import 경로 `@fmerp/db/migrate`) |
 | S3 어댑터 (write-once 포함) | `packages/storage/src/object-storage.ts` |
-| 인증·계정 | `packages/auth/src/` — `auth.ts`(Better Auth 설정), `session-guard.ts`, `accounts.ts`(계정·초대), `pin.ts`, `me.ts`, `test-accounts.ts`·`seed.ts` |
-| 감사 로그 | `packages/audit/src/` (`recordAudit`, `computeAuditDiff`) |
-| 세션·PIN 정책 (순수 함수) | `packages/core/src/session-policy.ts`, `pin-policy.ts` |
+| 인증·계정 — **`features/account/`** | `src/service/`(`auth.ts` Better Auth 설정·`authOf`, `accounts.ts` 계정·초대, `pin.ts`, `me.ts`, `dev-login.ts`, `test-accounts.ts`), `src/seed/`(시드 계정·시험 조직), `src/api/`(`routes.ts` 진입점), `src/ui/`(로그인·초대·온보딩·내 정보), 공통 세션 기본기는 `shared/src/authz/`(`errors`·`session-guard`·`membership`·`reauth`). 검사 `pnpm feature:check account` |
+| 감사 로그 기록 | `packages/audit/src/` (`recordAudit`, `computeAuditDiff`) |
+| 감사 조회·타임라인·월간 점검 (M6) — **`features/audit/`** | `src/domain/`(`audit-review.ts`·`audit-timeline.ts`), `src/service/`(`logs.ts`·`timeline.ts`), `src/api/routes.ts`, `src/ui/{pages,components,queries.ts}`(`audit-trail.tsx`는 결재 상세에 슬롯으로 끼움), 테스트 `tests/`, `feature.map.yaml`. 검사 `pnpm feature:check audit` |
+| 세션·PIN 정책 (순수 함수) | `shared/src/domain/session-policy.ts`, `pin-policy.ts` |
 | 스키마 | `packages/db/src/schema/` (`auth.ts`, `tenant.ts`, `audit.ts`, `columns.ts`) |
 | DB 권한·RLS | `packages/db/migrations/0002_grants_rls.sql` |
 | 로컬 개발·테스트 서비스 | `docker-compose.dev.yml`, DB 계정 생성 `docker/postgres/initdb/01-roles.sh` |
 | 테스트 설정 | `vitest.config.ts`(unit·integration 프로젝트), `packages/*/test/global-setup.ts`, 테스트 DB 초기화 `packages/db/test/reset-test-db.ts`, `apps/web/playwright.config.ts`, `apps/web/e2e/`(`test-env.ts`, `global-setup.ts`) |
-| 통합 테스트 로그인 헬퍼 / M1 통합 테스트 | `apps/web/server/test-client.ts` / `apps/web/server/m1.int.test.ts` |
+| 통합 테스트 로그인 헬퍼 / M1 통합 테스트 | `shared/src/testing/test-client.ts`(앱은 `apps/web/server/test-support.ts`가 vitest setupFiles로 주입) / `apps/web/server/m1.int.test.ts` |
 | 린트·Git hook·커밋 규칙 | `biome.json`(core import 제한 포함), `lefthook.yml`, `commitlint.config.mjs` |
 | CI | `.github/workflows/ci.yml` |
 | Claude hook·권한 | `.claude/settings.json`, `.claude/hooks/format-file.mjs` |
-| 덤프·내보내기·복구 (M7) | `packages/backup/src/`(`dump.ts` 덤프, `export.ts` 계정 ZIP, `reindex.ts` 색인 재구성, `rehearse.ts` 복원·리허설, `age.ts` 암호화, `verify.ts` 패키지 검증), 순수 규칙 `packages/core/src/backup.ts`·`doc-number-parse.ts` |
-| 덤프·내보내기 API·화면 | `apps/web/server/system/backups.ts`·`routes/system.ts`(시스템 관리자), `server/account-export.ts`·`routes/exports.ts`(계정 내보내기), 화면 `app/(app)/system/backups`, `app/(app)/admin/backups` |
-| 백업 worker·운영자 CLI | `apps/worker/src/backup-jobs.ts`(스케줄·요청 처리), `backup-config.ts`, `cli/{dump,restore,rehearse,reindex}.ts` (`pnpm backup:*`) |
-| 알림 (M8) | `packages/core/src/notification-rules.ts`(이벤트→수신자·문구), `packages/notification/src/`(`consume.ts` 이벤트→알림, `send.ts` 텔레그램 발송, `link.ts` 연결 토큰·`/start`, `receiver.ts` 폴링·웹훅 어댑터, `telegram-api.ts`), worker `apps/worker/src/notification-jobs.ts`, API `apps/web/server/routes/notifications.ts`·`server/notifications/`, 화면 `app/(app)/notifications`·`components/me/telegram-section.tsx`·`app/(app)/system/telegram`, 스키마 `packages/db/src/schema/notification.ts`, `migrations/0018~0020` |
+| 덤프·내보내기·복구 (M7) — **`features/backup/`** | `src/service/`(`dump.ts` 덤프, `export.ts` 계정 ZIP, `reindex.ts` 색인 재구성, `rehearse.ts` 복원·리허설, `age.ts` 암호화, `verify.ts` 패키지 검증, `system-backups.ts`·`account-export.ts` API 서비스), `src/domain/`(`backup.ts`·`doc-number-parse.ts` 순수 규칙) |
+| 덤프·내보내기 API·화면 | `features/backup/src/api/`(`routes.ts` 진입점, `system-routes.ts`, `export-routes.ts`, `guards.ts`), `src/ui/{pages,queries.ts}` (`app/(app)/system/backups`·`admin/backups`는 어댑터) |
+| 백업 worker·운영자 CLI | `features/backup/src/jobs/{jobs,config}.ts`(스케줄·요청 처리·설정), `src/operator.ts`, CLI는 합성 루트 `apps/worker/src/cli/{dump,restore,rehearse,reindex}.ts` (`pnpm backup:*`). 검사 `pnpm feature:check backup` |
+| 완료 PDF·패키지 (M5) — **`features/completion/`** | `src/service/`(`generate.ts` 패키지 생성, `load.ts`, `pdf-html.ts`, `package-download.ts`), `src/api/routes.ts`, `src/jobs/{jobs,render,fonts}.ts`, `src/ui/components/completion-files.tsx`(결재 상세에 슬롯으로 끼움), 형식은 공통 소유 `packages/core/src/completion-package.ts`. 검사 `pnpm feature:check completion` |
+| 알림 (M8) — **`features/notification/`** (기능 구조 시범, [계획 12장](plan/2026-10-06-feature-architecture-refactor.md)) | `src/domain/notification-rules.ts`(이벤트→수신자·문구), `src/service/`(`consume.ts` 이벤트→알림, `send.ts` 텔레그램 발송, `link.ts` 연결 토큰·`/start`, `receiver.ts` 폴링·웹훅 어댑터, `telegram-api.ts`, `alerts.ts` 운영 알림, `in-app.ts`·`telegram.ts` API 서비스), `src/api/routes.ts`, `src/jobs/jobs.ts`, `src/ui/{pages,components,queries.ts}`, 테스트 `tests/`, 지도 `feature.map.yaml`. Next 어댑터 `apps/web/app/(app)/{notifications,system/telegram,me}/page.tsx`, 스키마 `packages/db/src/schema/notification.ts`, `migrations/0018~0021`. 검사 `pnpm feature:check notification` |
 | 구조 검사 도구 (기능 구조 전환) | `tools/src/`(`feature-assignment.ts` 배정표, `gates/` 래칫 게이트, `cli/arch-check·guard·boundaries·run-gate·quality-report`), 설정 `.dependency-cruiser.cjs`·`knip.json`·`tsconfig.depcruise.json`·`biome.boundaries.json`(생성), 기준선 `tools/baselines/`, 명령 `pnpm arch:check`·`arch:guard`·`verify`, 파일 이동+import 자동 수정 `pnpm arch:move` |
 | 공통 영역 (기능 구조 전환) | `shared/src/`(`server/` 기반, `authz/`, `ui/`, `lib/`) — 이용 `@fmerp/shared/*`. `packages/db·audit·storage`도 공통 영역으로 취급 |
 | 덤프·내보내기 스키마 | `packages/db/src/schema/backup.ts`, `migrations/0015_backup_tables.sql`, `0016_backup_rls_roles.sql` |

@@ -1,0 +1,41 @@
+{
+  "name": "@fmerp/feature-approval",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api/routes": "./src/api/routes.ts",
+    "./api/guards": "./src/api/guards.ts",
+    "./provisioning": "./src/provisioning.ts",
+    "./ui/pages/*": "./src/ui/pages/*.tsx",
+    "./ui/components/*": "./src/ui/components/*.tsx",
+    "./ui/local-drafts": "./src/ui/local-drafts.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fmerp/audit": "workspace:*",
+    "@fmerp/db": "workspace:*",
+    "@fmerp/shared": "workspace:*",
+    "@fmerp/storage": "workspace:*",
+    "@hono/zod-openapi": "~1.6.3",
+    "@tanstack/react-query": "~5.104.1",
+    "@tiptap/pm": "~3.31.4",
+    "@tiptap/react": "~3.31.4",
+    "@tiptap/starter-kit": "~3.31.4",
+    "dexie": "~4.4.6",
+    "drizzle-orm": "~0.45.3",
+    "hono": "~4.13.12",
+    "lucide-react": "~1.49.0",
+    "next": "~16.3.8",
+    "react": "~19.3.0",
+    "react-hook-form": "~7.89.0",
+    "sonner": "~2.0.8",
+    "write-excel-file": "~4.1.1",
+    "zod": "~4.6.5"
+  },
+  "devDependencies": {
+    "@types/react": "~19.3.0"
+  }
+}

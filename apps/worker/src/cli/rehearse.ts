@@ -3,8 +3,8 @@
 //   pnpm backup:rehearse --identity=<age 개인키 파일> [--from=<S3 키 또는 파일>] [--sample=20] [--keep]
 // 환경 변수: REHEARSAL_ADMIN_URL(임시 DB를 만들 수 있는 연결), BACKUP_DATABASE_URL(최신 덤프를 찾고 운영 DB와 견줌)
 import { existsSync, readFileSync } from "node:fs";
-import { rehearseRestore } from "@fmerp/backup";
 import { createDatabase } from "@fmerp/db";
+import { rehearseRestore } from "@fmerp/feature-backup/operator";
 import { ObjectStorage } from "@fmerp/storage";
 import { env } from "../env";
 import { need, parseArgs } from "./args";

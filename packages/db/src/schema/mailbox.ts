@@ -24,7 +24,11 @@ const accountRef = () =>
 
 export const PACKAGE_STATUSES = ["PENDING", "READY", "FAILED"] as const;
 
-/** 완료 패키지(S3 `final/`) 생성 상태. READY가 되면 manifest 해시는 바꿀 수 없다 (ADR 0009) */
+/**
+ * 완료 패키지(S3 `final/`) 생성 상태. READY가 되면 manifest 해시는 바꿀 수 없다 (ADR 0009)
+ *
+ * @owner completion
+ */
 export const documentPackage = pgTable(
   "document_package",
   {
@@ -54,7 +58,11 @@ export const documentPackage = pgTable(
 
 export const RECIPIENT_KINDS = ["cc", "receive", "circulate"] as const;
 
-/** 참조·수신·공람 대상 (APV-070·072·073). 결재선 단계가 아니다 */
+/**
+ * 참조·수신·공람 대상 (APV-070·072·073). 결재선 단계가 아니다
+ *
+ * @owner approval
+ */
 export const documentRecipient = pgTable(
   "document_recipient",
   {
@@ -111,7 +119,11 @@ export const documentRecipient = pgTable(
   ],
 );
 
-/** 참조·공람의 사람별 열람 일시 (APV-072·073). 부서 대상이면 구성원마다 한 행 */
+/**
+ * 참조·공람의 사람별 열람 일시 (APV-072·073). 부서 대상이면 구성원마다 한 행
+ *
+ * @owner approval
+ */
 export const documentRecipientRead = pgTable(
   "document_recipient_read",
   {
@@ -134,7 +146,11 @@ export const documentRecipientRead = pgTable(
   ],
 );
 
-/** 수신 접수자가 부서 안 담당자에게 배부한 기록 (APV-070) */
+/**
+ * 수신 접수자가 부서 안 담당자에게 배부한 기록 (APV-070)
+ *
+ * @owner approval
+ */
 export const documentDistribution = pgTable(
   "document_distribution",
   {
@@ -163,7 +179,11 @@ export const documentDistribution = pgTable(
   ],
 );
 
-/** 본문 전문 검색용 텍스트 (APV-082). 본문은 S3에만 있어 상신할 때 추출해 둔다 (ADR 0009) */
+/**
+ * 본문 전문 검색용 텍스트 (APV-082). 본문은 S3에만 있어 상신할 때 추출해 둔다 (ADR 0009)
+ *
+ * @owner approval
+ */
 export const documentSearch = pgTable(
   "document_search",
   {

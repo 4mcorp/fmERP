@@ -1,0 +1,29 @@
+# 기능 지도 초안 (계획 5장). P8에서 형식을 확정하고 CI가 정합성을 검사한다.
+id: completion
+summary: 완료된 결재 문서의 PDF·패키지(final/)를 한 번만 만들어 S3에 쓰고, 열람 권한자에게 내려받게 한다
+keywords: [완료, PDF, 패키지, 내려받기, ZIP, 인쇄, final, 해시, manifest]
+access:
+  - { who: 문서 열람자, path: "완료된 결재 문서 상세 → 완료 파일", entry: ui/components/completion-files }
+screens: []
+adapters:
+  - apps/web/app/(app)/approval/[id]/page.tsx   # 결재 상세에 CompletionFiles를 끼운다 (슬롯 주입)
+api: { generated: true, entry: api/routes }       # registerPackageRoutes(router, deps, access)
+jobs:
+  entry: jobs/jobs                                # registerPackageJobs(boss, pool, deps); render·fonts는 worker가 주입
+  queues: [package.generate, package.sweep]
+tables:
+  owns: { generated: true }                       # document_package (P7에서 @owner로 채움)
+  reads: [approval_action, approval_step, attachment, business, department, document, document_revision, form, form_version]   # 패키지 내용을 만들려고 결재 문서·양식과 조직 이름을 읽는다 → P9 계약화 후보
+events: { publishes: [], consumes: [approval_event] }
+contracts:
+  - shared/contracts/document-access              # 문서 열람 확인 (결재가 제공, app.ts가 주입)
+  - shared/domain/completion-package                       # 패키지 형식·manifest (공통 소유, 백업도 읽는다)
+  - shared/domain/form-schema                              # 양식 스키마·값 (공통 소유)
+tests:
+  unit: tests/*.test.ts
+  int: tests/*.int.test.ts
+  e2e: apps/web/e2e (m5.spec.ts가 완료 파일을 거친다)
+invariants:
+  - final/ 객체는 한 번만 쓴다 (이미 있으면 해시가 같을 때만 성공, 다르면 사람이 확인)
+  - 열람할 수 없는 문서의 패키지는 존재도 알리지 않는다
+  - 내려받기는 재인증을 요구하고 감사 로그에 남긴다

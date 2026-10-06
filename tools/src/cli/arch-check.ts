@@ -6,9 +6,11 @@ import { BOUNDARIES_FILE, expectedBoundaries } from "../boundaries";
 import { GATES } from "../gates";
 import {
   evaluate,
+  evaluateStrict,
   normalize,
   readBaseline,
   readLimits,
+  removeBaseline,
   writeBaseline,
   writeLimits,
 } from "../ratchet";
@@ -29,6 +31,18 @@ for (const gate of GATES.filter((g) => !only || g.name === only)) {
   const limit = limits[gate.name];
 
   if (write || init) {
+    if (gate.strict) {
+      if (current.length > 0) {
+        fail(
+          `${gate.name}: 엄격 게이트는 위반 ${current.length}건을 기준선에 기록할 수 없습니다. 위반을 고치세요.`,
+        );
+        continue;
+      }
+      removeBaseline(gate.name);
+      limits[gate.name] = 0;
+      console.log(`${gate.name}: 엄격 게이트 (위반 0건, 기준선 없음)`);
+      continue;
+    }
     if (limit !== undefined && current.length > limit) {
       fail(
         `${gate.name}: 위반 ${current.length}건이 한도 ${limit}건을 넘어 기준선을 쓰지 않습니다. 위반을 고치세요 (한도를 올리는 것은 사람이 tools/baselines/limits.json을 직접 바꿔야 합니다).`,
@@ -42,13 +56,17 @@ for (const gate of GATES.filter((g) => !only || g.name === only)) {
   }
 
   console.log(`${gate.name} — ${gate.description}`);
-  const result = evaluate(gate.name, readBaseline(gate.name), current, limit);
+  const result = gate.strict
+    ? evaluateStrict(gate.name, readBaseline(gate.name), current, limit)
+    : evaluate(gate.name, readBaseline(gate.name), current, limit);
   for (const message of result.errors) fail(message);
   for (const k of result.added.slice(0, 20)) console.error(`      + ${k}`);
   if (result.added.length > 20) console.error(`      … 외 ${result.added.length - 20}건`);
   for (const k of result.removed.slice(0, 10)) console.error(`      - ${k}`);
   if (result.errors.length === 0)
-    console.log(`  ✓ ${current.length}건 (기준선과 같음, 한도 ${limit})`);
+    console.log(
+      gate.strict ? "  ✓ 0건 (엄격)" : `  ✓ ${current.length}건 (허용 목록과 같음, 한도 ${limit})`,
+    );
 }
 
 // Biome 경계 규칙이 features/*와 맞는지 (손으로 고쳤거나 기능을 추가하고 생성기를 안 돌렸으면 실패)

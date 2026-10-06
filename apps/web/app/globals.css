@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 /* 공통 영역(@fmerp/shared)의 UI 컴포넌트에 쓰인 클래스도 만든다 */
 @source "../../../shared/src";
+@source "../../../features";
 
 @custom-variant dark (&:is(.dark *));
 

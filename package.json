@@ -21,7 +21,7 @@
     "env:up": "docker compose -f docker-compose.dev.yml up -d --wait && pnpm --filter @fmerp/storage ensure-bucket",
     "env:down": "docker compose -f docker-compose.dev.yml down",
     "prepare": "lefthook install",
-    "db:seed": "pnpm --filter @fmerp/auth seed",
+    "db:seed": "pnpm --filter @fmerp/web seed",
     "backup:dump": "pnpm --filter @fmerp/worker backup:dump",
     "backup:restore": "pnpm --filter @fmerp/worker backup:restore",
     "backup:rehearse": "pnpm --filter @fmerp/worker backup:rehearse",
@@ -33,7 +33,12 @@
     "verify": "pnpm lint && pnpm typecheck && pnpm arch:check && pnpm arch:guard",
     "verify:all": "pnpm verify && pnpm test && pnpm test:e2e",
     "arch:boundaries": "tsx tools/src/cli/boundaries.ts",
-    "arch:move": "tsx tools/src/cli/move.ts"
+    "arch:move": "tsx tools/src/cli/move.ts",
+    "feature:check": "tsx tools/src/cli/feature-check.ts",
+    "feature:index": "tsx tools/src/cli/feature-map.ts index",
+    "feature:find": "tsx tools/src/cli/feature-map.ts find",
+    "feature:map-check": "tsx tools/src/cli/feature-map.ts check",
+    "feature:impact": "tsx tools/src/cli/feature-map.ts impact"
   },
   "devDependencies": {
     "@biomejs/biome": "~2.5.15",

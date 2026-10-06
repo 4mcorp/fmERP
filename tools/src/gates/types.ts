@@ -8,6 +8,11 @@
 export interface Gate {
   name: string;
   description: string;
+  /**
+   * 엄격 게이트: 위반이 하나라도 있으면 실패한다. 기준선 파일이 없고 한도는 0으로 고정된다(P10 하드 전환).
+   * 엄격하지 않은 게이트(suppressions)는 이유가 적힌 정당한 예외의 **허용 목록**이며 줄어들기만 한다.
+   */
+  strict?: boolean;
   /** 정렬·중복 제거 전의 위반 키 목록 */
   collect(): Promise<string[]>;
 }

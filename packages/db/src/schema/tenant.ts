@@ -13,8 +13,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth";
 import { createdAt, primaryId } from "./columns";
+import { user } from "./user";
 
 /** 계정별 보안 정책. 비어 있으면 기본값을 쓴다 (PRD AUTH-008) */
 export interface SecurityPolicy {
@@ -32,6 +32,7 @@ export interface SecurityPolicy {
   allowAdminExport?: boolean;
 }
 
+/** @owner shared */
 export const account = pgTable(
   "account",
   {
@@ -57,6 +58,7 @@ export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];
 export const MEMBERSHIP_STATUSES = ["active", "leave", "left"] as const;
 export type MembershipStatus = (typeof MEMBERSHIP_STATUSES)[number];
 
+/** @owner shared */
 export const membership = pgTable(
   "membership",
   {
@@ -83,7 +85,11 @@ export const membership = pgTable(
   ],
 );
 
-/** 초대 (PRD AUTH-006). 링크로 수락하므로 이메일 일치를 요구하지 않는다. 토큰은 해시만 저장한다. */
+/**
+ * 초대 (PRD AUTH-006). 링크로 수락하므로 이메일 일치를 요구하지 않는다. 토큰은 해시만 저장한다.
+ *
+ * @owner account
+ */
 export const invitation = pgTable(
   "invitation",
   {

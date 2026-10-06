@@ -1,0 +1,40 @@
+# 기능 지도 초안 (계획 5장). P8(feature-map 도구)에서 형식을 확정하고 CI가 정합성을 검사한다.
+# 사람이 쓰는 것은 의도(summary·keywords·access·dom.where)뿐이고, `generated: true`는 도구가 채운다.
+id: notification
+summary: 결재 이벤트를 인앱·텔레그램 알림으로 바꾸고, 월간 점검 누락·덤프 문제 같은 운영 알림을 보낸다
+keywords: [알림, 벨, 읽음, 텔레그램, 연결, 수신 방식, 웹훅, 폴링, 운영 알림]
+access:
+  - { who: 모든 구성원, path: "앱 헤더 알림 → /notifications", entry: ui/pages/notifications }
+  - { who: 모든 구성원, path: "내 정보 → 알림 탭", entry: ui/components/telegram-section }
+  - { who: 시스템 관리자, path: "/system/telegram", entry: ui/pages/system-telegram }
+screens:
+  - route: /notifications
+    file: src/ui/pages/notifications.tsx
+    dom:
+      - { role: heading, name: "알림", where: "페이지 제목" }
+  - route: /system/telegram
+    file: src/ui/pages/system-telegram.tsx
+adapters:                                  # Next app/ 쪽 한 줄 어댑터 (합성 루트)
+  - apps/web/app/(app)/notifications/page.tsx
+  - apps/web/app/(app)/system/telegram/page.tsx
+  - apps/web/app/(app)/me/page.tsx          # 내 정보 화면에 TelegramSection을 끼운다 (슬롯 주입)
+api: { generated: true, entry: api/routes } # registerNotificationRoutes(router, deps, guards)
+jobs:
+  entry: jobs/jobs                          # registerNotificationJobs(boss, deps)
+  queues: [notify.telegram]
+tables:
+  owns: { generated: true }                 # notification, event_notified, telegram_link, telegram_link_token, system_setting (P7에서 @owner로 채움)
+  reads: [approval_event, approval_step, audit_review, document, document_recipient, role_grant, system_backup]
+events: { publishes: [], consumes: [approval_event] }
+contracts:                                  # 이 기능이 쓰는 공통 계약
+  - shared/domain/approval-event                     # 결재가 만들고 알림이 읽는 이벤트 형식
+  - shared/contracts/ops-alerts             # 감사·백업 판정 규칙 (합성 루트가 주입)
+  - shared/contracts/system-guards          # 시스템 관리자·PIN 재인증 가드 (합성 루트가 주입)
+tests:
+  unit: tests/*.test.ts
+  int: tests/*.int.test.ts
+  e2e: apps/web/e2e/m8.spec.ts
+invariants:
+  - 외부 채널(텔레그램) 문구에 문서 제목·내용·의견을 넣지 않는다
+  - 연결 토큰은 해시만 저장하고 한 번만 쓴다
+  - 같은 사건은 dedupe_key로 한 번만 알린다

@@ -3,21 +3,25 @@ import { isTestFile, ownerOf } from "../feature-assignment";
 
 describe("기능 배정표", () => {
   it.each([
-    ["apps/web/server/approval/service.ts", "approval"],
-    ["apps/web/server/routes/forms.ts", "approval"],
-    ["apps/web/components/approval/line-editor.tsx", "approval"],
-    ["packages/core/src/approval-engine.ts", "approval"],
-    ["packages/core/src/form-schema.ts", "approval"],
-    ["packages/core/src/completion-package.ts", "completion"],
-    ["packages/notification/src/send.ts", "notification"],
-    ["apps/worker/src/backup-jobs.ts", "backup"],
-    ["apps/worker/src/package-jobs.ts", "completion"],
-    ["apps/web/server/routes/reauth.ts", "account"],
-    ["packages/auth/src/pin.ts", "account"],
-    ["apps/web/server/routes/members.ts", "org"],
-    ["packages/core/src/department-tree.ts", "org"],
-    ["apps/web/server/audit/logs.ts", "audit"],
-    ["apps/web/app/(app)/page.tsx", "home"],
+    ["features/approval/src/service/service.ts", "approval"],
+    ["features/approval/src/api/forms-routes.ts", "approval"],
+    ["features/approval/src/ui/components/line-editor.tsx", "approval"],
+    ["features/approval/src/domain/approval-engine.ts", "approval"],
+    ["shared/src/domain/form-schema.ts", "shared"],
+    ["features/approval/src/domain/form-defaults.ts", "approval"],
+    ["shared/src/domain/completion-package.ts", "shared"],
+    ["features/notification/src/service/send.ts", "notification"],
+    ["apps/web/app/(app)/notifications/page.tsx", "composition"],
+    ["features/backup/src/jobs/jobs.ts", "backup"],
+    ["features/completion/src/jobs/jobs.ts", "completion"],
+    ["apps/worker/src/cli/dump.ts", "composition"],
+    ["features/account/src/api/me-routes.ts", "account"],
+    ["features/account/src/service/pin.ts", "account"],
+    ["features/org/src/api/members-routes.ts", "org"],
+    ["features/org/src/domain/department-tree.ts", "org"],
+    ["features/audit/src/service/logs.ts", "audit"],
+    ["features/home/src/ui/pages/home.tsx", "home"],
+    ["apps/web/app/(app)/page.tsx", "composition"],
     ["apps/web/server/app.ts", "composition"],
     ["apps/worker/src/main.ts", "composition"],
     ["packages/db/src/schema/org.ts", "shared"],
@@ -37,7 +41,7 @@ describe("기능 배정표", () => {
     expect(isTestFile("apps/web/server/approval/service.test.ts")).toBe(true);
     expect(isTestFile("apps/web/server/approval/approval.int.test.ts")).toBe(true);
     expect(isTestFile("apps/web/e2e/m4.spec.ts")).toBe(true);
-    expect(isTestFile("packages/notification/src/test-support.ts")).toBe(true);
+    expect(isTestFile("features/notification/tests/test-support.ts")).toBe(true);
     expect(isTestFile("apps/web/server/approval/service.ts")).toBe(false);
   });
 });

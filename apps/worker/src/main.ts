@@ -1,16 +1,17 @@
 import { createDatabase } from "@fmerp/db";
-import { TelegramClient } from "@fmerp/notification";
+import { reviewStatuses } from "@fmerp/feature-audit/domain/audit-review";
+import { backupHealth, isSystemAdmin } from "@fmerp/feature-backup/domain/backup";
+import { createBackupContext } from "@fmerp/feature-backup/jobs/config";
+import { type BackupJobs, registerBackupJobs } from "@fmerp/feature-backup/jobs/jobs";
+import { loadFontCss } from "@fmerp/feature-completion/jobs/fonts";
+import { registerPackageJobs } from "@fmerp/feature-completion/jobs/jobs";
+import { closeBrowser, renderPdf } from "@fmerp/feature-completion/jobs/render";
+import { registerNotificationJobs, TelegramClient } from "@fmerp/feature-notification/jobs/jobs";
 import { ObjectStorage } from "@fmerp/storage";
 import { serve } from "@hono/node-server";
 import { PgBoss } from "pg-boss";
-import { createBackupContext } from "./backup-config";
-import { type BackupJobs, registerBackupJobs } from "./backup-jobs";
 import { env } from "./env";
-import { loadFontCss } from "./fonts";
 import { createHealthApp } from "./health";
-import { registerNotificationJobs } from "./notification-jobs";
-import { registerPackageJobs } from "./package-jobs";
-import { closeBrowser, renderPdf } from "./render";
 
 const HEARTBEAT = "heartbeat";
 
@@ -73,6 +74,8 @@ const notificationJobs = await registerNotificationJobs(boss, {
       ? { url: `${publicBase}/api/telegram/webhook`, secret: env.TELEGRAM_WEBHOOK_SECRET }
       : null,
   systemAdminEmails: env.SYSTEM_ADMIN_EMAILS,
+  // 운영 알림이 쓰는 감사·백업 판정 규칙은 합성 루트에서 주입한다 (기능끼리 직접 import하지 않는다)
+  rules: { reviewStatuses, backupHealth, isSystemAdmin },
   logger: console,
 });
 

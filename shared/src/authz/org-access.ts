@@ -1,4 +1,7 @@
 // 조직·권한 API가 공통으로 쓰는 권한 판정 헬퍼. 판정 규칙 자체는 packages/core의 can()에 있다 (PRD 3.2·3.3).
+
+import { schema, type Tx } from "@fmerp/db";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   type Action,
   type Actor,
@@ -7,9 +10,7 @@ import {
   type GrantRole,
   type ScopeType,
   type Target,
-} from "@fmerp/core";
-import { schema, type Tx } from "@fmerp/db";
-import { and, eq, isNull } from "drizzle-orm";
+} from "../domain/permissions";
 import { ApiError } from "../server/http";
 
 export interface TenantInfo {
@@ -68,7 +69,7 @@ export async function departmentTarget(tx: Tx, departmentId: string): Promise<Ta
 }
 
 /** 구성원이 소속된 사업자들(유효 소속 기준). 구성원 대상 행위는 이 중 하나라도 권한 범위에 있으면 허용한다 */
-export async function memberBusinessTargets(tx: Tx, membershipId: string): Promise<Target[]> {
+async function memberBusinessTargets(tx: Tx, membershipId: string): Promise<Target[]> {
   const rows = await tx
     .selectDistinct({ businessId: schema.assignment.businessId })
     .from(schema.assignment)

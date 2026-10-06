@@ -101,6 +101,7 @@ const isFeature = (o: Owner) => o !== "shared" && o !== "composition";
 
 export const crossFeatureGate: Gate = {
   name: "cross-feature",
+  strict: true,
   description: "기능 사이 import (공통·합성 루트 제외, 배럴은 이름 단위로 풀어서 측정)",
   collect: () => collectEdges((from, to) => isFeature(from) && isFeature(to) && from !== to),
 };
@@ -111,6 +112,7 @@ export const crossFeatureGate: Gate = {
  */
 export const sharedToFeatureGate: Gate = {
   name: "shared-to-feature",
+  strict: true,
   description: "공통 영역이 기능 소유 코드를 import (계약·승격으로 풀어야 하는 부채)",
   collect: () => collectEdges((from, to) => from === "shared" && isFeature(to)),
 };
@@ -118,6 +120,7 @@ export const sharedToFeatureGate: Gate = {
 /** 어느 기능에도 배정되지 않은 소스 파일. 새 파일은 반드시 배정되어야 한다 */
 export const unassignedGate: Gate = {
   name: "unassigned-files",
+  strict: true,
   description: "tools/src/feature-assignment.ts에 규칙이 없는 소스 파일",
   async collect() {
     const { modules } = await cruise();

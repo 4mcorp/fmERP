@@ -1,30 +1,10 @@
 // Better Auth가 사용하는 테이블 (ADR 0005). 필드 이름은 Better Auth 모델과 맞춘다.
-import {
-  boolean,
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { createdAt, primaryId, updatedAt } from "./columns";
 import { account } from "./tenant";
+import { user } from "./user";
 
-export const user = pgTable("user", {
-  id: primaryId(),
-  name: text().notNull(),
-  email: text().notNull().unique(),
-  emailVerified: boolean().notNull().default(false),
-  image: text(),
-  /** 서명·도장 이미지의 S3 키 (PRD AUTH-016) */
-  signatureKey: text(),
-  stampKey: text(),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
-});
-
+/** @owner shared */
 export const session = pgTable(
   "session",
   {
@@ -48,7 +28,11 @@ export const session = pgTable(
   (t) => [index().on(t.userId)],
 );
 
-/** 로그인 수단 (Better Auth의 account 모델). 테넌트 account와 구분하기 위해 이름을 바꿨다. */
+/**
+ * 로그인 수단 (Better Auth의 account 모델). 테넌트 account와 구분하기 위해 이름을 바꿨다.
+ *
+ * @owner shared
+ */
 export const userIdentity = pgTable(
   "user_identity",
   {
@@ -72,6 +56,7 @@ export const userIdentity = pgTable(
   (t) => [uniqueIndex().on(t.providerId, t.providerAccountId), index().on(t.userId)],
 );
 
+/** @owner shared */
 export const verification = pgTable(
   "verification",
   {
@@ -85,7 +70,11 @@ export const verification = pgTable(
   (t) => [index().on(t.identifier)],
 );
 
-/** 결재 PIN (PRD AUTH-009). Argon2id 해시만 저장한다. */
+/**
+ * 결재 PIN (PRD AUTH-009). Argon2id 해시만 저장한다.
+ *
+ * @owner shared
+ */
 export const approvalPin = pgTable("approval_pin", {
   userId: uuid()
     .primaryKey()

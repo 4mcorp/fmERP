@@ -17,6 +17,7 @@ import { account, membership } from "./tenant";
 
 export const AUDIT_RESULTS = ["success", "failure"] as const;
 
+/** @owner shared */
 export const auditLog = pgTable(
   "audit_log",
   {
@@ -49,6 +50,8 @@ export const auditLog = pgTable(
 /**
  * 월 1회 접속 기록 점검 기록 (PRD AUD-026). 추가만 한다(INSERT·SELECT 권한만).
  * 같은 달에 여러 건이 있을 수 있고 가장 마지막 건이 그 달의 현재 상태다 (정정은 새 건으로).
+ *
+ * @owner audit
  */
 export const auditReview = pgTable(
   "audit_review",
