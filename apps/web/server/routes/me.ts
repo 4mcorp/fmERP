@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import {
   getProfile,
-  hasApprovalPin,
   listLoginHistory,
   listMyAccounts,
   listMySessions,
@@ -10,6 +9,7 @@ import {
   updateProfile,
   verifyApprovalPin,
 } from "@fmerp/auth";
+import { hasApprovalPin } from "@fmerp/shared/authz/reauth";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
   ApiError,

@@ -118,11 +118,3 @@ async function checkPin(
   }
   throw new AuthDomainError("pin_mismatch", "PIN이 일치하지 않습니다");
 }
-
-export async function hasApprovalPin(db: Db, userId: string): Promise<boolean> {
-  const [row] = await db
-    .select({ userId: schema.approvalPin.userId })
-    .from(schema.approvalPin)
-    .where(eq(schema.approvalPin.userId, userId));
-  return Boolean(row);
-}

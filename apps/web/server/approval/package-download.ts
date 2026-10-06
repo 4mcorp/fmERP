@@ -2,13 +2,13 @@
 import { PassThrough, type Readable } from "node:stream";
 import { recordAudit } from "@fmerp/audit";
 import { schema } from "@fmerp/db";
+import type { DocumentAccess, Viewer } from "@fmerp/shared/contracts/document-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
+import { documentPrefix } from "@fmerp/shared/server/document-prefix";
 import { ApprovalError } from "@fmerp/shared/server/errors";
 import { FINAL_FILES, finalKey } from "@fmerp/storage";
 import { ZipArchive } from "archiver";
 import { eq } from "drizzle-orm";
-import { requireView, type Viewer } from "./access";
-import { documentPrefix } from "./drafts";
 
 export type PackageState = "NONE" | "PENDING" | "READY" | "FAILED";
 
@@ -22,8 +22,13 @@ async function loadDoc(ctx: ServiceContext, documentId: string) {
 }
 
 /** 완료 패키지 상태. 완료되지 않은 문서는 NONE이다 */
-export async function packageStatus(ctx: ServiceContext, documentId: string, viewer: Viewer) {
-  await requireView(ctx, documentId, viewer);
+export async function packageStatus(
+  ctx: ServiceContext,
+  documentId: string,
+  viewer: Viewer,
+  access: DocumentAccess,
+) {
+  await access.requireView(ctx, documentId, viewer);
   const doc = await loadDoc(ctx, documentId);
   const [pkg] = await ctx.tx
     .select()
@@ -34,8 +39,13 @@ export async function packageStatus(ctx: ServiceContext, documentId: string, vie
   return { status: state, readyAt: pkg?.readyAt ?? null };
 }
 
-async function requireReady(ctx: ServiceContext, documentId: string, viewer: Viewer) {
-  await requireView(ctx, documentId, viewer);
+async function requireReady(
+  ctx: ServiceContext,
+  documentId: string,
+  viewer: Viewer,
+  access: DocumentAccess,
+) {
+  await access.requireView(ctx, documentId, viewer);
   const doc = await loadDoc(ctx, documentId);
   const [pkg] = await ctx.tx
     .select()
@@ -55,16 +65,22 @@ export async function checkPackageDownload(
   ctx: ServiceContext,
   documentId: string,
   viewer: Viewer,
+  access: DocumentAccess,
 ) {
-  await requireReady(ctx, documentId, viewer);
+  await requireReady(ctx, documentId, viewer, access);
 }
 
 const safeName = (doc: { docNo: string | null; title: string }, ext: string) =>
   `${(doc.docNo ?? doc.title).replace(/[\\/:*?"<>|\r\n]/g, "_").slice(0, 80)}.${ext}`;
 
 /** 결재란이 찍힌 PDF의 짧은 수명 서명 URL (BAK-008) */
-export async function packagePdfUrl(ctx: ServiceContext, documentId: string, viewer: Viewer) {
-  const doc = await requireReady(ctx, documentId, viewer);
+export async function packagePdfUrl(
+  ctx: ServiceContext,
+  documentId: string,
+  viewer: Viewer,
+  access: DocumentAccess,
+) {
+  const doc = await requireReady(ctx, documentId, viewer, access);
   const prefix = await documentPrefix(ctx, doc);
   const url = await ctx.storage.presignGet(finalKey(prefix, "document.pdf"), 300, {
     downloadName: safeName(doc, "pdf"),
@@ -89,8 +105,9 @@ export async function openPackageZip(
   ctx: ServiceContext,
   documentId: string,
   viewer: Viewer,
+  access: DocumentAccess,
 ): Promise<{ filename: string; stream: Readable }> {
-  const doc = await requireReady(ctx, documentId, viewer);
+  const doc = await requireReady(ctx, documentId, viewer, access);
   const prefix = await documentPrefix(ctx, doc);
   const attachments = await ctx.tx
     .select()

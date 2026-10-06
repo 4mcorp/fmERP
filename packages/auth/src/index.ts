@@ -24,6 +24,6 @@ export {
   revokeMySession,
   updateProfile,
 } from "./me";
-export { hasApprovalPin, setApprovalPin, verifyApprovalPin } from "./pin";
+export { setApprovalPin, verifyApprovalPin } from "./pin";
 export { type ActiveSession, enforceSessionPolicy } from "./session-guard";
 export { DEV_TEST_PASSWORD, TEST_ACCOUNTS, TEST_USERS, type TestUser } from "./test-accounts";

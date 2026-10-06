@@ -1,3 +1,4 @@
+import { requireStrictReauth } from "@fmerp/shared/authz/reauth";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import { type AppRouter, type DepsProvider, requireSession } from "@fmerp/shared/server/http";
 import { createRoute, z } from "@hono/zod-openapi";
@@ -7,7 +8,6 @@ import {
   listBackups,
   requestBackupDeletion,
   requestManualDump,
-  requireStrictReauth,
   requireSystemAdmin,
 } from "../system/backups";
 

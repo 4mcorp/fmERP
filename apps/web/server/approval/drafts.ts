@@ -4,9 +4,10 @@ import { recordAudit } from "@fmerp/audit";
 import { type FormSchema, validateFormValues } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
+import { documentPrefix } from "@fmerp/shared/server/document-prefix";
 import { ApprovalError } from "@fmerp/shared/server/errors";
+import { revisionKey } from "@fmerp/storage";
 import { asc, desc, eq } from "drizzle-orm";
-import { docPrefix, revisionKey } from "./document-storage";
 import { getFormVersion } from "./forms";
 import { lockAndLoad } from "./store";
 
@@ -17,18 +18,7 @@ const MAX_BODY_BYTES = 1_000_000;
 export const sha256Hex = (data: string | Uint8Array) =>
   createHash("sha256").update(data).digest("hex");
 
-async function businessCodeOf(ctx: ServiceContext, businessId: string): Promise<string> {
-  const [b] = await ctx.tx
-    .select({ code: schema.business.code })
-    .from(schema.business)
-    .where(eq(schema.business.id, businessId));
-  if (!b) throw new ApprovalError("not_found", "사업자를 찾을 수 없습니다");
-  return b.code;
-}
-
-export async function documentPrefix(ctx: ServiceContext, doc: DocRow): Promise<string> {
-  return docPrefix(doc.accountId, await businessCodeOf(ctx, doc.businessId), doc.createdAt, doc.id);
-}
+export { documentPrefix };
 
 async function attachmentCount(ctx: ServiceContext, documentId: string): Promise<number> {
   const rows = await ctx.tx

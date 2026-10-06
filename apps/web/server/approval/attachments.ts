@@ -10,9 +10,9 @@ import {
 import { schema } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ApprovalError } from "@fmerp/shared/server/errors";
+import { attachmentKey, stagingKey, stagingPrefix } from "@fmerp/storage";
 import { eq } from "drizzle-orm";
 import { requireView, type Viewer } from "./access";
-import { attachmentKey, stagingKey, stagingPrefix } from "./document-storage";
 import { documentPrefix } from "./drafts";
 
 const MB = 1024 * 1024;

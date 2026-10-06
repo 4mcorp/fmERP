@@ -1,5 +1,6 @@
 import { withTenant } from "@fmerp/db";
 import { loadActor } from "@fmerp/shared/authz/org-access";
+import { createRequireReauth } from "@fmerp/shared/authz/reauth";
 import { errorResponses, json } from "@fmerp/shared/server/common";
 import {
   type AppRouter,
@@ -10,7 +11,6 @@ import {
 import { serviceContext } from "@fmerp/shared/server/service-context";
 import { createRoute, z } from "@hono/zod-openapi";
 import { listOverdue, transferAssignments } from "../approval/transfer";
-import { createRequireReauth } from "./reauth";
 
 /** 결재 문서 관리: 결재자 일괄 이관, 장기 미처리 목록 (PRD ADM-005, ORG-036) */
 export function registerApprovalAdminRoutes(app: AppRouter, deps: DepsProvider) {

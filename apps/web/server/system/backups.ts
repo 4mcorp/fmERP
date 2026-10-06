@@ -1,9 +1,10 @@
 // 시스템 덤프 관리 (PRD BAK-005~007, M7 plan 1·2·4절). DB 덤프는 모든 계정의 데이터를 담으므로
 // 환경 변수로 지정한 시스템 관리자만 다룬다. 계정(테넌트) 컨텍스트와 무관하다.
 import { recordAudit } from "@fmerp/audit";
-import { type ActiveSession, hasApprovalPin } from "@fmerp/auth";
-import { backupHealth, isPinReauthFresh, isSystemAdmin } from "@fmerp/core";
+import { backupHealth, isSystemAdmin } from "@fmerp/core";
 import { schema } from "@fmerp/db";
+import { requireStrictReauth } from "@fmerp/shared/authz/reauth";
+import type { SessionInfo } from "@fmerp/shared/contracts/system-guards";
 import type { ServerDeps } from "@fmerp/shared/server/deps";
 import { getEnv } from "@fmerp/shared/server/env";
 import { ApiError } from "@fmerp/shared/server/http";
@@ -22,19 +23,9 @@ export async function isSystemAdminUser(d: ServerDeps, userId: string): Promise<
   return !!u && isSystemAdmin(u.email, u.verified, allow);
 }
 
-export async function requireSystemAdmin(d: ServerDeps, session: ActiveSession): Promise<void> {
+export async function requireSystemAdmin(d: ServerDeps, session: SessionInfo): Promise<void> {
   if (!(await isSystemAdminUser(d, session.userId))) {
     throw new ApiError(404, "not_found", "찾을 수 없습니다");
-  }
-}
-
-/** 덤프는 항상 PIN 재인증을 요구한다 (계정 정책으로 면제할 수 없다) */
-export async function requireStrictReauth(d: ServerDeps, session: ActiveSession): Promise<void> {
-  if (!(await hasApprovalPin(d.authDb, session.userId))) {
-    throw new ApiError(428, "pin_not_set", "결재 PIN을 먼저 설정하세요");
-  }
-  if (!isPinReauthFresh(session.pinVerifiedAt, d.now())) {
-    throw new ApiError(428, "reauth_required", "결재 PIN을 입력하세요");
   }
 }
 
@@ -145,7 +136,7 @@ export async function listBackups(d: ServerDeps) {
 /** 수동 덤프를 요청한다. 실제 실행은 worker가 요청 행(QUEUED)을 집어 한다 */
 export async function requestManualDump(
   d: ServerDeps,
-  session: ActiveSession,
+  session: SessionInfo,
   note: string | undefined,
   request: RequestCtx,
 ) {
@@ -190,7 +181,7 @@ async function loadBackup(d: ServerDeps, id: string) {
 /** 암호화된 덤프 파일의 내려받기 URL. 삭제 요청된 덤프는 받을 수 없고, 발급은 감사 로그에 남긴다 */
 export async function backupDownloadUrl(
   d: ServerDeps,
-  session: ActiveSession,
+  session: SessionInfo,
   id: string,
   request: RequestCtx,
 ) {
@@ -224,7 +215,7 @@ export async function backupDownloadUrl(
  */
 export async function requestBackupDeletion(
   d: ServerDeps,
-  session: ActiveSession,
+  session: SessionInfo,
   id: string,
   request: RequestCtx,
 ) {

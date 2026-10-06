@@ -30,8 +30,8 @@ import {
 import { schema, type Tx } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ApprovalError } from "@fmerp/shared/server/errors";
+import { attachmentKey } from "@fmerp/storage";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { attachmentKey } from "./document-storage";
 import {
   computeContentHash,
   documentPrefix,

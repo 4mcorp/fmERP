@@ -46,7 +46,6 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AttachmentList } from "@/components/approval/attachment-uploader";
-import { CompletionFiles } from "@/components/approval/completion-files";
 import { FormValuesView } from "@/components/approval/form-view";
 import { LineEditor, type LineRow, rowsToItems } from "@/components/approval/line-editor";
 import { RecipientPanel } from "@/components/approval/recipient-panel";
@@ -169,15 +168,17 @@ function buttonsFor(
 const ICONS = { check: Check, x: X, pause: Pause, play: Play } as const;
 
 /** 문서 상세·결재 처리: 본문, 진행 현황, 첨부, 의견, 처리(재인증), 회수·재기안, 결재선 변경 (APV-017·019·037·040~043·048). 360px 모바일에서 전 과정 가능 */
-/** `printButton`·`timeline`은 감사 기능의 화면 조각이다. 합성 루트(app/(app)/approval/[id]/page.tsx)가 끼워 넣는다 */
+/** `printButton`·`timeline`(감사)·`completionFiles`(완료 패키지)는 다른 기능의 화면 조각이다. 합성 루트(app/(app)/approval/[id]/page.tsx)가 끼워 넣는다 */
 export function ApprovalDetailPage({
   id,
   printButton,
   timeline,
+  completionFiles,
 }: {
   id: string;
   printButton: ReactNode;
   timeline: ReactNode;
+  completionFiles: ReactNode;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -408,7 +409,7 @@ export function ApprovalDetailPage({
         </p>
       </div>
 
-      {view.status === "COMPLETED" && <CompletionFiles documentId={id} />}
+      {view.status === "COMPLETED" && completionFiles}
 
       <RecipientPanel documentId={id} completed={view.status === "COMPLETED"} involved={involved} />
 

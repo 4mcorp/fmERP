@@ -1,11 +1,11 @@
 // 계정 전체 내보내기 요청·이력·다운로드 (PRD BAK-007·009, M7 plan 3·4절). ZIP은 worker가 만든다.
 import { recordAudit } from "@fmerp/audit";
-import type { ActiveSession } from "@fmerp/auth";
 import { schema, type Tx, withTenant } from "@fmerp/db";
+import { requireStrictReauth } from "@fmerp/shared/authz/reauth";
+import type { SessionInfo } from "@fmerp/shared/contracts/system-guards";
 import type { ServerDeps } from "@fmerp/shared/server/deps";
 import { ApiError } from "@fmerp/shared/server/http";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { requireStrictReauth } from "./system/backups";
 
 type RequestCtx = { ip?: string | null; userAgent?: string | null; requestId?: string | null };
 type Tenant = { accountId: string; role: "owner" | "admin" | "member" };
@@ -116,7 +116,7 @@ export async function listExports(d: ServerDeps, tenant: Tenant) {
 export async function requestExport(
   d: ServerDeps,
   tenant: Tenant,
-  session: ActiveSession,
+  session: SessionInfo,
   request: RequestCtx,
 ) {
   await assertExportAllowed(d, tenant);
@@ -162,7 +162,7 @@ export async function requestExport(
 export async function exportDownloadUrl(
   d: ServerDeps,
   tenant: Tenant,
-  session: ActiveSession,
+  session: SessionInfo,
   id: string,
   request: RequestCtx,
 ) {

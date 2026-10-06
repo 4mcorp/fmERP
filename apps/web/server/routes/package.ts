@@ -1,6 +1,8 @@
 import { Readable } from "node:stream";
 import { withTenant } from "@fmerp/db";
 import { loadActor } from "@fmerp/shared/authz/org-access";
+import { createRequireReauth } from "@fmerp/shared/authz/reauth";
+import type { DocumentAccess } from "@fmerp/shared/contracts/document-access";
 import { errorResponses, json } from "@fmerp/shared/server/common";
 import type { AppRouter, DepsProvider } from "@fmerp/shared/server/http";
 import { serviceContext } from "@fmerp/shared/server/service-context";
@@ -11,12 +13,12 @@ import {
   packagePdfUrl,
   packageStatus,
 } from "../approval/package-download";
-import { createRequireReauth } from "./reauth";
 
 const idParam = z.object({ id: z.uuid() });
 
 /** 완료 문서 PDF·패키지 다운로드 (PRD APV-063, BAK-008). 세션·테넌트 검사는 /approvals/* 공통 미들웨어가 한다 */
-export function registerPackageRoutes(app: AppRouter, deps: DepsProvider) {
+/** `access`(문서 열람 확인)는 결재 기능이 제공하고 합성 루트가 주입한다 */
+export function registerPackageRoutes(app: AppRouter, deps: DepsProvider, access: DocumentAccess) {
   const requireReauth = createRequireReauth(deps);
 
   app.openapi(
@@ -42,7 +44,7 @@ export function registerPackageRoutes(app: AppRouter, deps: DepsProvider) {
       const { id } = c.req.valid("param");
       const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
-        return packageStatus(serviceContext(c, d, tx), id, { membershipId, actor });
+        return packageStatus(serviceContext(c, d, tx), id, { membershipId, actor }, access);
       });
       return c.json({ status: result.status, readyAt: result.readyAt?.toISOString() ?? null }, 200);
     },
@@ -66,7 +68,7 @@ export function registerPackageRoutes(app: AppRouter, deps: DepsProvider) {
       const { id } = c.req.valid("param");
       const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
-        return packagePdfUrl(serviceContext(c, d, tx), id, { membershipId, actor });
+        return packagePdfUrl(serviceContext(c, d, tx), id, { membershipId, actor }, access);
       });
       return c.json(result, 200);
     },
@@ -99,13 +101,13 @@ export function registerPackageRoutes(app: AppRouter, deps: DepsProvider) {
         // 화면이 내려받기 전에 재인증·권한을 먼저 확인한다 (파일을 열지 않고 감사 로그도 남기지 않는다)
         await withTenant(d.appDb, tenant.accountId, async (tx) => {
           const { actor, membershipId } = await loadActor(tx, tenant, session.userId);
-          await checkPackageDownload(serviceContext(c, d, tx), id, { membershipId, actor });
+          await checkPackageDownload(serviceContext(c, d, tx), id, { membershipId, actor }, access);
         });
         return c.json({ ok: true }, 200) as never;
       }
       const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor, membershipId } = await loadActor(tx, tenant, session.userId);
-        return openPackageZip(serviceContext(c, d, tx), id, { membershipId, actor });
+        return openPackageZip(serviceContext(c, d, tx), id, { membershipId, actor }, access);
       });
       return new Response(Readable.toWeb(result.stream) as ReadableStream, {
         status: 200,

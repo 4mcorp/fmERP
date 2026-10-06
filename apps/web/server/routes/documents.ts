@@ -1,6 +1,7 @@
 import { type ApprovalAction, can } from "@fmerp/core";
 import { schema, withTenant } from "@fmerp/db";
 import { businessTarget, loadActor } from "@fmerp/shared/authz/org-access";
+import { createRequireReauth } from "@fmerp/shared/authz/reauth";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import { ApprovalError } from "@fmerp/shared/server/errors";
 import {
@@ -35,7 +36,6 @@ import {
   withdrawDocument,
 } from "../approval/service";
 import { LineItem } from "./approvals";
-import { createRequireReauth } from "./reauth";
 
 const Comment = z.string().trim().max(2000);
 

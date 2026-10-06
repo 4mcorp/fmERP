@@ -29,8 +29,12 @@ const RULES: readonly Rule[] = [
   // ── 공통 영역 (이전 후) ──
   [/^shared\//, "shared"],
 
-  // 결재 이벤트 계약: 결재가 만들고 알림이 읽는다 (해체 시 shared/contracts로)
-  [/^packages\/core\/src\/approval-event\.ts$/, "shared"],
+  // 둘 이상의 기능이 같은 이유로 쓰는 도메인 규칙·계약 (해체 시 shared/{domain,contracts}로 옮긴다):
+  // 결재 이벤트(결재→알림), 양식 스키마·값·색인(결재·완료·백업), 문서번호(결재·백업), 완료 패키지 형식(완료·백업), PIN 정책(계정·공통 재인증)
+  [
+    /^packages\/core\/src\/(approval-event|form-schema|form-values|form-index|doc-number|completion-package|pin-policy)\.ts$/,
+    "shared",
+  ],
 
   // ── 합성 루트: 기능을 모아 연결한다 ──
   [/^apps\/web\/app\/api\//, "composition"],
