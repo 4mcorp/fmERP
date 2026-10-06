@@ -196,9 +196,9 @@
 | 대상 | 경로 |
 |---|---|
 | 웹 화면 (App Router) | `apps/web/app/` — 로그인 필요 영역 `app/(app)/`(홈, `me`, `admin/members`, `onboarding`, `invite/[token]`), 테스트 로그인 `app/dev-login` |
-| 홈 대시보드 (M8) | `apps/web/app/(app)/page.tsx` — 결재 대기·진행 중·최근 완료·자주 쓰는 양식 |
+| 홈 대시보드 (M8) — **`features/home/`** | `src/ui/pages/home.tsx` — 결재 대기·진행 중·최근 완료·자주 쓰는 양식 (`apps/web/app/(app)/page.tsx`는 어댑터), `feature.map.yaml` |
 | 앱 공통 레이아웃·계정 전환 메뉴 | `apps/web/components/app-shell.tsx` |
-| 화면 쪽 API 호출·타입 | `shared/src/lib/api.ts`, `apps/web/lib/types.ts`, `lib/queries.ts` |
+| 화면 쪽 API 호출·타입 | `shared/src/lib/api.ts`, `shared/src/lib/types.ts`, `shared/src/lib/queries.ts` (기능 전용 훅·타입은 해당 기능의 `ui/queries.ts`) |
 | shadcn 컴포넌트 / 유틸 | `shared/src/ui/`, `shared/src/lib/utils.ts` (`@fmerp/shared/ui/*`) |
 | API (Hono, `/api/*`) | `apps/web/server/create-app.ts`(기본·헬스), `server/app.ts`(라우트 등록), `server/routes/*.ts`(auth·dev, me, accounts·invitations, account), Next 마운트 `app/api/[[...route]]/route.ts` |
 | API 미들웨어 (세션·테넌트·역할·Origin·IP) | `shared/src/server/http.ts` |
@@ -218,7 +218,8 @@
 | 마이그레이션 SQL / 실행 | `packages/db/migrations/`, `src/migrate.ts`(import 경로 `@fmerp/db/migrate`) |
 | S3 어댑터 (write-once 포함) | `packages/storage/src/object-storage.ts` |
 | 인증·계정 | `packages/auth/src/` — `auth.ts`(Better Auth 설정), `session-guard.ts`, `accounts.ts`(계정·초대), `pin.ts`, `me.ts`, `test-accounts.ts`·`seed.ts` |
-| 감사 로그 | `packages/audit/src/` (`recordAudit`, `computeAuditDiff`) |
+| 감사 로그 기록 | `packages/audit/src/` (`recordAudit`, `computeAuditDiff`) |
+| 감사 조회·타임라인·월간 점검 (M6) — **`features/audit/`** | `src/domain/`(`audit-review.ts`·`audit-timeline.ts`), `src/service/`(`logs.ts`·`timeline.ts`), `src/api/routes.ts`, `src/ui/{pages,components,queries.ts}`(`audit-trail.tsx`는 결재 상세에 슬롯으로 끼움), 테스트 `tests/`, `feature.map.yaml`. 검사 `pnpm feature:check audit` |
 | 세션·PIN 정책 (순수 함수) | `packages/core/src/session-policy.ts`, `pin-policy.ts` |
 | 스키마 | `packages/db/src/schema/` (`auth.ts`, `tenant.ts`, `audit.ts`, `columns.ts`) |
 | DB 권한·RLS | `packages/db/migrations/0002_grants_rls.sql` |
