@@ -269,6 +269,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 
 ## 11. 결정·변경 기록
 - 2026-10-06: 초안 작성. 코드·설정·의존성은 바꾸지 않았다. 결합 측정은 임시 스크립트로 했고(저장소에 넣지 않음) P0에서 `tools/`로 정식화한다.
+- 2026-10-06: S6 완료(12장 기록): `features/backup`·`features/completion` 이동, 기능 간 결합 23건 해소(29→6).
 - 2026-10-06: S5 완료(12장 기록): `features/audit`·`features/home` 이동, 기능 간 결합 4건 해소.
 - 2026-10-06: S4 완료(12장 기록): `features/notification` 시범 이동, 기능 격리 검사(`pnpm feature:check`)·커버리지 하한 도입, 구조 템플릿 확정.
 - 2026-10-06: S3 완료(12장 기록): 공통 영역 1차 이동, arch:move 도구, shared-to-feature 게이트.
@@ -285,7 +286,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 | S3 | P2 공통 영역 1차 (+ `features/*`·`shared` 워크스페이스 골격) | 공통 코드 사본 0, 기준선 감소 | **완료 (2026-10-06)** |
 | S4 | P3 시범 `notification` | 구조 템플릿 확정, 격리 검사 통과, 빌드 시간·HMR 영향 측정 기록 | **완료 (2026-10-06)** |
 | S5 | P4 `audit`·`home` | 두 기능 위반 0건 | **완료 (2026-10-06)** |
-| S6 | P4 `backup`·`completion` (계약+주입 첫 적용) | 두 기능 위반 0건 | 대기 |
+| S6 | P4 `backup`·`completion` (계약+주입 첫 적용) | 두 기능 위반 0건 | **완료 (2026-10-06)** |
 | S7 | P5 `account`·`org` (`shared/authz` 확정) | **M9 착수 전 완료 목표** | 대기 |
 | S8–S9 | P6 `approval` (가장 큼, 두 세션까지 허용) | `approval` 위반 0건, 전체 기준선 0 | 대기 |
 | S10 | P7 테이블 소유권 + P8 feature map·스킬 | 소유권·지도 검사 CI 통과 | 대기 |
@@ -346,7 +347,20 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 - **발견 — 통합 시험의 실행 순서 의존 (수정함):** `org.int.test.ts`의 "소유자 둘이 동시에 서로를 비활성화" 시험이 `owner-b`에게 활성 소속(시험용 회사)을 하나 더 남겼다. vitest가 직전 실행의 실패·소요 시간으로 파일 순서를 바꾸면 `approval-m5-transfer`(`owner-b`로 `/api/approval-admin/overdue` 호출)가 그 회사로 들어가 403이 났다(S4 때는 우연히 순서가 맞아 드러나지 않았다). 시험 끝에 그 회사의 모든 소속을 `left`로 돌려 놓게 고쳤다. 또한 통합 시험을 **겹쳐 돌리면**(백그라운드 실행이 끝나기 전에 다시 시작) 21건이 실패한다는 [기존 기록](../ts/2026-10-05-audit-view-race-and-concurrent-int-runs.md)을 이번에도 어겼다 — 한 번에 하나만 돌린다.
 - **이월:** E2E 위치(S4 이월 ①)는 아직 `apps/web/e2e`(Playwright가 `apps/web`에만 있음). S6에서 `backup`·`completion`을 옮기며 결정한다.
 
-**다음 세션 시작 지침 (S6)**
-- 읽을 것: 이 문서 3.1~3.3·6장 P4, S4·S5 진행 기록(템플릿·해소 방법), `features/{notification,audit}/`, `tools/src/cli/feature-check.ts`, [통합 시험 동시 실행 기록](../ts/2026-10-05-audit-view-race-and-concurrent-int-runs.md). 시작 전 `git status` 깨끗(`.claude/launch.json` 제외), `pnpm verify`·단위 통과, `pnpm env:up`. **통합 시험은 전경에서 한 번에 하나만** 돌린다.
-- 할 일(P4 `backup` → `completion`): 기준선에서 이 둘이 낀 결합은 `completion→approval` 6, `approval→completion` 4, `backup→account` 4, `backup→approval` 4, `backup→completion` 2, `completion→account` 1이다. 가장 큰 덩어리는 완료 패키지가 읽는 **결재 문서 스냅샷**(계약+주입: `shared/contracts`에 포트를 두고 결재가 구현 — 첫 적용이므로 형식을 신중히 정해 진행 기록에 남긴다)과 백업이 읽는 계정·결재 데이터다. ① `features/backup`·`features/completion` 폴더 템플릿 생성(`pnpm install`) ② `arch:move --dry`로 범위 확인 후 이동: backup(`packages/backup`, `core/backup*`·`doc-number-parse`, `worker/{backup-*,cli/}`, `server/{system/,account-export,routes/{system,exports}.ts}`, `components/backup`, `app/(app)/{system/backups,admin/backups}`), completion(`packages/completion`, `core/completion-package`, `worker/{package-jobs,render,fonts,health}`, `routes/package.ts`, `approval/{package-download,document-storage}`, `completion-files.tsx`) ③ `worker/main.ts`·`app.ts`의 주입(`SystemGuards`는 백업이 제공, `OpsAlertRules.backupHealth`는 백업 진입점에서)을 새 진입점으로 바꾼다 ④ 두 기능 `feature:check` 통과·하한 기록 ⑤ E2E 이전 방안 결정 ⑥ 기준선 갱신·커밋. 완료 기준: 두 기능 위반 0건.
-- 주의: 동작은 바꾸지 않는다(통합 418·E2E 53). 규칙 약화 금지. 새 공통 코드는 `shared`로(`shared-to-feature` 증가 금지).
+**S6 진행 기록 (2026-10-06)**
+- **옮긴 것:** `features/backup`(`packages/backup` → `service`, `core/backup`·`doc-number-parse` → `domain`, `worker/{backup-jobs,backup-config}` → `jobs/{jobs,config}`, `server/{system/backups,account-export}` → `service`, `routes/{system,exports}` → `api`, 화면 2개 → `ui`), `features/completion`(`packages/completion` → `service`, `worker/{package-jobs,render,fonts}` → `jobs`, `approval/package-download` → `service`, `routes/package` → `api`, `completion-files` → `ui`). 운영자 CLI(`apps/worker/src/cli`)와 `health.ts`는 **합성 루트**로 분류해 worker에 남기고, 백업의 `operator`·`jobs/config` 진입점만 import한다. `packages/{backup,completion}`은 없어졌다.
+- **결합을 푼 방법 (기준선 cross-feature 29→6, shared-to-feature 7→6):**
+  1. **공통 소유 파일로 분류(이동 없음)**: 둘 이상이 같은 이유로 쓰는 순수 규칙 — `form-schema`·`form-values`·`form-index`(결재·완료·백업), `doc-number`(결재·백업), `completion-package`(완료가 쓰고 백업이 읽는 패키지 형식), `pin-policy`(계정·공통 재인증). 배정표에서 `shared`로 올렸고 `packages/core` 해체(P9~P10) 때 `shared/{domain,contracts}`로 옮긴다. `shared/lib/types.ts`→`form-schema` 결합도 함께 사라졌다.
+  2. **공통 승격(이동)**: PIN 재인증(`hasApprovalPin`·`requireStrictReauth`·`createRequireReauth`) → `shared/authz/reauth`(auth의 `hasApprovalPin` 삭제), 문서 S3 접두사 `documentPrefix` → `shared/server/document-prefix`, `sha256Hex` → `shared/server/hash`. `document-storage.ts`(`@fmerp/storage` 재export)는 없애고 직접 import.
+  3. **계약+주입**: 완료 패키지 라우트·서비스에 `DocumentAccess`(S5 계약)를 주입(`registerPackageRoutes(app, deps, access)`). 알림에 주입하던 `SystemGuards`는 `requireStrictReauth`가 공통이 되어 `requireSystemAdmin`(백업 `api/guards`)만 백업이 제공한다.
+  4. **UI 슬롯 주입**: 결재 상세가 `completionFiles` prop을 받고 합성 루트(`approval/[id]/page.tsx`)가 `CompletionFiles`를 끼운다. 백업·완료 전용 훅·타입은 각 `ui/queries.ts`로 옮겼다.
+  5. **시험용 접점 주입**: 백업 시험(내보내기·리허설·재색인)과 결재 다운로드 시험은 "실제로 만들어진 완료 패키지"가 필요한데 완료 기능을 import할 수 없다 → `shared/testing/package-generator`(`generateCompletedPackage`)를 쓰고, 합성 루트의 시험 설정 `apps/web/server/test-support.ts`가 완료의 `generatePackage`를 주입한다(`test-client`와 같은 방식). 시드 도우미 `test-support`는 `shared/testing/completed-document`로 승격.
+  6. 백업 설정(`createBackupContext`)이 worker의 `env` 타입을 import하던 것을 구조적 `BackupEnv` 인터페이스로 바꿨다.
+- **검사·기준선:** `feature:check backup` 통과(커버리지 줄 85.17·구문 82.05·함수 74.64·분기 57.72% → 하한 85·82·74·57), `feature:check completion` 통과(62.95·61.39·63.55·54.1% → 62·61·63·54). 기능 간 import 6건(approval↔account·org 등 남은 것은 S7~S9), `shared-to-feature` 6, 순환 1, Knip 26→**21**(미사용 의존성 5건 포함 정리), 억제 주석 10(경로만 변경), 미배정 0. `arch:guard` 한도 증가 없음.
+- **검증:** 린트(경고 6)·타입·`arch:check`·`arch:guard`·단위 388·통합 418(전경에서 한 번에 하나만 실행, 전부 통과)·E2E 53(3 건너뜀)·`next build`(82.9초; 이전 65초, 컴파일 단계 변동이 커서 기록만 한다). worker `main.ts`는 `tsx --env-file-if-exists=../../.env src/main.ts`로 직접 띄워 정상 기동("시작됨"·heartbeat)을 확인했다(개발 환경에 백업·텔레그램 설정이 없어 두 기능은 꺼짐 안내가 나옴. 켜진 상태의 기동은 통합 시험이 확인). 참고: `pnpm --filter @fmerp/worker start`는 `.env`를 읽지 않아 환경 변수 오류가 난다(`dev`는 읽음).
+- **이월:** E2E 위치(Playwright가 `apps/web`에만 있음)는 S7로 미룬다. `tests/`의 E2E 이전 방안은 `account`·`org`를 옮기며 Playwright를 루트로 올릴지 정한다. `approval-m5-download.int.test.ts`(결재 소유)가 완료의 시험 접점을 쓰는 것은 결재 이전(S8~9)에서 계약 시험으로 정리한다.
+
+**다음 세션 시작 지침 (S7)**
+- 읽을 것: 이 문서 3.1~3.3·6장 P5, S4~S6 진행 기록(템플릿·해소 방법 6가지·시험 접점), 3.4의 `shared/authz` 설명, `features/{notification,audit,backup,completion}/`. 시작 전 `git status` 깨끗(`.claude/launch.json` 제외), `pnpm verify`·단위 통과, `pnpm env:up`. 통합 시험은 전경에서 한 번에 하나만.
+- 할 일(P5 `account` → `org`, **M9 착수 전 완료 목표**): 남은 기능 간 결합 6건 중 `account→org` 4, `org→account` 1, `account→approval` 1(`approval→account`는 S3 때 공통으로 올라가 해소). **먼저 `shared/authz`를 확정**한다 — 지금 `shared-to-feature` 6건 중 4건이 세션·계정 처리(`http.ts`→`@fmerp/auth`의 `accounts`·`errors`·`session-guard`, `deps.ts`→`auth` 타입)라, 세션·멤버십 기본기를 `shared/authz`로 올려 `shared`가 `auth` 패키지에 기대지 않게 한다(`shared`↔`auth` 패키지 순환에 유의: 올릴 코드가 `auth`의 DB 접근이면 `shared`로 옮기고 `auth`는 그것을 쓰는 쪽으로). ① `features/account`(`packages/auth`, `core/{session,pin}-policy`(이미 공통 소유), `routes/{auth,me,accounts,account}`, `components/me`, `app/{login,dev-login,invite,onboarding,me}`, 시드·시험 계정) ② `features/org`(`routes/{org,departments,members}`, `org-access`(이미 shared), `in-flight`, `core/{department-*,assignment,org-defaults,business-number}`, `components/org`, `app/{org,admin/{settings,businesses,org,members,positions}}`, `lib/{admin-nav(shared),org-tree}`) ③ `account`→`org`·`org`→`account` 결합은 S4~S6의 방법(공통 승격·계약 주입·슬롯)으로 푼다 ④ `shared/lib/{queries,types}`의 계정·조직 훅·타입을 각 `ui/queries.ts`로 쪼갠다(`useMe`처럼 여럿이 쓰는 것은 shared에 둘지 판단해 기록) ⑤ `feature:check` 통과·하한 기록, 기준선 갱신, E2E 이전 방안. 완료 기준: 두 기능 위반 0건.
+- 주의: 동작은 바꾸지 않는다(통합 418·E2E 53). `account`는 M9(소셜 로그인)가 크게 만지는 곳이라 구조를 먼저 안정시킨다. 규칙 약화 금지. `auth`의 DB 스키마(`packages/db/src/schema/auth.ts`)는 공통 영역에 남는다.
