@@ -10,7 +10,7 @@ apps/worker (pg-boss 작업)      ─┼─> packages/auth ─┤
                                  └─> packages/storage
 ```
 - `packages/core`: 결재 엔진과 도메인 규칙. **순수 TypeScript**이며 DB, HTTP, 파일, 현재 시각, 난수를 직접 쓰지 않는다. 시각·ID는 인자로 주입받는다.
-- `packages/core`의 결재 엔진(`approval-engine.ts`)은 `(문서, 행위, 행위자, 컨텍스트) → (새 문서, 이벤트, 처리 기록)`만 계산한다. 저장은 `apps/web/server/approval/`가 문서 행을 잠근 뒤 한 트랜잭션에서 한다 (ADR 0007).
+- 결재 엔진(`features/approval/src/domain/approval-engine.ts`)은 `(문서, 행위, 행위자, 컨텍스트) → (새 문서, 이벤트, 처리 기록)`만 계산한다. 저장은 `features/approval/src/service/`가 문서 행을 잠근 뒤 한 트랜잭션에서 한다 (ADR 0007).
 - `packages/db`: Drizzle 스키마, 마이그레이션(권한·RLS 포함), `withTenant`.
 - `packages/audit`: 감사 로그 기록(`recordAudit`)과 변경 비교(`computeAuditDiff`, 민감 값 마스킹). 감사 로그는 이 패키지로만 쓴다.
 - `features/account`(옛 `packages/auth`): Better Auth 설정과 `fmerp_auth` 연결로 동작하는 인증·계정 서비스(계정·초대, PIN, 테스트 로그인·시드). 세션 정책 적용·구성원 확인 같은 공통 기본기는 `shared/src/authz`에 있다.

@@ -269,6 +269,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 
 ## 11. 결정·변경 기록
 - 2026-10-06: 초안 작성. 코드·설정·의존성은 바꾸지 않았다. 결합 측정은 임시 스크립트로 했고(저장소에 넣지 않음) P0에서 `tools/`로 정식화한다.
+- 2026-10-06: S8 완료(12장 기록): `features/approval` 이동(한 세션에 끝남, S9 불필요), `ApprovalError`→`ServiceError` 일반화, E2E는 합성 루트에 두기로 결정.
 - 2026-10-06: S7 완료(12장 기록): `shared/authz` 확정, `features/account`·`features/org` 이동. 기능 간 import 0·공통→기능 import 0 달성 (P5 완료, M9 전 목표 충족).
 - 2026-10-06: S6 완료(12장 기록): `features/backup`·`features/completion` 이동, 기능 간 결합 23건 해소(29→6).
 - 2026-10-06: S5 완료(12장 기록): `features/audit`·`features/home` 이동, 기능 간 결합 4건 해소.
@@ -289,7 +290,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 | S5 | P4 `audit`·`home` | 두 기능 위반 0건 | **완료 (2026-10-06)** |
 | S6 | P4 `backup`·`completion` (계약+주입 첫 적용) | 두 기능 위반 0건 | **완료 (2026-10-06)** |
 | S7 | P5 `account`·`org` (`shared/authz` 확정) | **M9 착수 전 완료 목표** | **완료 (2026-10-06)** |
-| S8–S9 | P6 `approval` (가장 큼, 두 세션까지 허용) | `approval` 위반 0건, 전체 기준선 0 | 대기 |
+| S8–S9 | P6 `approval` (가장 큼, 두 세션까지 허용) | `approval` 위반 0건, 전체 기준선 0 | **S8에서 한 번에 완료 (2026-10-06)** — 전체 기준선은 cross-feature·shared-to-feature 0, 남은 부채는 순환 1·knip 11·억제 주석 10(P9~P10) |
 | S10 | P7 테이블 소유권 + P8 feature map·스킬 | 소유권·지도 검사 CI 통과 | 대기 |
 | S11 | P9 공용 코드 사후 정리 + P10 하드 전환 + 문서 정리(TECH_SPEC 4장·rules/architecture.md·INDEX·CLAUDE.md) | 기준선 파일 삭제, 위반 0, 규칙 우회 방지 확인 | 대기 |
 
@@ -369,7 +370,19 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 - **검증:** 린트(경고 6)·타입·`arch:check`·`arch:guard`·단위 388·통합 418(전경 단독 실행, 통과)·E2E 53(3 건너뜀)·`next build` 73.8초·worker 기동·`pnpm db:seed` 확인. E2E 첫 전체 실행에서 2건(`m2` 겸직 발령의 관리 콘솔 메뉴 대기 시간 초과, `m4` 모바일의 "새 결재" 링크가 2개로 잡히는 엄격 모드 위반)이 실패했으나 해당 파일만 돌리면 통과하고 전체를 다시 돌리면 53건 모두 통과해 **타이밍 변동**으로 본다(`m4`의 건은 홈 화면 버튼이 뜨는 시점에 따라 링크가 1개/2개로 갈리는 시험 쪽 취약점 — S8에서 `getByRole(...).first()`나 영역 한정으로 고친다).
 - **이월·발견:** ① E2E 위치(Playwright가 `apps/web`에만 있음)는 결재 이전과 함께(S8) 정한다 — 이제 `m1`·`m2`·`m6`~`m8`이 옮겨 가야 할 기능에 모두 대응된다. ② `account`의 `createAccount` 경로가 `position`(조직)·`form`(결재) 표에 기본 행을 쓴다 — P7(테이블 소유권)에서 "다른 기능 표 쓰기" 허용 방식(계약 함수 주입 유지 또는 공통 시드 서비스)을 정한다. ③ `packages/core`에는 이제 결재 엔진·양식·위임·문서 접근과 공통 소유 파일(공통 규칙·계약)만 남았다. ④ 이름이 결재 특화인 `ApprovalError`·`ServiceContext`의 일반화(S3 이월 ①)는 결재 이전(S8~9)에서 한다.
 
-**다음 세션 시작 지침 (S8)**
-- 읽을 것: 이 문서 3.1~3.3·6장 P6, S4~S7 진행 기록(템플릿·해소 방법·시험 접점·슬롯·주입), `features/*/`, `docs/ts`의 통합 시험 동시 실행 기록. 시작 전 `git status` 깨끗(`.claude/launch.json` 제외), `pnpm verify`·단위 통과, `pnpm env:up`. **통합 시험은 전경에서 한 번에 하나만.**
-- 할 일(P6 `approval`, 가장 큰 덩어리 — 두 세션까지 허용): 남은 `apps/web` 결재 코드(`server/approval/*` 27개, `server/routes/{approvals,approval-admin,documents,forms,mailbox,recipients,search}`, `components/approval/*`, `app/(app)/{approval,mailbox,search,me/absence,admin/{approvals,forms}}`, `lib/local-drafts`)와 `packages/core`의 결재 파일(`approval-*`·`delegation`·`step-transfer`·`document-access`·`form-defaults`)을 `features/approval`로 옮긴다. 내부는 `src/{engine,forms,mailbox}/`로 폴더를 나눌 수 있지만 하위 영역 사이에 경계 검사는 두지 않는다(결정 Q2). ① 먼저 **결합이 이미 0**임을 이용해 `arch:move`로 이동하고(동작 변경 없음) ② 홈이 결재 데이터 훅(`useMine`·`usePending`·`useForms`)을 `shared/lib/queries`로 읽는 부채를 계약 훅으로 바꾸거나 승인 기능의 `ui/queries`로 옮기고 홈이 합성 루트로 슬롯을 받게 한다 ③ `shared/lib/{queries,types}`의 결재 훅·타입을 `approval/ui/queries.ts`로 쪼갠다 ④ `ApprovalError`→`ServiceError`, `ServiceContext` 일반화(S3 이월) ⑤ `approval-m5-download.int.test.ts`가 쓰는 시험 접점(`generateCompletedPackage`)은 그대로 둔다(결재 안에 있으니 기능 간이 아니다) ⑥ **E2E를 기능 `tests/`로 옮기는 방안**을 정한다(Playwright 설정을 루트로 올려 `features/*/tests/*.spec.ts`와 `apps/web/e2e/*.spec.ts`를 함께 돌리거나, 한 곳에 둔다고 결정하고 계획서에 근거를 남긴다) ⑦ `feature:check approval` 통과·하한 기록, 기준선 갱신. 완료 기준: `approval` 위반 0건(이미 0)·`apps/web/server`·`components`·`packages/core`에 결재 코드 사본 0, **전체 기준선 0 달성** 점검(남은 것: depcruise 1(순환), knip 20, 억제 주석 10).
-- 주의: 동작은 바꾸지 않는다(통합 418·E2E 53). 규칙 약화 금지. 크므로 한 세션에 끝내지 못하면 논리 단위(예: engine → forms → mailbox)로 나눠 각각 통과·커밋한 뒤 멈추고 기록한다.
+**S8 진행 기록 (2026-10-06)**
+- **옮긴 것:** `features/approval`(80개 파일): `core`의 `approval-{engine,state,line,line-edit,types}`·`delegation`·`document-access`·`form-defaults`·`step-transfer` → `src/domain`(순수 규칙, 시험 `tests/`), `server/approval/*`(서비스 18개·통합 시험 10개) → `src/service`·`tests`, `routes/{approvals,approval-admin,documents,forms,mailbox,recipients,search}` → `src/api/*-routes.ts`(진입점 `registerApprovalApi`·`registerApprovalSupportApi` — 완료 패키지 라우트가 그 사이에 등록되는 **순서 보존**), `components/approval/*`·결재 화면 11개·`local-drafts` → `src/ui`, 결재 전용 훅(`useApproval`·`useApprovalBody`·`useAttachments`·`useComments`·`useRecipients`·`useFormDetail`·`useMailbox`·`useSearch`) → `src/ui/queries.ts`. 합성 루트는 `@fmerp/feature-approval/{api/routes,api/guards,provisioning,ui/pages/*,ui/components/approval-detail,ui/local-drafts}`만 import한다. 폴더는 `engine/forms/mailbox`로 나누지 않고 `service/` 한 폴더로 뒀다(결정 Q2: 하위 영역 사이 경계 검사가 없어 나눠도 이득이 없음). 이 시점에 `apps/web`에는 `server/`(합성 루트: `app`·`create-app`·`deps`·`db`·`seed-cli`·시험 설정)·`components/app-shell`·`components/ui`·`app/` 어댑터만 남았다.
+- **공통 소유로 남은 `packages/core`:** `money`·`permissions`·`file-sniff`와 공통 소유 파일(양식 `form-{schema,values,index}`, `doc-number`, `completion-package`, `approval-event`, `engine-error-code`, `org-defaults`, `business-number`, `session-policy`, `pin-policy`)뿐이다. P9~P10에서 `shared/{domain,contracts}`로 옮기고 `core` 패키지를 없앤다.
+- **`ApprovalError` 일반화(S3 이월 해소):** `ApprovalError`·`ApprovalErrorCode`·`APPROVAL_ERROR_STATUS` → `ServiceError`·`ServiceErrorCode`·`SERVICE_ERROR_STATUS`(별도 커밋, 동작 변경 없음). `ServiceContext`는 이미 일반 이름이다.
+- **홈과 결재 데이터:** 홈이 읽는 `useMine`·`usePending`·`useForms`는 `shared/lib/queries.ts`에 **남겼다** — 결재 코드를 import하는 것이 아니라 API 응답을 읽는 얇은 훅이고(타입·상태 라벨은 공통 `shared/lib/types`), 앱 셸·홈이 함께 쓴다. 이를 "읽기 이음매"로 문서화하고(`features/home/feature.map.yaml`의 부채 항목은 유지) 홈이 자기 훅을 갖게 하는 일은 P9 판단으로 넘긴다.
+- **E2E 위치 결정:** E2E(`apps/web/e2e/*.spec.ts`)는 **합성 루트에 둔다.** 근거: ① 3.2 표가 E2E를 "다른 기능을 쓸 수 있는" 유일한 시험으로 정했고, 한 시나리오가 여러 기능을 거치는 것이 E2E의 본질이다(예: 결재 상세는 감사·완료 조각을 슬롯으로 받는다) ② Playwright 서버(`next dev`)·전역 설정(시드·DB 초기화)이 합성 루트에 묶여 있다 ③ 기능 폴더로 옮기려면 Playwright를 루트로 올리고 설정을 나눠야 해 얻는 것(경로 일치)보다 비용이 크다. 대신 `feature.map.yaml`의 `tests.e2e`가 기능↔E2E 파일 대응을 기록하고 배정표가 `m1`~`m8` 소유자를 가진다. 이 결정으로 S4~S7의 E2E 이월을 닫는다.
+- **`m4` 시험 취약점 수정:** 모바일에서 "새 결재" 링크가 앱 셸과 홈 버튼 둘로 잡혀 엄격 모드 위반이 나던 시험(S7 발견)을 `getByRole("navigation", { name: "전자결재" })` 범위로 한정했다.
+- **검사·기준선:** `feature:check approval` 통과(커버리지 줄 57.39·구문 56.15·함수 42.82·분기 42.29% → 하한 57·56·42·42). **cross-feature 0, shared-to-feature 0**, depcruise 1, Knip 20→**11**(결재 쪽 미사용 export·`apps/web` 의존성 8개 정리, 죽은 `canView` 삭제), 억제 주석 10(경로만 변경), 미배정 0. `arch:guard` 한도 증가 없음.
+- **검증:** 린트(경고 6)·타입·`arch:check`·`arch:guard`·단위 388·통합 418(전경 단독, 통과)·E2E 53(3 건너뜀)·`next build` 51.4초·worker 기동 확인.
+- **발견:** 단위 시험 전체 실행 중 `depcruise-rules` 파일이 한 번 실패했으나(바로 앞에 린트·타입 검사를 연달아 돌린 직후) 단독·재실행에서 모두 통과했다 — 일시적 변동으로 기록한다.
+
+**다음 세션 시작 지침 (S9)**
+- 읽을 것: 이 문서 3.4(DB와 마이그레이션)·5장(Feature map)·6장 P7·P8, S4~S8 진행 기록. 시작 전 `git status` 깨끗(`.claude/launch.json` 제외), `pnpm verify`·단위 통과, `pnpm env:up`. 통합 시험은 전경에서 한 번에 하나만.
+- 세션 표에서는 S10(P7+P8)이지만 S8에서 P6이 끝나 번호가 앞당겨졌다. 이번 세션을 **S9**로 부른다: ① **P7 테이블 소유권** — `packages/db/src/schema/*`의 모든 테이블에 `@owner <기능|shared>` 주석, 소유권 검사 게이트(쓰기는 소유 표·shared 표만, 읽기는 소유·shared·`feature.map.yaml`의 `tables.reads` 선언), 마이그레이션 첫 줄 `-- feature: <이름>` 규칙(기존 마이그레이션은 소급 면제 기준선 처리), 기능별 RLS 격리 시험 위치(`packages/db/src/notification.int.test.ts` 등)의 이전. 이미 알려진 쓰기 예외: 계정 생성이 `position`(조직)·`form`(결재)에 기본 행을 씀, 완료 패키지가 결재 표를 읽음, 백업 재색인이 문서·양식 표를 씀 — 선언하거나 계약으로 바꾼다. `drizzle-kit generate`가 변경 없음을 보고해야 한다(스키마 동일) ② **P8 지도·스킬** — `feature.map.yaml` 9개의 형식을 확정하고 `feature-map` 도구(`feature:index/find/check/impact`), 지도 정합성 CI, 프로젝트 스킬, `CLAUDE.md` 압축본·INDEX 9장 대체(`docs/feature-map/INDEX.md` 생성). 두 가지가 한 세션에 크면 P7만 하고 멈춰 기록한다.
+- 이후(S10~S11): P9 공용 코드 사후 정리(`packages/core` 해체 → `shared/{domain,contracts}`, 중복·재사용 탐지, 단독 사용 공통 역승격), P10 하드 전환(기준선 파일 삭제·규칙 error 고정·순환 1건·Knip 11건·억제 주석 10건 해소, `guard` 우회 방지 시험), 문서 정리(TECH_SPEC 4장·rules/architecture.md·INDEX·CLAUDE.md).
+- 주의: 동작은 바꾸지 않는다(통합 418·E2E 53). 규칙 약화 금지. 스키마(Drizzle 선언)는 공통 영역에 그대로 둔다(결정 Q6).

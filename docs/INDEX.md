@@ -207,9 +207,9 @@
 | 환경 변수 검증 | `shared/src/server/env.ts`, `apps/worker/src/env.ts` |
 | 권한 판정 어댑터(`loadActor`·`authorize`), 서비스 컨텍스트·오류 | `shared/src/authz/org-access.ts`, `shared/src/server/{context,errors,service-context,common}.ts` |
 | worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
-| 도메인 규칙 (결재 엔진 예정) | `packages/core/src/` — 금액 `money.ts`, 사업자번호 `business-number.ts`, 부서 트리 `department-tree.ts`·`department-csv.ts`, 권한 `permissions.ts`(`can()`), 소속 `assignment.ts` |
-| 결재 엔진 (순수 함수) | `packages/core/src/approval-*.ts`(상태·엔진·결재선 해석·검증), `delegation.ts`, `doc-number.ts` |
-| 결재 서비스·API | `apps/web/server/approval/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `delegation.ts`, `org-snapshot.ts`), `server/routes/approvals.ts` |
+| 공통 도메인 규칙 (순수 함수) | `packages/core/src/` — 금액 `money.ts`, 권한 `permissions.ts`(`can()`), 공통 소유 파일(양식 `form-*.ts`, `doc-number.ts`, `completion-package.ts`, `approval-event.ts`, `engine-error-code.ts`, `org-defaults.ts`, `business-number.ts`, `session-policy.ts`, `pin-policy.ts`). 기능 전용 규칙은 각 `features/*/src/domain/` |
+| 결재 — **`features/approval/`** (엔진) | `src/domain/`(`approval-engine·state·line·line-edit·types`, `delegation`, `document-access`, `step-transfer`, `form-defaults`) — 순수 함수, 시험 `tests/` |
+| 결재 서비스·API·화면 | `src/service/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `drafts·attachments·comments·mailbox·search·transfer·recipients·forms·export` 등), `src/api/`(`routes.ts` 진입점, `*-routes.ts`, `guards.ts`), `src/provisioning.ts`(기본 양식 설치), `src/ui/{pages,components,queries.ts,local-drafts.ts}`, `feature.map.yaml`. 검사 `pnpm feature:check approval`. 어댑터 페이지는 `apps/web/app/(app)/{approval,mailbox,search,me/absence,admin/{approvals,forms}}` |
 | 결재 스키마·트리거 | `packages/db/src/schema/approval.ts`, `migrations/0005_approval_engine.sql`, `0006_approval_rls_triggers.sql` |
 | 조직·권한 — **`features/org/`** | API `src/api/`(`routes.ts` 진입점, `org-routes.ts` 설정·사업자·직위·직책, `departments-routes.ts` 부서·조직도·CSV, `members-routes.ts` 구성원·소속·발령·역할), `src/domain/`(`assignment`·`department-csv`·`department-tree`), `src/service/in-flight.ts`, 화면 `src/ui/{pages,components,queries.ts}`, 테스트 `tests/`. 검사 `pnpm feature:check org` |
 | 조직 화면 어댑터 | `apps/web/app/(app)/org`, `admin/{settings,businesses,org,members,positions}`는 `features/org/src/ui/pages/`를 내보내는 한 줄 어댑터 |
