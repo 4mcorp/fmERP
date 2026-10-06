@@ -56,7 +56,7 @@ beforeAll(async () => {
     storage,
     renderPdf,
   });
-}, 60_000);
+}, 120_000);
 
 afterAll(async () => {
   await boss.stop({ graceful: false });
@@ -65,7 +65,7 @@ afterAll(async () => {
 });
 
 // 전체 통합 테스트를 병렬로 돌리면 다른 파일의 완료 문서까지 스윕이 집어 오래 걸릴 수 있어 넉넉히 기다린다
-async function waitFor<T>(fn: () => Promise<T | null | false>, ms = 50_000): Promise<T> {
+async function waitFor<T>(fn: () => Promise<T | null | false>, ms = 100_000): Promise<T> {
   const until = Date.now() + ms;
   while (Date.now() < until) {
     const value = await fn();
@@ -96,7 +96,7 @@ describe("패키지 큐와 스윕 (ADR 0009)", () => {
     });
     expect(pkg.manifestHash).toMatch(/^[0-9a-f]{64}$/);
     expect(await storage.head(finalKey(prefix, "manifest.json"))).not.toBeNull();
-  }, 60_000);
+  }, 120_000);
 
   it("스윕을 연달아 해도 같은 문서의 패키지는 한 번만 만들어진다", async () => {
     const env = { appDb: appDb.db, authDb: authDb.db, storage };
@@ -125,5 +125,5 @@ describe("패키지 큐와 스윕 (ADR 0009)", () => {
         .where(eq(schema.documentPackage.documentId, documentId)),
     );
     expect(after?.attempts).toBe(1);
-  }, 60_000);
+  }, 120_000);
 });
