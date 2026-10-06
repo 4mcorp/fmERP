@@ -11,6 +11,7 @@ import { registerBackupRoutes } from "@fmerp/feature-backup/api/routes";
 import { registerPackageRoutes } from "@fmerp/feature-completion/api/routes";
 import { registerNotificationRoutes } from "@fmerp/feature-notification/api/routes";
 import { registerOrgApi } from "@fmerp/feature-org/api/routes";
+import { applyInvitationPreset, installDefaultPositions } from "@fmerp/feature-org/provisioning";
 import { requireStrictReauth } from "@fmerp/shared/authz/reauth";
 import { getEnv } from "@fmerp/shared/server/env";
 import { requireSameOrigin } from "@fmerp/shared/server/http";
@@ -36,7 +37,11 @@ export const app = createApp({
       "*",
       requireSameOrigin(() => getEnv().BETTER_AUTH_URL),
     );
-    registerAccountApi(router, getServerDeps, { installDefaultForms });
+    registerAccountApi(router, getServerDeps, {
+      installDefaultForms,
+      installDefaultPositions,
+      applyInvitationPreset,
+    });
     // /account/* 인증·테넌트 미들웨어가 먼저 등록된 뒤에 추가한다
     registerOrgApi(router, getServerDeps);
     registerApprovalApi(router, getServerDeps);

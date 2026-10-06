@@ -2,6 +2,7 @@ import { crossFeatureGate, sharedToFeatureGate, unassignedGate } from "./cross-f
 import { depcruiseGate } from "./depcruise";
 import { knipGate } from "./knip";
 import { suppressionsGate } from "./suppressions";
+import { tableOwnershipGate } from "./table-ownership";
 import type { Gate } from "./types";
 
 export const GATES: Gate[] = [
@@ -11,4 +12,5 @@ export const GATES: Gate[] = [
   depcruiseGate,
   knipGate,
   suppressionsGate,
+  tableOwnershipGate,
 ];

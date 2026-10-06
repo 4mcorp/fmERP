@@ -19,12 +19,12 @@ adapters:
   - apps/web/app/(app)/invite/[token]/page.tsx
   - apps/web/app/(app)/onboarding/page.tsx
   - apps/web/app/(app)/me/page.tsx
-api: { generated: true, entry: api/routes }       # registerAccountApi(router, deps, provisioning) — 순서 주의: org의 구성원 라우트보다 먼저
+api: { generated: true, entry: api/routes }       # registerAccountApi(router, deps, provisioning{installDefaultForms,installDefaultPositions}) — 순서 주의: org의 구성원 라우트보다 먼저
 auth_setup: auth-setup                            # 합성 루트가 createAuth·resolveDevTestLogin을 가져가는 진입점
-seed: [seed, seed-org]                            # 시드 계정·시험 조직 (기본 양식 설치 함수는 호출자가 넘긴다)
+seed: apps/web/server/seed/                       # 시드 계정·시험 조직은 합성 루트가 가진다(account·org·approval 표를 함께 채움). 이 기능은 test-accounts 진입점만 낸다
 tables:
   owns: { generated: true }                       # user·session·account·membership 등 인증 표 (P7에서 @owner로 채움)
-  reads: []                                       # 회사 만들기가 position(조직)·form(결재)에 기본값을 쓴다 → P7에서 쓰기 허용 방식 결정
+  reads: [assignment, business, department, duty, position]   # 내 회사 목록·내 정보가 소속·조직 이름을 읽는다
 events: { publishes: [], consumes: [] }
 contracts:
   - shared/authz                                  # errors·session-guard·membership·reauth (공통)

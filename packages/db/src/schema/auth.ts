@@ -12,6 +12,7 @@ import {
 import { createdAt, primaryId, updatedAt } from "./columns";
 import { account } from "./tenant";
 
+/** @owner shared */
 export const user = pgTable("user", {
   id: primaryId(),
   name: text().notNull(),
@@ -25,6 +26,7 @@ export const user = pgTable("user", {
   updatedAt: updatedAt(),
 });
 
+/** @owner shared */
 export const session = pgTable(
   "session",
   {
@@ -48,7 +50,11 @@ export const session = pgTable(
   (t) => [index().on(t.userId)],
 );
 
-/** 로그인 수단 (Better Auth의 account 모델). 테넌트 account와 구분하기 위해 이름을 바꿨다. */
+/**
+ * 로그인 수단 (Better Auth의 account 모델). 테넌트 account와 구분하기 위해 이름을 바꿨다.
+ *
+ * @owner shared
+ */
 export const userIdentity = pgTable(
   "user_identity",
   {
@@ -72,6 +78,7 @@ export const userIdentity = pgTable(
   (t) => [uniqueIndex().on(t.providerId, t.providerAccountId), index().on(t.userId)],
 );
 
+/** @owner shared */
 export const verification = pgTable(
   "verification",
   {
@@ -85,7 +92,11 @@ export const verification = pgTable(
   (t) => [index().on(t.identifier)],
 );
 
-/** 결재 PIN (PRD AUTH-009). Argon2id 해시만 저장한다. */
+/**
+ * 결재 PIN (PRD AUTH-009). Argon2id 해시만 저장한다.
+ *
+ * @owner shared
+ */
 export const approvalPin = pgTable("approval_pin", {
   userId: uuid()
     .primaryKey()

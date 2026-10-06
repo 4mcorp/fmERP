@@ -1,7 +1,7 @@
 import { type Db, schema } from "@fmerp/db";
+import { DEV_TEST_PASSWORD, TEST_ACCOUNTS, TEST_USERS } from "@fmerp/feature-account/test-accounts";
 import { hashPassword } from "better-auth/crypto";
 import { and, eq } from "drizzle-orm";
-import { DEV_TEST_PASSWORD, TEST_ACCOUNTS, TEST_USERS } from "../service/test-accounts";
 
 /**
  * 개발·테스트용 계정을 만든다. 여러 번 실행해도 같은 결과가 되도록(멱등) 이메일·slug 기준으로 확인한다.

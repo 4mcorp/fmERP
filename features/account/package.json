@@ -5,11 +5,10 @@
   "type": "module",
   "exports": {
     "./api/routes": "./src/api/routes.ts",
-    "./seed": "./src/seed/seed.ts",
-    "./seed-org": "./src/seed/seed-org.ts",
     "./ui/pages/*": "./src/ui/pages/*.tsx",
     "./ui/components/*": "./src/ui/components/*.tsx",
-    "./auth-setup": "./src/auth-setup.ts"
+    "./auth-setup": "./src/auth-setup.ts",
+    "./test-accounts": "./src/service/test-accounts.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

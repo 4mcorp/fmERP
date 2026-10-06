@@ -1,7 +1,7 @@
 import { createDatabase } from "@fmerp/db";
-import { seedTestAccounts } from "@fmerp/feature-account/seed";
-import { seedTestOrganization } from "@fmerp/feature-account/seed-org";
 import { installDefaultForms } from "@fmerp/feature-approval/provisioning";
+import { seedTestAccounts } from "./seed/seed";
+import { seedTestOrganization } from "./seed/seed-org";
 
 if (process.env.NODE_ENV === "production") {
   console.error("운영 환경에서는 테스트 계정 시드를 실행할 수 없습니다.");

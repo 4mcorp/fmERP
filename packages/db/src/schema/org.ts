@@ -25,7 +25,11 @@ const accountRef = () =>
     .notNull()
     .references(() => account.id, { onDelete: "cascade" });
 
-/** 사업자 (ORG-002~005). 삭제하지 않고 비활성화한다. */
+/**
+ * 사업자 (ORG-002~005). 삭제하지 않고 비활성화한다.
+ *
+ * @owner org
+ */
 export const business = pgTable(
   "business",
   {
@@ -53,7 +57,11 @@ export const business = pgTable(
   ],
 );
 
-/** 부서 트리 (ORG-010~015). depth·path는 트리거가 계산한다 (path = 조상 id를 `/`로 이은 값). */
+/**
+ * 부서 트리 (ORG-010~015). depth·path는 트리거가 계산한다 (path = 조상 id를 `/`로 이은 값).
+ *
+ * @owner org
+ */
 export const department = pgTable(
   "department",
   {
@@ -93,7 +101,11 @@ export const department = pgTable(
   ],
 );
 
-/** 직위 마스터 (ORG-030). rank가 클수록 상위 */
+/**
+ * 직위 마스터 (ORG-030). rank가 클수록 상위
+ *
+ * @owner org
+ */
 export const position = pgTable(
   "position",
   {
@@ -110,7 +122,11 @@ export const position = pgTable(
   ],
 );
 
-/** 직책 마스터 (ORG-031) */
+/**
+ * 직책 마스터 (ORG-031)
+ *
+ * @owner org
+ */
 export const duty = pgTable(
   "duty",
   {
@@ -123,7 +139,11 @@ export const duty = pgTable(
   (t) => [unique().on(t.accountId, t.name), unique("duty_id_account_unique").on(t.id, t.accountId)],
 );
 
-/** 소속·겸직 (ORG-032·033). 유효한(valid_to 없는) 주소속은 구성원당 1개 */
+/**
+ * 소속·겸직 (ORG-032·033). 유효한(valid_to 없는) 주소속은 구성원당 1개
+ *
+ * @owner org
+ */
 export const assignment = pgTable(
   "assignment",
   {
@@ -168,7 +188,11 @@ export const assignment = pgTable(
   ],
 );
 
-/** 발령 이력 (ORG-035). 추가만 가능 */
+/**
+ * 발령 이력 (ORG-035). 추가만 가능
+ *
+ * @owner org
+ */
 export const assignmentHistory = pgTable(
   "assignment_history",
   {
@@ -193,7 +217,11 @@ export const assignmentHistory = pgTable(
   ],
 );
 
-/** 역할 부여 (PERM-001). 소유자·계정 관리자는 membership.role이며 여기에 넣지 않는다 */
+/**
+ * 역할 부여 (PERM-001). 소유자·계정 관리자는 membership.role이며 여기에 넣지 않는다
+ *
+ * @owner org
+ */
 export const roleGrant = pgTable(
   "role_grant",
   {

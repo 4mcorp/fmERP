@@ -53,7 +53,11 @@ export interface DocumentNumbering {
   formCode: string;
 }
 
-/** 결재 문서. 본문은 S3 리비전에 있고 DB에는 색인만 둔다 (document_revision, ADR 0008) */
+/**
+ * 결재 문서. 본문은 S3 리비전에 있고 DB에는 색인만 둔다 (document_revision, ADR 0008)
+ *
+ * @owner approval
+ */
 export const document = pgTable(
   "document",
   {
@@ -109,7 +113,11 @@ export const document = pgTable(
   ],
 );
 
-/** 결재선 단계. version은 낙관적 잠금이다 (APV-045) */
+/**
+ * 결재선 단계. version은 낙관적 잠금이다 (APV-045)
+ *
+ * @owner approval
+ */
 export const approvalStep = pgTable(
   "approval_step",
   {
@@ -157,7 +165,11 @@ export const approvalStep = pgTable(
   ],
 );
 
-/** 결재 처리 기록. 추가만 가능하다 (APV-046, INSERT·SELECT 권한만) */
+/**
+ * 결재 처리 기록. 추가만 가능하다 (APV-046, INSERT·SELECT 권한만)
+ *
+ * @owner approval
+ */
 export const approvalAction = pgTable(
   "approval_action",
   {
@@ -191,7 +203,11 @@ export const approvalAction = pgTable(
   ],
 );
 
-/** 도메인 이벤트 outbox. 소비자(PDF·알림·웹훅)는 M5·M8에서 추가한다 (ADR 0007) */
+/**
+ * 도메인 이벤트 outbox. 소비자(PDF·알림·웹훅)는 M5·M8에서 추가한다 (ADR 0007)
+ *
+ * @owner approval
+ */
 export const approvalEvent = pgTable(
   "approval_event",
   {
@@ -205,7 +221,11 @@ export const approvalEvent = pgTable(
   (t) => [index().on(t.documentId), index().on(t.createdAt)],
 );
 
-/** 문서번호 시리즈 (APV-061). last_seq를 한 문장으로 올려 누락·중복 없이 채번한다 */
+/**
+ * 문서번호 시리즈 (APV-061). last_seq를 한 문장으로 올려 누락·중복 없이 채번한다
+ *
+ * @owner approval
+ */
 export const docNumberSeries = pgTable(
   "doc_number_series",
   {
@@ -230,7 +250,11 @@ export interface DelegationScope {
   categories?: string[];
 }
 
-/** 부재·대결 설정 (APV-050·052·053) */
+/**
+ * 부재·대결 설정 (APV-050·052·053)
+ *
+ * @owner approval
+ */
 export const delegation = pgTable(
   "delegation",
   {

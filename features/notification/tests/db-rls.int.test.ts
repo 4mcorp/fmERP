@@ -1,6 +1,7 @@
 // M8 통합 테스트: 알림 테이블의 테넌트 격리·권한, 이벤트 조회 함수, 텔레그램 연결 테이블 권한 (실제 DB)
+
+import { createDatabase } from "@fmerp/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDatabase } from "./index";
 
 const need = (name: string) => {
   const v = process.env[name];

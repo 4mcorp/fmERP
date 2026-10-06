@@ -1,7 +1,8 @@
 // M7 통합 테스트: 덤프·내보내기 테이블의 권한·RLS·이력 보호·동시 실행 제한 (실제 DB)
+
+import { createDatabase } from "@fmerp/db";
 import type { PoolClient } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDatabase } from "./index";
 
 const need = (name: string) => {
   const v = process.env[name];

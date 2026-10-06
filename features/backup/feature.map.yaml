@@ -19,7 +19,8 @@ jobs:
   queues: [backup.*]
 tables:
   owns: { generated: true }                       # system_backup, account_export 등 (P7에서 @owner로 채움)
-  reads: []                                       # 재색인(reindex)이 문서·양식 표를 쓴다 → P7에서 reads 선언 또는 계약화
+  reads: [approval_line_template, approval_step, assignment, assignment_history, attachment, audit_review, business, department, doc_number_series, document, document_package, duty, form, form_version, position, role_grant]                                       # 재색인(reindex)이 문서·양식 표를 쓴다 → P7에서 reads 선언 또는 계약화
+  writes: [approval_action, approval_step, attachment, doc_number_series, document, document_package, document_revision, document_search]   # 재색인(reindex)이 S3 완료 패키지로 결재 색인 표를 되살린다 — 선언된 예외
 events: { publishes: [], consumes: [] }
 contracts:
   - shared/contracts/system-guards                # requireSystemAdmin은 이 기능이 제공

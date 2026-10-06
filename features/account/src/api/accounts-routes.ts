@@ -1,5 +1,4 @@
-import { DEFAULT_POSITIONS } from "@fmerp/core";
-import { type Executor, schema, withTenant } from "@fmerp/db";
+import { type Executor, withTenant } from "@fmerp/db";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
   ApiError,
@@ -9,6 +8,7 @@ import {
 } from "@fmerp/shared/server/http";
 import { createRoute, z } from "@hono/zod-openapi";
 import {
+  type ApplyInvitationPreset,
   acceptInvitation,
   createAccount,
   previewInvitation,
@@ -17,9 +17,11 @@ import {
 import { authOf } from "../service/auth";
 
 /** 회사(계정) 만들기·전환, 초대 수락. 활성 계정이 없어도 쓸 수 있다 (PRD AUTH-005·006·007) */
-/** 새 회사에 기본 양식을 설치하는 함수는 결재 기능의 것이라 합성 루트가 주입한다 */
+/** 새 회사의 기본 양식(결재)·직위(조직) 설치 함수는 다른 기능의 것이라 합성 루트가 주입한다 */
 export interface AccountProvisioning {
   installDefaultForms(tx: Executor, accountId: string): Promise<unknown>;
+  installDefaultPositions(tx: Executor, accountId: string): Promise<unknown>;
+  applyInvitationPreset: ApplyInvitationPreset;
 }
 
 export function registerAccountsRoutes(
@@ -63,11 +65,9 @@ export function registerAccountsRoutes(
           request: c.get("request"),
         },
       );
-      // 직위 마스터 기본값 (ORG-030). 첫 사업자 등록은 온보딩 화면이 안내한다 (ORG-002)
+      // 새 회사의 기본값(직위 마스터·기본 양식)은 다른 기능의 것이라 합성 루트가 주입한 함수로 설치한다
       await withTenant(d.appDb, created.accountId, async (tx) => {
-        await tx
-          .insert(schema.position)
-          .values(DEFAULT_POSITIONS.map((p) => ({ accountId: created.accountId, ...p })));
+        await provisioning.installDefaultPositions(tx, created.accountId);
         // 기본 양식 7종 (APV-003)
         await provisioning.installDefaultForms(tx, created.accountId);
       });
@@ -137,7 +137,11 @@ export function registerAccountsRoutes(
       const d = deps();
       const session = c.get("session");
       const result = await acceptInvitation(
-        { db: d.authDb, auth: authOf(d) },
+        {
+          db: d.authDb,
+          auth: authOf(d),
+          applyInvitationPreset: provisioning.applyInvitationPreset,
+        },
         {
           token: c.req.valid("json").token,
           userId: session.userId,

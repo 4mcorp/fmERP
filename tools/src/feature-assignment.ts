@@ -40,6 +40,7 @@ const RULES: readonly Rule[] = [
   // ── 합성 루트: 기능을 모아 연결한다 ──
   [/^apps\/web\/app\/api\//, "composition"],
   [/^apps\/web\/server\/(app|create-app|seed-cli|test-global-setup)\.ts$/, "composition"],
+  [/^apps\/web\/server\/seed\//, "composition"], // 시험·개발 시드: 계정·조직·양식 표를 함께 채운다
   [/^apps\/worker\/src\/main\.ts$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/layout\.tsx$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],

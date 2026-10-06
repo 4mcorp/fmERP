@@ -35,7 +35,7 @@ provisioning: provisioning                        # installDefaultForms — 계�
 guards: api/guards                                # requireView — 감사·완료 라우트에 주입 (DocumentAccess 구현)
 tables:
   owns: { generated: true }                       # document·approval_step·form·form_version·attachment·approval_event 등 (P7에서 @owner로 채움)
-  reads: []
+  reads: [assignment, business, department, duty, position, role_grant]
 events: { publishes: [approval_event], consumes: [] }   # 알림이 읽는다 (core/approval-event 계약)
 contracts:
   - core/approval-event                           # 이벤트 형식 (공통 소유)

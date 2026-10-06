@@ -38,7 +38,11 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 /** NONE: 텔레그램 대상 아님/미연결, PENDING: 발송 대기, SENT, FAILED: 재시도 소진, SKIPPED: 연결 해제·차단 */
 export const TELEGRAM_STATUSES = ["NONE", "PENDING", "SENT", "FAILED", "SKIPPED"] as const;
 
-/** 인앱 알림. 외부 채널로 나가는 문구에는 문서 제목·내용을 넣지 않는다 (M8 plan) */
+/**
+ * 인앱 알림. 외부 채널로 나가는 문구에는 문서 제목·내용을 넣지 않는다 (M8 plan)
+ *
+ * @owner notification
+ */
 export const notification = pgTable(
   "notification",
   {
@@ -70,6 +74,8 @@ export const notification = pgTable(
 /**
  * 알림 소비를 마친 결재 이벤트. 커서(id 순서)는 늦게 커밋된 이벤트를 놓칠 수 있어,
  * "아직 처리 표시가 없는 최근 이벤트"를 찾는 방식으로 누락을 막는다 (DB 함수 notification_pending_events).
+ *
+ * @owner notification
  */
 export const eventNotified = pgTable("event_notified", {
   eventId: uuid().primaryKey(),
@@ -77,7 +83,11 @@ export const eventNotified = pgTable("event_notified", {
   createdAt: createdAt(),
 });
 
-/** 사용자와 텔레그램 대화의 연결. 사용자당 1개, chat_id도 한 사용자에게만 묶인다 */
+/**
+ * 사용자와 텔레그램 대화의 연결. 사용자당 1개, chat_id도 한 사용자에게만 묶인다
+ *
+ * @owner notification
+ */
 export const telegramLink = pgTable(
   "telegram_link",
   {
@@ -90,7 +100,11 @@ export const telegramLink = pgTable(
   (t) => [uniqueIndex().on(t.chatId)],
 );
 
-/** 텔레그램 연결용 일회용 토큰. 원문은 링크에만 있고 해시만 저장한다 (10분 만료·1회용) */
+/**
+ * 텔레그램 연결용 일회용 토큰. 원문은 링크에만 있고 해시만 저장한다 (10분 만료·1회용)
+ *
+ * @owner notification
+ */
 export const telegramLinkToken = pgTable(
   "telegram_link_token",
   {
@@ -112,7 +126,11 @@ export const SYSTEM_SETTING_KEYS = [
   "telegram_receiver_status",
 ] as const;
 
-/** 시스템(서버) 설정. 계정 소속이 없고 RLS 대상이 아니다. 변경은 시스템 관리자 경로에서만 한다 */
+/**
+ * 시스템(서버) 설정. 계정 소속이 없고 RLS 대상이 아니다. 변경은 시스템 관리자 경로에서만 한다
+ *
+ * @owner notification
+ */
 export const systemSetting = pgTable("system_setting", {
   key: text({ enum: SYSTEM_SETTING_KEYS }).primaryKey(),
   value: jsonb().$type<unknown>().notNull(),

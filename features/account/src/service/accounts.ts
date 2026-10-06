@@ -7,17 +7,33 @@ import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Auth } from "./auth";
 
 /** 초대할 때 미리 지정하는 소속 (PRD AUTH-006). 수락 시 구성원의 주소속으로 만든다 */
-export interface InvitationPreset {
+interface InvitationPreset {
   businessId: string;
   departmentId: string;
   positionId: string | null;
   dutyId: string | null;
 }
 
+export type ApplyInvitationPreset = (
+  db: Db,
+  input: {
+    accountId: string;
+    userId: string;
+    createdBy: string;
+    preset: Partial<InvitationPreset>;
+    now: Date;
+  },
+) => Promise<void>;
+
 export interface AuthServiceDeps {
   /** fmerp_auth 역할 연결 (RLS 우회, ADR 0005) */
   db: Db;
   auth: Auth;
+}
+
+export interface AcceptInvitationDeps extends AuthServiceDeps {
+  /** 초대에 지정된 소속을 만든다. 조직 기능의 것이라 합성 루트가 주입한다 */
+  applyInvitationPreset: ApplyInvitationPreset;
 }
 
 /** 내가 속한 계정 목록 (계정 전환 메뉴용, PRD AUTH-007) */
@@ -117,7 +133,7 @@ export async function previewInvitation(db: Db, token: string, now: Date) {
  * 동시에 두 번 수락하지 못하도록 사용 처리를 조건부 UPDATE로 먼저 선점한다.
  */
 export async function acceptInvitation(
-  deps: AuthServiceDeps,
+  deps: AcceptInvitationDeps,
   input: {
     token: string;
     userId: string;
@@ -173,7 +189,7 @@ export async function acceptInvitation(
     throw error;
   }
 
-  await applyInvitationPreset(db, {
+  await deps.applyInvitationPreset(db, {
     accountId: claimed.accountId,
     userId: input.userId,
     createdBy: claimed.createdBy,
@@ -197,69 +213,4 @@ export async function acceptInvitation(
     request: input.request,
   });
   return { accountId: claimed.accountId };
-}
-
-/**
- * 초대에 지정된 사업자·부서·직위로 주소속을 만든다. 그 사이 부서나 사업자를 쓸 수 없게 되었으면
- * 소속 없이 합류시킨다(관리자가 나중에 발령한다).
- */
-async function applyInvitationPreset(
-  db: Db,
-  input: {
-    accountId: string;
-    userId: string;
-    createdBy: string;
-    preset: Partial<InvitationPreset>;
-    now: Date;
-  },
-) {
-  const { preset } = input;
-  if (!preset.businessId || !preset.departmentId) return;
-  const [dept] = await db
-    .select({ id: schema.department.id })
-    .from(schema.department)
-    .innerJoin(schema.business, eq(schema.business.id, schema.department.businessId))
-    .where(
-      and(
-        eq(schema.department.id, preset.departmentId),
-        eq(schema.department.businessId, preset.businessId),
-        eq(schema.department.accountId, input.accountId),
-        eq(schema.department.active, true),
-        eq(schema.business.active, true),
-      ),
-    );
-  if (!dept) return;
-  const [member] = await db
-    .select({ id: schema.membership.id })
-    .from(schema.membership)
-    .where(
-      and(
-        eq(schema.membership.accountId, input.accountId),
-        eq(schema.membership.userId, input.userId),
-      ),
-    );
-  if (!member) return;
-  const [created] = await db
-    .insert(schema.assignment)
-    .values({
-      accountId: input.accountId,
-      membershipId: member.id,
-      businessId: preset.businessId,
-      departmentId: preset.departmentId,
-      positionId: preset.positionId ?? null,
-      dutyId: preset.dutyId ?? null,
-      isPrimary: true,
-      validFrom: input.now,
-    })
-    .returning({ id: schema.assignment.id });
-  await db.insert(schema.assignmentHistory).values({
-    accountId: input.accountId,
-    membershipId: member.id,
-    assignmentId: created?.id ?? null,
-    action: "create",
-    changes: { ...preset, isPrimary: true },
-    effectiveDate: input.now.toISOString().slice(0, 10),
-    reason: "초대 수락",
-    actorUserId: input.createdBy,
-  });
 }

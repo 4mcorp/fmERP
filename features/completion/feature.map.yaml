@@ -13,7 +13,7 @@ jobs:
   queues: [package.generate, package.sweep]
 tables:
   owns: { generated: true }                       # document_package (P7에서 @owner로 채움)
-  reads: [document, attachment, approval_step]    # 패키지 내용을 만들려고 결재 문서를 읽는다 → P6에서 계약화 후보
+  reads: [approval_action, approval_step, attachment, business, department, document, document_revision, form, form_version]   # 패키지 내용을 만들려고 결재 문서·양식과 조직 이름을 읽는다 → P9 계약화 후보
 events: { publishes: [], consumes: [approval_event] }
 contracts:
   - shared/contracts/document-access              # 문서 열람 확인 (결재가 제공, app.ts가 주입)

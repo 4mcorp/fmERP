@@ -24,7 +24,7 @@ jobs:
   queues: [notify.telegram]
 tables:
   owns: { generated: true }                 # notification, event_notified, telegram_link, telegram_link_token, system_setting (P7에서 @owner로 채움)
-  reads: []
+  reads: [approval_event, approval_step, audit_review, document, document_recipient, role_grant, system_backup]
 events: { publishes: [], consumes: [approval_event] }
 contracts:                                  # 이 기능이 쓰는 공통 계약
   - core/approval-event                     # 결재가 만들고 알림이 읽는 이벤트 형식

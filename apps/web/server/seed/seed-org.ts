@@ -1,7 +1,7 @@
 import { DEFAULT_POSITIONS, makeBusinessNumber } from "@fmerp/core";
 import { type Db, schema } from "@fmerp/db";
+import { TEST_ACCOUNTS } from "@fmerp/feature-account/test-accounts";
 import { and, eq } from "drizzle-orm";
-import { TEST_ACCOUNTS } from "../service/test-accounts";
 
 /**
  * 개발·테스트용 조직 데이터 (M2 계획 5장). 사업자·부서·직위·소속·역할을 넣는다.

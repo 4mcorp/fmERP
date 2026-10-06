@@ -22,7 +22,7 @@ adapters:
 api: { generated: true, entry: api/routes }       # registerOrgApi(router, deps) — 계정의 registerAccountApi 뒤에 호출
 tables:
   owns: { generated: true }                       # business·department·position·duty·assignment 등 (P7에서 @owner로 채움)
-  reads: []
+  reads: [approval_step, document]
 events: { publishes: [], consumes: [] }
 contracts:
   - shared/authz/org-access                       # 범위 판정 (공통)
