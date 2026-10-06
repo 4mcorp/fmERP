@@ -6,7 +6,7 @@
 ## 1. 계층별 기준
 | 계층 | 도구 | 필수 대상 |
 |---|---|---|
-| 단위 | Vitest 4.1 | `packages/core` 전체 — 결재 상태 전이, 병렬 합의, 전결, 대결, 후결, 결재선 검증, 부서 뎁스 규칙 |
+| 단위 | Vitest 4.1 | `shared/src/domain`·`features/*/src/domain` 전체 (`features/*/tests`) — 결재 상태 전이, 병렬 합의, 전결, 대결, 후결, 결재선 검증, 부서 뎁스 규칙 |
 | 통합 | Vitest 4.1 + 실제 PostgreSQL 18 | 테넌트 격리(RLS), 문서번호 채번 동시성, 감사 로그 INSERT 전용 권한, 마이그레이션 적용 |
 | E2E | Playwright 1.63 | PRD 9장 시나리오 S1~S7 |
 

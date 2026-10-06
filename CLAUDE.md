@@ -20,7 +20,7 @@ Node 24 LTS · pnpm 11 · TypeScript ~6.0 · Next 16.3 + Hono 4.13(`/api`) · Po
 - 모든 테넌트 데이터는 `account_id` + RLS로 격리한다. 테넌트 경계를 넘는 쿼리는 금지한다.
 - 감사 로그(`audit_log`)는 INSERT만 한다. UPDATE·DELETE 코드는 금지한다.
 - 완료 문서 패키지(S3 `final/`)는 한 번만 쓴다. 문서 본문·첨부는 S3에, DB에는 색인·상태·S3 키만 둔다.
-- `packages/core`(결재 엔진·도메인)는 프레임워크·DB·네트워크를 import하지 않는다.
+- 도메인 규칙(`shared/src/domain`, `features/*/src/domain` — 결재 엔진 포함)은 프레임워크·DB·네트워크를 import하지 않는다.
 - 비밀정보(키, 토큰, `.env`)와 고객 데이터는 커밋하거나 로그·외부 도구 질의에 넣지 않는다.
 
 ### 작업 원칙
@@ -44,4 +44,4 @@ Node 24 LTS · pnpm 11 · TypeScript ~6.0 · Next 16.3 + Hono 4.13(`/api`) · Po
 - **개발 서버를 켜기 전, 또는 `packages/db/migrations`에 새 파일이 생겼을 때는 `pnpm db:migrate`(필요하면 `pnpm db:seed`)를 먼저 실행한다.** 개발 DB는 자동 갱신되지 않아, 놓치면 화면이 비고 API가 500이 된다 ([ts](docs/ts/2026-10-04-dev-db-not-migrated.md)).
 - `pnpm`이 PATH에 없으면 `corepack pnpm@11.28.3 <명령>`을 쓴다 ([ts](docs/ts/2026-10-03-windows-pnpm-not-on-path.md)).
 - 테스트 파일: 단위 `*.test.ts`, 통합 `*.int.test.ts`(실제 DB·S3), E2E `apps/web/e2e/*.spec.ts`.
-- **구조 검사:** `pnpm arch:check`(기능 간 import·순환·미사용 코드·억제 주석·테이블 소유권·기능 지도 정합성을 기준선과 비교), `pnpm arch:guard`(한도 증가 감지), 한꺼번에 `pnpm verify`. 새 위반은 기준선에 넣지 말고 **고친다.** `tools/baselines/`·`.dependency-cruiser.cjs`·`knip.json`·`biome.json`은 사람의 승인 없이 느슨하게 바꾸지 않는다. `pnpm arch:baseline`은 위반을 **줄였을 때만** 쓴다. 새 소스 파일은 `tools/src/feature-assignment.ts`에 배정되어야 한다. 새 테이블에는 `@owner` 주석을, 다른 기능 표를 읽으려면 그 지도의 `tables.reads` 선언을 단다(규칙: [rules/database.md](docs/rules/database.md)). 화면·API를 바꾸면 해당 `feature.map.yaml`을 고치고 `pnpm feature:index`를 실행한다. 기능 폴더로 옮긴 기능은 `pnpm feature:check <기능>`(타입 범위·의존 규칙·테스트·커버리지 하한)으로 격리를 확인한다. 구조 전환은 [계획](docs/plan/2026-10-06-feature-architecture-refactor.md) 12장의 세션 순서를 따른다.
+- **구조 검사:** `pnpm arch:check`(기능 간 import·순환·미사용 코드·억제 주석·테이블 소유권·기능 지도 정합성을 기준선과 비교), `pnpm arch:guard`(한도 증가 감지), 한꺼번에 `pnpm verify`. 검사는 **엄격**하다: 위반은 0건이어야 하고 기준선 파일이 없다(예외는 이유가 적힌 억제 주석의 허용 목록 `tools/baselines/suppressions.txt`뿐, 늘리지 않는다). 위반은 기준선에 넣지 말고 **고친다.** `tools/`·`.dependency-cruiser.cjs`·`knip.json`·`biome.json`은 사람의 승인 없이 느슨하게 바꾸지 않는다. 새 소스 파일은 `tools/src/feature-assignment.ts`에 배정되어야 한다. 새 테이블에는 `@owner` 주석을, 다른 기능 표를 읽으려면 그 지도의 `tables.reads` 선언을 단다(규칙: [rules/database.md](docs/rules/database.md)). 화면·API를 바꾸면 해당 `feature.map.yaml`을 고치고 `pnpm feature:index`를 실행한다. 기능 폴더로 옮긴 기능은 `pnpm feature:check <기능>`(타입 범위·의존 규칙·테스트·커버리지 하한)으로 격리를 확인한다. 구조 전환은 [계획](docs/plan/2026-10-06-feature-architecture-refactor.md) 12장의 세션 순서를 따른다.

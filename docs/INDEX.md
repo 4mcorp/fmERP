@@ -162,7 +162,7 @@
 | [2026-10-05-m7-security-review.md](plan/2026-10-05-m7-security-review.md) | done | M7 보안 리뷰: 앱 역할이 완료 상태·키를 직접 쓰는 문제(S1~S3)·덤프 멈춤(S4) 수정, 후속 FU-M7-1~3 |
 | [2026-10-05-m8-notifications-home.md](plan/2026-10-05-m8-notifications-home.md) | done | M8 알림·홈·통합 검증: outbox 소비 알림(인앱·이메일), 홈 대시보드, E2E S2~S7, 스테이징 초안 |
 | [2026-10-06-m8-security-review.md](plan/2026-10-06-m8-security-review.md) | done | M8 보안 리뷰: 계정 교차 조회의 이벤트 내용 노출(S1)·연결 완료 미감사(S2)·오류 문구의 매개변수(S3) 수정, 후속 FU-M8-1~5 |
-| [2026-10-06-feature-architecture-refactor.md](plan/2026-10-06-feature-architecture-refactor.md) | draft | 기능(feature) 단위 구조 전환 + 정적 분석 강제 체계(경계 4겹, Knip, feature map, 우회 방지) 계획과 도구 지정. **사용자 승인 대기** |
+| [2026-10-06-feature-architecture-refactor.md](plan/2026-10-06-feature-architecture-refactor.md) | done | 기능(feature) 단위 구조 전환 + 정적 분석 강제 체계(경계 4겹, Knip, feature map, 우회 방지) 계획과 도구 지정. **사용자 승인 대기** |
 
 ---
 
@@ -208,7 +208,7 @@
 | 환경 변수 검증 | `shared/src/server/env.ts`, `apps/worker/src/env.ts` |
 | 권한 판정 어댑터(`loadActor`·`authorize`), 서비스 컨텍스트·오류 | `shared/src/authz/org-access.ts`, `shared/src/server/{context,errors,service-context,common}.ts` |
 | worker (pg-boss, 헬스체크) | `apps/worker/src/main.ts`, `src/health.ts` |
-| 공통 도메인 규칙 (순수 함수) | `packages/core/src/` — 금액 `money.ts`, 권한 `permissions.ts`(`can()`), 공통 소유 파일(양식 `form-*.ts`, `doc-number.ts`, `completion-package.ts`, `approval-event.ts`, `engine-error-code.ts`, `org-defaults.ts`, `business-number.ts`, `session-policy.ts`, `pin-policy.ts`). 기능 전용 규칙은 각 `features/*/src/domain/` |
+| 공통 도메인 규칙 (순수 함수) | `shared/src/domain/` — 권한 `permissions.ts`(`can()`), 양식 `form-{schema,values,index}.ts`, `doc-number.ts`, `completion-package.ts`, `approval-event.ts`, `engine-error-code.ts`, `pin-policy.ts`, `session-policy.ts` (시험은 같은 폴더). 기능 전용 규칙은 각 `features/*/src/domain/` |
 | 결재 — **`features/approval/`** (엔진) | `src/domain/`(`approval-engine·state·line·line-edit·types`, `delegation`, `document-access`, `step-transfer`, `form-defaults`) — 순수 함수, 시험 `tests/` |
 | 결재 서비스·API·화면 | `src/service/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `drafts·attachments·comments·mailbox·search·transfer·recipients·forms·export` 등), `src/api/`(`routes.ts` 진입점, `*-routes.ts`, `guards.ts`), `src/provisioning.ts`(기본 양식 설치), `src/ui/{pages,components,queries.ts,local-drafts.ts}`, `feature.map.yaml`. 검사 `pnpm feature:check approval`. 어댑터 페이지는 `apps/web/app/(app)/{approval,mailbox,search,me/absence,admin/{approvals,forms}}` |
 | 결재 스키마·트리거 | `packages/db/src/schema/approval.ts`, `migrations/0005_approval_engine.sql`, `0006_approval_rls_triggers.sql` |
@@ -221,7 +221,7 @@
 | 인증·계정 — **`features/account/`** | `src/service/`(`auth.ts` Better Auth 설정·`authOf`, `accounts.ts` 계정·초대, `pin.ts`, `me.ts`, `dev-login.ts`, `test-accounts.ts`), `src/seed/`(시드 계정·시험 조직), `src/api/`(`routes.ts` 진입점), `src/ui/`(로그인·초대·온보딩·내 정보), 공통 세션 기본기는 `shared/src/authz/`(`errors`·`session-guard`·`membership`·`reauth`). 검사 `pnpm feature:check account` |
 | 감사 로그 기록 | `packages/audit/src/` (`recordAudit`, `computeAuditDiff`) |
 | 감사 조회·타임라인·월간 점검 (M6) — **`features/audit/`** | `src/domain/`(`audit-review.ts`·`audit-timeline.ts`), `src/service/`(`logs.ts`·`timeline.ts`), `src/api/routes.ts`, `src/ui/{pages,components,queries.ts}`(`audit-trail.tsx`는 결재 상세에 슬롯으로 끼움), 테스트 `tests/`, `feature.map.yaml`. 검사 `pnpm feature:check audit` |
-| 세션·PIN 정책 (순수 함수) | `packages/core/src/session-policy.ts`, `pin-policy.ts` |
+| 세션·PIN 정책 (순수 함수) | `shared/src/domain/session-policy.ts`, `pin-policy.ts` |
 | 스키마 | `packages/db/src/schema/` (`auth.ts`, `tenant.ts`, `audit.ts`, `columns.ts`) |
 | DB 권한·RLS | `packages/db/migrations/0002_grants_rls.sql` |
 | 로컬 개발·테스트 서비스 | `docker-compose.dev.yml`, DB 계정 생성 `docker/postgres/initdb/01-roles.sh` |

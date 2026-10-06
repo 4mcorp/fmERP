@@ -1,7 +1,7 @@
 ---
 title: 기능(feature) 단위 구조 전환과 정적 분석 강제 체계
 date: 2026-10-06
-status: accepted
+status: done
 tags: [architecture, lint, ci, refactor, feature-map, eval]
 related: [rules/architecture.md, rules/dependencies.md, TECH_SPEC 4장, M8 plan]
 ---
@@ -269,6 +269,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 
 ## 11. 결정·변경 기록
 - 2026-10-06: 초안 작성. 코드·설정·의존성은 바꾸지 않았다. 결합 측정은 임시 스크립트로 했고(저장소에 넣지 않음) P0에서 `tools/`로 정식화한다.
+- 2026-10-06: S10 완료(12장 기록): `packages/core` 해체, 공통 코드 역승격·죽은 코드 삭제, 스키마 순환·knip 부채 해소, **하드 전환**(엄격 게이트 7개·기준선 파일 삭제), 문서 정리. **계획 전체 완료 — status: done.**
 - 2026-10-06: S9 완료(12장 기록): P7 테이블 소유권 게이트(`@owner`·접근 검사·마이그레이션 태그)와 P8 기능 지도 도구(`feature:index/find/map-check/impact`·정합성 게이트·스킬·CLAUDE.md 압축본). `yaml` 패키지 추가(사용자 승인).
 - 2026-10-06: S8 완료(12장 기록): `features/approval` 이동(한 세션에 끝남, S9 불필요), `ApprovalError`→`ServiceError` 일반화, E2E는 합성 루트에 두기로 결정.
 - 2026-10-06: S7 완료(12장 기록): `shared/authz` 확정, `features/account`·`features/org` 이동. 기능 간 import 0·공통→기능 import 0 달성 (P5 완료, M9 전 목표 충족).
@@ -293,7 +294,7 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 | S7 | P5 `account`·`org` (`shared/authz` 확정) | **M9 착수 전 완료 목표** | **완료 (2026-10-06)** |
 | S8–S9 | P6 `approval` (가장 큼, 두 세션까지 허용) | `approval` 위반 0건, 전체 기준선 0 | **S8에서 한 번에 완료 (2026-10-06)** — 전체 기준선은 cross-feature·shared-to-feature 0, 남은 부채는 순환 1·knip 11·억제 주석 10(P9~P10) |
 | S10 (실제 S9) | P7 테이블 소유권 + P8 feature map·스킬 | 소유권·지도 검사 CI 통과 | **완료 (2026-10-06, 한 세션에 P7·P8 모두)** |
-| S11 | P9 공용 코드 사후 정리 + P10 하드 전환 + 문서 정리(TECH_SPEC 4장·rules/architecture.md·INDEX·CLAUDE.md) | 기준선 파일 삭제, 위반 0, 규칙 우회 방지 확인 | 대기 |
+| S11 (실제 S10) | P9 공용 코드 사후 정리 + P10 하드 전환 + 문서 정리(TECH_SPEC 4장·rules/architecture.md·INDEX·CLAUDE.md) | 기준선 파일 삭제, 위반 0, 규칙 우회 방지 확인 | **완료 (2026-10-06)** |
 
 **모든 세션의 공통 규칙**
 1. 시작: 이 12장의 "다음 세션 시작 지침"을 읽고, `git status`가 깨끗한지, `pnpm verify`(P1 이후) 또는 린트·타입·단위가 통과하는지 먼저 확인한다.
@@ -391,9 +392,12 @@ invariants: ["외부 채널 문구에 문서 제목·내용 없음", "연결 토
 - **기준선:** cross-feature 0, shared-to-feature 0, **table-ownership 0(신규)**, **feature-map 0(신규)**, depcruise 1, Knip 11, 억제 주석 10, 미배정 0. `arch:guard` 게이트 9개 한도 증가 없음.
 - **검증:** 린트(경고 6)·타입·`arch:check`·`arch:guard`·단위 401·통합 418(전경 단독, P7 변경 후 통과)·E2E(아래)·`drizzle-kit generate` 변경 없음. 두 신규 게이트의 위반 주입 시험 통과.
 
-**다음 세션 시작 지침 (S10 = P9 + P10 + 문서 정리)**
-- 읽을 것: 이 문서 7장(공용 코드 분류)·6장 P9·P10, S4~S9 진행 기록, `docs/feature-map/INDEX.md`. 시작 전 `git status` 깨끗(`.claude/launch.json` 제외), `pnpm verify`·단위 통과, `pnpm env:up`. 통합 시험은 전경에서 한 번에 하나만.
-- **P9 공용 코드 사후 정리:** ① `packages/core` 해체 — 공통 소유 파일(`form-*`·`doc-number`·`completion-package`·`approval-event`·`engine-error-code`·`org-defaults`·`business-number`·`session-policy`·`pin-policy`·`money`·`permissions`·`file-sniff`)을 `shared/{domain,contracts}`로 옮기고 `@fmerp/core` 패키지를 없앤다(`domain-is-pure` 규칙은 `shared/domain`으로). 단위 시험도 함께 ② 사용처 수 집계로 `shared` 모듈 중 한 기능만 쓰는 것 역승격, `jscpd`로 기능 간 복제 블록 분류(7.1 표) ③ 읽기 선언이 많은 기능(백업·알림·결재)의 `tables.reads` 줄이기(계약 후보 판단), 홈의 결재 데이터 훅(`useMine`·`usePending`·`useForms`) 정리 ④ 위 "P7에서 하지 않은 것"의 격리 시험 표지 검사 판단. 각각 별도 커밋.
-- **P10 하드 전환:** 남은 부채를 0으로 — depcruise 값 순환 1건(`db` 스키마 `auth.ts`↔`tenant.ts`), Knip 11건, 억제 주석 10건을 고치거나(가능하면) 이유와 함께 예외 규칙으로 승격한다. 그 뒤 `tools/baselines/*.txt` 삭제·게이트를 "0이 아니면 실패"로 고정(한도 파일 대신), 배정표(`feature-assignment.ts`)는 `features/`·`shared`·합성 루트 경로 규칙만 남기고 정리, `CODEOWNERS`·`arch:guard`로 규칙 파일 보호 확인과 **우회 방지 시험**(`guard`가 규칙 약화를 막는지). 사람의 승인이 필요한 파일(`.dependency-cruiser.cjs`·`knip.json`·`biome.json`·`tools/baselines`)을 바꿔야 하면 변경 내용을 먼저 보여 주고 승인을 받는다.
-- **문서 정리(마지막):** TECH_SPEC 4장·`docs/rules/architecture.md` 전면 갱신, INDEX·CLAUDE.md 최종 점검, 이 계획서를 `done`으로 닫고 ADR 0012에 결과 반영.
-- 주의: 동작은 바꾸지 않는다(통합 418·E2E 53). 규칙 약화 금지.
+**S10 진행 기록 (2026-10-06) — P9 + P10 + 문서 정리 (계획 종료)**
+- **P9 `packages/core` 해체:** 남은 25개 파일(양식·문서번호·완료 패키지·PIN·세션·권한·오류 코드 등)과 단위 시험을 `shared/src/domain/`으로 옮기고 `@fmerp/core` import 59곳을 `@fmerp/shared/domain/*`(shared 내부는 상대 경로)로 이름 단위로 전환했다. `@fmerp/core` 패키지·의존성·배정표 규칙을 삭제했다. 배럴이 가리던 미사용 export 19개는 `export`를 없앴고, 문서번호 되읽기 시험(백업 전용 코드)은 백업 `tests/`로 옮겼다. 도메인 순수성은 `.dependency-cruiser.cjs`의 `domain-is-pure`(`shared/(src/)?domain`·`features/*/src/domain`)가 계속 강제한다.
+- **P9 역승격·삭제:** 사용처 집계(기능 코드가 `@fmerp/shared/*`를 import하는 기능 수)에서 한 기능만 쓰는 도메인 코드를 소유 기능으로 돌렸다 — `file-sniff` → approval, `org-defaults`·`business-number` → org(합성 루트의 시드·E2E는 org 진입점 `./domain/*`을 씀). 나머지 "한 기능만 쓴다"로 보인 것(`authz/errors`·`pin-policy`·`engine-error-code`·`session-policy`·`hash`·`admin-nav`·`ops-alerts`)은 `shared`·합성 루트가 함께 쓰거나 계약이라 그대로 둔다. 아무도 안 쓰던 `money`는 삭제했다. `jscpd`(15줄·120토큰 이상)는 기능 간 복제 블록 0건, 한 파일 안 17줄 1건(`approval/service.ts`)뿐이라 승격할 것이 없다.
+- **P9 판단 항목:** ① 읽기 선언이 많은 기능(백업 16개·알림 7개·결재 6개)은 **그대로 둔다** — 백업은 DB 전체를 다루는 도구라 읽기 폭이 본질이고, 선언이 지도에 드러나는 것이 목적이었다(계약화는 이득보다 복잡도가 크다) ② 홈의 결재 데이터 훅(`useMine`·`usePending`·`useForms`)은 앱 셸과 함께 쓰는 얇은 API 읽기 훅이라 `shared/lib/queries`에 둔다 ③ 격리 시험 표지 검사(@tenant-isolation)는 **만들지 않는다** — 규칙은 `docs/rules/database.md`와 리뷰·시험 작성 관행에 맡기고, 정적으로 증명할 방법이 마땅치 않음을 한계로 남긴다.
+- **P10 부채 해소:** 값 순환(`schema/auth.ts`↔`tenant.ts`)은 `user` 표를 `schema/user.ts`로 분리해 끊었다(`drizzle-kit generate` 변경 없음). Knip 11건은 모두 고쳤다(죽은 `requireRole`·`apps/web/server/db.ts`·미사용 export·타입 삭제, 미사용 의존성 `@hookform/resolvers`·audit의 `drizzle-orm` 제거). 억제 주석은 16곳(10파일) 모두 이유가 적힌 정당한 예외(`<img>`가 외부 서명 URL, 배열 인덱스 키가 곧 식별자인 목록, 접근성 보조 수단, 제어문자 정규식, 의존성 배열 의도)라 **고치지 않고** 허용 목록으로 영구 고정했다.
+- **P10 하드 전환:** `Gate.strict`를 도입해 7개 게이트(`unassigned-files`·`cross-feature`·`shared-to-feature`·`depcruise`·`knip`·`table-ownership`·`feature-map`)를 **엄격**으로 바꿨다 — 위반이 하나라도 있으면 실패, 남은 기준선 파일·0이 아닌 한도도 실패, `arch:baseline`은 엄격 게이트에 위반을 기록하지 않는다. 기준선 파일 7개를 삭제했고(`tools/baselines`에는 `limits.json`(엄격 게이트 0·suppressions 10)·`suppressions.txt`(허용 목록)·`coverage.json`(기능별 하한)만 남음), `suppressions`만 "줄어들기만 하는 허용 목록"으로 유지한다. **우회 방지 확인:** ① 엄격 평가 단위 시험(기준선 파일·0이 아닌 한도·위반 하나 모두 실패) ② `limits.json`의 `knip`을 0→1로 올린 작업 트리에서 `arch:guard`가 기준 커밋(HEAD)과 비교해 **실패**함을 직접 확인(되돌림) ③ CODEOWNERS가 `tools/`·`tools/baselines/`·규칙 설정 파일을 보호(저장소 설정의 "Code Owners 승인 필수"는 사람이 켜야 함).
+- **문서 정리:** TECH_SPEC 4장(저장소 구조·의존 방향)과 `docs/rules/architecture.md` 1장을 현재 구조로 다시 썼고, `CLAUDE.md`(불변 조건·구조 검사 문구)·INDEX·rules(`api`·`testing`)의 `packages/core` 언급을 갱신했다. ADR 0012에 결과를 추가했다.
+- **최종 지표:** 기능 8개(`features/*`) + `shared` + `packages/{db,audit,storage}`; `packages/{core,auth,backup,completion,notification}` 삭제. cross-feature 0, shared-to-feature 0, depcruise 0, knip 0, table-ownership 0, feature-map 0, 미배정 0, 억제 주석 허용 목록 10파일(고정). 시작(S2 기준선) 대비: 기능 간 import 48→0, 순환 1→0, knip 34→0.
+- **남은 한계(계획 밖 후속):** ① 변이 테스트(Stryker, 결정 Q4)는 도입하지 않았다(기능 폴더·하한이 생겼으니 필요하면 다음 계획) ② 표 접근 검사는 `schema.<표>` 형태만 본다(원시 SQL 불가) ③ 지도의 `screens[].dom` 검증 미구현 ④ CI 워크플로 변경(`.github/workflows/ci.yml`)은 이 PC에서 실행해 보지 못했다 — 첫 push에서 확인 ⑤ `@owner`·지도 정합성은 사람이 지도에 쓰는 의도(summary·keywords·access)의 품질까지는 보증하지 못한다.
