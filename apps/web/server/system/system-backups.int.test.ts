@@ -1,9 +1,14 @@
 // M7 통합 테스트: 시스템 덤프 API (권한·재인증·요청·내려받기·삭제 요청) (실제 DB·S3)
 import { createDatabase, schema } from "@fmerp/db";
+import {
+  clientWithCookie,
+  json,
+  loginAs,
+  type TestClient,
+} from "@fmerp/shared/testing/test-client";
 import { ObjectStorage } from "@fmerp/storage";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientWithCookie, json, loginAs, type TestClient } from "../test-client";
 
 const need = (name: string) => {
   const v = process.env[name];

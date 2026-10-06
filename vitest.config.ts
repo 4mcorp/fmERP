@@ -29,6 +29,7 @@ export default defineConfig({
           include: [
             "{apps,packages}/*/{src,server}/**/*.test.ts",
             "shared/src/**/*.test.ts",
+            "features/*/{src,tests}/**/*.test.ts",
             "tools/src/**/*.test.ts",
           ],
           exclude: ["**/*.int.test.ts", "**/node_modules/**"],
@@ -40,8 +41,10 @@ export default defineConfig({
           include: [
             "{apps,packages}/*/{src,server}/**/*.int.test.ts",
             "shared/src/**/*.int.test.ts",
+            "features/*/{src,tests}/**/*.int.test.ts",
           ],
           env: integrationEnv,
+          setupFiles: ["apps/web/server/test-support.ts"],
           // 순서 중요: DB 초기화·마이그레이션 → 테스트 버킷 → 시드 계정
           globalSetup: [
             "packages/db/test/global-setup.ts",

@@ -1,9 +1,9 @@
 // M4 통합 테스트: 양식 버전, 본문 리비전·내용 해시, 첨부 검증, 처리 API(재인증), 의견, 결재선 변경, 받은함 (실제 DB·S3)
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { ObjectStorage } from "@fmerp/storage";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { json, loginAs, type TestClient } from "../test-client";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");

@@ -1,18 +1,16 @@
 // 알림 작업 (M8): 결재 이벤트 소비, 텔레그램 발송 큐, 수신 방식 관리.
-import {
-  consumeEvents,
-  createAuditReviewAlerts,
-  createBackupAlerts,
-  type Logger,
-  pendingTelegram,
-  ReceiverManager,
-  type SendDeps,
-  safeErrorText,
-  sendTelegramNotification,
-  type TelegramClient,
-} from "@fmerp/notification";
+
 import type { OpsAlertRules } from "@fmerp/shared/contracts/ops-alerts";
 import type { PgBoss } from "pg-boss";
+import { createAuditReviewAlerts, createBackupAlerts } from "../service/alerts";
+import { consumeEvents } from "../service/consume";
+import { type Logger, ReceiverManager } from "../service/receiver";
+import { safeErrorText } from "../service/safe-error";
+import { pendingTelegram, type SendDeps, sendTelegramNotification } from "../service/send";
+import type { TelegramClient } from "../service/telegram-api";
+
+/** 합성 루트(worker)가 봇 토큰으로 클라이언트를 만들 수 있도록 진입점에서 내보낸다 */
+export { TelegramClient } from "../service/telegram-api";
 
 export const NOTIFY_TELEGRAM = "notify.telegram";
 /** 일시 오류 재시도 횟수. 마지막 시도에서 실패하면 FAILED로 남긴다 */

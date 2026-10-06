@@ -2,7 +2,7 @@
 import { type Db, schema } from "@fmerp/db";
 import { eq, sql } from "drizzle-orm";
 
-export const RECEIVER_MODES = ["polling", "webhook"] as const;
+const RECEIVER_MODES = ["polling", "webhook"] as const;
 export type ReceiverMode = (typeof RECEIVER_MODES)[number];
 
 type Key = (typeof schema.SYSTEM_SETTING_KEYS)[number];

@@ -3,7 +3,7 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { OpsAlertRules } from "@fmerp/shared/contracts/ops-alerts";
-import type { TelegramUpdate } from "./telegram-api";
+import type { TelegramUpdate } from "../src/service/telegram-api";
 
 /**
  * 운영 알림 규칙의 시험용 대역. 실제 판정(감사·백업 기능)은 각 기능의 단위 시험이 확인하므로,

@@ -1,7 +1,7 @@
 // M8 통합 테스트: 월간 점검 누락 알림과 덤프 문제 알림 (실제 DB)
 import { createDatabase } from "@fmerp/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createAuditReviewAlerts, createBackupAlerts } from "./alerts";
+import { createAuditReviewAlerts, createBackupAlerts } from "../src/service/alerts";
 import { testOpsRules } from "./test-support";
 
 const need = (name: string) => {

@@ -1,8 +1,8 @@
 // M5-A4 통합 테스트: 문서 열람 권한(PERM-003), 참조·수신·공람·접수·배부 (APV-070·072·073) (실제 DB)
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { json, loginAs, type TestClient } from "../test-client";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");

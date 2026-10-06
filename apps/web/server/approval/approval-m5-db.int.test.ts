@@ -1,8 +1,8 @@
 // M5-A3 통합 테스트: 완료 패키지·수신·공람·검색 테이블의 격리와 불변성, 결재자 이관 함수, 패키지 스윕 함수 (실제 DB)
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { json, loginAs, type TestClient } from "../test-client";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");

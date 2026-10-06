@@ -1,8 +1,9 @@
 // 인앱 알림 한 건을 텔레그램으로 보낸다 (M8 plan). 재시도는 호출하는 쪽(pg-boss)이 맡고,
 // 이 함수는 영구 실패(연결 없음·차단)를 SKIPPED로, 재시도할 오류를 던져서 알린다.
-import { type NotificationKind, notificationPath } from "@fmerp/core";
+
 import { type Db, schema, withTenant } from "@fmerp/db";
 import { and, eq, sql } from "drizzle-orm";
+import { type NotificationKind, notificationPath } from "../domain/notification-rules";
 import { findChatId, unlinkTelegram } from "./link";
 import { TelegramApiError, type TelegramClient } from "./telegram-api";
 
@@ -16,11 +17,7 @@ export interface SendDeps {
 
 export type SendOutcome = "sent" | "skipped" | "not_pending";
 
-export function notificationLink(
-  baseUrl: string,
-  kind: NotificationKind,
-  documentId: string | null,
-) {
+function notificationLink(baseUrl: string, kind: NotificationKind, documentId: string | null) {
   return `${baseUrl.replace(/\/$/, "")}${notificationPath(kind, documentId)}`;
 }
 

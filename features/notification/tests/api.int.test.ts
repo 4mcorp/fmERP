@@ -1,8 +1,13 @@
 // M8 통합 테스트: 알림 API(본인 것만·테넌트 격리·읽음), 텔레그램 연결 API, 웹훅 수신, 수신 방식 설정 (실제 DB + 가짜 Bot API)
 import { createDatabase } from "@fmerp/db";
-import { FakeTelegram } from "@fmerp/notification/test-support";
+import {
+  clientWithCookie,
+  json,
+  loginAs,
+  type TestClient,
+} from "@fmerp/shared/testing/test-client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientWithCookie, json, loginAs, type TestClient } from "../test-client";
+import { FakeTelegram } from "./test-support";
 
 const need = (name: string) => {
   const v = process.env[name];

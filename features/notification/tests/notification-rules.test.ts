@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ApprovalEvent } from "./approval-types";
+import type { ApprovalEvent } from "../../../packages/core/src/approval-types";
 import {
   type NotificationContext,
   notificationPath,
   notificationsForEvent,
-} from "./notification-rules";
+} from "../src/domain/notification-rules";
 
 const ctx: NotificationContext = {
   docTitle: "비밀 프로젝트 지출 결의서",

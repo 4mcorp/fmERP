@@ -1,8 +1,8 @@
 // M5-A4 통합 테스트: 결재자 일괄 이관(ADM-005), 진행 중 결재 검사(ORG-005·015·036), 장기 미처리 목록 (실제 DB)
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { json, loginAs, type TestClient } from "../test-client";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");

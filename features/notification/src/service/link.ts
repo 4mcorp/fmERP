@@ -6,7 +6,7 @@ import { type Db, schema } from "@fmerp/db";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import type { TelegramClient, TelegramUpdate } from "./telegram-api";
 
-export const LINK_TOKEN_TTL_MS = 10 * 60 * 1000;
+const LINK_TOKEN_TTL_MS = 10 * 60 * 1000;
 
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
 
@@ -33,7 +33,7 @@ export async function createLinkToken(authDb: Db, userId: string, now: Date) {
  * 토큰이 유효하면(미사용·미만료) 사용 처리하고 사용자와 대화를 묶는다. 한 번만 성공한다.
  * 같은 대화가 다른 사용자에게 묶여 있었다면 그 연결은 끊어진다(대화 하나는 한 사용자에게만).
  */
-export async function consumeLinkToken(authDb: Db, token: string, chatId: number, now: Date) {
+async function consumeLinkToken(authDb: Db, token: string, chatId: number, now: Date) {
   return authDb.transaction(async (tx) => {
     const [row] = await tx
       .update(schema.telegramLinkToken)

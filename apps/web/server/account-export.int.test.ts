@@ -1,9 +1,14 @@
 // M7 통합 테스트: 계정 전체 내보내기 API (권한·허용 설정·재인증·요청·내려받기·격리) (실제 DB·S3)
 import { createDatabase, schema } from "@fmerp/db";
+import {
+  clientWithCookie,
+  json,
+  loginAs,
+  type TestClient,
+} from "@fmerp/shared/testing/test-client";
 import { ObjectStorage } from "@fmerp/storage";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientWithCookie, json, loginAs, type TestClient } from "./test-client";
 
 const need = (name: string) => {
   const v = process.env[name];

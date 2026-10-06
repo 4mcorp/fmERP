@@ -59,9 +59,9 @@ importers:
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@fmerp/notification':
+      '@fmerp/feature-notification':
         specifier: workspace:*
-        version: link:../../packages/notification
+        version: link:../../features/notification
       '@fmerp/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -168,12 +168,9 @@ importers:
       '@fmerp/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@fmerp/notification':
+      '@fmerp/feature-notification':
         specifier: workspace:*
-        version: link:../../packages/notification
-      '@fmerp/shared':
-        specifier: workspace:*
-        version: link:../../shared
+        version: link:../../features/notification
       '@fmerp/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -205,6 +202,49 @@ importers:
       drizzle-orm:
         specifier: ~0.45.3
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+
+  features/notification:
+    dependencies:
+      '@fmerp/audit':
+        specifier: workspace:*
+        version: link:../../packages/audit
+      '@fmerp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fmerp/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@fmerp/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@hono/zod-openapi':
+        specifier: ~1.6.3
+        version: 1.6.3(hono@4.13.12)(zod@4.6.5)
+      '@tanstack/react-query':
+        specifier: ~5.104.1
+        version: 5.104.1(react@19.3.0)
+      drizzle-orm:
+        specifier: ~0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      lucide-react:
+        specifier: ~1.49.0
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: ~16.3.8
+        version: 16.3.8(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      pg-boss:
+        specifier: ~12.35.1
+        version: 12.35.1
+      react:
+        specifier: ~19.3.0
+        version: 19.3.0
+      sonner:
+        specifier: ~2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ~19.3.0
+        version: 19.3.0
 
   packages/audit:
     dependencies:
@@ -311,24 +351,6 @@ importers:
       drizzle-kit:
         specifier: ~0.31.11
         version: 0.31.11
-
-  packages/notification:
-    dependencies:
-      '@fmerp/audit':
-        specifier: workspace:*
-        version: link:../audit
-      '@fmerp/core':
-        specifier: workspace:*
-        version: link:../core
-      '@fmerp/db':
-        specifier: workspace:*
-        version: link:../db
-      '@fmerp/shared':
-        specifier: workspace:*
-        version: link:../../shared
-      drizzle-orm:
-        specifier: ~0.45.3
-        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
 
   packages/storage:
     dependencies:

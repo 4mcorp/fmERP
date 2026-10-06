@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { safeErrorText } from "./safe-error";
-import { TelegramApiError } from "./telegram-api";
+import { safeErrorText } from "../src/service/safe-error";
+import { TelegramApiError } from "../src/service/telegram-api";
 
 describe("오류 문구 정리", () => {
   it("DB 쿼리 오류는 SQL·매개변수를 버리고 코드만 남긴다", () => {

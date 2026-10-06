@@ -1,36 +1,26 @@
 // 텔레그램 연결·웹훅 수신·수신 방식 설정 (M8 plan). 연결과 수신 방식은 사용자·서버 단위라 테넌트와 무관하다.
 import { computeAuditDiff, recordAudit } from "@fmerp/audit";
-import {
-  createLinkToken,
-  findChatId,
-  getReceiverMode,
-  getReceiverStatus,
-  processUpdate,
-  type ReceiverMode,
-  safeErrorText,
-  setReceiverMode,
-  TelegramClient,
-  type TelegramUpdate,
-  unlinkTelegram,
-  verifyWebhookSecret,
-  type WebhookInfo,
-} from "@fmerp/notification";
 import type { SessionInfo } from "@fmerp/shared/contracts/system-guards";
 import type { ServerDeps } from "@fmerp/shared/server/deps";
 import { getEnv } from "@fmerp/shared/server/env";
 import { ApiError } from "@fmerp/shared/server/http";
+import { createLinkToken, findChatId, processUpdate, unlinkTelegram } from "./link";
+import { verifyWebhookSecret } from "./receiver";
+import { safeErrorText } from "./safe-error";
+import { getReceiverMode, getReceiverStatus, type ReceiverMode, setReceiverMode } from "./settings";
+import { TelegramClient, type TelegramUpdate, type WebhookInfo } from "./telegram-api";
 
 type RequestCtx = { ip?: string | null; userAgent?: string | null; requestId?: string | null };
 
 /** 봇 토큰이 설정되어 있을 때만 클라이언트를 만든다 */
-export function telegramClient(): TelegramClient | null {
+function telegramClient(): TelegramClient | null {
   const env = getEnv();
   if (!env.TELEGRAM_BOT_TOKEN) return null;
   return new TelegramClient({ token: env.TELEGRAM_BOT_TOKEN, baseUrl: env.TELEGRAM_API_BASE_URL });
 }
 
 /** 웹훅을 켤 수 있는 환경인지: 공개 https 주소와 비밀 값이 있어야 한다 */
-export function webhookReady(): boolean {
+function webhookReady(): boolean {
   const env = getEnv();
   return (
     Boolean(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_WEBHOOK_SECRET) &&

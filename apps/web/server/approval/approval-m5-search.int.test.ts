@@ -1,8 +1,8 @@
 // M5-A4 통합 테스트: 문서 검색 (APV-082) — 본문 색인, 금액·기간·상태·양식·부서 조건, 열람 권한 필터 (실제 DB)
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { json, loginAs, type TestClient } from "../test-client";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");

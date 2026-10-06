@@ -1,8 +1,8 @@
 // M2 조직·권한 API 통합 테스트 (실제 DB). 수용 기준 S2와 권한·테넌트 격리·감사 로그를 확인한다.
 import { createDatabase, schema } from "@fmerp/db";
+import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { json, loginAs, type TestClient } from "./test-client";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 afterAll(() => authDb.pool.end());

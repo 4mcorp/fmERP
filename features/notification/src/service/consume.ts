@@ -1,10 +1,11 @@
 // 결재 이벤트(outbox) → 인앱 알림 (M8 plan). 이벤트마다 한 트랜잭션에서 알림을 만들고 처리 표시를 남긴다.
 // 같은 이벤트를 두 번 처리해도 알림은 한 번만 생긴다(수신자·dedupe_key 유니크).
-import { type ApprovalEvent, notificationsForEvent } from "@fmerp/core";
+import type { ApprovalEvent } from "@fmerp/core";
 import { type Db, schema, withTenant } from "@fmerp/db";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { notificationsForEvent } from "../domain/notification-rules";
 
-export type PendingEvent = {
+type PendingEvent = {
   event_id: string;
   account_id: string;
   document_id: string;
@@ -17,7 +18,7 @@ export interface CreatedNotification {
 }
 
 /** 아직 알림 처리 표시가 없는 최근 7일의 결재 이벤트의 위치 (계정을 가로지르는 DB 함수. 내용은 돌려주지 않는다) */
-export async function pendingEvents(appDb: Db, limit = 100): Promise<PendingEvent[]> {
+async function pendingEvents(appDb: Db, limit = 100): Promise<PendingEvent[]> {
   const result = await appDb.execute<PendingEvent>(
     sql`select * from notification_pending_events(${limit}, interval '7 days')`,
   );
@@ -26,7 +27,7 @@ export async function pendingEvents(appDb: Db, limit = 100): Promise<PendingEven
 
 /** 이벤트 하나를 처리한다. 새로 만든 알림 목록(텔레그램 발송 대상)을 돌려준다 */
 /** `telegram`이 false이면(봇 토큰 없음) 텔레그램 발송 대상으로 표시하지 않는다 */
-export async function processEvent(
+async function processEvent(
   appDb: Db,
   event: PendingEvent,
   telegram = true,

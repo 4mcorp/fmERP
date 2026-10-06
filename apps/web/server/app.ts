@@ -1,3 +1,4 @@
+import { registerNotificationRoutes } from "@fmerp/feature-notification/api/routes";
 import { getEnv } from "@fmerp/shared/server/env";
 import { requireSameOrigin } from "@fmerp/shared/server/http";
 import { problem } from "@fmerp/shared/server/problem";
@@ -17,7 +18,6 @@ import { registerFormRoutes } from "./routes/forms";
 import { registerMailboxRoutes } from "./routes/mailbox";
 import { registerMeRoutes } from "./routes/me";
 import { registerMemberRoutes } from "./routes/members";
-import { registerNotificationRoutes } from "./routes/notifications";
 import { registerOrgRoutes } from "./routes/org";
 import { registerPackageRoutes } from "./routes/package";
 import { registerRecipientRoutes } from "./routes/recipients";

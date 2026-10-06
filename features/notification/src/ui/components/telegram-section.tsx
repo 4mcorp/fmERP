@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useMyTelegram } from "@/lib/queries";
+import { useMyTelegram } from "../queries";
 
 /** 연결 링크 유효 시간(10분)보다 조금 길게 연결 여부를 확인한다 */
 const WAIT_MS = 10 * 60 * 1000;

@@ -6,10 +6,10 @@ import {
   seedCompletedDocument,
 } from "@fmerp/completion/test-support";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { ObjectStorage } from "@fmerp/storage";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { json, loginAs, type TestClient } from "../test-client";
 
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");

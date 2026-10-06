@@ -1,6 +1,6 @@
 import { backupHealth, isSystemAdmin, reviewStatuses } from "@fmerp/core";
 import { createDatabase } from "@fmerp/db";
-import { TelegramClient } from "@fmerp/notification";
+import { registerNotificationJobs, TelegramClient } from "@fmerp/feature-notification/jobs/jobs";
 import { ObjectStorage } from "@fmerp/storage";
 import { serve } from "@hono/node-server";
 import { PgBoss } from "pg-boss";
@@ -9,7 +9,6 @@ import { type BackupJobs, registerBackupJobs } from "./backup-jobs";
 import { env } from "./env";
 import { loadFontCss } from "./fonts";
 import { createHealthApp } from "./health";
-import { registerNotificationJobs } from "./notification-jobs";
 import { registerPackageJobs } from "./package-jobs";
 import { closeBrowser, renderPdf } from "./render";
 

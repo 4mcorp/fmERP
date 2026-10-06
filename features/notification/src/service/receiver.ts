@@ -26,9 +26,9 @@ export interface Logger {
 
 const errorText = safeErrorText;
 
-export type UpdateHandler = (update: TelegramUpdate) => Promise<unknown>;
+type UpdateHandler = (update: TelegramUpdate) => Promise<unknown>;
 
-export interface PollingOptions {
+interface PollingOptions {
   client: Pick<TelegramClient, "getUpdates">;
   appDb: Db;
   handle: UpdateHandler;
@@ -40,7 +40,7 @@ export interface PollingOptions {
 }
 
 /** getUpdates 롱폴링. 처리한 마지막 update_id를 DB에 남겨 재시작해도 중복 처리하지 않는다 */
-export class PollingReceiver implements TelegramReceiver {
+class PollingReceiver implements TelegramReceiver {
   readonly mode = "polling" as const;
   private controller: AbortController | null = null;
   private loop: Promise<void> | null = null;
@@ -110,7 +110,7 @@ export class PollingReceiver implements TelegramReceiver {
   }
 }
 
-export interface WebhookOptions {
+interface WebhookOptions {
   client: Pick<TelegramClient, "setWebhook">;
   /** 텔레그램이 호출할 공개 HTTPS 주소 (예: https://erp.example.com/api/telegram/webhook) */
   url: string;
@@ -118,7 +118,7 @@ export interface WebhookOptions {
 }
 
 /** 웹훅 등록. 요청 수신은 웹 API가 하므로 start에서 주소만 등록한다 */
-export class WebhookReceiver implements TelegramReceiver {
+class WebhookReceiver implements TelegramReceiver {
   readonly mode = "webhook" as const;
   constructor(private readonly o: WebhookOptions) {}
   async start() {

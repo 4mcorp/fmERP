@@ -38,16 +38,11 @@ const RULES: readonly Rule[] = [
   [/^apps\/worker\/src\/main\.ts$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/layout\.tsx$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],
-  [/^apps\/web\/app\/\(app\)\/me\/page\.tsx$/, "composition"], // 내 정보: 계정 화면에 알림 조각을 끼운다
+  // Next 페이지 어댑터: 기능의 화면 진입점을 한 줄로 내보낸다 (내 정보는 계정 화면에 알림 조각을 끼운다)
+  [/^apps\/web\/app\/\(app\)\/(me|notifications|system\/telegram)\/page\.tsx$/, "composition"],
   [/^apps\/web\/components\/app-shell\.tsx$/, "composition"],
 
-  // ── 알림 ──
-  [/^packages\/notification\//, "notification"],
-  [/^packages\/core\/src\/notification-rules/, "notification"],
-  [/^apps\/worker\/src\/notification-/, "notification"],
-  [/^apps\/web\/server\/(notifications\/|routes\/notifications\.ts)/, "notification"],
-  [/^apps\/web\/components\/me\/telegram-section\.tsx$/, "notification"],
-  [/^apps\/web\/app\/\(app\)\/(notifications|system\/telegram)\//, "notification"],
+  // ── 알림 ── (코드는 features/notification/으로 이동 완료: 경로가 소유자를 알려 준다. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m8\.spec\.ts$/, "notification"],
 
   // ── 백업·내보내기 ──
@@ -95,7 +90,7 @@ const RULES: readonly Rule[] = [
   // ── 공통 영역 ──
   [/^packages\/(db|audit|storage)\//, "shared"],
   [/^packages\/core\/src\/(index|money|file-sniff|permissions)/, "shared"],
-  [/^apps\/web\/server\/(db|test-client)\.ts$/, "shared"],
+  [/^apps\/web\/server\/(db)\.ts$/, "shared"],
   [/^apps\/web\/server\/deps\.ts$/, "composition"], // 실제 연결(DB·인증·저장소)을 만드는 합성 루트
   [/^apps\/web\/lib\/(api|utils|queries|types)\.ts$/, "shared"],
   [/^apps\/web\/components\/ui\//, "shared"],

@@ -1,8 +1,8 @@
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import { json, loginAs, type TestClient } from "@fmerp/shared/testing/test-client";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { app } from "./app";
-import { json, loginAs, type TestClient } from "./test-client";
 
 const env = process.env;
 const appDb = createDatabase(env.DATABASE_URL ?? "");

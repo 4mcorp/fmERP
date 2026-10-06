@@ -14,7 +14,7 @@ import {
   markRead,
   myMembershipId,
   unreadCount,
-} from "../notifications/service";
+} from "../service/in-app";
 import {
   changeReceiverMode,
   createMyLink,
@@ -22,7 +22,7 @@ import {
   getSystemTelegram,
   handleWebhook,
   unlinkMyTelegram,
-} from "../notifications/telegram";
+} from "../service/telegram";
 
 const ItemSchema = z.object({
   id: z.string(),

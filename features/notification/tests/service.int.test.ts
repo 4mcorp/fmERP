@@ -1,12 +1,13 @@
 // M8 통합 테스트: 텔레그램 연결, 이벤트 → 알림, 발송, 수신 방식 전환 (실제 DB + 가짜 Bot API 서버)
 import { createDatabase, schema } from "@fmerp/db";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { consumeEvents } from "./consume";
-import { createLinkToken, findChatId, MESSAGES, processUpdate } from "./link";
-import { ReceiverManager, verifyWebhookSecret } from "./receiver";
-import { sendTelegramNotification } from "./send";
-import { getReceiverStatus, setReceiverMode } from "./settings";
-import { TelegramClient } from "./telegram-api";
+import { NOTIFICATION_KINDS } from "../src/domain/notification-rules";
+import { consumeEvents } from "../src/service/consume";
+import { createLinkToken, findChatId, MESSAGES, processUpdate } from "../src/service/link";
+import { ReceiverManager, verifyWebhookSecret } from "../src/service/receiver";
+import { sendTelegramNotification } from "../src/service/send";
+import { getReceiverStatus, setReceiverMode } from "../src/service/settings";
+import { TelegramClient } from "../src/service/telegram-api";
 import { FakeTelegram } from "./test-support";
 
 const need = (name: string) => {
@@ -497,8 +498,7 @@ describe("수신 방식 전환 (폴링 ↔ 웹훅)", () => {
 });
 
 describe("알림 종류 목록", () => {
-  it("db의 종류 목록이 core와 같다", async () => {
-    const core = await import("@fmerp/core");
-    expect([...schema.NOTIFICATION_KINDS]).toEqual([...core.NOTIFICATION_KINDS]);
+  it("db의 종류 목록이 알림 규칙과 같다", () => {
+    expect([...schema.NOTIFICATION_KINDS]).toEqual([...NOTIFICATION_KINDS]);
   });
 });

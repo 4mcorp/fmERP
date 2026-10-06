@@ -2,9 +2,14 @@
 
 import { reviewTargetPeriod } from "@fmerp/core";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
+import {
+  clientWithCookie,
+  json,
+  loginAs,
+  type TestClient,
+} from "@fmerp/shared/testing/test-client";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientWithCookie, json, loginAs, type TestClient } from "../test-client";
 
 const authDb = createDatabase(process.env.AUTH_DATABASE_URL ?? "");
 const appDb = createDatabase(process.env.DATABASE_URL ?? "");

@@ -9,7 +9,8 @@ describe("기능 배정표", () => {
     ["packages/core/src/approval-engine.ts", "approval"],
     ["packages/core/src/form-schema.ts", "approval"],
     ["packages/core/src/completion-package.ts", "completion"],
-    ["packages/notification/src/send.ts", "notification"],
+    ["features/notification/src/service/send.ts", "notification"],
+    ["apps/web/app/(app)/notifications/page.tsx", "composition"],
     ["apps/worker/src/backup-jobs.ts", "backup"],
     ["apps/worker/src/package-jobs.ts", "completion"],
     ["apps/web/server/routes/reauth.ts", "account"],
@@ -37,7 +38,7 @@ describe("기능 배정표", () => {
     expect(isTestFile("apps/web/server/approval/service.test.ts")).toBe(true);
     expect(isTestFile("apps/web/server/approval/approval.int.test.ts")).toBe(true);
     expect(isTestFile("apps/web/e2e/m4.spec.ts")).toBe(true);
-    expect(isTestFile("packages/notification/src/test-support.ts")).toBe(true);
+    expect(isTestFile("features/notification/tests/test-support.ts")).toBe(true);
     expect(isTestFile("apps/web/server/approval/service.ts")).toBe(false);
   });
 });
