@@ -3,10 +3,10 @@
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { PinDialog } from "@fmerp/shared/ui/pin-dialog";
 import { Download, FileArchive, FileText, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { PinDialog } from "@/components/approval/pin-dialog";
 import { usePackageStatus } from "@/lib/queries";
 import { formatDateTime } from "@/lib/types";
 

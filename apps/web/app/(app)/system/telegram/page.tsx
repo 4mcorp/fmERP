@@ -5,10 +5,10 @@ import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { useReauth } from "@fmerp/shared/ui/use-reauth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useReauth } from "@/components/backup/use-reauth";
 import { useSystemTelegram } from "@/lib/queries";
 import { formatDateTime, type ReceiverMode } from "@/lib/types";
 

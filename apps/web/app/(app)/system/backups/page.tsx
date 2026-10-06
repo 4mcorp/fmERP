@@ -16,11 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from "@fmerp/shared/ui/table";
+import { useReauth } from "@fmerp/shared/ui/use-reauth";
 import { useQueryClient } from "@tanstack/react-query";
 import { DatabaseBackup, Download, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { useReauth } from "@/components/backup/use-reauth";
 import { useSystemBackups } from "@/lib/queries";
 import { formatBytes, formatDateTime, type SystemBackupItem } from "@/lib/types";
 

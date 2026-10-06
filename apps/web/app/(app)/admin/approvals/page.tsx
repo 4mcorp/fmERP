@@ -5,6 +5,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PinDialog } from "@fmerp/shared/ui/pin-dialog";
 import {
   Select,
   SelectContent,
@@ -25,7 +26,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useRef, useState } from "react";
 import { toast } from "sonner";
-import { PinDialog } from "@/components/approval/pin-dialog";
 import { useMembers } from "@/lib/queries";
 import { DOC_STATUS_LABEL } from "@/lib/types";
 

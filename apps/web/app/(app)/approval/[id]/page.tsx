@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmer
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Label } from "@fmerp/shared/ui/label";
 import { Modal } from "@fmerp/shared/ui/modal";
+import { PinDialog } from "@fmerp/shared/ui/pin-dialog";
 import {
   Select,
   SelectContent,
@@ -28,7 +29,6 @@ import { DocumentTimeline, PrintButton } from "@/components/approval/audit-trail
 import { CompletionFiles } from "@/components/approval/completion-files";
 import { FormValuesView } from "@/components/approval/form-view";
 import { LineEditor, type LineRow, rowsToItems } from "@/components/approval/line-editor";
-import { PinDialog } from "@/components/approval/pin-dialog";
 import { RecipientPanel } from "@/components/approval/recipient-panel";
 import {
   useApproval,
