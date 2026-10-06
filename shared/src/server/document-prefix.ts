@@ -3,7 +3,7 @@ import { schema } from "@fmerp/db";
 import { docPrefix } from "@fmerp/storage";
 import { eq } from "drizzle-orm";
 import type { ServiceContext } from "./context";
-import { ApprovalError } from "./errors";
+import { ServiceError } from "./errors";
 
 type DocRow = typeof schema.document.$inferSelect;
 
@@ -12,7 +12,7 @@ async function businessCodeOf(ctx: ServiceContext, businessId: string): Promise<
     .select({ code: schema.business.code })
     .from(schema.business)
     .where(eq(schema.business.id, businessId));
-  if (!b) throw new ApprovalError("not_found", "사업자를 찾을 수 없습니다");
+  if (!b) throw new ServiceError("not_found", "사업자를 찾을 수 없습니다");
   return b.code;
 }
 

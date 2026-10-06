@@ -2,7 +2,7 @@ import { can } from "@fmerp/core";
 import { schema, type Tx, withTenant } from "@fmerp/db";
 import { ACCOUNT_TARGET, loadActor } from "@fmerp/shared/authz/org-access";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import {
   type AppRouter,
   type DepsProvider,
@@ -181,7 +181,7 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
       const result = await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         const [doc] = await tx.select().from(schema.document).where(eq(schema.document.id, id));
-        if (!doc) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+        if (!doc) throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
         // 결재선 참여자 외에 참조·공람·수신·감사인(read_all)도 열람할 수 있다 (PERM-003)
         const viewCtx = serviceContext(c, d, tx);
         await requireView(viewCtx, id, { membershipId, actor });
@@ -321,7 +321,7 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
         const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         const target = body.membershipId ?? membershipId;
         if (target !== membershipId && !can(actor, "delegation.manage", ACCOUNT_TARGET)) {
-          throw new ApprovalError("forbidden", "다른 사람의 부재를 설정할 권한이 없습니다");
+          throw new ServiceError("forbidden", "다른 사람의 부재를 설정할 권한이 없습니다");
         }
         return createDelegation(serviceCtx(c, tx), {
           membershipId: target,
@@ -352,9 +352,9 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
       await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
         const [row] = await tx.select().from(schema.delegation).where(eq(schema.delegation.id, id));
-        if (!row) throw new ApprovalError("not_found", "부재 설정을 찾을 수 없습니다");
+        if (!row) throw new ServiceError("not_found", "부재 설정을 찾을 수 없습니다");
         if (row.membershipId !== membershipId && !can(actor, "delegation.manage", ACCOUNT_TARGET)) {
-          throw new ApprovalError("forbidden", "부재 설정을 취소할 권한이 없습니다");
+          throw new ServiceError("forbidden", "부재 설정을 취소할 권한이 없습니다");
         }
         await revokeDelegation(serviceCtx(c, tx), id);
       });

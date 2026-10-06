@@ -1,6 +1,6 @@
 import type { EngineErrorCode, LineEditErrorCode } from "@fmerp/core";
 
-export type ApprovalErrorCode =
+export type ServiceErrorCode =
   | EngineErrorCode
   | LineEditErrorCode
   | "not_found"
@@ -19,18 +19,18 @@ export type ApprovalErrorCode =
   | "invalid_transfer";
 
 /** 결재 서비스의 업무 오류. 라우트가 RFC 9457 응답으로 바꾼다 (http.ts) */
-export class ApprovalError extends Error {
+export class ServiceError extends Error {
   constructor(
-    readonly code: ApprovalErrorCode,
+    readonly code: ServiceErrorCode,
     message: string,
     readonly extensions?: Record<string, unknown>,
   ) {
     super(message);
-    this.name = "ApprovalError";
+    this.name = "ServiceError";
   }
 }
 
-export const APPROVAL_ERROR_STATUS: Record<ApprovalErrorCode, 400 | 403 | 404 | 409> = {
+export const SERVICE_ERROR_STATUS: Record<ServiceErrorCode, 400 | 403 | 404 | 409> = {
   invalid_state: 409,
   step_not_found: 404,
   step_not_active: 409,

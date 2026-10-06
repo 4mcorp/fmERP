@@ -1,7 +1,7 @@
 import { recordAudit } from "@fmerp/audit";
 import { validateDelegation } from "@fmerp/core";
 import { schema } from "@fmerp/db";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { engineContext, loadDelegationRules, type ServiceContext } from "./service";
 import { lockAndLoad } from "./store";
@@ -28,7 +28,7 @@ export async function createDelegation(ctx: ServiceContext, input: CreateDelegat
     },
     existing,
   );
-  if (!check.ok) throw new ApprovalError("delegation_invalid", check.reason);
+  if (!check.ok) throw new ServiceError("delegation_invalid", check.reason);
 
   // 대결자는 재직 중인 같은 계정 구성원이어야 한다
   const [delegate] = await ctx.tx
@@ -36,7 +36,7 @@ export async function createDelegation(ctx: ServiceContext, input: CreateDelegat
     .from(schema.membership)
     .where(eq(schema.membership.id, input.delegateMembershipId));
   if (delegate?.status !== "active") {
-    throw new ApprovalError("delegation_invalid", "대결자는 재직 중인 구성원이어야 합니다");
+    throw new ServiceError("delegation_invalid", "대결자는 재직 중인 구성원이어야 합니다");
   }
 
   const [row] = await ctx.tx
@@ -108,7 +108,7 @@ export async function revokeDelegation(ctx: ServiceContext, id: string) {
     .where(and(eq(schema.delegation.id, id), isNull(schema.delegation.revokedAt)))
     .returning({ id: schema.delegation.id, membershipId: schema.delegation.membershipId });
   const revoked = rows[0];
-  if (!revoked) throw new ApprovalError("not_found", "부재 설정을 찾을 수 없습니다");
+  if (!revoked) throw new ServiceError("not_found", "부재 설정을 찾을 수 없습니다");
   await recordAudit(ctx.tx, {
     accountId: ctx.accountId,
     actorUserId: ctx.userId,

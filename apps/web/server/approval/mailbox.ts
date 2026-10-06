@@ -6,7 +6,7 @@ import { schema } from "@fmerp/db";
 import { businessTarget } from "@fmerp/shared/authz/org-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { decodeCursor, encodeCursor } from "@fmerp/shared/server/cursor";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, eq, or, type SQL, sql } from "drizzle-orm";
 
 export const MAILBOXES = [
@@ -295,7 +295,7 @@ export async function listMailbox(
       businesses.map((b) => b.id),
     );
     // 감사 범위가 없으면 빈 목록이 아니라 접근 거부로 구분한다
-    if (!condition) throw new ApprovalError("forbidden", "감사 범위가 없습니다");
+    if (!condition) throw new ServiceError("forbidden", "감사 범위가 없습니다");
   } else {
     condition = boxCondition(box, viewer.membershipId);
   }

@@ -5,7 +5,7 @@ import { schema } from "@fmerp/db";
 import { ACCOUNT_TARGET, authorize } from "@fmerp/shared/authz/org-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { decodeCursor, encodeCursor } from "@fmerp/shared/server/cursor";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, desc, eq, gte, lt, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { reviewStatuses, reviewTargetPeriod } from "../domain/audit-review";
@@ -184,14 +184,14 @@ export async function addReview(
   authorize(actor, "audit.read", ACCOUNT_TARGET);
   const allowed = reviewStatuses(ctx.now, [], REVIEW_MONTHS).map((m) => m.period);
   if (!allowed.includes(input.period)) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "validation_failed",
       "점검할 수 없는 달입니다 (최근 12개월의 지난 달만)",
     );
   }
   const note = input.abnormalNote?.trim() ?? "";
   if (input.abnormal && note.length === 0) {
-    throw new ApprovalError("validation_failed", "이상이 있으면 내용을 적어야 합니다");
+    throw new ServiceError("validation_failed", "이상이 있으면 내용을 적어야 합니다");
   }
   const [row] = await ctx.tx
     .insert(schema.auditReview)

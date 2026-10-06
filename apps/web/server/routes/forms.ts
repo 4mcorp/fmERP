@@ -7,7 +7,7 @@ import {
   loadActor,
 } from "@fmerp/shared/authz/org-access";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import {
   ApiError,
   type AppRouter,
@@ -625,10 +625,10 @@ export function registerFormRoutes(app: AppRouter, deps: DepsProvider) {
           .select()
           .from(schema.approvalLineTemplate)
           .where(eq(schema.approvalLineTemplate.id, id));
-        if (!row) throw new ApprovalError("not_found", "템플릿을 찾을 수 없습니다");
+        if (!row) throw new ServiceError("not_found", "템플릿을 찾을 수 없습니다");
         if (row.ownerMembershipId === null) authorize(actor, "form.manage", ACCOUNT_TARGET);
         else if (row.ownerMembershipId !== membershipId)
-          throw new ApprovalError("not_found", "템플릿을 찾을 수 없습니다");
+          throw new ServiceError("not_found", "템플릿을 찾을 수 없습니다");
         await tx.delete(schema.approvalLineTemplate).where(eq(schema.approvalLineTemplate.id, id));
       });
       return c.json({ ok: true as const }, 200);

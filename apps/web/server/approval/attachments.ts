@@ -9,7 +9,7 @@ import {
 } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { attachmentKey, stagingKey, stagingPrefix } from "@fmerp/storage";
 import { eq } from "drizzle-orm";
 import { requireView, type Viewer } from "./access";
@@ -47,15 +47,12 @@ async function draftOf(ctx: ServiceContext, documentId: string, membershipId: st
     .select()
     .from(schema.document)
     .where(eq(schema.document.id, documentId));
-  if (!doc) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+  if (!doc) throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
   if (doc.drafterMembershipId !== membershipId) {
-    throw new ApprovalError("forbidden", "기안자만 첨부를 바꿀 수 있습니다");
+    throw new ServiceError("forbidden", "기안자만 첨부를 바꿀 수 있습니다");
   }
   if (doc.status !== "DRAFT") {
-    throw new ApprovalError(
-      "invalid_state",
-      "상신된 문서의 첨부는 바꿀 수 없습니다 (회수 후 수정)",
-    );
+    throw new ServiceError("invalid_state", "상신된 문서의 첨부는 바꿀 수 없습니다 (회수 후 수정)");
   }
   return doc;
 }
@@ -76,23 +73,23 @@ export async function requestUpload(
   await draftOf(ctx, input.documentId, input.actorMembershipId);
   const limits = await loadLimits(ctx);
   if (!Number.isInteger(input.size) || input.size < 1) {
-    throw new ApprovalError("attachment_invalid", "파일 크기가 올바르지 않습니다");
+    throw new ServiceError("attachment_invalid", "파일 크기가 올바르지 않습니다");
   }
   if (input.size > limits.fileBytes) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "attachment_invalid",
       `파일은 ${limits.fileBytes / MB}MB 이하여야 합니다`,
     );
   }
   const ext = extensionOf(input.filename);
   if (!limits.allowedExtensions.map((e) => e.toLowerCase()).includes(ext)) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "attachment_invalid",
       `허용되지 않는 파일 형식입니다${ext ? ` (.${ext})` : ""}`,
     );
   }
   if ((await usedBytes(ctx, input.documentId)) + input.size > limits.documentBytes) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "attachment_invalid",
       `문서당 첨부는 ${limits.documentBytes / MB}MB까지입니다`,
     );
@@ -123,19 +120,19 @@ export async function registerAttachment(
 ) {
   const doc = await draftOf(ctx, input.documentId, input.actorMembershipId);
   if (!input.stagingKey.startsWith(stagingPrefix(ctx.accountId))) {
-    throw new ApprovalError("forbidden", "이 회사의 업로드만 등록할 수 있습니다");
+    throw new ServiceError("forbidden", "이 회사의 업로드만 등록할 수 있습니다");
   }
   const limits = await loadLimits(ctx);
   const info = await ctx.storage.head(input.stagingKey);
-  if (!info) throw new ApprovalError("attachment_invalid", "업로드된 파일이 없습니다");
+  if (!info) throw new ServiceError("attachment_invalid", "업로드된 파일이 없습니다");
   if (info.size !== input.declaredSize || info.size > limits.fileBytes) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "attachment_invalid",
       "업로드한 파일의 크기가 선언한 크기와 다르거나 한도를 넘습니다",
     );
   }
   if ((await usedBytes(ctx, doc.id)) + info.size > limits.documentBytes) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "attachment_invalid",
       `문서당 첨부는 ${limits.documentBytes / MB}MB까지입니다`,
     );
@@ -147,10 +144,10 @@ export async function registerAttachment(
     Math.min(info.size, SNIFF_BYTES) - 1,
   );
   const checked = checkAttachment({ filename, head, allowedExtensions: limits.allowedExtensions });
-  if (!checked.ok) throw new ApprovalError("attachment_invalid", checked.reason);
+  if (!checked.ok) throw new ServiceError("attachment_invalid", checked.reason);
   const { sha256, size } = await ctx.storage.hashObject(input.stagingKey);
   if (size !== info.size)
-    throw new ApprovalError("attachment_invalid", "업로드한 파일의 크기를 확인할 수 없습니다");
+    throw new ServiceError("attachment_invalid", "업로드한 파일의 크기를 확인할 수 없습니다");
 
   const id = randomUUID();
   const finalKey = attachmentKey(await documentPrefix(ctx, doc), id, filename);
@@ -192,7 +189,7 @@ export async function removeAttachment(
     });
   const row = rows[0];
   if (!row || row.documentId !== input.documentId) {
-    throw new ApprovalError("not_found", "첨부를 찾을 수 없습니다");
+    throw new ServiceError("not_found", "첨부를 찾을 수 없습니다");
   }
   await recordAudit(ctx.tx, {
     accountId: ctx.accountId,
@@ -233,10 +230,10 @@ export async function attachmentUrl(
     .from(schema.attachment)
     .where(eq(schema.attachment.id, input.attachmentId));
   if (!row || row.documentId !== input.documentId) {
-    throw new ApprovalError("not_found", "첨부를 찾을 수 없습니다");
+    throw new ServiceError("not_found", "첨부를 찾을 수 없습니다");
   }
   if (input.preview && !PREVIEWABLE.test(row.mime)) {
-    throw new ApprovalError("attachment_invalid", "미리보기를 지원하지 않는 형식입니다");
+    throw new ServiceError("attachment_invalid", "미리보기를 지원하지 않는 형식입니다");
   }
   const url = await ctx.storage.presignGet(
     row.storageKey,

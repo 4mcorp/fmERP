@@ -7,7 +7,7 @@ import { AuthDomainError, type AuthErrorCode } from "../authz/errors";
 import { requireActiveMembership } from "../authz/membership";
 import { type ActiveSession, enforceSessionPolicy } from "../authz/session-guard";
 import type { ServerDeps } from "./deps";
-import { APPROVAL_ERROR_STATUS, ApprovalError } from "./errors";
+import { SERVICE_ERROR_STATUS, ServiceError } from "./errors";
 import { problem } from "./problem";
 
 export interface AppEnv {
@@ -63,9 +63,9 @@ export function toProblemResponse(error: unknown): Response | null {
   if (error instanceof ApiError) {
     return problem(error.status, error.code, error.message, undefined, error.extensions);
   }
-  if (error instanceof ApprovalError) {
+  if (error instanceof ServiceError) {
     return problem(
-      APPROVAL_ERROR_STATUS[error.code],
+      SERVICE_ERROR_STATUS[error.code],
       error.code,
       error.message,
       undefined,

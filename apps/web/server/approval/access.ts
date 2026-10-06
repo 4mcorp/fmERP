@@ -4,7 +4,7 @@ import { schema } from "@fmerp/db";
 import { businessTarget, departmentTarget } from "@fmerp/shared/authz/org-access";
 import type { Viewer } from "@fmerp/shared/contracts/document-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 
 export type { Viewer };
@@ -187,7 +187,7 @@ export async function requireView(
 ): Promise<void> {
   const facts = await loadViewFacts(ctx, documentId, viewer);
   if (!facts || !canViewDocument(facts)) {
-    throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+    throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
   }
   if (facts.hasReadAll && !canViewDocument({ ...facts, hasReadAll: false })) {
     await recordReadAllView(ctx, documentId, facts.securityLevel);

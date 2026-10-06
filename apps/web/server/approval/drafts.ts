@@ -5,7 +5,7 @@ import { type FormSchema, validateFormValues } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { documentPrefix } from "@fmerp/shared/server/document-prefix";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { revisionKey } from "@fmerp/storage";
 import { asc, desc, eq } from "drizzle-orm";
 import { getFormVersion } from "./forms";
@@ -39,7 +39,7 @@ export async function validateBody(
   mode: "draft" | "submit",
 ): Promise<Record<string, unknown>> {
   if (JSON.stringify(body).length > MAX_BODY_BYTES) {
-    throw new ApprovalError("validation_failed", "본문이 너무 큽니다");
+    throw new ServiceError("validation_failed", "본문이 너무 큽니다");
   }
   if (!doc.formVersionId) return body;
   const version = await getFormVersion(ctx.tx, doc.formVersionId);
@@ -48,7 +48,7 @@ export async function validateBody(
     attachmentCount: await attachmentCount(ctx, doc.id),
   });
   if (!result.ok) {
-    throw new ApprovalError("validation_failed", "입력값을 확인하세요", { errors: result.errors });
+    throw new ServiceError("validation_failed", "입력값을 확인하세요", { errors: result.errors });
   }
   return result.values;
 }
@@ -66,7 +66,7 @@ export async function writeRevision(
   try {
     await ctx.storage.putIfAbsent(key, json, "application/json");
   } catch {
-    throw new ApprovalError(
+    throw new ServiceError(
       "revision_conflict",
       "다른 저장과 겹쳤습니다. 새로고침 후 다시 저장하세요",
     );
@@ -104,13 +104,13 @@ export async function saveDraft(ctx: ServiceContext, input: SaveDraftInput) {
   const loaded = await lockAndLoad(ctx.tx, input.documentId);
   const doc = loaded.row;
   if (doc.drafterMembershipId !== input.actorMembershipId) {
-    throw new ApprovalError("forbidden", "기안자만 저장할 수 있습니다");
+    throw new ServiceError("forbidden", "기안자만 저장할 수 있습니다");
   }
   if (doc.status !== "DRAFT") {
-    throw new ApprovalError("invalid_state", "상신된 문서는 수정할 수 없습니다 (회수 후 수정)");
+    throw new ServiceError("invalid_state", "상신된 문서는 수정할 수 없습니다 (회수 후 수정)");
   }
   if (input.expectedRevision !== undefined && input.expectedRevision !== doc.latestRevision) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "revision_conflict",
       "다른 곳에서 먼저 저장되었습니다. 새로고침 후 다시 저장하세요",
     );
@@ -150,7 +150,7 @@ export async function loadBody(
     .select()
     .from(schema.document)
     .where(eq(schema.document.id, documentId));
-  if (!doc) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+  if (!doc) throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
   const target = n ?? doc.latestRevision;
   if (target < 1) return null;
   const [rev] = await ctx.tx
@@ -162,7 +162,7 @@ export async function loadBody(
   if (!row) return null;
   const bytes = await ctx.storage.getBytes(row.storageKey);
   if (sha256Hex(bytes) !== row.sha256) {
-    throw new ApprovalError("content_changed", "저장된 본문이 변경되었습니다 (무결성 오류)");
+    throw new ServiceError("content_changed", "저장된 본문이 변경되었습니다 (무결성 오류)");
   }
   return {
     revision: row.n,
@@ -206,7 +206,7 @@ export async function computeContentHash(ctx: ServiceContext, doc: DocRow): Prom
 export async function verifyIntegrity(ctx: ServiceContext, doc: DocRow): Promise<void> {
   if (!doc.contentHash) return;
   if ((await computeContentHash(ctx, doc)) !== doc.contentHash) {
-    throw new ApprovalError("content_changed", "상신 이후 문서 내용이 바뀌어 처리할 수 없습니다");
+    throw new ServiceError("content_changed", "상신 이후 문서 내용이 바뀌어 처리할 수 없습니다");
   }
   if (doc.latestRevision > 0) await loadBody(ctx, doc.id);
 }

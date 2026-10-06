@@ -2,7 +2,7 @@
 import { recordAudit } from "@fmerp/audit";
 import { schema } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { asc, eq } from "drizzle-orm";
 import { requireView, type Viewer } from "./access";
 import { isParticipant } from "./service";
@@ -21,10 +21,10 @@ export async function addComment(
 ) {
   const body = input.body.trim();
   if (body === "" || body.length > MAX_COMMENT) {
-    throw new ApprovalError("comment_required", `의견은 1~${MAX_COMMENT}자로 입력하세요`);
+    throw new ServiceError("comment_required", `의견은 1~${MAX_COMMENT}자로 입력하세요`);
   }
   if (!(await isParticipant(ctx, input.documentId, input.authorMembershipId))) {
-    throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+    throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
   }
   if (input.stepId) {
     const [step] = await ctx.tx
@@ -32,7 +32,7 @@ export async function addComment(
       .from(schema.approvalStep)
       .where(eq(schema.approvalStep.id, input.stepId));
     if (step?.documentId !== input.documentId) {
-      throw new ApprovalError("step_not_found", "결재 단계를 찾을 수 없습니다");
+      throw new ServiceError("step_not_found", "결재 단계를 찾을 수 없습니다");
     }
   }
   const [row] = await ctx.tx
@@ -65,7 +65,7 @@ export async function listComments(ctx: ServiceContext, documentId: string, view
     .select({ drafter: schema.document.drafterMembershipId })
     .from(schema.document)
     .where(eq(schema.document.id, documentId));
-  if (!doc) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+  if (!doc) throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
   await requireView(ctx, documentId, viewer);
   const rows = await ctx.tx
     .select({

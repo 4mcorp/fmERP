@@ -9,7 +9,7 @@ import {
 } from "@fmerp/core";
 import { schema, type Tx } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 export interface FormNumbering {
@@ -45,26 +45,26 @@ type VersionRow = typeof schema.formVersion.$inferSelect;
 function validateVersion(input: FormVersionInput) {
   const check = validateFormSchema(input.schema);
   if (!check.ok)
-    throw new ApprovalError("form_invalid", "양식 필드가 올바르지 않습니다", {
+    throw new ServiceError("form_invalid", "양식 필드가 올바르지 않습니다", {
       errors: check.errors,
     });
   if (input.numbering) {
     const n = validateDocNumberRule(input.numbering.rule);
-    if (!n.ok) throw new ApprovalError("form_invalid", n.reason);
+    if (!n.ok) throw new ServiceError("form_invalid", n.reason);
   }
   if (!RETENTION_YEARS.includes(input.retentionYears)) {
-    throw new ApprovalError("form_invalid", "보존연한은 1·3·5·10년 또는 영구여야 합니다");
+    throw new ServiceError("form_invalid", "보존연한은 1·3·5·10년 또는 영구여야 합니다");
   }
   if (input.defaultLine.length > 30)
-    throw new ApprovalError("form_invalid", "기본 결재선은 30단계까지입니다");
+    throw new ServiceError("form_invalid", "기본 결재선은 30단계까지입니다");
   if (!input.allowLineEdit && input.defaultLine.every((i) => i.type === "post")) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "form_invalid",
       "결재선 수정을 막으려면 결재 단계가 있는 기본 결재선이 필요합니다",
     );
   }
   if (!input.allowLineEdit && input.defaultLine.length === 0) {
-    throw new ApprovalError("form_invalid", "결재선 수정을 막으려면 기본 결재선이 필요합니다");
+    throw new ServiceError("form_invalid", "결재선 수정을 막으려면 기본 결재선이 필요합니다");
   }
 }
 
@@ -95,7 +95,7 @@ export async function getFormVersion(tx: Tx, versionId: string): Promise<Version
     .select()
     .from(schema.formVersion)
     .where(eq(schema.formVersion.id, versionId));
-  if (!row) throw new ApprovalError("not_found", "양식 버전을 찾을 수 없습니다");
+  if (!row) throw new ServiceError("not_found", "양식 버전을 찾을 수 없습니다");
   return row;
 }
 
@@ -106,13 +106,13 @@ export async function latestVersion(tx: Tx, formId: string): Promise<VersionRow>
     .where(eq(schema.formVersion.formId, formId))
     .orderBy(desc(schema.formVersion.version))
     .limit(1);
-  if (!row) throw new ApprovalError("not_found", "양식을 찾을 수 없습니다");
+  if (!row) throw new ServiceError("not_found", "양식을 찾을 수 없습니다");
   return row;
 }
 
 export async function getForm(tx: Tx, formId: string): Promise<FormRow> {
   const [row] = await tx.select().from(schema.form).where(eq(schema.form.id, formId));
-  if (!row) throw new ApprovalError("not_found", "양식을 찾을 수 없습니다");
+  if (!row) throw new ServiceError("not_found", "양식을 찾을 수 없습니다");
   return row;
 }
 
@@ -249,7 +249,7 @@ export async function importForm(
   override?: { code?: string; name?: string },
 ) {
   if (data.format !== "fmerp-form/1")
-    throw new ApprovalError("form_invalid", "지원하지 않는 양식 파일입니다");
+    throw new ServiceError("form_invalid", "지원하지 않는 양식 파일입니다");
   return createForm(
     ctx,
     {

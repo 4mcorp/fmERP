@@ -1,5 +1,5 @@
 // 목록 쪽 나누기용 커서 (문서함·감사 로그 공통)
-import { ApprovalError } from "./errors";
+import { ServiceError } from "./errors";
 
 /**
  * 커서의 시각은 DB가 준 **마이크로초 문자열**을 그대로 쓴다. JS Date는 밀리초까지만 담아서, 같은 밀리초 안에 만들어진
@@ -14,7 +14,7 @@ export const encodeCursor = (at: string, id: string) =>
 export function decodeCursor(cursor: string): { at: string; id: string } {
   const [at, id] = Buffer.from(cursor, "base64url").toString().split("|");
   if (!at || !id || !CURSOR_AT.test(at) || !UUID.test(id)) {
-    throw new ApprovalError("validation_failed", "잘못된 커서입니다");
+    throw new ServiceError("validation_failed", "잘못된 커서입니다");
   }
   return { at, id };
 }

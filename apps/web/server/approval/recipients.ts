@@ -3,7 +3,7 @@ import { recordAudit } from "@fmerp/audit";
 import { canDistribute, canReceive, canViewDocument, type Recipient } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, eq, inArray } from "drizzle-orm";
 import { loadViewFacts, type Viewer } from "./access";
 
@@ -14,11 +14,11 @@ export type RecipientInput = {
   assigneeMembershipId?: string | null;
 };
 
-const notFound = () => new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+const notFound = () => new ServiceError("not_found", "문서를 찾을 수 없습니다");
 
 const toRow = (ctx: ServiceContext, documentId: string, r: RecipientInput) => {
   if (r.kind === "receive" && r.target.type !== "department") {
-    throw new ApprovalError("validation_failed", "수신 대상은 부서여야 합니다");
+    throw new ServiceError("validation_failed", "수신 대상은 부서여야 합니다");
   }
   return {
     accountId: ctx.accountId,
@@ -47,7 +47,7 @@ export async function setRecipients(
     .where(eq(schema.document.id, input.documentId));
   if (!doc || doc.drafter !== input.actorMembershipId) throw notFound();
   if (doc.status !== "DRAFT") {
-    throw new ApprovalError("invalid_state", "초안에서만 참조·수신 대상을 바꿀 수 있습니다");
+    throw new ServiceError("invalid_state", "초안에서만 참조·수신 대상을 바꿀 수 있습니다");
   }
   const unique = [...new Map(input.items.map((i) => [keyOf(i), i])).values()];
   await tx
@@ -74,7 +74,7 @@ export async function circulate(
     facts.stepParticipantIds.includes(input.viewer.membershipId);
   if (!involved) throw notFound();
   if (facts.status !== "COMPLETED") {
-    throw new ApprovalError("invalid_state", "완료된 문서만 공람으로 회람할 수 있습니다");
+    throw new ServiceError("invalid_state", "완료된 문서만 공람으로 회람할 수 있습니다");
   }
   const existing = await tx
     .select()
@@ -276,7 +276,7 @@ export async function receiveDocument(
     // 접수 담당자가 아니면 수신 건이 있는지도 알려 주지 않는다. 담당자인데 이미 접수했거나 완료 전이면 상태 오류다
     const receiver = recipient.assigneeMembershipId ?? dept?.head ?? null;
     if (receiver === input.viewerMembershipId) {
-      throw new ApprovalError("invalid_state", "접수할 수 없는 상태입니다");
+      throw new ServiceError("invalid_state", "접수할 수 없는 상태입니다");
     }
     throw notFound();
   }
@@ -320,7 +320,7 @@ export async function distributeDocument(
         targetDepartmentIds: departmentIds,
       })
     ) {
-      throw new ApprovalError(
+      throw new ServiceError(
         "validation_failed",
         "수신 부서 소속이 아닌 구성원에게는 배부할 수 없습니다",
       );

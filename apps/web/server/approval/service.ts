@@ -29,7 +29,7 @@ import {
 } from "@fmerp/core";
 import { schema, type Tx } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { attachmentKey } from "@fmerp/storage";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import {
@@ -79,7 +79,7 @@ export interface CreateApprovalInput {
 const asRecord = (value: object) => value as Record<string, unknown>;
 
 function unwrap(result: EngineResult) {
-  if (!result.ok) throw new ApprovalError(result.code, result.message);
+  if (!result.ok) throw new ServiceError(result.code, result.message);
   return result;
 }
 
@@ -119,12 +119,12 @@ export async function allocateDocNumber(
   numbering: Numbering,
 ): Promise<string> {
   const check = validateDocNumberRule(numbering.rule);
-  if (!check.ok) throw new ApprovalError("rule_invalid", check.reason);
+  if (!check.ok) throw new ServiceError("rule_invalid", check.reason);
   const [business] = await ctx.tx
     .select({ code: schema.business.code })
     .from(schema.business)
     .where(eq(schema.business.id, businessId));
-  if (!business) throw new ApprovalError("not_found", "사업자를 찾을 수 없습니다");
+  if (!business) throw new ServiceError("not_found", "사업자를 찾을 수 없습니다");
   const numberCtx: DocNumberContext = {
     businessCode: business.code,
     departmentCode: numbering.departmentCode,
@@ -182,7 +182,7 @@ function lineForForm(
   if (!version.allowLineEdit || !requested) return defaults;
   const allowedPost = defaults.filter((i) => i.type === "post").length;
   if (requested.filter((i) => i.type === "post").length > allowedPost) {
-    throw new ApprovalError(
+    throw new ServiceError(
       "line_invalid",
       "후결 단계는 양식의 기본 결재선에 있는 것만 둘 수 있습니다",
     );
@@ -201,7 +201,7 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
     .map((a) => a.departmentId);
   const drafterDepartmentId = input.drafterDepartmentId ?? departmentIds[0];
   if (!drafterDepartmentId || !departmentIds.includes(drafterDepartmentId)) {
-    throw new ApprovalError("line_invalid", "기안자의 소속(부서)을 확인할 수 없습니다");
+    throw new ServiceError("line_invalid", "기안자의 소속(부서)을 확인할 수 없습니다");
   }
   const [drafterDept] = await tx
     .select({ code: schema.department.code })
@@ -229,7 +229,7 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
       .filter((a) => a.membershipId === input.drafterMembershipId)
       .map((a) => a.departmentId);
     if (!formUsableBy(form, { businessIds: myBusinesses, departmentIds: myDepartments })) {
-      throw new ApprovalError("form_invalid", "사용할 수 없는 양식입니다");
+      throw new ServiceError("form_invalid", "사용할 수 없는 양식입니다");
     }
     const input2 = versionToInput(version);
     line = lineForForm(version, input.line);
@@ -242,7 +242,7 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
     securityLevel = securityLevel ?? version.securityDefault;
   }
   if (!line || line.length === 0) {
-    throw new ApprovalError("line_invalid", "결재선이 필요합니다");
+    throw new ServiceError("line_invalid", "결재선이 필요합니다");
   }
 
   const resolved = resolveLine(line, org, {
@@ -250,7 +250,7 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
     departmentId: drafterDepartmentId,
   });
   if (!resolved.ok) {
-    throw new ApprovalError("line_invalid", "결재선을 해석할 수 없습니다", {
+    throw new ServiceError("line_invalid", "결재선을 해석할 수 없습니다", {
       errors: resolved.errors,
     });
   }
@@ -270,13 +270,13 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
     auditors: await loadAuditorIds(tx),
   });
   if (validation.errors.length > 0) {
-    throw new ApprovalError("line_invalid", validation.errors.join("; "), {
+    throw new ServiceError("line_invalid", validation.errors.join("; "), {
       errors: validation.errors,
     });
   }
   if (numbering) {
     const check = validateDocNumberRule(numbering.rule);
-    if (!check.ok) throw new ApprovalError("rule_invalid", check.reason);
+    if (!check.ok) throw new ServiceError("rule_invalid", check.reason);
   }
 
   const cards = await loadMemberCards(tx, [
@@ -311,7 +311,7 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
   }
   for (const linked of new Set(input.relatedDocumentIds ?? [])) {
     if (!(await isParticipant(ctx, linked, input.drafterMembershipId))) {
-      throw new ApprovalError("forbidden", "열람 권한이 없는 문서는 연결할 수 없습니다");
+      throw new ServiceError("forbidden", "열람 권한이 없는 문서는 연결할 수 없습니다");
     }
     await tx
       .insert(schema.documentLink)
@@ -346,10 +346,10 @@ export async function replaceDraftLine(
   const loaded = await lockAndLoad(tx, input.documentId);
   const doc = loaded.row;
   if (doc.drafterMembershipId !== input.actorMembershipId) {
-    throw new ApprovalError("forbidden", "기안자만 결재선을 바꿀 수 있습니다");
+    throw new ServiceError("forbidden", "기안자만 결재선을 바꿀 수 있습니다");
   }
   if (doc.status !== "DRAFT") {
-    throw new ApprovalError("invalid_state", "상신된 문서의 결재선은 초안에서만 바꿀 수 있습니다");
+    throw new ServiceError("invalid_state", "상신된 문서의 결재선은 초안에서만 바꿀 수 있습니다");
   }
   let line = input.line;
   if (doc.formVersionId) {
@@ -365,7 +365,7 @@ export async function replaceDraftLine(
     departmentId: assignment?.departmentId ?? "",
   });
   if (!resolved.ok) {
-    throw new ApprovalError("line_invalid", "결재선을 해석할 수 없습니다", {
+    throw new ServiceError("line_invalid", "결재선을 해석할 수 없습니다", {
       errors: resolved.errors,
     });
   }
@@ -385,7 +385,7 @@ export async function replaceDraftLine(
     auditors: await loadAuditorIds(tx),
   });
   if (validation.errors.length > 0) {
-    throw new ApprovalError("line_invalid", validation.errors.join("; "), {
+    throw new ServiceError("line_invalid", validation.errors.join("; "), {
       errors: validation.errors,
     });
   }
@@ -476,7 +476,7 @@ export async function submitDocument(
 ) {
   const loaded = await lockAndLoad(ctx.tx, documentId);
   if (loaded.row.drafterMembershipId !== actorMembershipId) {
-    throw new ApprovalError("forbidden", "기안자만 상신할 수 있습니다");
+    throw new ServiceError("forbidden", "기안자만 상신할 수 있습니다");
   }
   // 상신 전 검증 (APV-015): 양식 입력값 전체, 첨부 수
   const saved = await loadBody(ctx, documentId);
@@ -572,7 +572,7 @@ export async function reopenDocument(
 ) {
   const loaded = await lockAndLoad(ctx.tx, documentId);
   if (loaded.row.drafterMembershipId !== actorMembershipId) {
-    throw new ApprovalError("forbidden", "기안자만 수정할 수 있습니다");
+    throw new ServiceError("forbidden", "기안자만 수정할 수 있습니다");
   }
   const result = unwrap(reopenDraft(loaded.doc));
   return finish(ctx, loaded, result, { idempotencyKey: null, auditAction: "approval.reopen" });
@@ -586,10 +586,10 @@ export async function redraftDocument(
 ) {
   const loaded = await lockAndLoad(ctx.tx, documentId);
   if (loaded.row.drafterMembershipId !== actorMembershipId) {
-    throw new ApprovalError("forbidden", "기안자만 재기안할 수 있습니다");
+    throw new ServiceError("forbidden", "기안자만 재기안할 수 있습니다");
   }
   const seed = redraftSeed(loaded.doc, (old) => old);
-  if (!seed.ok) throw new ApprovalError(seed.code, seed.message);
+  if (!seed.ok) throw new ServiceError(seed.code, seed.message);
   const { row } = loaded;
   const [copy] = await ctx.tx
     .insert(schema.document)

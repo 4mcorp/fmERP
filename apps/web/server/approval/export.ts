@@ -2,7 +2,7 @@
 import { recordAudit } from "@fmerp/audit";
 import type { Actor } from "@fmerp/core";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import writeXlsxFile from "write-excel-file/node";
 import type { MailboxItem } from "./mailbox";
 import { type SearchInput, searchDocuments } from "./search";
@@ -90,7 +90,7 @@ export async function exportDocuments(
     const page = await searchDocuments(ctx, viewer, { ...input, limit: PAGE, cursor });
     items.push(...page.items);
     if (items.length > EXPORT_LIMIT) {
-      throw new ApprovalError(
+      throw new ServiceError(
         "validation_failed",
         `내보낼 문서가 ${EXPORT_LIMIT.toLocaleString("ko-KR")}건을 넘습니다. 기간·상태 같은 조건으로 줄여서 다시 시도하세요`,
       );

@@ -1,7 +1,7 @@
 // 결재 엔진 통합 테스트 (실제 DB): 수용 기준 S3·S4, 동시성·멱등·채번·완료 후 불변·대결·테넌트 격리 (M3).
 import type { ApprovalAction, DraftLineItem } from "@fmerp/core";
 import { createDatabase, schema, withTenant } from "@fmerp/db";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { ObjectStorage } from "@fmerp/storage";
 import { and, count, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -57,8 +57,8 @@ async function expectApprovalError(promise: Promise<unknown>, code: string) {
     () => null,
     (e: unknown) => e,
   );
-  expect(error).toBeInstanceOf(ApprovalError);
-  expect((error as ApprovalError).code).toBe(code);
+  expect(error).toBeInstanceOf(ServiceError);
+  expect((error as ServiceError).code).toBe(code);
 }
 
 const run = <T>(fn: (ctx: ServiceContext) => Promise<T>, now: Date = NOW, forAccount?: string) =>
@@ -359,7 +359,7 @@ describe("동시성·멱등 (APV-045)", () => {
         ),
       ).then(
         () => "ok",
-        (e: unknown) => (e as ApprovalError).code,
+        (e: unknown) => (e as ServiceError).code,
       );
     const results = await Promise.all([attempt(), attempt()]);
     expect(results.filter((r) => r === "ok")).toHaveLength(1);

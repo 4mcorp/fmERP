@@ -5,7 +5,7 @@ import { schema } from "@fmerp/db";
 import type { DocumentAccess, Viewer } from "@fmerp/shared/contracts/document-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { documentPrefix } from "@fmerp/shared/server/document-prefix";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { FINAL_FILES, finalKey } from "@fmerp/storage";
 import { ZipArchive } from "archiver";
 import { eq } from "drizzle-orm";
@@ -17,7 +17,7 @@ async function loadDoc(ctx: ServiceContext, documentId: string) {
     .select()
     .from(schema.document)
     .where(eq(schema.document.id, documentId));
-  if (!doc) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+  if (!doc) throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
   return doc;
 }
 
@@ -52,10 +52,10 @@ async function requireReady(
     .from(schema.documentPackage)
     .where(eq(schema.documentPackage.documentId, documentId));
   if (doc.status !== "COMPLETED") {
-    throw new ApprovalError("invalid_state", "완료된 문서만 내려받을 수 있습니다");
+    throw new ServiceError("invalid_state", "완료된 문서만 내려받을 수 있습니다");
   }
   if (pkg?.status !== "READY") {
-    throw new ApprovalError("invalid_state", "PDF를 만드는 중입니다. 잠시 뒤에 다시 시도하세요");
+    throw new ServiceError("invalid_state", "PDF를 만드는 중입니다. 잠시 뒤에 다시 시도하세요");
   }
   return doc;
 }

@@ -1,6 +1,6 @@
 import type { ApprovalDoc, ApprovalStep, EngineResult } from "@fmerp/core";
 import { schema, type Tx } from "@fmerp/db";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, asc, eq } from "drizzle-orm";
 
 type DocRow = typeof schema.document.$inferSelect;
@@ -35,7 +35,7 @@ export async function lockAndLoad(tx: Tx, documentId: string): Promise<LoadedDoc
     .from(schema.document)
     .where(eq(schema.document.id, documentId))
     .for("update");
-  if (!row) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+  if (!row) throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
   const stepRows = await tx
     .select()
     .from(schema.approvalStep)
@@ -82,7 +82,7 @@ export async function persistResult(
       .where(and(eq(schema.approvalStep.id, id), eq(schema.approvalStep.version, old.version)))
       .returning({ id: schema.approvalStep.id });
     if (updated.length === 0) {
-      throw new ApprovalError(
+      throw new ServiceError(
         "version_conflict",
         "다른 처리와 충돌했습니다. 새로고침 후 다시 시도하세요",
       );

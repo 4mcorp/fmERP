@@ -12,7 +12,7 @@ import {
 } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { and, eq } from "drizzle-orm";
 import { getFormVersion } from "./forms";
 import { loadAuditorIds, loadMemberCards, loadOrgSnapshot } from "./org-snapshot";
@@ -45,7 +45,7 @@ export async function changeLine(
     (e): e is Extract<LineChangeInput, { kind: "add" }> => e.kind === "add",
   );
   if (added.some((e) => e.item.type === "post")) {
-    throw new ApprovalError("line_invalid", "진행 중에는 후결 단계를 추가할 수 없습니다");
+    throw new ServiceError("line_invalid", "진행 중에는 후결 단계를 추가할 수 없습니다");
   }
   const resolved =
     added.length === 0
@@ -59,7 +59,7 @@ export async function changeLine(
           },
         );
   if (!resolved.ok) {
-    throw new ApprovalError("line_invalid", "추가할 결재선을 해석할 수 없습니다", {
+    throw new ServiceError("line_invalid", "추가할 결재선을 해석할 수 없습니다", {
       errors: resolved.errors,
     });
   }
@@ -84,7 +84,7 @@ export async function changeLine(
   });
 
   const result = editLine(loaded.doc, edits, input.actor, { reason: input.reason, allowLineEdit });
-  if (!result.ok) throw new ApprovalError(result.code, result.message);
+  if (!result.ok) throw new ServiceError(result.code, result.message);
 
   // 변경 후 결재선이 검증을 통과해야 한다 (비활성 사용자 등)
   const inactive = new Set(
@@ -106,7 +106,7 @@ export async function changeLine(
     },
   );
   if (validation.errors.length > 0) {
-    throw new ApprovalError("line_invalid", validation.errors.join("; "), {
+    throw new ServiceError("line_invalid", validation.errors.join("; "), {
       errors: validation.errors,
     });
   }

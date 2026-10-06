@@ -3,7 +3,7 @@ import { schema, withTenant } from "@fmerp/db";
 import { businessTarget, loadActor } from "@fmerp/shared/authz/org-access";
 import { createRequireReauth } from "@fmerp/shared/authz/reauth";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import {
   type AppRouter,
   type DepsProvider,
@@ -94,7 +94,7 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
           .select({ formVersionId: schema.document.formVersionId })
           .from(schema.document)
           .where(eq(schema.document.id, id));
-        if (!doc?.formVersionId) throw new ApprovalError("not_found", "양식 없이 만든 문서입니다");
+        if (!doc?.formVersionId) throw new ServiceError("not_found", "양식 없이 만든 문서입니다");
         const v = await getFormVersion(tx, doc.formVersionId);
         const form = await getForm(tx, v.formId);
         return {
@@ -324,7 +324,7 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
         // 참여자가 아니면 문서가 있는지도 알려 주지 않는다 (결재 관리자도 처리자는 아니다)
         const admin = doc ? can(actor, "approval.manage", businessTarget(doc.businessId)) : false;
         if (!doc || (!admin && !(await isParticipant(ctx, id, membershipId)))) {
-          throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+          throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
         }
         return actOnStep(
           ctx,
@@ -479,7 +479,7 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
           .select({ businessId: schema.document.businessId })
           .from(schema.document)
           .where(eq(schema.document.id, id));
-        if (!doc) throw new ApprovalError("not_found", "문서를 찾을 수 없습니다");
+        if (!doc) throw new ServiceError("not_found", "문서를 찾을 수 없습니다");
         return changeLine(serviceContext(c, d, tx), {
           documentId: id,
           actor: {

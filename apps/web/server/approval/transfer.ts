@@ -5,7 +5,7 @@ import { type Actor, can, planTransfer } from "@fmerp/core";
 import { schema } from "@fmerp/db";
 import { businessTarget } from "@fmerp/shared/authz/org-access";
 import type { ServiceContext } from "@fmerp/shared/server/context";
-import { ApprovalError } from "@fmerp/shared/server/errors";
+import { ServiceError } from "@fmerp/shared/server/errors";
 import { eq, sql } from "drizzle-orm";
 import { loadMemberCards } from "./org-snapshot";
 import { lockAndLoad } from "./store";
@@ -34,22 +34,22 @@ export async function transferAssignments(
   const { tx } = ctx;
   // 이관할 문서가 없어도 잘못된 요청은 거부한다
   if (input.reason.trim() === "") {
-    throw new ApprovalError("reason_required", "이관 사유를 입력하세요");
+    throw new ServiceError("reason_required", "이관 사유를 입력하세요");
   }
   if (input.fromMembershipId === input.toMembershipId) {
-    throw new ApprovalError("invalid_transfer", "같은 사람에게는 이관할 수 없습니다");
+    throw new ServiceError("invalid_transfer", "같은 사람에게는 이관할 수 없습니다");
   }
   const [from] = await tx
     .select({ id: schema.membership.id })
     .from(schema.membership)
     .where(eq(schema.membership.id, input.fromMembershipId));
-  if (!from) throw new ApprovalError("validation_failed", "이관할 구성원을 찾을 수 없습니다");
+  if (!from) throw new ServiceError("validation_failed", "이관할 구성원을 찾을 수 없습니다");
   const [to] = await tx
     .select({ id: schema.membership.id, status: schema.membership.status })
     .from(schema.membership)
     .where(eq(schema.membership.id, input.toMembershipId));
   if (to?.status !== "active") {
-    throw new ApprovalError("validation_failed", "대체 결재자는 재직 중인 구성원이어야 합니다");
+    throw new ServiceError("validation_failed", "대체 결재자는 재직 중인 구성원이어야 합니다");
   }
 
   const documentIds = await openDocumentsOf(ctx, input.fromMembershipId);
@@ -58,14 +58,14 @@ export async function transferAssignments(
     const loaded = await lockAndLoad(tx, id);
     // 이관은 결재 관리 권한이다. 관리 범위 밖 사업자의 문서가 하나라도 있으면 전체를 거부한다
     if (!can(input.actor, "approval.manage", businessTarget(loaded.row.businessId))) {
-      throw new ApprovalError("forbidden", "이관 대상 문서를 관리할 권한이 없습니다");
+      throw new ServiceError("forbidden", "이관 대상 문서를 관리할 권한이 없습니다");
     }
     const plan = planTransfer(loaded.doc, {
       from: input.fromMembershipId,
       to: input.toMembershipId,
       reason: input.reason,
     });
-    if (!plan.ok) throw new ApprovalError(plan.code, plan.message);
+    if (!plan.ok) throw new ServiceError(plan.code, plan.message);
     if (plan.changes.length === 0) continue;
 
     const cards = await loadMemberCards(
@@ -124,7 +124,7 @@ export async function listOverdue(
   // 결재 관리 범위가 하나도 없으면 빈 목록이 아니라 접근 거부로 구분한다
   const businesses = await ctx.tx.select({ id: schema.business.id }).from(schema.business);
   if (!businesses.some((b) => can(actor, "approval.manage", businessTarget(b.id)))) {
-    throw new ApprovalError("forbidden", "결재 관리 권한이 없습니다");
+    throw new ServiceError("forbidden", "결재 관리 권한이 없습니다");
   }
   const { rows } = await ctx.tx.execute<{
     id: string;
