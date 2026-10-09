@@ -3,18 +3,81 @@
 import { DOC_STATUS_LABEL, type DocumentListItem, formatDateTime } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
-import { Card, CardContent } from "@fmerp/shared/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@fmerp/shared/ui/table";
+import { DataTable, type DataTableColumn, type DataTableFilter } from "@fmerp/shared/ui/data-table";
 import Link from "next/link";
 
 const SECURITY_LABEL: Record<string, string> = { confidential: "대외비", secret: "비밀" };
+
+const when = (d: DocumentListItem) => d.completedAt ?? d.submittedAt ?? d.createdAt;
+
+const COLUMNS: DataTableColumn<DocumentListItem>[] = [
+  {
+    id: "docNo",
+    header: "문서번호",
+    cell: (d) => d.docNo ?? "-",
+    sortValue: (d) => d.docNo,
+    className: "tabular-nums whitespace-nowrap",
+  },
+  {
+    id: "title",
+    header: "제목",
+    className: "max-w-72",
+    cell: (d) => (
+      <>
+        <Link
+          href={d.status === "DRAFT" ? `/approval/draft/${d.id}` : `/approval/${d.id}`}
+          className="break-words font-medium underline-offset-4 hover:underline"
+        >
+          {d.title}
+        </Link>
+        {d.urgent && (
+          <Badge variant="destructive" className="ml-2">
+            긴급
+          </Badge>
+        )}
+        {SECURITY_LABEL[d.securityLevel] && (
+          <Badge variant="outline" className="ml-2">
+            {SECURITY_LABEL[d.securityLevel]}
+          </Badge>
+        )}
+      </>
+    ),
+  },
+  {
+    id: "drafter",
+    header: "기안자",
+    cell: (d) => d.drafterName,
+    className: "whitespace-nowrap",
+    hideBelow: "md",
+  },
+  {
+    id: "status",
+    header: "상태",
+    cell: (d) => (
+      <Badge variant={d.status === "COMPLETED" ? "secondary" : "outline"}>
+        {DOC_STATUS_LABEL[d.status] ?? d.status}
+      </Badge>
+    ),
+  },
+  {
+    id: "date",
+    header: "일시",
+    cell: (d) => formatDateTime(when(d)),
+    sortValue: (d) => when(d),
+    className: "whitespace-nowrap",
+    hideBelow: "sm",
+  },
+];
+
+const FILTERS: DataTableFilter<DocumentListItem>[] = [
+  {
+    id: "status",
+    label: "상태 필터",
+    allLabel: "전체 상태",
+    options: Object.entries(DOC_STATUS_LABEL).map(([value, label]) => ({ value, label })),
+    predicate: (d, v) => d.status === v,
+  },
+];
 
 /** 문서함·검색 결과 표. 커서로 이어서 가져오는 "더 보기"를 함께 둔다 */
 export function DocumentTable({
@@ -33,75 +96,27 @@ export function DocumentTable({
   emptyText?: string;
 }) {
   return (
-    <Card>
-      <CardContent className="overflow-x-auto pt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>제목</TableHead>
-              <TableHead>기안자</TableHead>
-              <TableHead>상태</TableHead>
-              <TableHead>문서번호</TableHead>
-              <TableHead>일시</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((d) => (
-              <TableRow key={d.id}>
-                <TableCell className="max-w-72">
-                  <Link
-                    href={d.status === "DRAFT" ? `/approval/draft/${d.id}` : `/approval/${d.id}`}
-                    className="break-words font-medium underline-offset-4 hover:underline"
-                  >
-                    {d.title}
-                  </Link>
-                  {d.urgent && (
-                    <Badge variant="destructive" className="ml-2">
-                      긴급
-                    </Badge>
-                  )}
-                  {SECURITY_LABEL[d.securityLevel] && (
-                    <Badge variant="outline" className="ml-2">
-                      {SECURITY_LABEL[d.securityLevel]}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">{d.drafterName}</TableCell>
-                <TableCell>
-                  <Badge variant={d.status === "COMPLETED" ? "secondary" : "outline"}>
-                    {DOC_STATUS_LABEL[d.status] ?? d.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="tabular-nums">{d.docNo ?? "-"}</TableCell>
-                <TableCell className="whitespace-nowrap">
-                  {formatDateTime(d.completedAt ?? d.submittedAt ?? d.createdAt)}
-                </TableCell>
-              </TableRow>
-            ))}
-            {loading && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  불러오는 중…
-                </TableCell>
-              </TableRow>
-            )}
-            {!loading && rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  {emptyText}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        {hasMore && (
-          <div className="flex justify-center pt-4">
-            <Button variant="outline" onClick={onMore} disabled={loadingMore}>
-              {loadingMore ? "불러오는 중…" : "더 보기"}
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div>
+      <DataTable
+        rows={rows}
+        columns={COLUMNS}
+        rowKey={(d) => d.id}
+        caption="문서 목록"
+        isLoading={loading}
+        empty={<div className="py-12 text-center text-sm text-muted-foreground">{emptyText}</div>}
+        search={{
+          placeholder: "제목·기안자·문서번호 검색",
+          text: (d) => `${d.title} ${d.drafterName} ${d.docNo ?? ""}`,
+        }}
+        filters={FILTERS}
+      />
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" onClick={onMore} disabled={loadingMore}>
+            {loadingMore ? "불러오는 중…" : "더 보기"}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
