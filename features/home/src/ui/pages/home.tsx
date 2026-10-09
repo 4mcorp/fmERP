@@ -19,6 +19,7 @@ import {
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import { FilePlus2, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -123,19 +124,17 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">{account.name}</h1>
-          <p className="text-muted-foreground">
-            {me.name}님 · {ROLE_LABEL[account.myRole]}
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/approval/new">
-            <FilePlus2 aria-hidden />새 결재
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title={account.name}
+        description={`${me.name}님 · ${ROLE_LABEL[account.myRole]}`}
+        actions={
+          <Button asChild>
+            <Link href="/approval/new">
+              <FilePlus2 aria-hidden />새 결재
+            </Link>
+          </Button>
+        }
+      />
 
       <ul aria-label="요약" className="grid grid-cols-3 gap-3">
         {[
