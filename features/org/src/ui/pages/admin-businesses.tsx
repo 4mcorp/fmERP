@@ -7,9 +7,14 @@ import { Badge } from "@fmerp/shared/ui/badge";
 import { BusinessForm } from "@fmerp/shared/ui/business-form";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@fmerp/shared/ui/sheet";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Building2 } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
@@ -146,23 +151,75 @@ function BusinessCard({ business }: { business: Business }) {
 export default function BusinessesPage() {
   const { data: businesses } = useBusinesses();
   const [adding, setAdding] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   if (!businesses) return null;
+  const selected = businesses.find((b) => b.id === selectedId);
+
+  const columns: DataTableColumn<Business>[] = [
+    {
+      id: "name",
+      header: "사업자명",
+      cell: (b) => <span className="font-medium">{b.name}</span>,
+      sortValue: (b) => b.name,
+    },
+    { id: "code", header: "코드", cell: (b) => b.code, sortValue: (b) => b.code, hideBelow: "sm" },
+    {
+      id: "bizRegNo",
+      header: "사업자등록번호",
+      cell: (b) => <span className="tabular-nums">{formatBizNo(b.bizRegNo)}</span>,
+      sortValue: (b) => b.bizRegNo,
+      hideBelow: "md",
+    },
+    {
+      id: "ceoName",
+      header: "대표자",
+      cell: (b) => b.ceoName ?? "-",
+      sortValue: (b) => b.ceoName ?? "",
+      hideBelow: "md",
+    },
+    {
+      id: "active",
+      header: "상태",
+      cell: (b) => (
+        <Badge variant={b.active ? "success" : "outline"}>{b.active ? "사용 중" : "비활성"}</Badge>
+      ),
+      sortValue: (b) => (b.active ? 0 : 1),
+    },
+    {
+      id: "actions",
+      header: "작업",
+      align: "right",
+      cell: (b) => (
+        <Button
+          size="sm"
+          variant="outline"
+          aria-label={`${b.name} 관리`}
+          onClick={() => setSelectedId(b.id)}
+        >
+          관리
+        </Button>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">사업자 관리</h1>
-        <Button onClick={() => setAdding((v) => !v)} variant={adding ? "outline" : "default"}>
-          {adding ? "닫기" : "사업자 등록"}
-        </Button>
-      </div>
+    <div>
+      <PageHeader
+        title="사업자 관리"
+        description="사업자는 삭제하지 않고 비활성화합니다."
+        breadcrumbs={[{ label: "관리" }, { label: "사업자 관리" }]}
+        actions={
+          <Button onClick={() => setAdding((v) => !v)} variant={adding ? "outline" : "default"}>
+            {adding ? "닫기" : "사업자 등록"}
+          </Button>
+        }
+      />
       {adding && (
-        <Card>
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle className="text-base">새 사업자</CardTitle>
             <CardDescription>
-              사업자는 삭제하지 않고 비활성화합니다. 같은 회사 안에서 사업자등록번호·코드는 중복될
-              수 없습니다.
+              같은 회사 안에서 사업자등록번호·코드는 중복될 수 없습니다.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -170,12 +227,42 @@ export default function BusinessesPage() {
           </CardContent>
         </Card>
       )}
-      {businesses.length === 0 && !adding && (
-        <p className="text-muted-foreground">등록된 사업자가 없습니다. 먼저 사업자를 등록하세요.</p>
-      )}
-      {businesses.map((b) => (
-        <BusinessCard key={b.id} business={b} />
-      ))}
+      <DataTable
+        rows={businesses}
+        columns={columns}
+        rowKey={(b) => b.id}
+        caption="사업자 목록"
+        search={{
+          placeholder: "사업자명·코드 검색",
+          text: (b) => `${b.name} ${b.code} ${b.bizRegNo}`,
+        }}
+        filters={[
+          {
+            id: "active",
+            label: "상태",
+            allLabel: "전체 상태",
+            options: [
+              { value: "active", label: "사용 중" },
+              { value: "inactive", label: "비활성" },
+            ],
+            predicate: (b, v) => (v === "active") === b.active,
+          },
+        ]}
+        empty={
+          <EmptyState
+            icon={Building2}
+            title="등록된 사업자가 없습니다"
+            description="먼저 사업자를 등록하세요."
+          />
+        }
+      />
+      <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)}>
+        <SheetContent className="w-full p-4 sm:max-w-xl">
+          <SheetTitle className="pr-8">{selected?.name ?? "사업자"}</SheetTitle>
+          <SheetDescription className="sr-only">사업자 정보 확인·수정</SheetDescription>
+          {selected && <BusinessCard business={selected} />}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

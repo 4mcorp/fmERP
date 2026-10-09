@@ -7,6 +7,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Table,
   TableBody,
@@ -136,7 +137,7 @@ function MasterSection({
                     </TableCell>
                   )}
                   <TableCell>
-                    <Badge variant={item.active ? "secondary" : "outline"}>
+                    <Badge variant={item.active ? "success" : "outline"}>
                       {item.active ? "사용" : "사용 안 함"}
                     </Badge>
                   </TableCell>
@@ -169,7 +170,11 @@ export default function PositionsPage() {
   if (!positions || !duties) return null;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">직위·직책</h1>
+      <PageHeader
+        title="직위·직책"
+        breadcrumbs={[{ label: "관리" }, { label: "직위·직책" }]}
+        className="pb-0"
+      />
       <MasterSection
         kind="positions"
         title="직위"

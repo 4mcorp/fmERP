@@ -6,6 +6,7 @@ import { Badge } from "@fmerp/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import { ChevronRight, Search } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -121,7 +122,11 @@ export default function OrgPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">조직도</h1>
+      <PageHeader
+        title="조직도"
+        description="부서와 구성원을 트리·차트로 봅니다."
+        className="pb-0"
+      />
       <div className="space-y-2">
         <Label htmlFor="org-search">부서 검색</Label>
         <div className="relative max-w-sm">

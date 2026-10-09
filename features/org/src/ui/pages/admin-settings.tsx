@@ -8,6 +8,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -111,7 +112,11 @@ export default function SettingsPage() {
 
   return (
     <form onSubmit={save} className="space-y-4">
-      <h1 className="text-2xl font-semibold">계정 설정</h1>
+      <PageHeader
+        title="계정 설정"
+        breadcrumbs={[{ label: "관리" }, { label: "계정 설정" }]}
+        className="pb-0"
+      />
 
       <Card>
         <CardHeader>
