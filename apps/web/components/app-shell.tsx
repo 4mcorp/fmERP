@@ -12,7 +12,7 @@ import {
   useSystemMe,
 } from "@fmerp/shared/lib/queries";
 import { ROLE_LABEL } from "@fmerp/shared/lib/types";
-import { cn } from "@fmerp/shared/lib/utils";
+import { AppFrame, type NavSection } from "@fmerp/shared/ui/app-frame";
 import { Button } from "@fmerp/shared/ui/button";
 import {
   DropdownMenu,
@@ -24,14 +24,18 @@ import {
 } from "@fmerp/shared/ui/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  Archive,
   Bell,
   Building2,
   CalendarOff,
   ChevronDown,
   DatabaseBackup,
+  FilePlus2,
+  Inbox,
   LogOut,
   Network,
   Plus,
+  Search,
   Send,
   Settings,
   UserRound,
@@ -70,45 +74,86 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.location.href = me?.devTestLogin ? "/dev-login" : "/login";
   }
 
+  // 각 기능의 진입점을 합성 루트에서 모아 셸에 주입한다 (셸은 기능을 알지 못한다)
+  const nav: NavSection[] = me?.activeAccountId
+    ? [
+        {
+          id: "approval",
+          label: "전자결재",
+          items: [
+            { href: "/approval/new", label: "새 결재", icon: FilePlus2 },
+            {
+              href: "/approval/pending",
+              label: "결재 대기",
+              icon: Inbox,
+              count: pending?.length,
+              tone: "info",
+            },
+            { href: "/approval/mine", label: "기안함", icon: Send },
+            { href: "/mailbox", label: "문서함", icon: Archive },
+            { href: "/search", label: "검색", icon: Search },
+          ],
+        },
+        { id: "org", label: "조직", items: [{ href: "/org", label: "조직도", icon: Network }] },
+        ...(adminLink
+          ? [
+              {
+                id: "admin",
+                label: "관리",
+                items: [{ href: adminLink, label: "관리 콘솔", icon: Settings }],
+              },
+            ]
+          : []),
+      ]
+    : [];
+
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b bg-background">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4">
-          <Link href="/" className="font-semibold">
-            4mERP
-          </Link>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="max-w-48 gap-1" aria-label="회사 전환">
-                <Building2 className="size-4 shrink-0" aria-hidden />
-                <span className="truncate">{account?.name ?? "회사 선택"}</span>
-                <ChevronDown className="size-4 shrink-0" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuLabel>회사 전환</DropdownMenuLabel>
-              {activeAccounts.map((a) => (
-                <DropdownMenuItem
-                  key={a.accountId}
-                  onSelect={() => switchAccount(a.accountId)}
-                  aria-current={a.accountId === me?.activeAccountId ? "true" : undefined}
-                >
-                  <span className="flex-1">{a.name}</span>
-                  <span className="text-xs text-muted-foreground">{ROLE_LABEL[a.role]}</span>
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/onboarding">
-                  <Plus className="size-4" aria-hidden />새 회사 만들기·초대 합류
-                </Link>
+    <AppFrame
+      brand={
+        <Link href="/" className="font-semibold">
+          4mERP
+        </Link>
+      }
+      nav={nav}
+      pathname={pathname}
+      renderLink={({ children: linkChildren, ...p }) => <Link {...p}>{linkChildren}</Link>}
+      switcher={
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-1"
+              aria-label="회사 전환"
+            >
+              <Building2 className="size-4 shrink-0" aria-hidden />
+              <span className="flex-1 truncate text-left">{account?.name ?? "회사 선택"}</span>
+              <ChevronDown className="size-4 shrink-0" aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuLabel>회사 전환</DropdownMenuLabel>
+            {activeAccounts.map((a) => (
+              <DropdownMenuItem
+                key={a.accountId}
+                onSelect={() => switchAccount(a.accountId)}
+                aria-current={a.accountId === me?.activeAccountId ? "true" : undefined}
+              >
+                <span className="flex-1">{a.name}</span>
+                <span className="text-xs text-muted-foreground">{ROLE_LABEL[a.role]}</span>
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <div className="flex-1" />
-
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/onboarding">
+                <Plus className="size-4" aria-hidden />새 회사 만들기·초대 합류
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
+      topbarEnd={
+        <>
           {me?.activeAccountId && (
             <Button variant="ghost" size="sm" className="relative" asChild>
               <Link
@@ -186,42 +231,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-        {me?.activeAccountId && (
-          <nav
-            aria-label="전자결재"
-            className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 pb-2"
-          >
-            {[
-              { href: "/approval/new", label: "새 결재" },
-              { href: "/approval/pending", label: "결재 대기", count: pending?.length },
-              { href: "/approval/mine", label: "기안함" },
-              { href: "/mailbox", label: "문서함" },
-              { href: "/search", label: "검색" },
-              { href: "/org", label: "조직도" },
-            ].map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                aria-current={pathname.startsWith(n.href) ? "page" : undefined}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm hover:bg-muted",
-                  pathname.startsWith(n.href) && "bg-muted font-medium",
-                )}
-              >
-                {n.label}
-                {n.count ? (
-                  <span className="rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
-                    {n.count}
-                    <span className="sr-only">건</span>
-                  </span>
-                ) : null}
-              </Link>
-            ))}
-          </nav>
-        )}
-      </header>
-      <main className="mx-auto max-w-5xl p-4 sm:p-6">{children}</main>
-    </div>
+        </>
+      }
+    >
+      {children}
+    </AppFrame>
   );
 }
