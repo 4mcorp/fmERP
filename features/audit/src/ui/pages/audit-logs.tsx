@@ -5,9 +5,12 @@ import { formatDateTime } from "@fmerp/shared/lib/format";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
+import { DataTable, type DataTableColumn, type DataTableFilter } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
 import { Modal } from "@fmerp/shared/ui/modal";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -23,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@fmerp/shared/ui/table";
-import { Search as SearchIcon } from "lucide-react";
+import { ScrollText, Search as SearchIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useState } from "react";
 import { AuditTabs } from "../components/audit-tabs";
@@ -150,6 +153,17 @@ function Detail({ row, onClose }: { row: AuditLogRow | null; onClose: () => void
   );
 }
 
+const RESULT_FILTER: DataTableFilter<AuditLogRow> = {
+  id: "result",
+  label: "결과",
+  allLabel: "결과 전체",
+  options: [
+    { value: "success", label: "성공" },
+    { value: "failure", label: "실패" },
+  ],
+  predicate: (r, v) => r.result === v,
+};
+
 /**
  * 감사 로그 조회 (AUD-025): 기간·행위자·행위 유형·대상으로 걸러 본다.
  * 계정 범위 감사 권한자(소유자·관리자·감사인)만 열 수 있고, 조회한 사실도 로그에 남는다.
@@ -163,6 +177,67 @@ function AuditLogView() {
   const { data: members } = useAuditActors();
   const query = useAuditLogs(toApiQuery(applied), true);
   const rows = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const columns: DataTableColumn<AuditLogRow>[] = [
+    {
+      id: "occurredAt",
+      header: "일시",
+      sortValue: (r) => r.occurredAt,
+      cell: (r) => <span className="whitespace-nowrap">{formatDateTime(r.occurredAt)}</span>,
+    },
+    {
+      id: "actor",
+      header: "행위자",
+      sortValue: (r) => r.actorName ?? "시스템",
+      cell: (r) => r.actorName ?? "시스템",
+    },
+    {
+      id: "action",
+      header: "행위",
+      sortValue: (r) => actionLabel(r.action),
+      cell: (r) => actionLabel(r.action),
+    },
+    {
+      id: "target",
+      header: "대상",
+      hideBelow: "sm",
+      className: "max-w-64 truncate",
+      cell: (r) =>
+        r.masked ? (
+          <span className="text-muted-foreground">문서 내용 가림 · {r.targetId}</span>
+        ) : (
+          <span title={r.targetLabel ?? r.targetId ?? undefined}>
+            {r.targetLabel ?? r.targetId ?? "—"}
+          </span>
+        ),
+    },
+    {
+      id: "result",
+      header: "결과",
+      cell: (r) =>
+        r.result === "success" ? (
+          <Badge variant="success">성공</Badge>
+        ) : (
+          <Badge variant="danger">실패</Badge>
+        ),
+    },
+    {
+      id: "detail",
+      header: "상세",
+      cell: (r) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelected(r);
+          }}
+          aria-label={`${formatDateTime(r.occurredAt)} ${actionLabel(r.action)} 상세 보기`}
+        >
+          상세
+        </Button>
+      ),
+    },
+  ];
   const set = (key: FilterKey) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
   const forbidden = query.error instanceof ApiProblem && query.error.status === 403;
 
@@ -187,7 +262,7 @@ function AuditLogView() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">감사 로그</h1>
+      <PageHeader title="감사 로그" description="기간·행위자·행위 유형·대상으로 걸러 봅니다." />
       <AuditTabs />
       <Card>
         <CardContent className="pt-6">
@@ -298,76 +373,37 @@ function AuditLogView() {
           {errorMessage(query.error)}
         </p>
       )}
-      {query.isPending ? (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          불러오는 중…
-        </p>
-      ) : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">조건에 맞는 기록이 없습니다.</p>
-      ) : (
-        <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead scope="col">일시</TableHead>
-                <TableHead scope="col">행위자</TableHead>
-                <TableHead scope="col">행위</TableHead>
-                <TableHead scope="col">대상</TableHead>
-                <TableHead scope="col">결과</TableHead>
-                <TableHead scope="col">
-                  <span className="sr-only">상세</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="whitespace-nowrap">
-                    {formatDateTime(r.occurredAt)}
-                  </TableCell>
-                  <TableCell>{r.actorName ?? "시스템"}</TableCell>
-                  <TableCell>{actionLabel(r.action)}</TableCell>
-                  <TableCell
-                    className="max-w-64 truncate"
-                    title={r.targetLabel ?? r.targetId ?? undefined}
-                  >
-                    {r.masked ? (
-                      <span className="text-muted-foreground">문서 내용 가림 · {r.targetId}</span>
-                    ) : (
-                      (r.targetLabel ?? r.targetId ?? "—")
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {r.result === "success" ? (
-                      <Badge variant="outline">성공</Badge>
-                    ) : (
-                      <Badge variant="destructive">실패</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelected(r)}
-                      aria-label={`${formatDateTime(r.occurredAt)} ${actionLabel(r.action)} 상세 보기`}
-                    >
-                      상세
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {query.hasNextPage && (
-            <Button
-              variant="outline"
-              onClick={() => query.fetchNextPage()}
-              disabled={query.isFetchingNextPage}
-            >
-              {query.isFetchingNextPage ? "불러오는 중…" : "더 보기"}
-            </Button>
-          )}
-        </>
+      <DataTable
+        rows={rows}
+        rowKey={(r) => r.id}
+        caption="감사 로그 목록"
+        isLoading={query.isPending}
+        columns={columns}
+        search={{
+          placeholder: "불러온 기록에서 검색…",
+          text: (r) =>
+            `${r.actorName ?? "시스템"} ${actionLabel(r.action)} ${r.masked ? "" : (r.targetLabel ?? "")} ${r.targetId ?? ""}`,
+        }}
+        filters={[RESULT_FILTER]}
+        onRowClick={setSelected}
+        empty={
+          <EmptyState
+            icon={ScrollText}
+            title="조건에 맞는 기록이 없습니다"
+            description="기간이나 조건을 바꿔 다시 조회해 보세요."
+          />
+        }
+      />
+      {query.hasNextPage && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => query.fetchNextPage()}
+            disabled={query.isFetchingNextPage}
+          >
+            {query.isFetchingNextPage ? "불러오는 중…" : "더 보기"}
+          </Button>
+        </div>
       )}
       <Detail row={selected} onClose={() => setSelected(null)} />
     </div>
