@@ -113,7 +113,7 @@ test.describe("완료 처리·문서함 (M5)", () => {
 
     await loginAs(page, "박사원");
     await page
-      .getByRole("navigation", { name: "전자결재" })
+      .getByRole("navigation", { name: "주 메뉴" })
       .getByRole("link", { name: "문서함" })
       .click();
     await expect(page).toHaveURL(/\/mailbox\/progress/);

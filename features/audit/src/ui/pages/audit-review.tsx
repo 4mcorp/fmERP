@@ -6,6 +6,7 @@ import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Label } from "@fmerp/shared/ui/label";
 import { Modal } from "@fmerp/shared/ui/modal";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Table,
   TableBody,
@@ -158,12 +159,11 @@ export default function AuditReviewPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">감사 로그</h1>
+      <PageHeader
+        title="감사 로그"
+        description='매달 지난달의 접속 기록을 확인하고 점검 결과를 남깁니다. 점검을 거르면 이 화면과 메뉴에 "점검 필요"가 표시됩니다.'
+      />
       <AuditTabs />
-      <p className="text-sm text-muted-foreground">
-        매달 지난달의 접속 기록을 확인하고 점검 결과를 남깁니다. 점검을 거르면 이 화면과 메뉴에
-        "점검 필요"가 표시됩니다.
-      </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {errorMessage(error)}
@@ -196,10 +196,10 @@ export default function AuditReviewPage() {
                     <Badge
                       variant={
                         m.state === "pending"
-                          ? "destructive"
+                          ? "danger"
                           : m.state === "abnormal"
-                            ? "secondary"
-                            : "outline"
+                            ? "warning"
+                            : "success"
                       }
                     >
                       {STATE_LABEL[m.state]}
