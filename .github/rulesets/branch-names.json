@@ -2,7 +2,12 @@
   "name": "branch-names",
   "target": "branch",
   "enforcement": "active",
-  "conditions": { "ref_name": { "include": ["~ALL"], "exclude": ["~DEFAULT_BRANCH"] } },
+  "conditions": {
+    "ref_name": {
+      "include": ["~ALL"],
+      "exclude": ["~DEFAULT_BRANCH", "refs/heads/dev"]
+    }
+  },
   "bypass_actors": [],
   "rules": [
     {
