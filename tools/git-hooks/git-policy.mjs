@@ -1,4 +1,4 @@
-// pre-push 정책: main 직접 push·삭제 차단, 작업 브랜치 이름 검사 (docs/rules/git.md)
+// pre-push 정책: main·dev 직접 push·삭제 차단, 작업 브랜치 이름 검사 (docs/rules/git.md)
 // lefthook가 git의 pre-push stdin("<local ref> <local sha> <remote ref> <remote sha>")을 넘긴다.
 import { readFileSync } from "node:fs";
 
@@ -12,8 +12,8 @@ for (const line of lines) {
   if (!remoteRef?.startsWith("refs/heads/")) continue;
   const name = remoteRef.slice("refs/heads/".length);
 
-  if (name === "main") {
-    errors.push("main에는 직접 push할 수 없다. 작업 브랜치로 PR을 만든다.");
+  if (name === "main" || name === "dev") {
+    errors.push(`${name}에는 직접 push할 수 없다. 작업 브랜치를 dev에서 분기해 dev로 PR을 만든다.`);
     continue;
   }
   if (ZERO.test(localSha)) continue; // 브랜치 삭제는 허용

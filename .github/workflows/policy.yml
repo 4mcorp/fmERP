@@ -18,6 +18,7 @@ jobs:
           fetch-depth: 0
 
       - name: 브랜치 이름·PR 제목
+        if: github.base_ref != 'main'
         env:
           HEAD_REF: ${{ github.head_ref }}
           TITLE: ${{ github.event.pull_request.title }}
@@ -32,7 +33,21 @@ jobs:
           fi
           exit $fail
 
-      - name: 최신 main 기준·merge 커밋·충돌
+      - name: 병합 대상 브랜치 규칙 (dev 중심)
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -u
+          if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" != "dev" ]; then
+            echo "::error::main으로는 dev에서만 병합할 수 있다. 작업 브랜치는 dev로 PR을 만든다 (base=$BASE_REF, head=$HEAD_REF)"; exit 1
+          fi
+          if [ "$BASE_REF" != "main" ] && [ "$BASE_REF" != "dev" ]; then
+            echo "::error::PR 대상은 dev 또는 main(dev에서만)이어야 한다: $BASE_REF"; exit 1
+          fi
+
+      - name: 최신 base 기준·merge 커밋·충돌
+        if: github.base_ref != 'main'
         env:
           BASE: origin/${{ github.base_ref }}
         run: |
@@ -43,9 +58,9 @@ jobs:
           fi
           merges=$(git rev-list --merges "$BASE..${{ github.event.pull_request.head.sha }}" | wc -l)
           if [ "$merges" -gt 0 ]; then
-            echo "::error::PR에 merge 커밋 ${merges}개가 있다. main을 merge하지 말고 rebase 한다."; fail=1
+            echo "::error::PR에 merge 커밋 ${merges}개가 있다. base를 merge하지 말고 rebase 한다."; fail=1
           fi
           if ! git merge-tree --write-tree "$BASE" "${{ github.event.pull_request.head.sha }}" > /tmp/mt.out 2>&1; then
-            echo "::error::main과 충돌한다. 충돌 파일:"; grep -E '^CONFLICT' /tmp/mt.out || cat /tmp/mt.out; fail=1
+            echo "::error::base와 충돌한다. 충돌 파일:"; grep -E '^CONFLICT' /tmp/mt.out || cat /tmp/mt.out; fail=1
           fi
           exit $fail
