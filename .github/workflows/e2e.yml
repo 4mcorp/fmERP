@@ -1,0 +1,50 @@
+name: E2E
+
+# CI가 main PR에서 호출하고 check가 결과를 검증한다. 수동 실행도 허용한다.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # E2E는 테스트 DB(55433)를 초기화·시드해서 쓴다 (apps/web/e2e/test-env.ts)
+      - name: 테스트 서비스 기동 (PostgreSQL 18 테스트 DB, SeaweedFS)
+        run: docker compose -f docker-compose.dev.yml up -d --wait postgres-test s3
+      - name: 브라우저 설치 (Playwright Chromium)
+        run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
+
+      - name: E2E 테스트
+        run: pnpm exec tsx tools/src/cli/run-gate.ts e2e -- pnpm test:e2e
+
+      - name: 품질 리포트
+        if: always()
+        run: pnpm quality:report
+      - name: 품질 리포트 보관
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-report-e2e
+          path: artifacts
+          retention-days: 30
+      - name: 실패 시 Playwright 리포트 보관
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: apps/web/test-results
+          retention-days: 7
