@@ -97,7 +97,7 @@ beforeAll(async () => {
       recipients: [keys.recipient],
       pgDump: {
         command: `docker exec -i -e PGPASSWORD=fmerp_backup_dev ${CONTAINER} pg_dump`,
-        url: "postgres://fmerp_backup:fmerp_backup_dev@localhost:5432/fmerp",
+        url: `postgres://fmerp_backup:fmerp_backup_dev@localhost:5432/${new URL(need("BACKUP_DATABASE_URL")).pathname.slice(1)}`,
       },
     },
     { note: MARK },

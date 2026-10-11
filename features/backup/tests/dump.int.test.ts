@@ -23,7 +23,8 @@ const MARK = `m7-dump-${Date.now().toString(36)}`;
 const dockerTool = (tool: string, password: string) =>
   `docker exec -i -e PGPASSWORD=${password} ${CONTAINER} ${tool}`;
 // 컨테이너 안에서 보이는 주소 (호스트의 55433이 아니라 5432)
-const dumpConfig = (db = "fmerp"): PgToolConfig => ({
+const TEST_DB_NAME = new URL(need("BACKUP_DATABASE_URL")).pathname.slice(1);
+const dumpConfig = (db = TEST_DB_NAME): PgToolConfig => ({
   command: dockerTool("pg_dump", "fmerp_backup_dev"),
   url: `postgres://fmerp_backup:fmerp_backup_dev@localhost:5432/${db}`,
 });
