@@ -4,6 +4,7 @@ import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { ROLE_LABEL, type Role } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -34,22 +35,25 @@ export default function InvitePage() {
   }
 
   return (
-    <Card className="mx-auto max-w-md">
-      <CardHeader>
-        <CardTitle>회사 초대</CardTitle>
-        <CardDescription>
-          {isPending && "초대를 확인하고 있습니다…"}
-          {error && errorMessage(error)}
-          {data && `${data.accountName}에 ${ROLE_LABEL[data.role]}(으)로 초대받았습니다.`}
-        </CardDescription>
-      </CardHeader>
-      {data && (
-        <CardContent>
-          <Button onClick={accept} disabled={accepting} className="w-full">
-            {accepting ? "합류하는 중…" : "초대 수락"}
-          </Button>
-        </CardContent>
-      )}
-    </Card>
+    <div className="mx-auto max-w-md">
+      <PageHeader title="회사 초대" />
+      <Card>
+        <CardHeader>
+          <CardTitle>초대 확인</CardTitle>
+          <CardDescription>
+            {isPending && "초대를 확인하고 있습니다…"}
+            {error && errorMessage(error)}
+            {data && `${data.accountName}에 ${ROLE_LABEL[data.role]}(으)로 초대받았습니다.`}
+          </CardDescription>
+        </CardHeader>
+        {data && (
+          <CardContent>
+            <Button onClick={accept} disabled={accepting} className="w-full">
+              {accepting ? "합류하는 중…" : "초대 수락"}
+            </Button>
+          </CardContent>
+        )}
+      </Card>
+    </div>
   );
 }

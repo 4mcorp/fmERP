@@ -2,11 +2,13 @@
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { type DevTestUser, ROLE_LABEL } from "@fmerp/shared/lib/types";
+import { Alert, AlertDescription } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { AuthLayout } from "../components/auth-layout";
 
 const ACCOUNT_LABEL: Record<string, string> = { main: "포엠테스트", other: "다른회사" };
 
@@ -33,23 +35,22 @@ export default function DevLoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-4 p-4 sm:p-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">4mERP 테스트 로그인</h1>
-        <p className="text-sm text-muted-foreground">
-          개발·테스트 환경 전용입니다. 소셜 로그인(Google·Naver)은 마지막 단계(M9)에서 연결합니다.
-        </p>
-      </header>
-
+    <AuthLayout
+      wide
+      title="4mERP 테스트 로그인"
+      description="개발·테스트 환경 전용입니다. 소셜 로그인(Google·Naver)은 마지막 단계(M9)에서 연결합니다."
+    >
       {isError && (
-        <p role="alert" className="text-sm text-destructive">
-          테스트 로그인이 꺼져 있습니다. 개발 환경의 DEV_TEST_LOGIN 설정을 확인하세요.
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>
+            테스트 로그인이 꺼져 있습니다. 개발 환경의 DEV_TEST_LOGIN 설정을 확인하세요.
+          </AlertDescription>
+        </Alert>
       )}
       {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <ul className="grid gap-3">
@@ -81,6 +82,6 @@ export default function DevLoginPage() {
           </li>
         ))}
       </ul>
-    </main>
+    </AuthLayout>
   );
 }
