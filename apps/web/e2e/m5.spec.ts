@@ -112,10 +112,7 @@ test.describe("완료 처리·문서함 (M5)", () => {
     const id = await completedDoc(page, title);
 
     await loginAs(page, "박사원");
-    await page
-      .getByRole("navigation", { name: "전자결재" })
-      .getByRole("link", { name: "문서함" })
-      .click();
+    await page.getByRole("link", { name: "문서함", exact: true }).first().click();
     await expect(page).toHaveURL(/\/mailbox\/progress/);
     await page.getByRole("link", { name: "완료함" }).click();
     await expect(page).toHaveURL(/\/mailbox\/completed/);
