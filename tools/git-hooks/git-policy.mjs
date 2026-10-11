@@ -8,7 +8,7 @@ const errors = [];
 
 const lines = readFileSync(0, "utf8").split("\n").filter(Boolean);
 for (const line of lines) {
-  const [localRef, localSha, remoteRef, remoteSha] = line.split(" ");
+  const [, localSha, remoteRef] = line.split(" ");
   if (!remoteRef?.startsWith("refs/heads/")) continue;
   const name = remoteRef.slice("refs/heads/".length);
 
