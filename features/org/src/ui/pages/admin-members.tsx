@@ -13,6 +13,7 @@ import {
   formatDateTime,
   GRANT_ROLE_LABEL,
   type Invitation,
+  type Member,
   ROLE_LABEL,
   STATUS_LABEL,
 } from "@fmerp/shared/lib/types";
@@ -20,8 +21,11 @@ import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -29,16 +33,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@fmerp/shared/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@fmerp/shared/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Users } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { MemberDetail } from "../components/member-detail";
@@ -53,77 +50,124 @@ const INVITATION_STATUS: Record<Invitation["status"], string> = {
   revoked: "취소",
 };
 
+const INVITATION_TONE = {
+  pending: "info",
+  used: "success",
+  expired: "outline",
+  revoked: "outline",
+} as const;
+
 /** 구성원 목록과 상세 편집: 상태·사번, 소속·발령, 역할 (AUTH-015, ORG-032~035, PERM-001) */
 function MembersTab({ caps }: { caps: Capabilities }) {
   const { data: members } = useMembers();
   const [selected, setSelected] = useState<string | null>(null);
   const current = members?.find((m) => m.userId === selected);
 
+  const columns: DataTableColumn<Member>[] = [
+    {
+      id: "name",
+      header: "이름",
+      sortValue: (m) => m.name,
+      cell: (m) => (
+        <>
+          <div className="font-medium">{m.name}</div>
+          <div className="text-xs text-muted-foreground">{m.email}</div>
+        </>
+      ),
+    },
+    {
+      id: "dept",
+      header: "소속",
+      hideBelow: "sm",
+      sortValue: (m) => m.assignments.find((a) => a.isPrimary)?.departmentName ?? "",
+      cell: (m) => {
+        const primary = m.assignments.find((a) => a.isPrimary);
+        const extra = m.assignments.length - (primary ? 1 : 0);
+        return primary ? (
+          <>
+            {primary.departmentName}
+            {primary.positionName ? ` · ${primary.positionName}` : ""}
+            {extra > 0 && <Badge variant="outline">겸직 {extra}</Badge>}
+          </>
+        ) : (
+          <span className="text-muted-foreground">소속 없음</span>
+        );
+      },
+    },
+    {
+      id: "role",
+      header: "역할",
+      hideBelow: "md",
+      sortValue: (m) => ROLE_LABEL[m.role],
+      cell: (m) => (
+        <span className="flex flex-wrap items-center gap-1">
+          <span>{ROLE_LABEL[m.role]}</span>
+          {m.grants.map((g) => (
+            <Badge key={g.id} variant="accent">
+              {GRANT_ROLE_LABEL[g.role]}
+            </Badge>
+          ))}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      header: "상태",
+      sortValue: (m) => STATUS_LABEL[m.status],
+      cell: (m) => (
+        <Badge variant={m.status === "active" ? "success" : "outline"}>
+          {STATUS_LABEL[m.status]}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      header: "작업",
+      align: "right",
+      cell: (m) => (
+        <Button
+          size="sm"
+          variant="outline"
+          aria-label={`${m.name} 관리`}
+          onClick={() => setSelected(m.userId === selected ? null : m.userId)}
+        >
+          관리
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="overflow-x-auto pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>이름</TableHead>
-                <TableHead>소속</TableHead>
-                <TableHead>역할</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead className="text-right">작업</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members?.map((m) => {
-                const primary = m.assignments.find((a) => a.isPrimary);
-                const extra = m.assignments.length - (primary ? 1 : 0);
-                return (
-                  <TableRow key={m.userId}>
-                    <TableCell>
-                      <div>{m.name}</div>
-                      <div className="text-xs text-muted-foreground">{m.email}</div>
-                    </TableCell>
-                    <TableCell>
-                      {primary ? (
-                        <>
-                          {primary.departmentName}
-                          {primary.positionName ? ` · ${primary.positionName}` : ""}
-                          {extra > 0 && <Badge variant="outline">겸직 {extra}</Badge>}
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground">소속 없음</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="space-x-1">
-                      <span>{ROLE_LABEL[m.role]}</span>
-                      {m.grants.map((g) => (
-                        <Badge key={g.id} variant="secondary">
-                          {GRANT_ROLE_LABEL[g.role]}
-                        </Badge>
-                      ))}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={m.status === "active" ? "secondary" : "outline"}>
-                        {STATUS_LABEL[m.status]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        aria-label={`${m.name} 관리`}
-                        onClick={() => setSelected(m.userId === selected ? null : m.userId)}
-                      >
-                        관리
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <DataTable
+        rows={members ?? []}
+        isLoading={!members}
+        columns={columns}
+        rowKey={(m) => m.userId}
+        caption="구성원 목록"
+        search={{
+          placeholder: "이름·이메일·부서 검색",
+          text: (m) =>
+            `${m.name} ${m.email} ${m.assignments.map((a) => a.departmentName).join(" ")}`,
+        }}
+        filters={[
+          {
+            id: "status",
+            label: "상태",
+            allLabel: "전체 상태",
+            options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+            predicate: (m, v) => m.status === v,
+          },
+          {
+            id: "role",
+            label: "역할",
+            allLabel: "전체 역할",
+            options: Object.entries(ROLE_LABEL).map(([value, label]) => ({ value, label })),
+            predicate: (m, v) => m.role === v,
+          },
+        ]}
+        empty={<EmptyState icon={Users} title="구성원이 없습니다" />}
+      />
       {current && <MemberDetail member={current} caps={caps} onClose={() => setSelected(null)} />}
     </div>
   );
@@ -307,44 +351,58 @@ function InvitationsTab({ caps }: { caps: Capabilities }) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="overflow-x-auto pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>역할</TableHead>
-                <TableHead>이메일</TableHead>
-                <TableHead>지정 소속</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>만료</TableHead>
-                <TableHead className="text-right">작업</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invitations?.map((inv) => (
-                <TableRow key={inv.id}>
-                  <TableCell>{ROLE_LABEL[inv.role]}</TableCell>
-                  <TableCell>{inv.email ?? "-"}</TableCell>
-                  <TableCell>
-                    {departments?.find((d) => d.id === inv.preset.departmentId)?.name ?? "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{INVITATION_STATUS[inv.status]}</Badge>
-                  </TableCell>
-                  <TableCell>{formatDateTime(inv.expiresAt)}</TableCell>
-                  <TableCell className="text-right">
-                    {inv.status === "pending" && (
-                      <Button size="sm" variant="outline" onClick={() => revoke(inv.id)}>
-                        취소
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <DataTable
+        rows={invitations ?? []}
+        isLoading={!invitations}
+        rowKey={(inv) => inv.id}
+        caption="초대 목록"
+        columns={[
+          { id: "role", header: "역할", cell: (inv) => ROLE_LABEL[inv.role] },
+          { id: "email", header: "이메일", hideBelow: "sm", cell: (inv) => inv.email ?? "-" },
+          {
+            id: "dept",
+            header: "지정 소속",
+            hideBelow: "md",
+            cell: (inv) => departments?.find((d) => d.id === inv.preset.departmentId)?.name ?? "-",
+          },
+          {
+            id: "status",
+            header: "상태",
+            sortValue: (inv) => INVITATION_STATUS[inv.status],
+            cell: (inv) => (
+              <Badge variant={INVITATION_TONE[inv.status]}>{INVITATION_STATUS[inv.status]}</Badge>
+            ),
+          },
+          {
+            id: "expires",
+            header: "만료",
+            hideBelow: "sm",
+            sortValue: (inv) => inv.expiresAt,
+            cell: (inv) => formatDateTime(inv.expiresAt),
+          },
+          {
+            id: "actions",
+            header: "작업",
+            align: "right",
+            cell: (inv) =>
+              inv.status === "pending" && (
+                <Button size="sm" variant="outline" onClick={() => revoke(inv.id)}>
+                  취소
+                </Button>
+              ),
+          },
+        ]}
+        filters={[
+          {
+            id: "status",
+            label: "초대 상태",
+            allLabel: "전체 상태",
+            options: Object.entries(INVITATION_STATUS).map(([value, label]) => ({ value, label })),
+            predicate: (inv, v) => inv.status === v,
+          },
+        ]}
+        empty={<EmptyState title="초대 내역이 없습니다" />}
+      />
     </div>
   );
 }
@@ -360,9 +418,9 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">구성원 관리</h1>
-      <Tabs defaultValue={canMembers ? "members" : "invitations"}>
+    <div>
+      <PageHeader title="구성원 관리" breadcrumbs={[{ label: "관리" }, { label: "구성원 관리" }]} />
+      <Tabs defaultValue={canMembers ? "members" : "invitations"} className="gap-4">
         <TabsList>
           {canMembers && <TabsTrigger value="members">구성원</TabsTrigger>}
           {canInvite && <TabsTrigger value="invitations">초대</TabsTrigger>}

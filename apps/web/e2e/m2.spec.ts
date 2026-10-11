@@ -63,11 +63,11 @@ test.describe("조직 구성 흐름 (M2)", { tag: "@stateful" }, () => {
     await openAdmin(page, "사업자");
     await page.getByRole("button", { name: "사업자 등록" }).click();
     await page.getByLabel("상호").fill("검증 사업자");
-    await page.getByLabel(/^사업자등록번호/).fill("123-45-67890");
+    await page.locator("#biz-bizRegNo").fill("123-45-67890");
     await page.getByLabel(/^사업자 코드/).fill("VB");
     await page.getByRole("button", { name: "등록", exact: true }).click();
     await expect(page.getByText(/사업자등록번호가 올바르지 않습니다/)).toBeVisible();
-    await page.getByLabel(/^사업자등록번호/).fill(makeBusinessNumber("300123456"));
+    await page.locator("#biz-bizRegNo").fill(makeBusinessNumber("300123456"));
     await page.getByRole("button", { name: "등록", exact: true }).click();
     await expect(page.getByText("사업자를 등록했습니다")).toBeVisible();
 
@@ -122,7 +122,8 @@ test.describe("조직 구성 흐름 (M2)", { tag: "@stateful" }, () => {
     await expect(page.getByRole("row", { name: /발령 .*프로젝트 파견/ })).toBeVisible();
 
     // 역할 부여: 감사인(계정 전체)
-    await chooseOption(page, "역할", "감사인");
+    await page.getByRole("combobox", { name: "역할" }).last().click();
+    await page.getByRole("option", { name: "감사인" }).first().click();
     await page.getByRole("button", { name: "부여" }).click();
     await expect(page.getByText("역할을 부여했습니다")).toBeVisible();
     await expect(page.getByRole("listitem").filter({ hasText: "감사인" })).toBeVisible();

@@ -9,6 +9,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -405,7 +406,11 @@ export default function AdminOrgPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">조직 관리</h1>
+      <PageHeader
+        title="조직 관리"
+        breadcrumbs={[{ label: "관리" }, { label: "조직 관리" }]}
+        className="pb-0"
+      />
 
       {chart.businesses.length === 0 ? (
         <p className="text-muted-foreground">먼저 사업자를 등록하세요.</p>
