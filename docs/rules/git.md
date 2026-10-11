@@ -15,5 +15,10 @@
 - 대화형 명령(`git add -p`, `rebase -i`)은 이 환경에서 동작하지 않으므로 쓰지 않는다.
 - 커밋 전에 스테이징된 파일에 비밀정보(`.env`, 키, 덤프)가 없는지 확인한다.
 
-## 3. 브랜치
-현재(설계 단계)는 `main`에 직접 커밋한다. 구현을 시작하면 브랜치·PR 전략을 정해 이 섹션을 갱신한다.
+## 3. 브랜치·PR·병합 (정적 강제)
+규칙의 정의와 적용 방법은 `.github/rulesets/README.md`, 서버 강제는 `.github/rulesets/*.json`(ruleset), 임시·보조 강제는 lefthook `git-policy`와 CI `policy` 잡이다.
+- main에는 직접 push·force push·삭제를 하지 않는다. 모든 변경은 PR로 들어간다.
+- 작업 브랜치는 항상 최신 `origin/main`에서 분기하고, 이름은 `wt|feat|fix|chore|docs|refactor|test|ci|perf|build/<소문자-숫자-._->`로 한다. 브랜치끼리 쌓지 않는다(선행 작업은 PR을 main에 병합한 뒤 후속 카드를 시작한다).
+- PR 제목은 Conventional Commits 형식이다. 병합은 squash만 허용하고, 병합 후 브랜치는 자동 삭제된다.
+- 병합 조건: CI `check`·`policy` 통과, 최신 main 기준(up-to-date), 코드오너 승인 1건, 리뷰 대화 모두 해결.
+- 충돌 시: 해당 브랜치에서 `git fetch origin && git rebase origin/main` 후 `git push --force-with-lease`. 다른 브랜치 force push는 하지 않는다.

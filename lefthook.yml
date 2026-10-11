@@ -14,6 +14,9 @@ commit-msg:
 # 푸시 전 구조 검사: 새 위반(기능 경계·순환·미사용 코드·억제 주석)과 규칙 약화를 막는다 (docs/plan/2026-10-06-feature-architecture-refactor.md)
 pre-push:
   commands:
+    git-policy:
+      run: node tools/git-hooks/git-policy.mjs
+      use_stdin: true
     arch-check:
       run: node_modules/.bin/tsx tools/src/cli/arch-check.ts
     arch-guard:

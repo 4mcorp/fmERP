@@ -1,0 +1,51 @@
+name: Policy
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: policy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: 브랜치 이름·PR 제목
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -u
+          fail=0
+          if ! printf '%s' "$HEAD_REF" | grep -Eq '^(wt|feat|fix|chore|docs|refactor|test|ci|perf|build)/[a-z0-9._-]+$'; then
+            echo "::error::브랜치 이름 '$HEAD_REF'이(가) 규칙에 맞지 않는다 (docs/rules/git.md)"; fail=1
+          fi
+          if ! printf '%s' "$TITLE" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z]+\))?!?: .+'; then
+            echo "::error::PR 제목은 Conventional Commits 형식이어야 한다: '$TITLE'"; fail=1
+          fi
+          exit $fail
+
+      - name: 최신 main 기준·merge 커밋·충돌
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          set -u
+          fail=0
+          if ! git merge-base --is-ancestor "$BASE" "${{ github.event.pull_request.head.sha }}"; then
+            echo "::error::브랜치가 $BASE 보다 뒤처져 있다. 'git fetch origin && git rebase $BASE' 후 'git push --force-with-lease'"; fail=1
+          fi
+          merges=$(git rev-list --merges "$BASE..${{ github.event.pull_request.head.sha }}" | wc -l)
+          if [ "$merges" -gt 0 ]; then
+            echo "::error::PR에 merge 커밋 ${merges}개가 있다. main을 merge하지 말고 rebase 한다."; fail=1
+          fi
+          if ! git merge-tree --write-tree "$BASE" "${{ github.event.pull_request.head.sha }}" > /tmp/mt.out 2>&1; then
+            echo "::error::main과 충돌한다. 충돌 파일:"; grep -E '^CONFLICT' /tmp/mt.out || cat /tmp/mt.out; fail=1
+          fi
+          exit $fail
