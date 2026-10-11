@@ -1,0 +1,23 @@
+{
+  "name": "branch-names",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~ALL"],
+      "exclude": ["~DEFAULT_BRANCH", "refs/heads/dev"]
+    }
+  },
+  "bypass_actors": [],
+  "rules": [
+    {
+      "type": "branch_name_pattern",
+      "parameters": {
+        "name": "work branch names",
+        "negate": false,
+        "operator": "regex",
+        "pattern": "^(wt|feat|fix|chore|docs|refactor|test|ci|perf|build)/[a-z0-9._-]+$"
+      }
+    }
+  ]
+}

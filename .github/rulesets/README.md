@@ -37,4 +37,4 @@ gh api -X POST repos/4mcorp/fmERP/rulesets --input .github/rulesets/dev.json
 
 ## 적용 현황·제약
 - 적용됨: `main-protection`, `dev-protection` (public 전환 후 적용).
-- 브랜치 이름(`branch_name_pattern`)·커밋 메시지(`commit_message_pattern`) ruleset 규칙은 개인 소유 저장소에서 422로 거부된다(조직/Enterprise 전용). 대신 로컬 `git-policy` 훅(브랜치 이름), CI `policy` 잡(PR 제목), commitlint가 강제한다. 조직으로 이전하면 ruleset으로 올릴 수 있다.
+- 조직(4mcorp) 이전 후 `branch-names`, `dev-protection`의 커밋 메시지 규칙까지 서버 ruleset으로 적용됨. 적용: `gh api -X POST repos/4mcorp/fmERP/rulesets --input .github/rulesets/branch-names.json`
