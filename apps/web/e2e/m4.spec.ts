@@ -58,10 +58,7 @@ async function submitDoc(page: Page, title: string, approverEmail: string) {
 
 test("임시저장한 입력은 새로고침해도 이 브라우저에서 복구할 수 있다", async ({ page }) => {
   await loginAs(page, "박사원");
-  await page
-    .getByRole("navigation", { name: "전자결재" })
-    .getByRole("link", { name: "새 결재" })
-    .click();
+  await page.getByRole("link", { name: "새 결재" }).first().click();
   await page
     .getByRole("button", { name: /^일반 기안v1$/ })
     .first()
@@ -102,10 +99,7 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
   }) => {
     // 기안: 일반 기안은 기본 결재선이 기안자의 부서장(최대리)이다
     await loginAs(page, "박사원");
-    await page
-      .getByRole("navigation", { name: "전자결재" })
-      .getByRole("link", { name: "새 결재" })
-      .click();
+    await page.getByRole("link", { name: "새 결재" }).first().click();
     await page
       .getByRole("button", { name: /^일반 기안v1$/ })
       .first()
@@ -144,7 +138,11 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     const pinSet = await page.request.put("/api/me/pin", { data: { pin: "135790" } });
     const pin = pinSet.ok() ? "135790" : "482915";
     await page.setViewportSize({ width: 360, height: 780 });
-    await page.getByRole("link", { name: /결재 대기/ }).click();
+    // 결재 대기 링크는 카드와 "모두 보기" 버튼 두 개가 같은 href로 있어 첫 번째를 쓴다
+    await page
+      .getByRole("link", { name: /결재 대기/ })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/approval\/pending/);
     await page.getByRole("link", { name: /출장비 정산 안내/ }).click();
     await expect(page.getByText("10월 출장비를 정산합니다.")).toBeVisible();
