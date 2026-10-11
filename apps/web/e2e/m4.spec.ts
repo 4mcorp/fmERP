@@ -59,7 +59,7 @@ async function submitDoc(page: Page, title: string, approverEmail: string) {
 test("임시저장한 입력은 새로고침해도 이 브라우저에서 복구할 수 있다", async ({ page }) => {
   await loginAs(page, "박사원");
   await page
-    .getByRole("navigation", { name: "전자결재" })
+    .getByRole("navigation", { name: "주 메뉴" })
     .getByRole("link", { name: "새 결재" })
     .click();
   await page
@@ -103,7 +103,7 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     // 기안: 일반 기안은 기본 결재선이 기안자의 부서장(최대리)이다
     await loginAs(page, "박사원");
     await page
-      .getByRole("navigation", { name: "전자결재" })
+      .getByRole("navigation", { name: "주 메뉴" })
       .getByRole("link", { name: "새 결재" })
       .click();
     await page
