@@ -306,7 +306,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     PR[Pull Request] --> CI[GitHub Actions<br/>lint · 타입 검사 · 테스트<br/>테넌트 격리 테스트]
-    CI --> M[main 병합]
+    CI --> M[dev 자동병합 → 검증 후 main 병합]
     M --> D[서버에서 deploy.sh 실행<br/>Tailscale SSH]
     D --> S1[git pull → 이미지 빌드]
     S1 --> S2[수동 덤프 자동 실행]
