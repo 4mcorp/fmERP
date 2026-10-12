@@ -17,6 +17,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -283,16 +284,21 @@ export default function DraftEditorPage() {
   const hasAttachmentField = schema.fields.some((f) => f.type === "attachment");
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold">{docForm.name} 작성</h1>
-        <Badge variant="outline">임시저장</Badge>
-        <span role="status" aria-live="polite" className="text-sm text-muted-foreground">
-          {saveState.kind === "saving" && "저장 중…"}
-          {saveState.kind === "saved" && `저장됨 ${clock.format(saveState.at)}`}
-          {saveState.kind === "failed" && "저장하지 못했습니다. 입력은 이 브라우저에 보관됩니다."}
-        </span>
-      </div>
+    <div className="w-full min-w-0 space-y-4">
+      <PageHeader
+        title={`${docForm.name} 작성`}
+        actions={
+          <>
+            <Badge variant="outline">임시저장</Badge>
+            <span role="status" aria-live="polite" className="text-sm text-muted-foreground">
+              {saveState.kind === "saving" && "저장 중…"}
+              {saveState.kind === "saved" && `저장됨 ${clock.format(saveState.at)}`}
+              {saveState.kind === "failed" &&
+                "저장하지 못했습니다. 입력은 이 브라우저에 보관됩니다."}
+            </span>
+          </>
+        }
+      />
 
       {restore && (
         <Alert>

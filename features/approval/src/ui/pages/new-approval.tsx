@@ -16,6 +16,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -183,8 +184,8 @@ export default function NewApprovalPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">새 결재</h1>
+    <div className="w-full min-w-0 space-y-6">
+      <PageHeader title="새 결재" />
 
       <Card>
         <CardHeader>
