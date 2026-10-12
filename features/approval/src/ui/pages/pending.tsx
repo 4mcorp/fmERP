@@ -4,6 +4,8 @@ import { usePending } from "@fmerp/shared/lib/queries";
 import { formatDateTime, SECURITY_LABEL, STEP_TYPE_LABEL } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import Link from "next/link";
 
 /** 결재 대기: 지금 내가 처리할 차례인 문서 (APV-080 일부). 모바일에서도 목록에서 바로 문서로 들어간다 */
@@ -12,9 +14,9 @@ export default function PendingPage() {
   if (!data) return null;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">결재 대기</h1>
+      <PageHeader title="결재 대기" />
       {data.length === 0 ? (
-        <p className="text-muted-foreground">처리할 결재가 없습니다.</p>
+        <EmptyState title="처리할 결재가 없습니다." />
       ) : (
         <ul className="space-y-2">
           {data.map((d) => (
