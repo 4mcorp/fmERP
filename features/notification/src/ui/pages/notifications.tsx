@@ -4,6 +4,8 @@ import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { formatDateTime } from "@fmerp/shared/lib/format";
 import { cn } from "@fmerp/shared/lib/utils";
 import { Button } from "@fmerp/shared/ui/button";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
 import Link from "next/link";
@@ -66,21 +68,25 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="flex-1 text-2xl font-semibold">알림</h1>
-        <Button
-          variant={unreadOnly ? "default" : "outline"}
-          size="sm"
-          aria-pressed={unreadOnly}
-          onClick={() => setUnreadOnly((v) => !v)}
-        >
-          안 읽은 알림만
-        </Button>
-        <Button variant="outline" size="sm" onClick={readAll}>
-          <CheckCheck aria-hidden />
-          모두 읽음
-        </Button>
-      </div>
+      <PageHeader
+        title="알림"
+        actions={
+          <>
+            <Button
+              variant={unreadOnly ? "default" : "outline"}
+              size="sm"
+              aria-pressed={unreadOnly}
+              onClick={() => setUnreadOnly((v) => !v)}
+            >
+              안 읽은 알림만
+            </Button>
+            <Button variant="outline" size="sm" onClick={readAll}>
+              <CheckCheck aria-hidden />
+              모두 읽음
+            </Button>
+          </>
+        }
+      />
 
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -92,10 +98,10 @@ export default function NotificationsPage() {
           불러오는 중…
         </p>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-          <Bell className="size-8" aria-hidden />
-          <p>{unreadOnly ? "읽지 않은 알림이 없습니다." : "아직 알림이 없습니다."}</p>
-        </div>
+        <EmptyState
+          icon={Bell}
+          title={unreadOnly ? "읽지 않은 알림이 없습니다." : "아직 알림이 없습니다."}
+        />
       ) : (
         <ul className="divide-y rounded-md border">
           {items.map((n) => (
