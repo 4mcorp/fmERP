@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -32,9 +33,9 @@ class CIResultTest(unittest.TestCase):
             (directory / "quality-report.json").write_text(json.dumps(report))
 
     def run_check(self):
-        result = subprocess.run(["python", str(SCRIPT)], cwd=self.root,
+        result = subprocess.run([sys.executable, "-X", "utf8", "-I", str(SCRIPT)], cwd=self.root,
                                 env=dict(os.environ, NEEDS_JSON=json.dumps(self.needs)),
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, encoding="utf-8", errors="replace")
         return result
 
     def test_collects_all_gates(self):
@@ -89,6 +90,45 @@ class CIResultTest(unittest.TestCase):
         report = self.root / "downloaded/quality-report-core/quality-report.json"
         report.write_text(json.dumps({"gates": [{"name": "test-core", "pass": False, "exitCode": 1}]}))
         self.assertNotEqual(self.run_check().returncode, 0)
+
+    def test_static_only_download_layout_passes(self):
+        # 범위상 기능·코어·E2E가 모두 skip인 PR: 단일 아티팩트 quality-report-static만 내려받는다.
+        self.needs["scope"]["outputs"] = {"features": "[]", "core": "false", "e2e": "false"}
+        self.needs["test-feature"]["result"] = "skipped"
+        self.needs["test-core"]["result"] = "skipped"
+        self.needs["test-integration"]["result"] = "skipped"
+        for job in ("org", "core", "integration"):
+            (self.root / f"downloaded/quality-report-{job}/quality-report.json").unlink()
+            (self.root / f"downloaded/quality-report-{job}").rmdir()
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
+    def test_static_only_flat_download_layout_passes(self):
+        # 실제 CI(run 38185377858): 단일 아티팩트는 downloaded/ 바로 아래에 풀린다(이름 폴더 없음).
+        self.needs["scope"]["outputs"] = {"features": "[]", "core": "false", "e2e": "false"}
+        self.needs["test-feature"]["result"] = "skipped"
+        self.needs["test-core"]["result"] = "skipped"
+        self.needs["test-integration"]["result"] = "skipped"
+        static_dir = self.root / "downloaded/quality-report-static"
+        static_report = static_dir / "quality-report.json"
+        (self.root / "downloaded/quality-report.json").write_text(static_report.read_text())
+        static_report.unlink()
+        static_dir.rmdir()
+        for job in ("org", "core", "integration"):
+            (self.root / f"downloaded/quality-report-{job}/quality-report.json").unlink()
+            (self.root / f"downloaded/quality-report-{job}").rmdir()
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
+    def test_flat_root_report_does_not_mask_missing_static_when_multiple_reports_expected(self):
+        # 기대 리포트가 여럿이면 downloaded/quality-report.json으로 static을 대체하지 않는다(누락은 실패).
+        static_dir = self.root / "downloaded/quality-report-static"
+        static_report = static_dir / "quality-report.json"
+        (self.root / "downloaded/quality-report.json").write_text(static_report.read_text())
+        static_report.unlink()
+        static_dir.rmdir()
+        result = self.run_check()
+        self.assertNotEqual(result.returncode, 0)
 
     def test_expected_skips_pass(self):
         self.needs["scope"]["outputs"] = {"features": "[]", "core": "false", "e2e": "false"}
