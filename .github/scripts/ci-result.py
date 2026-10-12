@@ -40,6 +40,10 @@ def main():
     static = {}
     for job, expected in expected_reports.items():
         path = Path("downloaded") / f"quality-report-{job}" / "quality-report.json"
+        # 단일 아티팩트(quality-report-static만 받는 PR)는 downloaded/ 바로 아래에 풀린다.
+        # 기대 리포트가 하나뿐일 때만 허용한다(다중 기대 리포트에서 root 파일로 대체하면 누락을 가린다).
+        if job == "static" and len(expected_reports) == 1 and not path.is_file():
+            path = Path("downloaded") / "quality-report.json"
         if not path.is_file():
             errors.append(f"누락된 리포트: {path}")
             continue
