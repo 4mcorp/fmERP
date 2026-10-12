@@ -2,9 +2,10 @@
 
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { useMembers } from "@fmerp/shared/lib/queries";
-import { DOC_STATUS_LABEL } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
 import { PinDialog } from "@fmerp/shared/ui/pin-dialog";
@@ -15,19 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@fmerp/shared/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@fmerp/shared/ui/table";
+import { StatusBadge } from "@fmerp/shared/ui/status-badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ApprovalPageLayout } from "../components/approval-page-layout";
 
 interface OverdueItem {
   id: string;
@@ -40,6 +35,54 @@ interface OverdueItem {
 }
 
 const DAY_OPTIONS = ["3", "7", "14", "30"];
+
+const OVERDUE_COLUMNS: DataTableColumn<OverdueItem>[] = [
+  {
+    id: "title",
+    header: "제목",
+    className: "max-w-72",
+    sortValue: (d) => d.title,
+    cell: (d) => (
+      <Link
+        href={`/approval/${d.id}`}
+        className="break-words font-medium underline-offset-4 hover:underline"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {d.title}
+      </Link>
+    ),
+  },
+  {
+    id: "drafter",
+    header: "기안자",
+    hideBelow: "sm",
+    sortValue: (d) => d.drafterName,
+    cell: (d) => d.drafterName,
+  },
+  {
+    id: "status",
+    header: "상태",
+    sortValue: (d) => d.status,
+    cell: (d) => <StatusBadge kind="document" status={d.status} />,
+  },
+  {
+    id: "waiting",
+    header: "대기 중인 사람",
+    hideBelow: "md",
+    cell: (d) =>
+      d.waiting
+        .map((w) => w.name)
+        .filter(Boolean)
+        .join(", ") || "-",
+  },
+  {
+    id: "waitingDays",
+    header: "경과",
+    align: "right",
+    sortValue: (d) => d.waitingDays,
+    cell: (d) => `${d.waitingDays}일`,
+  },
+];
 
 /**
  * 결재 문서 관리 (ADM-005, ORG-036): 결재자 일괄 이관과 장기 미처리 문서.
@@ -102,9 +145,7 @@ function ApprovalAdminView() {
   const heirs = people.filter((m) => m.status === "active" && m.membershipId !== from);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">결재 문서 관리</h1>
-
+    <ApprovalPageLayout title="결재 문서 관리">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">결재자 일괄 이관</CardTitle>
@@ -195,56 +236,14 @@ function ApprovalAdminView() {
               결재 관리 권한이 없습니다.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>제목</TableHead>
-                    <TableHead>기안자</TableHead>
-                    <TableHead>상태</TableHead>
-                    <TableHead>대기 중인 사람</TableHead>
-                    <TableHead className="text-right">경과</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(overdue.data ?? []).map((d) => (
-                    <TableRow key={d.id}>
-                      <TableCell className="max-w-72">
-                        <Link
-                          href={`/approval/${d.id}`}
-                          className="break-words font-medium underline-offset-4 hover:underline"
-                        >
-                          {d.title}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{d.drafterName}</TableCell>
-                      <TableCell>{DOC_STATUS_LABEL[d.status] ?? d.status}</TableCell>
-                      <TableCell>
-                        {d.waiting
-                          .map((w) => w.name)
-                          .filter(Boolean)
-                          .join(", ") || "-"}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{d.waitingDays}일</TableCell>
-                    </TableRow>
-                  ))}
-                  {overdue.isLoading && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        불러오는 중…
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {!overdue.isLoading && (overdue.data ?? []).length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        오래 걸린 문서가 없습니다.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable
+              caption="장기 미처리 결재 문서 목록"
+              rows={overdue.data ?? []}
+              columns={OVERDUE_COLUMNS}
+              rowKey={(d) => d.id}
+              isLoading={overdue.isLoading}
+              empty={<EmptyState title="오래 걸린 문서가 없습니다." />}
+            />
           )}
         </CardContent>
       </Card>
@@ -260,7 +259,7 @@ function ApprovalAdminView() {
           if (task) void task();
         }}
       />
-    </div>
+    </ApprovalPageLayout>
   );
 }
 
