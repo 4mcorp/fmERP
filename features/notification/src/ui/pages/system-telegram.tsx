@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import { useReauth } from "@fmerp/shared/ui/use-reauth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -56,8 +57,8 @@ export default function SystemTelegramPage() {
   const mismatch = data && data.applied?.mode !== data.mode;
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">텔레그램 수신 방식</h1>
+    <div className="min-w-0 w-full max-w-3xl space-y-4">
+      <PageHeader title="텔레그램 수신 방식" />
       {dialog}
       {error && !notFound && (
         <p role="alert" className="text-sm text-destructive">
