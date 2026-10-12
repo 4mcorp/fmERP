@@ -14,6 +14,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -550,9 +551,9 @@ export default function FormBuilderPage() {
 
   return (
     <form onSubmit={save} className="space-y-4">
-      <h1 className="text-2xl font-semibold">
-        {isNew ? "새 양식" : `${name} 편집${detail ? ` (현재 v${detail.version})` : ""}`}
-      </h1>
+      <PageHeader
+        title={isNew ? "새 양식" : `${name} 편집${detail ? ` (현재 v${detail.version})` : ""}`}
+      />
 
       <Card>
         <CardHeader>

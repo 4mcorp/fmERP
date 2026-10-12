@@ -9,6 +9,7 @@ import { Card, CardContent } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
 import { Modal } from "@fmerp/shared/ui/modal";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Table,
   TableBody,
@@ -98,25 +99,29 @@ export default function AdminFormsPage() {
   if (!forms) return null;
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-2xl font-semibold">양식 관리</h1>
-        <Button asChild>
-          <Link href="/admin/forms/new">새 양식</Link>
-        </Button>
-        <Button variant="outline" asChild>
-          <label htmlFor="form-import" className="cursor-pointer">
-            <Upload aria-hidden />
-            JSON 가져오기
-          </label>
-        </Button>
-        <input
-          id="form-import"
-          type="file"
-          accept="application/json,.json"
-          className="sr-only"
-          onChange={importFile}
-        />
-      </div>
+      <PageHeader
+        title="양식 관리"
+        actions={
+          <>
+            <Button asChild>
+              <Link href="/admin/forms/new">새 양식</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <label htmlFor="form-import" className="cursor-pointer">
+                <Upload aria-hidden />
+                JSON 가져오기
+              </label>
+            </Button>
+            <input
+              id="form-import"
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={importFile}
+            />
+          </>
+        }
+      />
       <Card>
         <CardContent className="overflow-x-auto pt-6">
           <Table>
