@@ -7,6 +7,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -116,7 +117,7 @@ function SearchView() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">검색</h1>
+      <PageHeader title="검색" />
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
