@@ -254,10 +254,10 @@ function FieldEditor({
           <legend className="text-sm font-medium">선택지</legend>
           {field.options.map((o, oi) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: 선택지는 순서가 곧 식별자다
-            <div key={oi} className="flex flex-wrap gap-2">
+            <div key={oi} className="flex min-w-0 flex-wrap gap-2">
               <Input
                 aria-label={`선택지 ${oi + 1} 값`}
-                className="w-32"
+                className="w-32 max-w-full"
                 value={o.value}
                 onChange={(e) =>
                   set({
