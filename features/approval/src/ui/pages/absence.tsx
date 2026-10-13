@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmer
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -108,8 +109,8 @@ export default function AbsencePage() {
   const now = new Date();
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">부재 설정</h1>
+    <div className="w-full min-w-0 space-y-4">
+      <PageHeader title="부재 설정" />
       <Card>
         <CardHeader>
           <CardTitle className="text-base">부재·대결 등록</CardTitle>

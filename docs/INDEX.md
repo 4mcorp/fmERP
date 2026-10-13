@@ -120,6 +120,7 @@
 | 파일 | 태그 | 요약 (재발 방지 핵심) |
 |---|---|---|
 | [2026-10-12-ci-isolated-backup-test-db.md](ts/2026-10-12-ci-isolated-backup-test-db.md) | ci, test, db, backup | 격리 DB의 조회·pg_dump DB 이름 일치, 55433 reset 안전 검사 유지 |
+| [2026-10-12-ci-db-readiness-analysis.md](ts/2026-10-12-ci-db-readiness-analysis.md) | ci, e2e, playwright, db, test, flaky | CI 실패는 `gh run view --log-failed`로 확인한다. "connection refused"는 의도된 시험 출력이므로 원인으로 보지 않는다. E2E는 locator를 좁히고 webServer/globalSetup 순서는 실행 로그로 확인 후 바꾼다 |
 | [2026-10-03-windows-npx-mcp-enoent.md](ts/2026-10-03-windows-npx-mcp-enoent.md) | windows, mcp, npx, claude-code | Windows MCP 설정에서 `npx`는 `cmd /c`로 감싼다. 원격 HTTP 방식을 우선한다. 추가 후 `initialize` 응답을 확인한다 |
 | [2026-10-03-pnpm11-config-location.md](ts/2026-10-03-pnpm11-config-location.md) | pnpm, deps, config | pnpm 설정은 `pnpm-workspace.yaml`에 둔다. 적용 값은 `pnpm config get`으로 확인한다 |
 | [2026-10-03-skill-dependency-and-session-load.md](ts/2026-10-03-skill-dependency-and-session-load.md) | skills, claude-code | 스킬 설치 후 참조하는 스킬이 빠졌는지 확인한다. 설치 직후 인식되지 않으면 SKILL.md 절차를 직접 따른다 |

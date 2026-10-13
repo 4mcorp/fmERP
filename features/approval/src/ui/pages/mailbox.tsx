@@ -4,6 +4,7 @@ import { ApiProblem } from "@fmerp/shared/lib/api";
 import { useCapabilities } from "@fmerp/shared/lib/queries";
 import { MAILBOX_TABS } from "@fmerp/shared/lib/types";
 import { cn } from "@fmerp/shared/lib/utils";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { DocumentTable } from "../components/document-table";
@@ -21,7 +22,7 @@ export default function MailboxPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">문서함</h1>
+      <PageHeader title="문서함" />
       <nav aria-label="문서함 종류" className="flex flex-wrap gap-1">
         {tabs.map((t) => (
           <Link
