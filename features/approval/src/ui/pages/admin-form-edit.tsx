@@ -29,6 +29,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ApprovalPageLayout } from "../components/approval-page-layout";
 import { FormFields, type Values } from "../components/form-fields";
+import { FormPrintPreview } from "../components/form-print-preview";
 import { itemsToRows, LineEditor, type LineRow, rowsToItems } from "../components/line-editor";
 import { useFormDetail } from "../queries";
 
@@ -554,354 +555,375 @@ export default function FormBuilderPage() {
       <ApprovalPageLayout
         title={isNew ? "새 양식" : `${name} 편집${detail ? ` (현재 v${detail.version})` : ""}`}
       >
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">기본 정보</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="form-name">양식 이름</Label>
-              <Input
-                id="form-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                maxLength={100}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="form-code">양식 코드 (문서번호용)</Label>
-              <Input
-                id="form-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                required
-                disabled={!isNew}
-                pattern="[A-Za-z0-9_\-]{1,30}"
-                title="영문·숫자·-·_ 30자 이하"
-                autoComplete="off"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="form-category">분류</Label>
-              <Input
-                id="form-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-                maxLength={50}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:items-start">
+          <div className="min-w-0 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">기본 정보</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="form-name">양식 이름</Label>
+                  <Input
+                    id="form-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="form-code">양식 코드 (문서번호용)</Label>
+                  <Input
+                    id="form-code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    required
+                    disabled={!isNew}
+                    pattern="[A-Za-z0-9_\-]{1,30}"
+                    title="영문·숫자·-·_ 30자 이하"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="form-category">분류</Label>
+                  <Input
+                    id="form-category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    required
+                    maxLength={50}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">필드</CardTitle>
-            <CardDescription>
-              입력 항목을 위에서 아래로 나열합니다. 표는 행 추가와 열 합계를, 리치 텍스트는 서식
-              있는 본문을 지원합니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <ol className="space-y-2">
-              {fields.map((f, i) => (
-                <FieldEditor
-                  // biome-ignore lint/suspicious/noArrayIndexKey: 키를 편집할 수 있어 순서로 식별한다
-                  key={i}
-                  field={f}
-                  index={i}
-                  total={fields.length}
-                  onChange={(next) => setFields(fields.map((x, xi) => (xi === i ? next : x)))}
-                  onMove={(to) => moveField(i, to)}
-                  onRemove={() => setFields(fields.filter((_, xi) => xi !== i))}
-                />
-              ))}
-            </ol>
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="space-y-1">
-                <Label htmlFor="add-type">필드 유형</Label>
-                <Select value={addType} onValueChange={(v) => setAddType(v as FormField["type"])}>
-                  <SelectTrigger id="add-type" className="w-44">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(FIELD_TYPE_LABEL) as FormField["type"][]).map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {FIELD_TYPE_LABEL[t]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setFields([...fields, blankField(addType, fields.length + 1)])}
-              >
-                <Plus aria-hidden />
-                필드 추가
-              </Button>
-            </div>
-            {!schemaCheck.ok && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">필드</CardTitle>
+                <CardDescription>
+                  입력 항목을 위에서 아래로 나열합니다. 표는 행 추가와 열 합계를, 리치 텍스트는 서식
+                  있는 본문을 지원합니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <ol className="space-y-2">
+                  {fields.map((f, i) => (
+                    <FieldEditor
+                      // biome-ignore lint/suspicious/noArrayIndexKey: 키를 편집할 수 있어 순서로 식별한다
+                      key={i}
+                      field={f}
+                      index={i}
+                      total={fields.length}
+                      onChange={(next) => setFields(fields.map((x, xi) => (xi === i ? next : x)))}
+                      onMove={(to) => moveField(i, to)}
+                      onRemove={() => setFields(fields.filter((_, xi) => xi !== i))}
+                    />
+                  ))}
+                </ol>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="add-type">필드 유형</Label>
+                    <Select
+                      value={addType}
+                      onValueChange={(v) => setAddType(v as FormField["type"])}
+                    >
+                      <SelectTrigger id="add-type" className="w-44">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(FIELD_TYPE_LABEL) as FormField["type"][]).map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {FIELD_TYPE_LABEL[t]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setFields([...fields, blankField(addType, fields.length + 1)])}
+                  >
+                    <Plus aria-hidden />
+                    필드 추가
+                  </Button>
+                </div>
+                {!schemaCheck.ok && (
+                  <Alert variant="destructive">
+                    <AlertTitle>필드 정의를 확인하세요</AlertTitle>
+                    <AlertDescription>
+                      <ul className="list-disc pl-5">
+                        {schemaCheck.errors.map((m) => (
+                          <li key={m}>{m}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">속성</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="form-retention">보존연한</Label>
+                  <Select
+                    value={String(def.retentionYears)}
+                    onValueChange={(v) =>
+                      setDef({
+                        ...def,
+                        retentionYears: Number(v) as FormDefinition["retentionYears"],
+                      })
+                    }
+                  >
+                    <SelectTrigger id="form-retention" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 3, 5, 10].map((y) => (
+                        <SelectItem key={y} value={String(y)}>
+                          {y}년
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="0">영구</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="form-security">보안 등급 기본값</Label>
+                  <Select
+                    value={def.securityDefault}
+                    onValueChange={(v) => setDef({ ...def, securityDefault: v as SecurityLevel })}
+                  >
+                    <SelectTrigger id="form-security" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(SECURITY_LABEL) as SecurityLevel[]).map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {SECURITY_LABEL[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="flex items-center gap-2 self-end pb-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="size-4"
+                    checked={def.allowLineEdit}
+                    onChange={(e) => setDef({ ...def, allowLineEdit: e.target.checked })}
+                  />
+                  기안자·결재자가 결재선을 바꿀 수 있다
+                </label>
+                <div className="space-y-2">
+                  <Label htmlFor="form-disagree">합의 부동의</Label>
+                  <Select
+                    value={def.policy.disagree}
+                    onValueChange={(v) =>
+                      setDef({
+                        ...def,
+                        policy: { ...def.policy, disagree: v as "reject" | "comment" },
+                      })
+                    }
+                  >
+                    <SelectTrigger id="form-disagree" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="reject">반려로 처리</SelectItem>
+                      <SelectItem value="comment">의견만 남기고 진행</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="form-rejectto">반려 대상</Label>
+                  <Select
+                    value={def.policy.rejectTo}
+                    onValueChange={(v) =>
+                      setDef({
+                        ...def,
+                        policy: { ...def.policy, rejectTo: v as "drafter" | "previous" },
+                      })
+                    }
+                  >
+                    <SelectTrigger id="form-rejectto" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="drafter">기안자에게</SelectItem>
+                      <SelectItem value="previous">직전 결재 단계로</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="flex items-center gap-2 self-end pb-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="size-4"
+                    checked={def.policy.auditCanReject}
+                    onChange={(e) =>
+                      setDef({
+                        ...def,
+                        policy: { ...def.policy, auditCanReject: e.target.checked },
+                      })
+                    }
+                  />
+                  감사 단계에서 반려할 수 있다
+                </label>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">문서번호</CardTitle>
+                <CardDescription>
+                  토큰: {"{사업자코드} {부서코드} {양식코드} {YYYY} {YY} {MM} {SEQ:4}"} —{" "}
+                  {"{SEQ:n}"}은 정확히 하나 필요합니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="size-4"
+                    checked={def.numbering !== null}
+                    onChange={(e) =>
+                      setDef({ ...def, numbering: e.target.checked ? DEFAULT_DEF.numbering : null })
+                    }
+                  />
+                  문서번호를 자동 부여한다
+                </label>
+                {def.numbering && (
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="num-rule">규칙</Label>
+                      <Input
+                        id="num-rule"
+                        value={def.numbering.rule}
+                        onChange={(e) =>
+                          setDef({
+                            ...def,
+                            numbering: {
+                              ...(def.numbering as NonNullable<FormDefinition["numbering"]>),
+                              rule: e.target.value,
+                            },
+                          })
+                        }
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="num-cycle">순번 초기화</Label>
+                      <Select
+                        value={def.numbering.cycle}
+                        onValueChange={(v) =>
+                          setDef({
+                            ...def,
+                            numbering: {
+                              ...(def.numbering as NonNullable<FormDefinition["numbering"]>),
+                              cycle: v as "year" | "month" | "none",
+                            },
+                          })
+                        }
+                      >
+                        <SelectTrigger id="num-cycle" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="year">해마다</SelectItem>
+                          <SelectItem value="month">달마다</SelectItem>
+                          <SelectItem value="none">안 함</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="num-at">부여 시점</Label>
+                      <Select
+                        value={def.numbering.at}
+                        onValueChange={(v) =>
+                          setDef({
+                            ...def,
+                            numbering: {
+                              ...(def.numbering as NonNullable<FormDefinition["numbering"]>),
+                              at: v as "submit" | "complete",
+                            },
+                          })
+                        }
+                      >
+                        <SelectTrigger id="num-at" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="submit">상신할 때</SelectItem>
+                          <SelectItem value="complete">완료할 때</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">기본 결재선</CardTitle>
+                <CardDescription>
+                  기안 때 처음 채워지는 결재선입니다. 후결 단계는 여기에 있는 만큼만 기안자가 쓸 수
+                  있습니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LineEditor rows={rows} onChange={setRows} ctx={ctx} allowPost />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">미리보기</CardTitle>
+                <CardDescription>
+                  기안자가 보게 될 입력 화면입니다. 입력값은 저장되지 않습니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {schemaCheck.ok ? (
+                  <FormFields
+                    schema={def.schema}
+                    form={previewForm}
+                    errors={{}}
+                    ctx={ctx}
+                    attachmentSlot={
+                      <p className="text-sm text-muted-foreground">(첨부 올리기 영역)</p>
+                    }
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    필드 정의 오류를 고치면 미리보기가 표시됩니다.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {errors.length > 0 && (
               <Alert variant="destructive">
-                <AlertTitle>필드 정의를 확인하세요</AlertTitle>
+                <AlertTitle>저장할 수 없습니다</AlertTitle>
                 <AlertDescription>
                   <ul className="list-disc pl-5">
-                    {schemaCheck.errors.map((m) => (
+                    {errors.map((m) => (
                       <li key={m}>{m}</li>
                     ))}
                   </ul>
                 </AlertDescription>
               </Alert>
             )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">속성</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="form-retention">보존연한</Label>
-              <Select
-                value={String(def.retentionYears)}
-                onValueChange={(v) =>
-                  setDef({ ...def, retentionYears: Number(v) as FormDefinition["retentionYears"] })
-                }
-              >
-                <SelectTrigger id="form-retention" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 3, 5, 10].map((y) => (
-                    <SelectItem key={y} value={String(y)}>
-                      {y}년
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="0">영구</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="form-security">보안 등급 기본값</Label>
-              <Select
-                value={def.securityDefault}
-                onValueChange={(v) => setDef({ ...def, securityDefault: v as SecurityLevel })}
-              >
-                <SelectTrigger id="form-security" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(SECURITY_LABEL) as SecurityLevel[]).map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {SECURITY_LABEL[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input
-                type="checkbox"
-                className="size-4"
-                checked={def.allowLineEdit}
-                onChange={(e) => setDef({ ...def, allowLineEdit: e.target.checked })}
-              />
-              기안자·결재자가 결재선을 바꿀 수 있다
-            </label>
-            <div className="space-y-2">
-              <Label htmlFor="form-disagree">합의 부동의</Label>
-              <Select
-                value={def.policy.disagree}
-                onValueChange={(v) =>
-                  setDef({ ...def, policy: { ...def.policy, disagree: v as "reject" | "comment" } })
-                }
-              >
-                <SelectTrigger id="form-disagree" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="reject">반려로 처리</SelectItem>
-                  <SelectItem value="comment">의견만 남기고 진행</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="form-rejectto">반려 대상</Label>
-              <Select
-                value={def.policy.rejectTo}
-                onValueChange={(v) =>
-                  setDef({
-                    ...def,
-                    policy: { ...def.policy, rejectTo: v as "drafter" | "previous" },
-                  })
-                }
-              >
-                <SelectTrigger id="form-rejectto" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="drafter">기안자에게</SelectItem>
-                  <SelectItem value="previous">직전 결재 단계로</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input
-                type="checkbox"
-                className="size-4"
-                checked={def.policy.auditCanReject}
-                onChange={(e) =>
-                  setDef({ ...def, policy: { ...def.policy, auditCanReject: e.target.checked } })
-                }
-              />
-              감사 단계에서 반려할 수 있다
-            </label>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">문서번호</CardTitle>
-            <CardDescription>
-              토큰: {"{사업자코드} {부서코드} {양식코드} {YYYY} {YY} {MM} {SEQ:4}"} — {"{SEQ:n}"}은
-              정확히 하나 필요합니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="size-4"
-                checked={def.numbering !== null}
-                onChange={(e) =>
-                  setDef({ ...def, numbering: e.target.checked ? DEFAULT_DEF.numbering : null })
-                }
-              />
-              문서번호를 자동 부여한다
-            </label>
-            {def.numbering && (
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="num-rule">규칙</Label>
-                  <Input
-                    id="num-rule"
-                    value={def.numbering.rule}
-                    onChange={(e) =>
-                      setDef({
-                        ...def,
-                        numbering: {
-                          ...(def.numbering as NonNullable<FormDefinition["numbering"]>),
-                          rule: e.target.value,
-                        },
-                      })
-                    }
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="num-cycle">순번 초기화</Label>
-                  <Select
-                    value={def.numbering.cycle}
-                    onValueChange={(v) =>
-                      setDef({
-                        ...def,
-                        numbering: {
-                          ...(def.numbering as NonNullable<FormDefinition["numbering"]>),
-                          cycle: v as "year" | "month" | "none",
-                        },
-                      })
-                    }
-                  >
-                    <SelectTrigger id="num-cycle" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="year">해마다</SelectItem>
-                      <SelectItem value="month">달마다</SelectItem>
-                      <SelectItem value="none">안 함</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="num-at">부여 시점</Label>
-                  <Select
-                    value={def.numbering.at}
-                    onValueChange={(v) =>
-                      setDef({
-                        ...def,
-                        numbering: {
-                          ...(def.numbering as NonNullable<FormDefinition["numbering"]>),
-                          at: v as "submit" | "complete",
-                        },
-                      })
-                    }
-                  >
-                    <SelectTrigger id="num-at" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="submit">상신할 때</SelectItem>
-                      <SelectItem value="complete">완료할 때</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">기본 결재선</CardTitle>
-            <CardDescription>
-              기안 때 처음 채워지는 결재선입니다. 후결 단계는 여기에 있는 만큼만 기안자가 쓸 수
-              있습니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <LineEditor rows={rows} onChange={setRows} ctx={ctx} allowPost />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">미리보기</CardTitle>
-            <CardDescription>
-              기안자가 보게 될 입력 화면입니다. 입력값은 저장되지 않습니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {schemaCheck.ok ? (
-              <FormFields
-                schema={def.schema}
-                form={previewForm}
-                errors={{}}
-                ctx={ctx}
-                attachmentSlot={<p className="text-sm text-muted-foreground">(첨부 올리기 영역)</p>}
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                필드 정의 오류를 고치면 미리보기가 표시됩니다.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {errors.length > 0 && (
-          <Alert variant="destructive">
-            <AlertTitle>저장할 수 없습니다</AlertTitle>
-            <AlertDescription>
-              <ul className="list-disc pl-5">
-                {errors.map((m) => (
-                  <li key={m}>{m}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
+          </div>
+          <div className="order-last min-w-0 lg:sticky lg:top-4 lg:order-first lg:self-start">
+            <FormPrintPreview def={def} name={name} />
+          </div>
+        </div>
         <div className="sticky bottom-0 flex gap-2 border-t bg-background py-3">
           <Button type="submit" disabled={saving || !schemaCheck.ok}>
             {saving ? "저장 중…" : isNew ? "양식 만들기" : "새 버전으로 저장"}
