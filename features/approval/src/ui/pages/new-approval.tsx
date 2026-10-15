@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { CollapsibleCard } from "@fmerp/shared/ui/collapsible-card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
@@ -157,7 +158,9 @@ export default function NewApprovalPage() {
   if (!forms) return null;
 
   const FormCard = ({ f }: { f: FormSummary }) => (
-    <li className="flex items-stretch gap-1">
+    <li
+      className={`flex items-stretch rounded-lg border ${formId === f.id ? "border-primary bg-muted/50" : ""}`}
+    >
       <button
         type="button"
         onClick={() => {
@@ -165,7 +168,7 @@ export default function NewApprovalPage() {
           setErrors([]);
         }}
         aria-pressed={formId === f.id}
-        className={`flex-1 rounded-lg border px-3 py-2 text-left text-sm hover:bg-muted/50 ${formId === f.id ? "border-primary bg-muted/50" : ""}`}
+        className="flex-1 rounded-l-lg px-3 py-2 text-left text-sm hover:bg-muted/50"
       >
         <span className="font-medium">{f.name}</span>
         <span className="ml-2 text-xs text-muted-foreground">v{f.version}</span>
@@ -174,6 +177,7 @@ export default function NewApprovalPage() {
         type="button"
         size="icon"
         variant="ghost"
+        className="mr-1 self-center"
         aria-label={`${f.name} 즐겨찾기 ${f.favorite ? "해제" : "추가"}`}
         aria-pressed={f.favorite}
         onClick={() => toggleFavorite(f)}
@@ -196,34 +200,31 @@ export default function NewApprovalPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {favorites.length > 0 && (
-            <section aria-label="즐겨찾기">
-              <h2 className="mb-1 text-sm font-medium">즐겨찾기</h2>
-              <ul className="grid gap-1 sm:grid-cols-2">
+            <CollapsibleCard title="즐겨찾기" count={favorites.length} defaultOpen>
+              <ul className="grid gap-1">
                 {favorites.map((f) => (
                   <FormCard key={f.id} f={f} />
                 ))}
               </ul>
-            </section>
+            </CollapsibleCard>
           )}
           {recent.length > 0 && (
-            <section aria-label="최근 사용">
-              <h2 className="mb-1 text-sm font-medium">최근 사용</h2>
-              <ul className="grid gap-1 sm:grid-cols-2">
+            <CollapsibleCard title="최근 사용" count={recent.length} defaultOpen>
+              <ul className="grid gap-1">
                 {recent.map((f) => (
                   <FormCard key={f.id} f={f} />
                 ))}
               </ul>
-            </section>
+            </CollapsibleCard>
           )}
           {grouped.map(([category, list]) => (
-            <section key={category} aria-label={category}>
-              <h2 className="mb-1 text-sm font-medium">{category}</h2>
-              <ul className="grid gap-1 sm:grid-cols-2">
+            <CollapsibleCard key={category} title={category} count={list.length}>
+              <ul className="grid gap-1">
                 {list.map((f) => (
                   <FormCard key={f.id} f={f} />
                 ))}
               </ul>
-            </section>
+            </CollapsibleCard>
           ))}
           {forms.length === 0 && (
             <p className="text-sm text-muted-foreground">사용할 수 있는 양식이 없습니다.</p>
