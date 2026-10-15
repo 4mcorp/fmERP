@@ -449,24 +449,22 @@ export default function AdminOrgPage() {
                 CSV 내보내기
               </a>
             </Button>
-            <div className="space-y-1">
-              <Label htmlFor="org-import" className="sr-only">
+            <Label htmlFor="org-import" className="sr-only">
+              CSV 가져오기
+            </Label>
+            <Button variant="outline" asChild>
+              <label htmlFor="org-import" className="cursor-pointer">
+                <Upload className="size-4" aria-hidden />
                 CSV 가져오기
-              </Label>
-              <Button variant="outline" asChild>
-                <label htmlFor="org-import" className="cursor-pointer">
-                  <Upload className="size-4" aria-hidden />
-                  CSV 가져오기
-                </label>
-              </Button>
-              <input
-                id="org-import"
-                type="file"
-                accept=".csv,text/csv"
-                onChange={onImport}
-                className="sr-only"
-              />
-            </div>
+              </label>
+            </Button>
+            <input
+              id="org-import"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={onImport}
+              className="sr-only"
+            />
           </div>
           <p className="text-sm text-muted-foreground">
             최대 {chart.maxDeptDepth}단계. 부서를 끌어서 다른 부서 위에 놓으면 그 아래로 이동합니다.
