@@ -23,6 +23,8 @@ import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { CardGrid } from "@fmerp/shared/ui/card-grid";
+import { CollapsibleCard } from "@fmerp/shared/ui/collapsible-card";
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Label } from "@fmerp/shared/ui/label";
 import { Modal } from "@fmerp/shared/ui/modal";
@@ -408,222 +410,230 @@ export function ApprovalDetailPage({
 
       {view.status === "COMPLETED" && completionFiles}
 
-      <RecipientPanel documentId={id} completed={view.status === "COMPLETED"} involved={involved} />
+      <CardGrid>
+        <RecipientPanel
+          documentId={id}
+          completed={view.status === "COMPLETED"}
+          involved={involved}
+        />
 
-      {actionStep && (
-        <Card className="border-primary">
-          <CardHeader>
-            <CardTitle className="text-base">
-              {myPending?.asDelegate ? "대결 처리" : "결재 처리"} —{" "}
-              {STEP_TYPE_LABEL[actionStep.type]}
-            </CardTitle>
-            <CardDescription>
-              처리할 때 결재 PIN 확인이 필요합니다. 처리 후에는 되돌릴 수 없습니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {buttonsFor(actionStep, policy).map((b) => {
-              const Icon = b.icon ? ICONS[b.icon] : null;
-              return (
-                <Button
-                  key={b.label}
-                  type="button"
-                  variant={b.variant ?? "default"}
-                  disabled={busy}
-                  onClick={() => {
-                    if (b.askReason) {
-                      setReason({ button: b, step: actionStep });
-                      setReasonText("");
-                    } else {
-                      void act(actionStep, b.action);
-                    }
-                  }}
-                >
-                  {Icon && <Icon aria-hidden />}
-                  {b.label}
-                </Button>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {isDrafter && view.status === "IN_PROGRESS" && untouched && (
-          <Button variant="outline" disabled={busy} onClick={() => setWithdrawOpen(true)}>
-            회수
-          </Button>
-        )}
-        {isDrafter && view.status === "WITHDRAWN" && (
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() =>
-              simple("reopen", "초안으로 되돌렸습니다", () => router.push(`/approval/draft/${id}`))
-            }
-          >
-            수정하기(초안으로)
-          </Button>
-        )}
-        {isDrafter && view.status === "REJECTED" && (
-          <Button
-            disabled={busy}
-            onClick={() =>
-              simple("redraft", "재기안 초안을 만들었습니다", (r) =>
-                router.push(`/approval/draft/${r.documentId}`),
-              )
-            }
-          >
-            재기안
-          </Button>
-        )}
-        {canEditLine && (
-          <Button
-            variant="outline"
-            onClick={() => {
-              setLineOpen(true);
-              setLineRows([]);
-              setLineRemove([]);
-              setLineError([]);
-            }}
-          >
-            결재선 변경
-          </Button>
-        )}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">결재선</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ol className="space-y-2">
-            {view.steps.map((s, i) => (
-              <li
-                key={s.id}
-                className={`flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm ${s.status === "ACTIVE" ? "border-primary" : ""}`}
-              >
-                <span className="w-6 text-muted-foreground tabular-nums">{i + 1}</span>
-                <Badge variant="outline">{STEP_TYPE_LABEL[s.type]}</Badge>
-                <span className="min-w-0 flex-1 break-words">
-                  {s.assignees
-                    .map((a) => [a.name, a.positionName].filter(Boolean).join(" "))
-                    .join(" / ") || "-"}
-                  {s.proxies.map((x) => (
-                    <Badge
-                      key={`${x.actorName}-${x.originalName}`}
-                      variant="secondary"
-                      className="ml-2"
-                      title={`${x.originalName}님 대신 처리`}
+        {actionStep && (
+          <CardGrid.Full>
+            <Card className="border-primary">
+              <CardHeader>
+                <CardTitle className="text-base">
+                  {myPending?.asDelegate ? "대결 처리" : "결재 처리"} —{" "}
+                  {STEP_TYPE_LABEL[actionStep.type]}
+                </CardTitle>
+                <CardDescription>
+                  처리할 때 결재 PIN 확인이 필요합니다. 처리 후에는 되돌릴 수 없습니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {buttonsFor(actionStep, policy).map((b) => {
+                  const Icon = b.icon ? ICONS[b.icon] : null;
+                  return (
+                    <Button
+                      key={b.label}
+                      type="button"
+                      variant={b.variant ?? "default"}
+                      disabled={busy}
+                      onClick={() => {
+                        if (b.askReason) {
+                          setReason({ button: b, step: actionStep });
+                          setReasonText("");
+                        } else {
+                          void act(actionStep, b.action);
+                        }
+                      }}
                     >
-                      대결 {x.actorName}
+                      {Icon && <Icon aria-hidden />}
+                      {b.label}
+                    </Button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </CardGrid.Full>
+        )}
+
+        <CardGrid.Full>
+          <div className="flex flex-wrap gap-2">
+            {isDrafter && view.status === "IN_PROGRESS" && untouched && (
+              <Button variant="outline" disabled={busy} onClick={() => setWithdrawOpen(true)}>
+                회수
+              </Button>
+            )}
+            {isDrafter && view.status === "WITHDRAWN" && (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() =>
+                  simple("reopen", "초안으로 되돌렸습니다", () =>
+                    router.push(`/approval/draft/${id}`),
+                  )
+                }
+              >
+                수정하기(초안으로)
+              </Button>
+            )}
+            {isDrafter && view.status === "REJECTED" && (
+              <Button
+                disabled={busy}
+                onClick={() =>
+                  simple("redraft", "재기안 초안을 만들었습니다", (r) =>
+                    router.push(`/approval/draft/${r.documentId}`),
+                  )
+                }
+              >
+                재기안
+              </Button>
+            )}
+            {canEditLine && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setLineOpen(true);
+                  setLineRows([]);
+                  setLineRemove([]);
+                  setLineError([]);
+                }}
+              >
+                결재선 변경
+              </Button>
+            )}
+          </div>
+        </CardGrid.Full>
+
+        <CardGrid.Full>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">결재선</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="space-y-2">
+                {view.steps.map((s, i) => (
+                  <li
+                    key={s.id}
+                    className={`flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm ${s.status === "ACTIVE" ? "border-primary" : ""}`}
+                  >
+                    <span className="w-6 text-muted-foreground tabular-nums">{i + 1}</span>
+                    <Badge variant="outline">{STEP_TYPE_LABEL[s.type]}</Badge>
+                    <span className="min-w-0 flex-1 break-words">
+                      {s.assignees
+                        .map((a) => [a.name, a.positionName].filter(Boolean).join(" "))
+                        .join(" / ") || "-"}
+                      {s.proxies.map((x) => (
+                        <Badge
+                          key={`${x.actorName}-${x.originalName}`}
+                          variant="secondary"
+                          className="ml-2"
+                          title={`${x.originalName}님 대신 처리`}
+                        >
+                          대결 {x.actorName}
+                        </Badge>
+                      ))}
+                    </span>
+                    <Badge
+                      variant={
+                        s.status === "ACTIVE"
+                          ? "default"
+                          : s.status === "REJECTED"
+                            ? "destructive"
+                            : "secondary"
+                      }
+                    >
+                      {STEP_STATUS_LABEL[s.status] ?? s.status}
                     </Badge>
-                  ))}
-                </span>
-                <Badge
-                  variant={
-                    s.status === "ACTIVE"
-                      ? "default"
-                      : s.status === "REJECTED"
-                        ? "destructive"
-                        : "secondary"
-                  }
-                >
-                  {STEP_STATUS_LABEL[s.status] ?? s.status}
-                </Badge>
-              </li>
-            ))}
-          </ol>
-        </CardContent>
-      </Card>
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+        </CardGrid.Full>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">내용</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {docForm && serverBody ? (
-            <FormValuesView
-              schema={docForm.definition.schema as FormSchema}
-              values={serverBody.body}
-              ctx={ctx}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">표시할 내용이 없습니다.</p>
-          )}
-        </CardContent>
-      </Card>
+        <CardGrid.Full>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">내용</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {docForm && serverBody ? (
+                <FormValuesView
+                  schema={docForm.definition.schema as FormSchema}
+                  values={serverBody.body}
+                  ctx={ctx}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">표시할 내용이 없습니다.</p>
+              )}
+            </CardContent>
+          </Card>
+        </CardGrid.Full>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">첨부</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CollapsibleCard title="첨부" count={(attachments ?? []).length}>
           <AttachmentList documentId={id} items={attachments ?? []} />
-        </CardContent>
-      </Card>
+        </CollapsibleCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">의견</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {(comments ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">의견이 없습니다.</p>
-          ) : (
-            <ul className="space-y-2">
-              {comments?.map((c) => (
-                <li key={c.id} className="rounded-lg border p-2 text-sm">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">{c.authorName}</span>
-                    <span>{formatDateTime(c.createdAt)}</span>
-                    {c.visibility === "drafter" && <Badge variant="outline">기안자만</Badge>}
-                  </div>
-                  <p className="mt-1 break-words whitespace-pre-wrap">{c.body}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-          {involved ? (
-            <form onSubmit={addComment} className="space-y-2">
-              <Label htmlFor="comment-body">의견 추가</Label>
-              <Textarea
-                id="comment-body"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                maxLength={2000}
-                required
-              />
-              <div className="flex flex-wrap items-center gap-2">
-                <Label htmlFor="comment-visibility" className="sr-only">
-                  공개 범위
-                </Label>
-                <Select
-                  value={commentVisibility}
-                  onValueChange={(v) => setCommentVisibility(v as "all" | "drafter")}
-                >
-                  <SelectTrigger id="comment-visibility" className="w-44">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">결재선 전체에 공개</SelectItem>
-                    <SelectItem value="drafter">기안자에게만</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button type="submit" variant="outline">
-                  의견 등록
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              열람 권한으로 보고 있어 의견을 남길 수 없습니다 (읽기 전용).
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        <CollapsibleCard title="의견" count={(comments ?? []).length}>
+          <div className="space-y-4">
+            {(comments ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">의견이 없습니다.</p>
+            ) : (
+              <ul className="space-y-2">
+                {comments?.map((c) => (
+                  <li key={c.id} className="rounded-lg border p-2 text-sm">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{c.authorName}</span>
+                      <span>{formatDateTime(c.createdAt)}</span>
+                      {c.visibility === "drafter" && <Badge variant="outline">기안자만</Badge>}
+                    </div>
+                    <p className="mt-1 break-words whitespace-pre-wrap">{c.body}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {involved ? (
+              <form onSubmit={addComment} className="space-y-2">
+                <Label htmlFor="comment-body">의견 추가</Label>
+                <Textarea
+                  id="comment-body"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  maxLength={2000}
+                  required
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Label htmlFor="comment-visibility" className="sr-only">
+                    공개 범위
+                  </Label>
+                  <Select
+                    value={commentVisibility}
+                    onValueChange={(v) => setCommentVisibility(v as "all" | "drafter")}
+                  >
+                    <SelectTrigger id="comment-visibility" className="w-44">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">결재선 전체에 공개</SelectItem>
+                      <SelectItem value="drafter">기안자에게만</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="submit" variant="outline">
+                    의견 등록
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                열람 권한으로 보고 있어 의견을 남길 수 없습니다 (읽기 전용).
+              </p>
+            )}
+          </div>
+        </CollapsibleCard>
 
-      {timeline}
+        {timeline}
+      </CardGrid>
 
       <Modal
         open={reason !== null}

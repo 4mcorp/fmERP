@@ -5,7 +5,7 @@ import { useDepartments, useMembers } from "@fmerp/shared/lib/queries";
 import { formatDateTime, RECIPIENT_KIND_LABEL, type RecipientInfo } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { CollapsibleCard } from "@fmerp/shared/ui/collapsible-card";
 import { Modal } from "@fmerp/shared/ui/modal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
@@ -67,16 +67,16 @@ export function RecipientPanel({
     );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">참조·수신·공람</CardTitle>
-        <CardDescription>
-          {involved
-            ? "열람한 사람과 시각, 접수·배부 상태를 볼 수 있습니다."
-            : "이 문서의 전달 대상입니다."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <CollapsibleCard
+      title="참조·수신·공람"
+      count={list.length}
+      description={
+        involved
+          ? "열람한 사람과 시각, 접수·배부 상태를 볼 수 있습니다."
+          : "이 문서의 전달 대상입니다."
+      }
+    >
+      <div className="space-y-3">
         {list.length === 0 && (
           <p className="text-sm text-muted-foreground">지정된 대상이 없습니다.</p>
         )}
@@ -136,7 +136,7 @@ export function RecipientPanel({
             공람 지정
           </Button>
         )}
-      </CardContent>
+      </div>
 
       <Modal
         open={distribute !== null}
@@ -269,7 +269,7 @@ export function RecipientPanel({
           </div>
         </form>
       </Modal>
-    </Card>
+    </CollapsibleCard>
   );
 }
 
