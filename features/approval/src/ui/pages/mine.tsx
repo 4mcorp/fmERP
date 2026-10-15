@@ -3,14 +3,12 @@
 import { useMine } from "@fmerp/shared/lib/queries";
 import { formatDateTime, type MineItem } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
-import { Card, CardContent } from "@fmerp/shared/ui/card";
-import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
-import { EmptyState } from "@fmerp/shared/ui/empty-state";
+import type { DataTableColumn } from "@fmerp/shared/ui/data-table";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
-import { StatusBadge } from "@fmerp/shared/ui/status-badge";
 import { Tabs, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { DocumentStatusBadge, DocumentTable } from "../components/document-table";
 
 const TABS = [
   { value: "all", label: "전체", statuses: null },
@@ -50,7 +48,7 @@ const COLUMNS: DataTableColumn<MineItem>[] = [
   {
     id: "status",
     header: "상태",
-    cell: (d) => <StatusBadge kind="document" status={d.status} />,
+    cell: (d) => <DocumentStatusBadge status={d.status} />,
   },
   {
     id: "docNo",
@@ -90,17 +88,12 @@ export default function MyDocumentsPage() {
           ))}
         </TabsList>
       </Tabs>
-      <Card>
-        <CardContent className="pt-6">
-          <DataTable
-            rows={rows}
-            columns={COLUMNS}
-            rowKey={(d) => d.id}
-            caption="내가 기안한 문서 목록"
-            empty={<EmptyState title="문서가 없습니다." />}
-          />
-        </CardContent>
-      </Card>
+      <DocumentTable
+        rows={rows}
+        columns={COLUMNS}
+        rowKey={(d) => d.id}
+        caption="내가 기안한 문서 목록"
+      />
     </div>
   );
 }
