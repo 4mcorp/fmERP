@@ -3,7 +3,7 @@
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { formatDateTime } from "@fmerp/shared/lib/format";
 import { Button } from "@fmerp/shared/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { CollapsibleCard } from "@fmerp/shared/ui/collapsible-card";
 import { Printer } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -69,11 +69,8 @@ function withKeys(items: TimelineItem[]) {
 export function DocumentTimeline({ documentId }: { documentId: string }) {
   const { data, error, isPending } = useTimeline(documentId, true);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">이력</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <CollapsibleCard title="이력" count={error || isPending ? undefined : data.length}>
+      <div>
         {error ? (
           <p role="alert" className="text-sm text-destructive">
             {errorMessage(error)}
@@ -110,7 +107,7 @@ export function DocumentTimeline({ documentId }: { documentId: string }) {
             ))}
           </ol>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </CollapsibleCard>
   );
 }
