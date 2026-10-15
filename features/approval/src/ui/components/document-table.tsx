@@ -1,6 +1,7 @@
 "use client";
 
 import { DOC_STATUS_LABEL, type DocumentListItem, formatDateTime } from "@fmerp/shared/lib/types";
+import { cn } from "@fmerp/shared/lib/utils";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { DataTable, type DataTableColumn, type DataTableFilter } from "@fmerp/shared/ui/data-table";
@@ -9,13 +10,23 @@ import Link from "next/link";
 
 const SECURITY_LABEL: Record<string, string> = { confidential: "대외비", secret: "비밀" };
 
-const when = (d: DocumentListItem) => d.completedAt ?? d.submittedAt ?? d.createdAt;
+/** `read`는 열람 여부. 목록 API가 주지 않으면 undefined(기본 스타일) */
+type DocumentTableRow = DocumentListItem & { read?: boolean };
 
-const COLUMNS: DataTableColumn<DocumentListItem>[] = [
+const when = (d: DocumentTableRow) => d.completedAt ?? d.submittedAt ?? d.createdAt;
+
+/** 읽은 문서는 연하게, 안 읽은 문서는 진하게 (R8). 행 단위 class를 줄 수 없어 셀 내용마다 적용 */
+const readTone = (d: DocumentTableRow) =>
+  cn(
+    d.read === false && "font-semibold text-foreground",
+    d.read === true && "text-muted-foreground",
+  );
+
+const COLUMNS: DataTableColumn<DocumentTableRow>[] = [
   {
     id: "docNo",
     header: "문서번호",
-    cell: (d) => d.docNo ?? "-",
+    cell: (d) => <span className={readTone(d)}>{d.docNo ?? "-"}</span>,
     sortValue: (d) => d.docNo,
     className: "tabular-nums whitespace-nowrap",
   },
@@ -27,7 +38,11 @@ const COLUMNS: DataTableColumn<DocumentListItem>[] = [
       <>
         <Link
           href={d.status === "DRAFT" ? `/approval/draft/${d.id}` : `/approval/${d.id}`}
-          className="break-words font-medium underline-offset-4 hover:underline"
+          className={cn(
+            "break-words underline-offset-4 hover:underline",
+            d.read === false ? "font-semibold text-foreground" : "font-medium",
+            d.read === true && "text-muted-foreground",
+          )}
         >
           {d.title}
         </Link>
@@ -47,7 +62,7 @@ const COLUMNS: DataTableColumn<DocumentListItem>[] = [
   {
     id: "drafter",
     header: "기안자",
-    cell: (d) => d.drafterName,
+    cell: (d) => <span className={readTone(d)}>{d.drafterName}</span>,
     className: "whitespace-nowrap",
     hideBelow: "md",
   },
@@ -63,7 +78,7 @@ const COLUMNS: DataTableColumn<DocumentListItem>[] = [
   {
     id: "date",
     header: "일시",
-    cell: (d) => formatDateTime(when(d)),
+    cell: (d) => <span className={readTone(d)}>{formatDateTime(when(d))}</span>,
     sortValue: (d) => when(d),
     className: "whitespace-nowrap",
     hideBelow: "sm",
