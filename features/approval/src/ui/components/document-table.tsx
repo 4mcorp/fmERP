@@ -4,6 +4,7 @@ import { DOC_STATUS_LABEL, type DocumentListItem, formatDateTime } from "@fmerp/
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { DataTable, type DataTableColumn, type DataTableFilter } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import Link from "next/link";
 
 const SECURITY_LABEL: Record<string, string> = { confidential: "대외비", secret: "비밀" };
@@ -103,7 +104,7 @@ export function DocumentTable({
         rowKey={(d) => d.id}
         caption="문서 목록"
         isLoading={loading}
-        empty={<div className="py-12 text-center text-sm text-muted-foreground">{emptyText}</div>}
+        empty={<EmptyState title={emptyText} />}
         search={{
           placeholder: "제목·기안자·문서번호 검색",
           text: (d) => `${d.title} ${d.drafterName} ${d.docNo ?? ""}`,
