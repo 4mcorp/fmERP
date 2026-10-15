@@ -149,6 +149,7 @@
 | 파일 | 상태 | 요약 |
 |---|---|---|
 | [2026-10-12-feature-scoped-ci.md](plan/2026-10-12-feature-scoped-ci.md) | done | 기능별 단위 선택·전체 통합 병렬 실행, main E2E를 필수 check에 연결. 로컬 검증 완료, 원격 실행 미검증 |
+| [2026-10-15-ui-ux-refactor-round2.md](plan/2026-10-15-ui-ux-refactor-round2.md) | draft | UI/UX 2차: 결재 상세 토글·다열 카드, 출력물 결재란 자동 맞춤(최대 15칸·2줄)·테두리·줄바꿈, 진행 중 문서 A4 미리보기, 목록 화면 통일·읽음 표시, 양식 선택·편집 미리보기, 관리콘솔 정리, action 버튼·탭 표준 (카드 U0~U10) |
 | [2026-10-03-mvp-roadmap.md](plan/2026-10-03-mvp-roadmap.md) | accepted | MVP 마일스톤 M0~M8, P0 요구사항 118개 배정, 선행 작업·위험 |
 | [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | done | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
 | [2026-10-03-m1-security-review.md](plan/2026-10-03-m1-security-review.md) | done | M1 보안 리뷰: 지적 SR-1~5 조치, 후속 FU-1~5 (업로드 크기·형식 검증은 M4) |
