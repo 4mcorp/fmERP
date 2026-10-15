@@ -140,9 +140,8 @@ export default function AdminFormsPage() {
       id: "actions",
       header: "작업",
       align: "right",
-      className: "whitespace-nowrap",
       cell: (f) => (
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <Button size="sm" variant="outline" asChild>
             <Link href={`/admin/forms/${f.id}`} aria-label={`${f.name} 편집`}>
               편집
