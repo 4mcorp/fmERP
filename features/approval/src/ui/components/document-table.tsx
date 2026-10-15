@@ -4,7 +4,12 @@ import { DOC_STATUS_LABEL, type DocumentListItem, formatDateTime } from "@fmerp/
 import { cn } from "@fmerp/shared/lib/utils";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
-import { DataTable, type DataTableColumn, type DataTableFilter } from "@fmerp/shared/ui/data-table";
+import {
+  DataTable,
+  type DataTableColumn,
+  type DataTableFilter,
+  type DataTableProps,
+} from "@fmerp/shared/ui/data-table";
 import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import Link from "next/link";
 
@@ -21,6 +26,15 @@ const readTone = (d: DocumentTableRow) =>
     d.read === false && "font-semibold text-foreground",
     d.read === true && "text-muted-foreground",
   );
+
+/** 문서 상태 배지. 문서함·기안함·결재 대기·검색 표가 같은 모양을 쓴다 */
+export function DocumentStatusBadge({ status }: { status: string }) {
+  return (
+    <Badge variant={status === "COMPLETED" ? "secondary" : "outline"}>
+      {DOC_STATUS_LABEL[status] ?? status}
+    </Badge>
+  );
+}
 
 const COLUMNS: DataTableColumn<DocumentTableRow>[] = [
   {
@@ -69,11 +83,7 @@ const COLUMNS: DataTableColumn<DocumentTableRow>[] = [
   {
     id: "status",
     header: "상태",
-    cell: (d) => (
-      <Badge variant={d.status === "COMPLETED" ? "secondary" : "outline"}>
-        {DOC_STATUS_LABEL[d.status] ?? d.status}
-      </Badge>
-    ),
+    cell: (d) => <DocumentStatusBadge status={d.status} />,
   },
   {
     id: "date",
@@ -95,36 +105,49 @@ const FILTERS: DataTableFilter<DocumentListItem>[] = [
   },
 ];
 
-/** 문서함·검색 결과 표. 커서로 이어서 가져오는 "더 보기"를 함께 둔다 */
-export function DocumentTable({
+const SEARCH = {
+  placeholder: "제목·기안자·문서번호 검색",
+  text: (d: DocumentTableRow) => `${d.title} ${d.drafterName} ${d.docNo ?? ""}`,
+};
+
+/**
+ * 문서 목록 표 (문서함·검색·기안함·결재 대기 공용). 머리줄·행 높이·상태 배지·빈 상태 모양은 같고,
+ * 화면별로 `columns`만 고른다. `columns`를 생략하면 문서함 기본 열과 검색·상태 필터를 쓴다.
+ * 빈 목록도 머리줄을 유지하고 본문 한 행에 안내를 둔다 (R15). 커서로 이어서 가져오는 "더 보기"를 함께 둔다.
+ */
+export function DocumentTable<T extends object = DocumentListItem>({
   rows,
-  loading,
-  hasMore,
-  loadingMore,
+  columns,
+  rowKey,
+  caption = "문서 목록",
+  loading = false,
+  hasMore = false,
+  loadingMore = false,
   onMore,
   emptyText = "문서가 없습니다.",
 }: {
-  rows: DocumentListItem[];
-  loading: boolean;
-  hasMore: boolean;
-  loadingMore: boolean;
-  onMore: () => void;
+  rows: T[];
+  columns?: DataTableColumn<T>[];
+  rowKey?: (row: T) => string;
+  caption?: string;
+  loading?: boolean;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onMore?: () => void;
   emptyText?: string;
 }) {
+  const isDefault = columns === undefined;
   return (
     <div>
       <DataTable
         rows={rows}
-        columns={COLUMNS}
-        rowKey={(d) => d.id}
-        caption="문서 목록"
+        columns={columns ?? (COLUMNS as unknown as DataTableColumn<T>[])}
+        rowKey={rowKey ?? ((row) => String((row as unknown as DocumentListItem).id))}
+        caption={caption}
         isLoading={loading}
         empty={<EmptyState title={emptyText} />}
-        search={{
-          placeholder: "제목·기안자·문서번호 검색",
-          text: (d) => `${d.title} ${d.drafterName} ${d.docNo ?? ""}`,
-        }}
-        filters={FILTERS}
+        search={isDefault ? (SEARCH as unknown as DataTableProps<T>["search"]) : undefined}
+        filters={isDefault ? (FILTERS as unknown as DataTableFilter<T>[]) : []}
       />
       {hasMore && (
         <div className="flex justify-center pt-4">
