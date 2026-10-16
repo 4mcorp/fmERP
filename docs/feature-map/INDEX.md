@@ -11,7 +11,7 @@
 ## approval — 기안·결재선·결재 처리(승인·반려·합의·보류·회수), 위임·부재, 양식 관리, 문서함·검색·수신(참조), 일괄 이관, 문서 내보내기
 - 키워드: 결재, 기안, 결재선, 승인, 반려, 합의, 보류, 회수, 대결, 부재, 양식, 문서번호, 문서함, 수신, 참조, 검색, 이관, 첨부, 임시저장
 - 화면: /approval/new, /approval/draft/[id], /approval/[id], /approval/pending, /approval/mine, /mailbox, /mailbox/[box], /search, /me/absence, /admin/approvals, /admin/forms, /admin/forms/[id] · API 42개 · 폴더 `features/approval/`
-- 표: 소유 approval_action, approval_comment, approval_event, approval_line_template, approval_step, attachment, delegation, doc_number_series, document, document_distribution, document_link, document_recipient, document_recipient_read, document_revision, document_search, form, form_version, user_form_pref / 읽기 6개
+- 표: 소유 approval_action, approval_comment, approval_event, approval_line_template, approval_step, attachment, delegation, doc_number_series, document, document_distribution, document_link, document_recipient, document_recipient_read, document_revision, document_search, document_view, form, form_version, user_form_pref / 읽기 6개
 - 시험: tests/*.test.ts · tests/*.int.test.ts · apps/web/e2e/m4.spec.ts, apps/web/e2e/m5.spec.ts
 
 ## audit — 감사 로그 조회, 문서 이력 타임라인·인쇄 기록, 월간 접속 기록 점검(AUD-026)

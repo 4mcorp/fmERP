@@ -162,6 +162,13 @@
       "when": 1792070017596,
       "tag": "0022_account_approval_line_max_cells",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792135973749,
+      "tag": "0023_document_view",
+      "breakpoints": true
     }
   ]
 }

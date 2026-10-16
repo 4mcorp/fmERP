@@ -22,6 +22,7 @@ const Item = z.object({
   createdAt: z.string(),
   submittedAt: z.string().nullable(),
   completedAt: z.string().nullable(),
+  read: z.boolean(),
 });
 
 /** 개인·부서·감사 문서함 (PRD APV-080·081). 결재 대기는 /inbox/pending */

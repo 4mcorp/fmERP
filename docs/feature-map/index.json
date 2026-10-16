@@ -350,6 +350,7 @@
           "document_recipient_read",
           "document_revision",
           "document_search",
+          "document_view",
           "form",
           "form_version",
           "user_form_pref"

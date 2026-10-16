@@ -158,6 +158,18 @@ describe("테넌트 격리 (PERM-002) — M5 테이블", () => {
     });
   }
 
+  it("document_view는 사람·문서당 한 행이고 다른 계정에는 보이지 않는다", async () => {
+    const id = await createDoc();
+    const row = { documentId: id, accountId, membershipId: ids["member1@example.com"] ?? "" };
+    await tenant((tx) => tx.insert(schema.documentView).values(row).onConflictDoNothing());
+    await tenant((tx) => tx.insert(schema.documentView).values(row).onConflictDoNothing());
+    const mine = await tenant((tx) => tx.select().from(schema.documentView));
+    expect(mine.filter((r) => r.documentId === id)).toHaveLength(1);
+    expect(await appDb.db.select().from(schema.documentView)).toHaveLength(0);
+    const theirs = await tenant((tx) => tx.select().from(schema.documentView), otherAccountId);
+    expect(theirs.filter((r) => r.documentId === id)).toHaveLength(0);
+  });
+
   it("다른 계정 문서에 대한 패키지·검색 행은 만들 수 없다", async () => {
     const id = await createDoc();
     const msg = await failure(
