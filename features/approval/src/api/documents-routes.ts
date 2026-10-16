@@ -27,6 +27,7 @@ import { loadBody, saveDraft } from "../service/drafts";
 import { getForm, getFormVersion, versionToInput } from "../service/forms";
 import { listMyDocuments, listPending } from "../service/inbox";
 import { changeLine } from "../service/line-change";
+import { buildPrintPreview } from "../service/print-preview";
 import {
   actOnStep,
   isParticipant,
@@ -107,6 +108,39 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
         };
       });
       return c.json(result, 200);
+    },
+  );
+
+  // ===== 출력 미리보기 (계획 2.3, R6): 저장·S3 기록 없이 완료 출력과 같은 A4 HTML을 돌려준다 =====
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/approvals/{id}/print-preview",
+      tags: ["approval"],
+      summary: "상신한 문서의 A4 출력 미리보기 HTML (열람 권한 없으면 404, 저장하지 않음)",
+      request: { params: idParam },
+      responses: {
+        200: {
+          description: "A4 출력 HTML",
+          content: { "text/html": { schema: z.string() } },
+        },
+        404: { description: "열람할 수 없거나 문서가 없음" },
+        409: { description: "아직 상신하지 않은 문서" },
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const d = deps();
+      const tenant = c.get("tenant");
+      const { id } = c.req.valid("param");
+      const html = await withTenant(d.appDb, tenant.accountId, async (tx) => {
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        return buildPrintPreview(serviceContext(c, d, tx), id, { membershipId, actor }, d.authDb);
+      });
+      return c.body(html, 200, {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+      });
     },
   );
 

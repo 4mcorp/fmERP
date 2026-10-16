@@ -482,6 +482,11 @@
         },
         {
           "method": "get",
+          "path": "/approvals/{id}/print-preview",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
           "path": "/approvals/{id}/recipients",
           "file": "features/approval/src/api/recipients-routes.ts"
         },

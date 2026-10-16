@@ -365,6 +365,11 @@ const CSS = `
   .seal { position: absolute; right: 12mm; top: 6mm; max-height: 20mm; opacity: 0.85; }
 `;
 
+/** 결재가 끝나지 않은 문서의 출력 미리보기에만 넣는 워터마크·스타일 (계획 2.3) */
+const DRAFT_WATERMARK_CSS = `
+  .draft-watermark { position: fixed; top: 40%; left: 0; right: 0; text-align: center; font-size: 46pt; font-weight: 700; color: rgba(200, 0, 0, 0.12); transform: rotate(-20deg); pointer-events: none; }
+`;
+
 const POSITIONS = new Set(["top-right", "top-left", "bottom"]);
 
 export function buildPdfHtml(input: PdfInput): string {
@@ -388,12 +393,14 @@ export function buildPdfHtml(input: PdfInput): string {
           .join("")}</ul></div>`
       : "";
   const box = approvalBox(input);
+  const completed = input.completedAt !== null;
   return `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>${esc(input.title)}</title>
 <style>${input.fontCss ?? ""}
 @page { size: A4 ${orientation}; }
-${CSS}</style></head>
+${CSS}${completed ? "" : DRAFT_WATERMARK_CSS}</style></head>
 <body>
+${completed ? "" : `<div class="draft-watermark">결재 진행 중 (미완료)</div>`}
 ${seal ? `<img class="seal" src="${seal}" alt="">` : ""}
 <h1 class="title">${esc(input.title)}</h1>
 <div class="meta"><span>${esc(input.businessName)} · ${esc(input.form.name)}</span><span>문서번호 ${esc(input.docNo ?? "-")}</span></div>
@@ -401,6 +408,6 @@ ${seal ? `<img class="seal" src="${seal}" alt="">` : ""}
 <div class="fields">${fields}</div>
 ${attachments}
 <div class="bottom-box ${position === "bottom" ? "show" : ""}">${position === "bottom" ? box : ""}</div>
-<div class="footer">상신 ${esc(kstFull(input.submittedAt))} · 완료 ${esc(kstFull(input.completedAt))}<br>상신 시점 내용 해시(SHA-256): ${esc(input.contentHash ?? "-")}</div>
+<div class="footer">상신 ${esc(kstFull(input.submittedAt))} · 완료 ${completed ? esc(kstFull(input.completedAt)) : "결재 진행 중"}<br>상신 시점 내용 해시(SHA-256): ${esc(input.contentHash ?? "-")}</div>
 </body></html>`;
 }

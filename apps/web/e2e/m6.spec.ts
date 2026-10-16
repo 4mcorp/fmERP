@@ -55,17 +55,19 @@ test.describe("감사 기능 (M6)", () => {
     await loginAs(page, "감사인");
     await page.goto(`/approval/${id}`);
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
-    // 읽기 전용: 의견을 쓸 수 없고 결재 처리 버튼도 없다
+    // 읽기 전용: 의견을 쓸 수 없고 결재 처리 버튼도 없다 (의견 카드는 접혀 있어 펼쳐서 확인한다)
+    await page.getByRole("button", { name: /^의견(\s|$)/ }).click();
     await expect(page.getByText("열람 권한으로 보고 있어 의견을 남길 수 없습니다")).toBeVisible();
     await expect(page.getByRole("button", { name: "의견 등록" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "승인" })).toHaveCount(0);
-    // 이력: 상신과, 방금 한 열람(접속지 포함)
+    // 이력: 상신과, 방금 한 열람(접속지 포함) (이력 카드도 접혀 있어 펼쳐서 확인한다)
+    await page.getByRole("button", { name: /^이력(\s|$)/ }).click();
     const timeline = page.getByRole("listitem").filter({ hasText: "감사 열람" });
     await expect(timeline.first()).toBeVisible();
     await expect(page.getByRole("listitem").filter({ hasText: "상신" }).first()).toBeVisible();
   });
 
-  test("인쇄 버튼을 누르면 인쇄가 이력에 기록된다 @stateful", async ({ page }) => {
+  test("미리보기에서 인쇄하면 인쇄가 이력에 기록된다 @stateful", async ({ page }) => {
     // 헤드리스 브라우저에서 인쇄 대화상자가 뜨지 않도록 막는다
     await page.addInitScript(() => {
       window.print = () => {};
@@ -73,12 +75,19 @@ test.describe("감사 기능 (M6)", () => {
     await loginAs(page, "박사원");
     const id = await submitDoc(page, unique("E2E 인쇄 기록"));
     await page.goto(`/approval/${id}`);
+    // 1단계: 인쇄 버튼은 미리보기 모달을 연다 (이 단계는 기록하지 않는다)
+    await page.getByRole("button", { name: "인쇄", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "출력 미리보기" });
+    await expect(dialog).toBeVisible();
+    // 2단계: 모달 안의 인쇄를 누르면 print-log가 기록된다
     const logged = page.waitForResponse(
       (r) => r.url().includes(`/api/approvals/${id}/print-log`) && r.request().method() === "POST",
     );
-    await page.getByRole("button", { name: "인쇄" }).click();
+    await dialog.getByRole("button", { name: "인쇄", exact: true }).click();
     expect((await logged).ok()).toBe(true);
     await page.reload();
+    // 이력 카드는 새로 불러오면 다시 접혀 있으므로 펼쳐서 확인한다
+    await page.getByRole("button", { name: /^이력(\s|$)/ }).click();
     await expect(page.getByRole("listitem").filter({ hasText: "인쇄" }).first()).toBeVisible();
   });
 
