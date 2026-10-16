@@ -69,3 +69,9 @@ export const useSearch = (query: string) =>
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     enabled: query !== "",
   });
+/** 결재선 정책 (결재란 최대 칸 수). 구성원 누구나 읽는다 */
+export const useApprovalPolicy = () =>
+  useQuery({
+    queryKey: ["approval-policy"],
+    queryFn: () => api<{ approvalLineMaxCells: number }>("/api/account/approval-policy"),
+  });

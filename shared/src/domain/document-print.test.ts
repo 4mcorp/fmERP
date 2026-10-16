@@ -114,6 +114,64 @@ describe("buildPdfHtml (APV-063)", () => {
     expect(html).toMatch(/\.bottom-box \{[^}]*break-inside: avoid/);
   });
 
+  it("결재란은 3·8·15칸 기준으로 한두 줄에 나누고 폭·글자 크기를 자동 맞춤한다", () => {
+    for (const maxCells of [3, 8, 15]) {
+      const input = base();
+      input.approvalLineMaxCells = maxCells;
+      input.approvers = Array.from({ length: maxCells - 1 }, (_, i) => ({
+        stepId: `s-${i}`,
+        type: "approve",
+        label: "결재",
+        name: `결재자${i}`,
+        position: null,
+        status: "PENDING",
+        at: null,
+        onBehalfOfName: null,
+      }));
+      const html = buildPdfHtml(input);
+      expect(html).toContain("--cell-width:20mm");
+      expect(html).toContain("--cell-font:");
+      const approvalRows = html
+        .match(/<table class="approval"[^>]*>(.*?)<\/table>/s)?.[1]
+        ?.match(/<tr>/g);
+      expect(approvalRows?.length).toBe(maxCells <= 2 ? 1 : 2);
+      expect(html).toContain(`결재자${maxCells - 2}`);
+    }
+  });
+
+  it("결재란 칸 폭은 11~20mm 범위로 자동 계산한다 (2·15칸 20mm, 20칸 18.6mm, 30칸 12.4mm)", () => {
+    const widths: Record<number, string> = {
+      2: "20mm",
+      15: "20mm",
+      20: "18.6mm",
+      30: "12.4mm",
+    };
+    for (const [maxCells, width] of Object.entries(widths)) {
+      const input = base();
+      input.approvalLineMaxCells = Number(maxCells);
+      const html = buildPdfHtml(input);
+      expect(html, `maxCells=${maxCells}`).toContain(`--cell-width:${width}`);
+    }
+  });
+
+  it("결재란은 설정된 최대 칸을 넘어도 결재자를 누락하지 않는다", () => {
+    const input = base();
+    input.approvalLineMaxCells = 3;
+    input.approvers = Array.from({ length: 15 }, (_, i) => ({
+      stepId: `s-${i}`,
+      type: "approve",
+      label: "결재",
+      name: `결재자${i}`,
+      position: null,
+      status: "PENDING",
+      at: null,
+      onBehalfOfName: null,
+    }));
+    const html = buildPdfHtml(input);
+    expect(html).toContain("결재자14");
+    expect(html.match(/<td class="cell"/g)).toHaveLength(16);
+  });
+
   it("문서번호·제목·사업자·양식 이름을 머리에 둔다", () => {
     const html = buildPdfHtml(base());
     for (const text of ["FM-GEN-2026-0001", "출장 정산", "포엠테스트 본사", "지출결의서"]) {

@@ -113,6 +113,7 @@ export interface AccountSettings {
   name: string;
   allowedDomains: string[];
   maxDeptDepth: number;
+  approvalLineMaxCells: number;
   timezone: string;
   locale: string;
   securityPolicy: {

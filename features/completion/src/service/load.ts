@@ -17,6 +17,7 @@ import type { PdfApprover } from "./pdf-html";
 export interface PackageData {
   documentId: string;
   accountId: string;
+  approvalLineMaxCells: number;
   prefix: string;
   doc: {
     title: string;
@@ -121,9 +122,11 @@ export async function loadPackageData(
       businessCode: schema.business.code,
       businessName: schema.business.name,
       sealKey: schema.business.sealKey,
+      approvalLineMaxCells: schema.account.approvalLineMaxCells,
     })
     .from(schema.document)
     .innerJoin(schema.business, eq(schema.business.id, schema.document.businessId))
+    .innerJoin(schema.account, eq(schema.account.id, schema.document.accountId))
     .where(eq(schema.document.id, documentId));
   if (!row) throw new Error(`문서를 찾을 수 없습니다: ${documentId}`);
   const { doc } = row;
@@ -286,6 +289,7 @@ export async function loadPackageData(
   return {
     documentId,
     accountId: doc.accountId,
+    approvalLineMaxCells: row.approvalLineMaxCells,
     prefix: docPrefix(doc.accountId, row.businessCode, doc.createdAt, doc.id),
     doc: {
       title: doc.title,

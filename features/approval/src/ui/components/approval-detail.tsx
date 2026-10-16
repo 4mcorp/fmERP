@@ -43,7 +43,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useApproval, useApprovalBody, useAttachments, useComments } from "../queries";
+import {
+  useApproval,
+  useApprovalBody,
+  useApprovalPolicy,
+  useAttachments,
+  useComments,
+} from "../queries";
 import { AttachmentList } from "./attachment-uploader";
 import { FormValuesView } from "./form-view";
 import { LineEditor, type LineRow, rowsToItems } from "./line-editor";
@@ -184,6 +190,7 @@ export function ApprovalDetailPage({
   const { data: me } = useMe();
   const { data: view, error: viewError } = useApproval(id);
   const { data: serverBody } = useApprovalBody(id);
+  const { data: linePolicy } = useApprovalPolicy();
   const { data: attachments } = useAttachments(id);
   const { data: comments } = useComments(id);
   const { data: pending } = usePending();
@@ -710,7 +717,12 @@ export function ApprovalDetailPage({
           </fieldset>
           <div className="space-y-1">
             <p className="text-sm font-medium">추가할 단계</p>
-            <LineEditor rows={lineRows} onChange={setLineRows} ctx={ctx} />
+            <LineEditor
+              rows={lineRows}
+              onChange={setLineRows}
+              ctx={ctx}
+              maxCells={linePolicy?.approvalLineMaxCells}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="line-reason">변경 사유</Label>

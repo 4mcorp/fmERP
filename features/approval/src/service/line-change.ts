@@ -85,6 +85,11 @@ export async function changeLine(
   const inactive = new Set(
     org.members.filter((m) => m.status !== "active").map((m) => m.membershipId),
   );
+  const [account] = await ctx.tx
+    .select({ approvalLineMaxCells: schema.account.approvalLineMaxCells })
+    .from(schema.account)
+    .where(eq(schema.account.id, ctx.accountId));
+  const maxCells = account?.approvalLineMaxCells ?? 15;
   const validation = validateLine(
     result.doc.steps.map((s) => ({
       type: s.type,
@@ -98,6 +103,7 @@ export async function changeLine(
       ranks: new Map(),
       inactive,
       auditors: await loadAuditorIds(ctx.tx),
+      maxCells,
     },
   );
   if (validation.errors.length > 0) {

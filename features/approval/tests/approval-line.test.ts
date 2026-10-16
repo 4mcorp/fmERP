@@ -233,6 +233,24 @@ describe("결재선 검증 (APV-015·038)", () => {
     expect(validateLine([s(1, ["drafter"])], base).errors.join()).toMatch(/본인/);
   });
 
+  it("설정된 결재란 최대 칸 수를 기안 칸 포함으로 적용한다", () => {
+    const cells = (count: number) => [
+      s(
+        1,
+        Array.from({ length: count - 1 }, (_, i) => `member-${i}`),
+      ),
+    ];
+    for (const maxCells of [3, 8, 15]) {
+      expect(validateLine(cells(maxCells), { ...base, maxCells }).errors).toEqual([]);
+      expect(validateLine(cells(maxCells + 1), { ...base, maxCells }).errors).toContain(
+        `결재란은 최대 ${maxCells}칸까지입니다`,
+      );
+    }
+    expect(validateLine(cells(16), { ...base, maxCells: 15 }).errors).toContain(
+      "결재란은 최대 15칸까지입니다",
+    );
+  });
+
   it("감사 단계의 처리자는 감사인 역할 보유자여야 한다 (AUD-001)", () => {
     const withAuditors = { ...base, auditors: new Set(["aud"]) };
     const audit = (ids: string[]) => s(2, ids, { type: "audit" });

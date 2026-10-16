@@ -29,7 +29,7 @@
 ## completion — 완료된 결재 문서의 PDF·패키지(final/)를 한 번만 만들어 S3에 쓰고, 열람 권한자에게 내려받게 한다
 - 키워드: 완료, PDF, 패키지, 내려받기, ZIP, 인쇄, final, 해시, manifest
 - 화면: (없음) · API 3개 · 폴더 `features/completion/`
-- 표: 소유 document_package / 읽기 9개
+- 표: 소유 document_package / 읽기 10개
 - 시험: tests/*.test.ts · tests/*.int.test.ts · apps/web/e2e (m5.spec.ts가 완료 파일을 거친다)
 
 ## home — 로그인 후 첫 화면 — 내 결재 대기·기안 현황과 양식 바로가기
@@ -46,6 +46,6 @@
 
 ## org — 사업자·부서·직위·직책·구성원·소속(겸직)·역할 부여, 조직도, 부서 CSV 가져오기·내보내기
 - 키워드: 조직, 조직도, 부서, 사업자, 직위, 직책, 구성원, 겸직, 발령, 역할, 권한, 초대, 부서 CSV
-- 화면: /org, /admin/settings, /admin/businesses, /admin/org, /admin/members, /admin/positions · API 23개 · 폴더 `features/org/`
+- 화면: /org, /admin/settings, /admin/businesses, /admin/org, /admin/members, /admin/positions · API 24개 · 폴더 `features/org/`
 - 표: 소유 assignment, assignment_history, business, department, duty, position, role_grant / 읽기 2개
 - 시험: tests/*.test.ts · tests/org.int.test.ts, tests/org-db.int.test.ts · apps/web/e2e/m2.spec.ts
