@@ -27,7 +27,7 @@ const req = (who: string, path: string, method = "GET", body?: unknown) =>
   });
 
 interface Page {
-  items: { id: string; title: string; status: string }[];
+  items: { id: string; title: string; status: string; read: boolean }[];
   nextCursor: string | null;
 }
 const box = async (who: string, name: string, query = "") =>
@@ -265,5 +265,17 @@ describe("커서 페이지네이션", () => {
     const app = getTestApp();
     const res = await app.request("/api/mailbox/mine");
     expect(res.status).toBe(401);
+  });
+});
+
+describe("문서함 읽음 표시 (R8)", () => {
+  it("결재 문서는 상세를 열기 전까지 안 읽음이고, 연 뒤 읽음이 된다", async () => {
+    const id = await createDoc([step(1, "member2@example.com")], "읽음 표시 테스트");
+    await submit(id);
+    const flag = async (who: string) =>
+      (await box(who, "progress", "?limit=100")).items.find((i) => i.id === id)?.read;
+    expect(await flag("member2")).toBe(false);
+    expect((await req("member2", `/api/approvals/${id}`)).status).toBe(200);
+    expect(await flag("member2")).toBe(true);
   });
 });
