@@ -37,7 +37,7 @@ import {
   type LineRow,
   rowsToItems,
 } from "../components/line-editor";
-import { useFormDetail } from "../queries";
+import { useApprovalPolicy, useFormDetail } from "../queries";
 
 function problemLines(error: unknown): string[] {
   if (!(error instanceof ApiProblem)) return [errorMessage(error)];
@@ -62,6 +62,7 @@ export default function NewApprovalPage() {
   const { data: mine } = useMine();
   const [formId, setFormId] = useState<string | null>(null);
   const { data: detail } = useFormDetail(formId ?? undefined);
+  const { data: policy } = useApprovalPolicy();
 
   const myMember = members?.find((m) => m.userId === me?.id);
   const assignments = myMember?.assignments ?? [];
@@ -307,6 +308,7 @@ export default function NewApprovalPage() {
                   rows={rows}
                   onChange={setRows}
                   ctx={ctx}
+                  maxCells={policy?.approvalLineMaxCells}
                   allowPost={detail.definition.defaultLine.some((i) => i.type === "post")}
                 />
               ) : (

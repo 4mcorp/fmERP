@@ -114,6 +114,7 @@ describe("접근 제어 (비로그인·일반 구성원)", () => {
       ["GET", "/api/duties"],
       ["GET", "/api/account/settings"],
       ["GET", "/api/account/capabilities"],
+      ["GET", "/api/account/approval-policy"],
     ] as const) {
       const res = await app.request(path, { method });
       expect(res.status, path).toBe(401);
@@ -124,6 +125,10 @@ describe("접근 제어 (비로그인·일반 구성원)", () => {
     expect((await member1.request("/api/org-chart")).status).toBe(200);
     expect((await member1.request("/api/account/members")).status).toBe(200);
     expect((await member1.request("/api/account/settings")).status).toBe(403);
+    // 결재선 정책은 구성원도 읽는다 (응답은 칸 수 하나뿐)
+    const policy = await member1.request("/api/account/approval-policy");
+    expect(policy.status).toBe(200);
+    expect(Object.keys(await policy.json())).toEqual(["approvalLineMaxCells"]);
     expect(
       (await post(member1, "/api/businesses", { name: "x", bizRegNo: "2208162517", code: "X" }))
         .status,

@@ -40,6 +40,8 @@ export interface PdfInput {
   attachments: { filename: string; size: number }[];
   /** `@font-face` CSS (worker가 Pretendard 파일을 담아 넘긴다) */
   fontCss?: string;
+  /** 기안 칸을 포함한 결재란 최대 칸 수 (2~30, 기본 15) */
+  approvalLineMaxCells?: number;
 }
 
 const ESCAPES: Record<string, string> = {
@@ -304,7 +306,18 @@ function approvalBox(input: PdfInput): string {
       a.status === "APPROVED" || a.status === "POST_APPROVED" || a.status === "SKIPPED",
     ),
   );
-  return `<table class="approval"><tr>${drafter}${cells.join("")}</tr></table>`;
+  const maxCells = Math.min(30, Math.max(2, Math.floor(input.approvalLineMaxCells ?? 15)));
+  const rowCapacity = Math.ceil(maxCells / 2);
+  const firstRow = [drafter, ...cells.slice(0, rowCapacity - 1)];
+  const secondRow = cells.slice(rowCapacity - 1, Math.min(cells.length, maxCells - 1));
+  const extraRows = cells.slice(maxCells - 1);
+  const rows = [firstRow, secondRow, ...extraRows.map((cell) => [cell])].filter(
+    (row) => row.length > 0,
+  );
+  const cellWidth = Math.min(20, Math.max(11, (210 - 24) / rowCapacity));
+  const cellFont = Math.min(8.5, Math.max(7, (8.5 * cellWidth) / 24));
+  const cellImageWidth = Math.min(20, cellWidth * 0.85);
+  return `<table class="approval" style="--cell-width:${cellWidth}mm;--cell-font:${cellFont}pt;--cell-image-width:${cellImageWidth}mm">${rows.map((row) => `<tr>${row.join("")}</tr>`).join("")}</table>`;
 }
 
 const CSS = `
@@ -319,15 +332,15 @@ const CSS = `
   .top.approval-bottom { display: none; }
   .bottom-box { display: none; margin-top: 8mm; break-inside: avoid; }
   .bottom-box.show { display: flex; justify-content: flex-end; }
-  table.approval { border-collapse: collapse; break-inside: avoid; }
+  table.approval { border-collapse: collapse; break-inside: avoid; table-layout: fixed; }
   table.approval tr, table.approval td.cell { break-inside: avoid; }
-  table.approval td.cell { border: 1px solid #333; width: 24mm; text-align: center; vertical-align: top; padding: 0; }
-  .cell .head { background: #f1f1f1; border-bottom: 1px solid #333; font-size: 8.5pt; padding: 1mm; min-height: 9mm; }
+  table.approval td.cell { border: 1px solid #333; width: var(--cell-width); text-align: center; vertical-align: top; padding: 0; font-size: var(--cell-font); }
+  .cell .head { background: #f1f1f1; border-bottom: 1px solid #333; font-size: inherit; padding: 1mm; min-height: 9mm; }
   .cell .body { height: 15mm; position: relative; display: flex; align-items: center; justify-content: center; }
-  .cell .body img.sig, .cell .body img.stamp { max-height: 13mm; max-width: 20mm; }
+  .cell .body img.sig, .cell .body img.stamp { max-height: 13mm; max-width: var(--cell-image-width); }
   .cell .body img.stamp { position: absolute; right: 1mm; top: 1mm; max-height: 11mm; opacity: 0.9; }
   .cell .signed-name { font-weight: 600; }
-  .cell .pending { color: #999; font-size: 8.5pt; }
+  .cell .pending { color: #999; font-size: inherit; }
   .cell .behalf { position: absolute; left: 1mm; top: 1mm; border: 1px solid #c00; color: #c00; font-size: 7pt; padding: 0 1mm; border-radius: 1mm; }
   .cell .who { font-size: 8.5pt; border-top: 1px solid #ccc; padding: 0.5mm; }
   .cell .when { font-size: 7.5pt; color: #444; padding-bottom: 0.5mm; min-height: 4mm; }

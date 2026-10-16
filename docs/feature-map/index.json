@@ -853,6 +853,7 @@
       "tables": {
         "owns": ["document_package"],
         "reads": [
+          "account",
           "approval_action",
           "approval_step",
           "attachment",
@@ -1208,6 +1209,11 @@
       ],
       "folder": "org",
       "routes": [
+        {
+          "method": "get",
+          "path": "/account/approval-policy",
+          "file": "features/org/src/api/org-routes.ts"
+        },
         {
           "method": "get",
           "path": "/account/capabilities",

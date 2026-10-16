@@ -45,6 +45,7 @@ export default function SettingsPage() {
     name: "",
     domains: "",
     depth: "1",
+    approvalLineMaxCells: "15",
     idle: "",
     absolute: "",
     pinRequired: true,
@@ -62,6 +63,7 @@ export default function SettingsPage() {
       name: data.name,
       domains: data.allowedDomains.join(", "),
       depth: String(data.maxDeptDepth),
+      approvalLineMaxCells: String(data.approvalLineMaxCells),
       idle: p.idleTimeoutMinutes ? String(p.idleTimeoutMinutes) : "",
       absolute: p.absoluteTimeoutHours ? String(p.absoluteTimeoutHours) : "",
       pinRequired: p.pinRequired ?? true,
@@ -85,6 +87,7 @@ export default function SettingsPage() {
           name: form.name,
           allowedDomains: splitList(form.domains),
           maxDeptDepth: Number(form.depth),
+          approvalLineMaxCells: Number(form.approvalLineMaxCells),
           securityPolicy: {
             ...(form.idle ? { idleTimeoutMinutes: Number(form.idle) } : {}),
             ...(form.absolute ? { absoluteTimeoutHours: Number(form.absolute) } : {}),
@@ -185,6 +188,30 @@ export default function SettingsPage() {
               </AlertDescription>
             </Alert>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">결재란 최대 칸 수</CardTitle>
+          <CardDescription>
+            기안 칸을 포함한 결재란 전체 칸 수입니다. 2~30칸으로 설정할 수 있습니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-40 space-y-2">
+            <Label htmlFor="s-approval-line-max-cells">최대 칸 수</Label>
+            <Input
+              id="s-approval-line-max-cells"
+              type="number"
+              min={2}
+              max={30}
+              step={1}
+              required
+              value={form.approvalLineMaxCells}
+              onChange={(e) => set("approvalLineMaxCells")(e.target.value)}
+            />
+          </div>
         </CardContent>
       </Card>
 

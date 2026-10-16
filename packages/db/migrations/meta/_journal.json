@@ -155,6 +155,13 @@
       "when": 1791240492170,
       "tag": "0021_notification_events_no_payload",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792070017596,
+      "tag": "0022_account_approval_line_max_cells",
+      "breakpoints": true
     }
   ]
 }

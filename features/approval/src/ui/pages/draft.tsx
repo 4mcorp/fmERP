@@ -41,7 +41,7 @@ import {
 } from "../components/line-editor";
 import { RecipientEditor } from "../components/recipient-editor";
 import { loadLocalDraft, removeLocalDraft, saveLocalDraft } from "../local-drafts";
-import { useApproval, useApprovalBody, useAttachments } from "../queries";
+import { useApproval, useApprovalBody, useApprovalPolicy, useAttachments } from "../queries";
 
 const AUTOSAVE_MS = 30_000;
 const LOCAL_SAVE_MS = 1_000;
@@ -72,6 +72,7 @@ export default function DraftEditorPage() {
   const { data: view } = useApproval(id);
   const { data: serverBody } = useApprovalBody(id);
   const { data: attachments } = useAttachments(id);
+  const { data: policy } = useApprovalPolicy();
   const { data: members } = useMembers();
   const { data: departments } = useDepartments();
   const { data: businesses } = useBusinesses();
@@ -435,6 +436,7 @@ export default function DraftEditorPage() {
                   setLineDirty(true);
                 }}
                 ctx={ctx}
+                maxCells={policy?.approvalLineMaxCells}
                 allowPost={docForm.definition.defaultLine.some((i) => i.type === "post")}
               />
               {lineErrors.length > 0 && (

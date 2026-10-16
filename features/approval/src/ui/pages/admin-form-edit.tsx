@@ -31,7 +31,7 @@ import { ApprovalPageLayout } from "../components/approval-page-layout";
 import { FormFields, type Values } from "../components/form-fields";
 import { FormPrintPreview } from "../components/form-print-preview";
 import { itemsToRows, LineEditor, type LineRow, rowsToItems } from "../components/line-editor";
-import { useFormDetail } from "../queries";
+import { useApprovalPolicy, useFormDetail } from "../queries";
 
 const FIELD_TYPE_LABEL: Record<FormField["type"], string> = {
   text: "텍스트",
@@ -471,6 +471,7 @@ export default function FormBuilderPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: detail } = useFormDetail(isNew ? undefined : id);
+  const { data: policy } = useApprovalPolicy();
   const { data: members } = useMembers();
   const { data: departments } = useDepartments();
   const { data: businesses } = useBusinesses();
@@ -877,7 +878,13 @@ export default function FormBuilderPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <LineEditor rows={rows} onChange={setRows} ctx={ctx} allowPost />
+                <LineEditor
+                  rows={rows}
+                  onChange={setRows}
+                  ctx={ctx}
+                  maxCells={policy?.approvalLineMaxCells}
+                  allowPost
+                />
               </CardContent>
             </Card>
 
