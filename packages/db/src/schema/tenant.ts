@@ -119,3 +119,31 @@ export const invitation = pgTable(
   },
   (t) => [index().on(t.accountId)],
 );
+
+/**
+ * passkey 등록 토큰 (1회용). 관리자가 사전 등록한 사용자가 처음 passkey를 등록할 때 쓴다.
+ * 토큰 원문은 저장하지 않고 해시만 둔다. 재발급하면 이전 토큰은 revokedAt으로 폐기한다.
+ *
+ * @owner account
+ */
+export const enrollmentToken = pgTable(
+  "enrollment_token",
+  {
+    id: primaryId(),
+    accountId: uuid()
+      .notNull()
+      .references(() => account.id, { onDelete: "cascade" }),
+    userId: uuid()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    tokenHash: text().notNull().unique(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    usedAt: timestamp({ withTimezone: true }),
+    revokedAt: timestamp({ withTimezone: true }),
+    createdBy: uuid()
+      .notNull()
+      .references(() => user.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.accountId), index().on(t.userId)],
+);

@@ -1,5 +1,14 @@
 // Better Auth가 사용하는 테이블 (ADR 0005). 필드 이름은 Better Auth 모델과 맞춘다.
-import { index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createdAt, primaryId, updatedAt } from "./columns";
 import { account } from "./tenant";
 import { user } from "./user";
@@ -68,6 +77,32 @@ export const verification = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [index().on(t.identifier)],
+);
+
+/**
+ * passkey (WebAuthn) 자격 증명. Better Auth passkey 플러그인 모델 `passkey`와 필드 이름을 맞춘다.
+ * 공개키·카운터만 저장하며 비밀은 없다. 테넌트 표가 아니라 사용자 표다 (계정 간 공유 없음).
+ *
+ * @owner shared
+ */
+export const passkey = pgTable(
+  "passkey",
+  {
+    id: primaryId(),
+    name: text(),
+    publicKey: text().notNull(),
+    userId: uuid()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    credentialID: text().notNull().unique(),
+    counter: integer().notNull(),
+    deviceType: text().notNull(),
+    backedUp: boolean().notNull(),
+    transports: text(),
+    aaguid: text(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow(),
+  },
+  (t) => [index().on(t.userId)],
 );
 
 /**
