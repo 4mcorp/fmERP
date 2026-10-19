@@ -21,6 +21,7 @@ test-results/
 .env.*
 !.env.example
 !.env.staging.example
+!.env.prod.example
 *.pem
 *.key
 

@@ -1,0 +1,131 @@
+# 운영(prod) 로컬 서버 Compose. 접근은 Tailscale(MagicDNS, HTTPS)로만 한다. docs/ops/prod.md 참고
+# 실행:  docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# 규칙:
+#  - ports를 두지 않는다. Docker가 연 포트는 호스트 방화벽(ufw)을 우회한다. tailnet 밖에서는 닿지 않는다.
+#  - cloudflared를 쓰지 않는다. dev(fmerp-dev)·staging(fmerp-staging)과 프로젝트명·볼륨·네트워크가 다르다.
+#  - 필수 값(${VAR:?})은 비면 기동 전에 실패한다. initdb 스크립트의 개발용 기본 비밀번호가 쓰이지 않게 하려는 장치다.
+#  - 메모리 상한 합계: postgres 4096 + web 1024 + worker 2048 + tailscale 256 + migrate 256(1회) = 7680MB (서버 16GB 기준)
+name: fmerp-prod
+
+x-app-env: &app-env
+  NODE_ENV: production
+  DATABASE_URL: postgres://fmerp_app:${APP_DB_PASSWORD:?APP_DB_PASSWORD 필요}@postgres:5432/fmerp
+  AUTH_DATABASE_URL: postgres://fmerp_auth:${AUTH_DB_PASSWORD:?AUTH_DB_PASSWORD 필요}@postgres:5432/fmerp
+  S3_ENDPOINT: ${S3_ENDPOINT:-}
+  S3_REGION: ${S3_REGION:-auto}
+  S3_BUCKET: ${S3_BUCKET:?S3_BUCKET 필요}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID 필요}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY 필요}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+  SYSTEM_ADMIN_EMAILS: ${SYSTEM_ADMIN_EMAILS:-}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+  # 공개 주소는 tailnet의 MagicDNS FQDN이다. 알림 링크·인증 리디렉션의 기준
+  PUBLIC_BASE_URL: https://${PROD_FQDN:?PROD_FQDN 필요}
+
+services:
+  postgres:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 필요}
+      POSTGRES_DB: fmerp
+      MIGRATOR_DB_PASSWORD: ${MIGRATOR_DB_PASSWORD:?MIGRATOR_DB_PASSWORD 필요}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD 필요}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:?AUTH_DB_PASSWORD 필요}
+      BACKUP_DB_PASSWORD: ${BACKUP_DB_PASSWORD:?BACKUP_DB_PASSWORD 필요}
+    volumes:
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fmerp"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 4096m
+    networks: [internal]
+
+  # 배포 때마다 1회: 마이그레이션. 시드(테스트 계정)는 운영에서 만들지 않는다 (DEV_TEST_LOGIN 없음)
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    working_dir: /app
+    command: ["pnpm", "--filter", "@fmerp/db", "migrate"]
+    environment:
+      MIGRATION_DATABASE_URL: postgres://fmerp_migrator:${MIGRATOR_DB_PASSWORD:?MIGRATOR_DB_PASSWORD 필요}@postgres:5432/fmerp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    mem_limit: 256m
+    networks: [internal]
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runner
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      BETTER_AUTH_URL: https://${PROD_FQDN:?PROD_FQDN 필요}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET 필요}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    mem_limit: 1024m
+    networks: [edge, internal]
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      BACKUP_DATABASE_URL: postgres://fmerp_backup:${BACKUP_DB_PASSWORD:?BACKUP_DB_PASSWORD 필요}@postgres:5432/fmerp
+      BACKUP_AGE_RECIPIENTS: ${BACKUP_AGE_RECIPIENTS:?BACKUP_AGE_RECIPIENTS 필요}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    mem_limit: 2048m
+    networks: [internal]
+
+  # tailnet 연결과 HTTPS 노출. 노드 이름 = MagicDNS 이름, 인증서는 Tailscale이 발급한다.
+  # 시작 때 docker/tailscale/serve.json.tmpl의 __PROD_FQDN__을 PROD_FQDN으로 치환해 web:3000을 HTTPS로 tailnet 안에만 노출한다 (Funnel 꺼짐)
+  tailscale:
+    image: tailscale/tailscale:v1.104.1
+    restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+      - sed "s/__PROD_FQDN__/$$PROD_FQDN/g" /config/serve.json.tmpl > /var/lib/tailscale/serve.json && exec /usr/local/bin/containerboot
+    environment:
+      # 최초 1회 필요. state 볼륨에 상태가 남으면 비워도 된다. 태그가 붙은 재사용 불가 키를 쓴다 (docs/ops/prod.md 4장)
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_HOSTNAME: ${TS_HOSTNAME:-fmerp}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "true"
+      TS_SERVE_CONFIG: /var/lib/tailscale/serve.json
+      TS_EXTRA_ARGS: --advertise-tags=tag:fmerp-prod
+      PROD_FQDN: ${PROD_FQDN:?PROD_FQDN 필요}
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./docker/tailscale/serve.json.tmpl:/config/serve.json.tmpl:ro
+    depends_on:
+      - web
+    mem_limit: 256m
+    networks: [edge]
+
+networks:
+  # tailscale ↔ web. DB에는 닿지 않는다
+  edge:
+  # web·worker·migrate ↔ postgres. tailscale 컨테이너는 여기에 붙지 않는다
+  internal:
+
+volumes:
+  pgdata:
+  tailscale-state:
