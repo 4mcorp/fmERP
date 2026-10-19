@@ -169,6 +169,13 @@
       "when": 1792135973749,
       "tag": "0023_document_view",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792430679114,
+      "tag": "0024_passkey_enrollment",
+      "breakpoints": true
     }
   ]
 }

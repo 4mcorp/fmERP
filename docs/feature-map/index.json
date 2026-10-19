@@ -74,7 +74,7 @@
       "auth_setup": "auth-setup",
       "seed": "apps/web/server/seed/",
       "tables": {
-        "owns": ["invitation"],
+        "owns": ["enrollment_token", "invitation"],
         "reads": ["assignment", "business", "department", "duty", "position"],
         "writes": []
       },
