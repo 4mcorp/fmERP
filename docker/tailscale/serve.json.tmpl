@@ -1,0 +1,19 @@
+{
+  "TCP": {
+    "443": {
+      "HTTPS": true
+    }
+  },
+  "Web": {
+    "__PROD_FQDN__:443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://web:3000"
+        }
+      }
+    }
+  },
+  "AllowFunnel": {
+    "__PROD_FQDN__:443": false
+  }
+}

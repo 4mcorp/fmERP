@@ -68,6 +68,7 @@
 | DB 덤프·복구 절차·이관 절차·로컬 사본 | DEPLOYMENT_PLAN 8장, [ops/migration.md](ops/migration.md)(운영자 절차), ADR 0011 |
 | 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
 | 스테이징 구축·배포·Access 절차 (초안, 미검증) | [ops/staging.md](ops/staging.md), `docker-compose.staging.yml`, `apps/web/Dockerfile`, `.env.staging.example` |
+| 운영 구축·Tailscale MagicDNS 접속·tailnet ACL·사용자 흐름 (초안, 미검증) | [ops/prod.md](ops/prod.md), `docker-compose.prod.yml`, `docker/tailscale/serve.json.tmpl`, `.env.prod.example` |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
 | 개발용 테스트 계정 목록·비밀번호 | `features/account/src/service/test-accounts.ts` (시드: `pnpm db:seed` → `apps/web/server/seed-cli.ts`) |
 | 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
