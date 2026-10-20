@@ -86,7 +86,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod logs tailscale
 ## 8. 미검증 항목
 
 - tailscale 컨테이너 실제 기동, MagicDNS 이름 발급, HTTPS 인증서 발급: 실제 tailnet auth key가 필요하다. 키 없이는 검증할 수 없다.
-- 휴대폰 홈 화면 추가와 push 수신: 실기기 확인 필요.
+- **미검증(실기기)**: 휴대폰 홈 화면 추가와 웹 푸시 수신(iOS Safari·삼성 인터넷). 자동 시험은 manifest·아이콘·sw.js 응답과 발송 로직까지만 확인한다. 아래 §10.3 절차로 직접 확인한다.
 - passkey rpID 연결: 인증 플러그인 작업에서 `PROD_FQDN`을 rpID로 설정한다 (아직 코드 미연결).
 
 ## 9. GitHub Actions 자동 배포 (초안, 미검증)
@@ -184,3 +184,33 @@ GitHub 저장소 Settings → Environments에 **`prod`** 환경을 만들고 "Re
 2. 9.3 ACL 반영 권한 (관리자).
 3. 서버: 배포 사용자·배포 키 공개키, 저장소 클론 경로, 호스트 키 지문, sshd의 tailnet 한정 설정.
 4. 9.4의 secrets·vars 값과 `prod` 환경(필수 승인자).
+
+## 10. 웹 푸시(VAPID) 설정과 실기기 확인 (미검증 — 실기기)
+
+홈 화면 앱의 알림은 Web Push로 간다. 세 값(`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`)을 **모두** 채워야 켜진다. 모두 비우면 푸시만 꺼진다. 일부만 채우면 웹 서버의 env 검증(`shared/src/server/env.ts`)이 실패하므로 세 값을 함께 넣거나 함께 비운다. 값은 `.env`에만 두고 저장소에 커밋하지 않는다.
+
+### 10.1 키 생성 (최초 1회)
+
+서버에서 Node 24로 한 번 실행한다. 출력의 개인 키는 비밀정보로 취급한다.
+
+```sh
+node --input-type=module -e "const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);console.log('VAPID_PUBLIC_KEY='+Buffer.from(await crypto.subtle.exportKey('raw',k.publicKey)).toString('base64url'));console.log('VAPID_PRIVATE_KEY='+(await crypto.subtle.exportKey('jwk',k.privateKey)).d);"
+```
+
+`VAPID_SUBJECT`에는 운영 연락처를 `mailto:ops@...` 또는 `https://...` 형식으로 쓴다. 키를 바꾸면 기존 구독은 모두 무효가 되므로 사용자가 다시 켜야 한다.
+
+### 10.2 적용
+
+`.env`에 세 값을 채운 뒤 `docker compose -f docker-compose.prod.yml up -d web worker`로 다시 띄운다. worker 로그에 `웹 푸시 알림이 꺼져 있습니다`가 없으면 켜진 것이다.
+
+### 10.3 실기기 수동 확인 (iOS Safari·삼성 인터넷)
+
+1. 휴대폰을 tailnet에 연결하고 `https://<PROD_FQDN>`에 접속한다.
+2. **iPhone**: Safari 공유 버튼 → "홈 화면에 추가". 홈 화면의 4mERP 아이콘으로 연다(standalone 화면인지 확인). **삼성 인터넷**: 메뉴 → "홈 화면에 추가".
+3. 홈 화면 앱에서 내 정보 → 알림 → "이 기기 알림 켜기"를 누르고 권한을 허용한다. iOS는 이 단계가 홈 화면 앱에서만 된다.
+4. 다른 구성원 계정으로 해당 구성원에게 결재 요청을 올린다.
+5. 잠금 화면에 알림이 뜨는지 확인한다. 알림 본문에 문서 제목이 없어야 한다.
+6. 알림을 누르면 앱이 열리고 해당 문서(`/approval/<id>`)로 이동하는지 확인한다.
+7. "이 기기 알림 끄기"를 누르고 다시 결재 요청을 올렸을 때 알림이 오지 않는지 확인한다.
+
+확인 결과(기기 모델·OS 버전·브라우저 버전·통과 여부)를 이 문서 아래에 날짜와 함께 남긴다. 한 번도 확인하지 않았다면 실기기 수신은 미검증 상태다.

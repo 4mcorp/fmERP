@@ -1,6 +1,7 @@
 import { withTenant } from "@fmerp/db";
 import type { SystemGuards } from "@fmerp/shared/contracts/system-guards";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
+import { getEnv } from "@fmerp/shared/server/env";
 import {
   type AppRouter,
   type DepsProvider,
@@ -15,6 +16,7 @@ import {
   myMembershipId,
   unreadCount,
 } from "../service/in-app";
+import { removeSubscription, saveSubscription, vapidFromEnv } from "../service/push";
 import {
   changeReceiverMode,
   createMyLink,
@@ -188,6 +190,81 @@ export function registerNotificationRoutes(
     }),
     async (c) => {
       await unlinkMyTelegram(deps(), c.get("session"), c.get("request"));
+      return c.json({ ok: true as const }, 200);
+    },
+  );
+
+  // ---- 웹 푸시 (홈 화면 앱·브라우저의 이 기기 알림) ----
+  app.use("/me/push", requireSession(deps), requireTenant(deps));
+  app.use("/me/push/*", requireSession(deps), requireTenant(deps));
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/me/push/config",
+      tags: ["notification"],
+      summary: "웹 푸시 공개 키 (설정되지 않았으면 publicKey는 null)",
+      responses: {
+        200: json(z.object({ publicKey: z.string().nullable() })),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const env = getEnv();
+      const keys = vapidFromEnv(env);
+      return c.json({ publicKey: keys?.publicKey ?? null }, 200);
+    },
+  );
+
+  const SubscriptionBody = z.object({
+    endpoint: z.url().max(2048),
+    keys: z.object({ p256dh: z.string().min(1).max(256), auth: z.string().min(1).max(256) }),
+  });
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/me/push/subscribe",
+      tags: ["notification"],
+      summary: "이 기기의 웹 푸시 구독 저장 (같은 주소는 갱신한다)",
+      request: { body: { content: { "application/json": { schema: SubscriptionBody } } } },
+      responses: { 200: json(OkSchema), ...errorResponses },
+    }),
+    async (c) => {
+      const d = deps();
+      const body = c.req.valid("json");
+      await withTenant(d.appDb, c.get("tenant").accountId, async (tx) => {
+        const membershipId = await myMembershipId(tx, c.get("session").userId);
+        await saveSubscription(tx, c.get("tenant").accountId, membershipId, {
+          endpoint: body.endpoint,
+          p256dh: body.keys.p256dh,
+          auth: body.keys.auth,
+        });
+      });
+      return c.json({ ok: true as const }, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/me/push/unsubscribe",
+      tags: ["notification"],
+      summary: "이 기기의 웹 푸시 구독 해제 (남의 구독은 건드리지 않는다)",
+      request: {
+        body: {
+          content: { "application/json": { schema: z.object({ endpoint: z.url().max(2048) }) } },
+        },
+      },
+      responses: { 200: json(OkSchema), ...errorResponses },
+    }),
+    async (c) => {
+      const d = deps();
+      const { endpoint } = c.req.valid("json");
+      await withTenant(d.appDb, c.get("tenant").accountId, async (tx) => {
+        const membershipId = await myMembershipId(tx, c.get("session").userId);
+        await removeSubscription(tx, membershipId, endpoint);
+      });
       return c.json({ ok: true as const }, 200);
     },
   );

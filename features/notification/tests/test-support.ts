@@ -157,3 +157,32 @@ export class FakeTelegram {
     return fail(404, "Not Found");
   }
 }
+
+/** 웹 푸시 시험용 VAPID 키 쌍 (실제 P-256. 공개 키는 65바이트 비압축 점) */
+export async function makeVapid() {
+  const b64url = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64url");
+  const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
+    "sign",
+    "verify",
+  ]);
+  const jwk = await crypto.subtle.exportKey("jwk", kp.privateKey);
+  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey));
+  return {
+    publicKey: b64url(raw),
+    privateKey: jwk.d ?? "",
+    subject: "mailto:ops@example.com",
+  };
+}
+
+/** 브라우저 구독 키(p256dh 점 + auth 16바이트)를 만든다 */
+export async function makeSubscriptionKeys() {
+  const b64url = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64url");
+  const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, [
+    "deriveBits",
+  ]);
+  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey));
+  return {
+    p256dh: b64url(raw),
+    auth: b64url(crypto.getRandomValues(new Uint8Array(16))),
+  };
+}

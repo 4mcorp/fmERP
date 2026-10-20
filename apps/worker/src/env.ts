@@ -36,6 +36,18 @@ const schema = z.object({
   TELEGRAM_API_BASE_URL: z.url().optional(),
   /** 웹훅 요청 검증용 비밀 값 (웹 서버와 같은 값). 웹훅을 쓸 때만 필요 */
   TELEGRAM_WEBHOOK_SECRET: z.string().min(16).optional(),
+  /** 웹 푸시(VAPID) 공개 키. 세 값이 모두 있을 때만 푸시가 켜진다. 빈 문자열은 없는 값 */
+  VAPID_PUBLIC_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(1).optional()),
+  /** 웹 푸시(VAPID) 개인 키. 비밀정보라 .env에만 둔다 */
+  VAPID_PRIVATE_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(1).optional()),
+  /** 웹 푸시 연락처 (mailto: 또는 https:) */
+  VAPID_SUBJECT: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z
+      .string()
+      .regex(/^(mailto:|https:)/)
+      .optional(),
+  ),
   /** 사용자가 접속하는 공개 주소. 알림 링크와 웹훅 등록 주소의 기준 (웹훅은 https만) */
   PUBLIC_BASE_URL: z.url().default("http://localhost:3000"),
   /** 덤프 문제 알림을 받을 시스템 관리자 이메일(쉼표 구분). 웹 서버와 같은 값 */

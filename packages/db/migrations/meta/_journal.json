@@ -176,6 +176,13 @@
       "when": 1792430679114,
       "tag": "0024_passkey_enrollment",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792457844954,
+      "tag": "0025_push_subscription",
+      "breakpoints": true
     }
   ]
 }
