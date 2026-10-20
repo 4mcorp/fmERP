@@ -6,6 +6,7 @@ import {
   businessTarget,
   loadActor,
 } from "@fmerp/shared/authz/org-access";
+import { requireStrictReauth } from "@fmerp/shared/authz/reauth";
 import { can, canInAnyScope } from "@fmerp/shared/domain/permissions";
 import { errorResponses, json, OkSchema } from "@fmerp/shared/server/common";
 import {
@@ -18,6 +19,7 @@ import {
 import { createRoute, z } from "@hono/zod-openapi";
 import { and, desc, eq } from "drizzle-orm";
 import { createInvitationToken } from "../service/accounts";
+import { resetMemberPasskeys } from "../service/passkey-reset";
 
 const INVITATION_DAYS = 7;
 
@@ -264,6 +266,74 @@ export function registerAccountRoutes(app: AppRouter, deps: DepsProvider) {
         });
       });
       return c.json({ ok: true as const }, 200);
+    },
+  );
+
+  // ===== 구성원 passkey 초기화 (PK1c). 계정 관리자 이상만, 결재 PIN 재인증 후 =====
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/account/members/{userId}/passkey-reset",
+      tags: ["account"],
+      summary:
+        "구성원 passkey 전체 삭제·세션 종료 후 새 등록 토큰 발급 (토큰은 이때 한 번만 보여 준다). 결재 PIN 재인증 필요",
+      request: { params: z.object({ userId: z.uuid() }) },
+      responses: {
+        200: json(
+          z.object({
+            token: z.string(),
+            expiresAt: z.string(),
+            removedPasskeys: z.number(),
+            endedSessions: z.number(),
+          }),
+        ),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const d = deps();
+      const tenant = c.get("tenant");
+      const session = c.get("session");
+      const { userId: targetUserId } = c.req.valid("param");
+      // 권한 확인을 먼저 한다: 권한 없는 사람에게 재인증 요구(428)로 응답하지 않는다
+      await withTenant(d.appDb, tenant.accountId, async (tx) => {
+        const { actor } = await loadActor(tx, tenant, session.userId);
+        authorize(actor, "member.passkey_reset", ACCOUNT_TARGET);
+        // 소유자의 passkey는 소유자만 초기화한다. 관리자가 소유자 계정을 넘겨받는 길을 막는다 (role.grant와 같은 이유)
+        const [target] = await tx
+          .select({ role: schema.membership.role })
+          .from(schema.membership)
+          .where(
+            and(
+              eq(schema.membership.accountId, tenant.accountId),
+              eq(schema.membership.userId, targetUserId),
+            ),
+          );
+        if (target?.role === "owner" && tenant.role !== "owner") {
+          throw new ApiError(403, "forbidden", "소유자의 passkey는 소유자만 초기화할 수 있습니다");
+        }
+      });
+      await requireStrictReauth(d, session);
+      const result = await resetMemberPasskeys(
+        { appDb: d.appDb, authDb: d.authDb },
+        {
+          accountId: tenant.accountId,
+          actorUserId: session.userId,
+          targetUserId,
+          now: d.now(),
+          request: c.get("request"),
+        },
+      );
+      if (!result) throw new ApiError(404, "not_found", "구성원을 찾을 수 없습니다");
+      return c.json(
+        {
+          token: result.token,
+          expiresAt: result.expiresAt.toISOString(),
+          removedPasskeys: result.removedPasskeys,
+          endedSessions: result.endedSessions,
+        },
+        200,
+      );
     },
   );
 }
