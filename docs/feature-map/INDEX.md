@@ -4,7 +4,7 @@
 
 ## account — 로그인(개발용 시드 로그인·Better Auth)·세션, 회사 만들기·전환, 초대 수락, 내 정보(프로필·결재 PIN·세션·로그인 이력)
 - 키워드: 로그인, 계정, 세션, 초대, 온보딩, 회사 전환, PIN, 프로필, 서명, 도장, 로그인 이력
-- 화면: /login, /dev-login, /invite/[token], /onboarding, /me · API 24개 · 폴더 `features/account/`
+- 화면: /login, /dev-login, /invite/[token], /onboarding, /me · API 26개 · 폴더 `features/account/`
 - 표: 소유 enrollment_token, invitation / 읽기 5개
 - 시험: tests/*.test.ts · tests/account.int.test.ts · apps/web/e2e/m1.spec.ts
 

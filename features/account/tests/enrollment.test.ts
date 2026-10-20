@@ -23,6 +23,15 @@ describe("사전 등록 이메일·이름 정규화", () => {
     }
   });
 
+  it("이메일은 254자까지 받고 255자를 넘으면 거부한다", () => {
+    const max = `${"a".repeat(254 - "@x.com".length)}@x.com`;
+    expect(max.length).toBe(254);
+    expect(normalizeEnrollmentEmail(max)).toBe(max);
+    const tooLong = `${"a".repeat(255 - "@x.com".length)}@x.com`;
+    expect(tooLong.length).toBe(255);
+    expect(() => normalizeEnrollmentEmail(tooLong)).toThrow(EnrollmentError);
+  });
+
   it("이름은 앞뒤 공백을 지우고, 비었거나 100자를 넘으면 거부한다", () => {
     expect(normalizeEnrollmentName(" 김철수 ")).toBe("김철수");
     expect(() => normalizeEnrollmentName("  ")).toThrow(EnrollmentError);

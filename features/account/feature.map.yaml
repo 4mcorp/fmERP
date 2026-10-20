@@ -10,6 +10,8 @@ access:
   - { who: 로그인 전 사용자(등록 링크), path: "/api/auth/passkey/* (등록 옵션·검증, passkey 로그인)", entry: api/auth-routes }
   - { who: 모든 구성원, path: "/api/me/passkeys (목록·이름 변경·삭제)", entry: api/passkey-routes }
   - { who: 소유자·계정 관리자, path: "/api/account/members/{userId}/passkey-reset (passkey 초기화, PIN 재인증)", entry: api/account-routes }
+  - { who: 소유자·계정 관리자, path: "/api/account/members (POST, 사전 등록 + 등록 링크, PIN 재인증)", entry: api/account-routes }
+  - { who: 소유자·계정 관리자, path: "/api/account/members/{userId}/enrollment (POST, passkey 없는 구성원 등록 링크 재발급, PIN 재인증)", entry: api/account-routes }
 screens:
   - { route: /login, file: src/ui/pages/login.tsx }
   - { route: /dev-login, file: src/ui/pages/dev-login.tsx }

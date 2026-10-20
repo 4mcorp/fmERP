@@ -51,6 +51,16 @@
           "who": "소유자·계정 관리자",
           "path": "/api/account/members/{userId}/passkey-reset (passkey 초기화, PIN 재인증)",
           "entry": "api/account-routes"
+        },
+        {
+          "who": "소유자·계정 관리자",
+          "path": "/api/account/members (POST, 사전 등록 + 등록 링크, PIN 재인증)",
+          "entry": "api/account-routes"
+        },
+        {
+          "who": "소유자·계정 관리자",
+          "path": "/api/account/members/{userId}/enrollment (POST, passkey 없는 구성원 등록 링크 재발급, PIN 재인증)",
+          "entry": "api/account-routes"
         }
       ],
       "screens": [
@@ -135,6 +145,16 @@
         {
           "method": "delete",
           "path": "/account/invitations/{id}",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/members",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/members/{userId}/enrollment",
           "file": "features/account/src/api/account-routes.ts"
         },
         {

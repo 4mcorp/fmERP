@@ -41,6 +41,7 @@ PK1a에서 스키마·마이그레이션·RLS와 사전 등록·등록 토큰 �
 - [x] 단위 테스트 `tests/enrollment.test.ts`, 통합 테스트 `tests/enrollment.int.test.ts`
 - [x] PK1b: `@better-auth/passkey@1.7.7` 추가, passkey 등록·로그인 라우트와 `createAuth` 연결 (구현: service/auth.ts 플러그인, service/passkey.ts, service/passkey-manage.ts, api/passkey-routes.ts)
 - [x] PK1c: 관리자 초기화 (구현: service/passkey-reset.ts, api/account-routes.ts `POST /api/account/members/{userId}/passkey-reset`. 권한 `member.passkey_reset`은 소유자·관리자. PIN 재인증 후 passkey 전체 삭제·세션 종료·새 등록 토큰 발급, `passkey.admin_reset` 감사 기록)
+- [x] PK1d: 관리자 사전 등록·등록 링크 재발급 (구현: api/account-routes.ts `POST /api/account/members`, `POST /api/account/members/{userId}/enrollment`, service/enrollment.ts `preRegisterMember`·`reissueMemberEnrollment`. 권한·재인증은 `member.passkey_reset`과 같다. 감사 `member.pre_register`·`member.enrollment_issue`)
 - [ ] PK2: 로그인 화면·Google 안내 문구 제거
 
 ## 완료 기준
@@ -50,5 +51,6 @@ PK1a에서 스키마·마이그레이션·RLS와 사전 등록·등록 토큰 �
 ## 결정·변경 기록
 - 2026-10-20: 카드 범위를 PK1a/1b/1c로 나눈다. 1a는 스키마·마이그레이션·서비스만 한다. 라우트와 관리자 초기화는 뒤 카드에서 한다.
 - 2026-10-20: `@better-auth/passkey`는 PK1b로 옮겼다. PK1a에서 추가하면 knip(미사용 의존성) 게이트가 실패한다. 소유자 결정(knip 예외 추가 대신 의존성 이관). 1.7.11은 `minimumReleaseAgeExclude` 변경과 `better-auth` 상향이 필요해 승인 없이 쓰지 않는다.
+- 2026-10-20 (PK1d): 사전 등록(`POST /api/account/members`)은 이메일이 이 계정 구성원이면 409(`member_exists`)로 답하고 이름을 바꾸지 않는다. 등록 링크 재발급 대신 passkey 초기화를 안내한다. 이 계정에 속하지 않은 기존 사용자(다른 회사 소속, passkey 보유, 소속도 passkey도 없는 고아 계정)는 셋 모두 같은 409(`enrollment_email_unavailable`, 문구 "사용할 수 없는 이메일입니다")로 거부하고 이 계정에 붙이지 않는다. 응답·로그 메시지에는 사유를 싣지 않고, 사유(`other_company`·`has_passkey`·`orphan_account`)는 `member.pre_register` 감사(result=failure, reason)에만 INSERT한다. 이메일로 남의 계정에 링크를 만들면 그 사람의 계정을 넘겨받게 되기 때문이다. **변경 사실**: 초기 PK1a 설계(고아 계정을 이 계정 구성원으로 붙임)는 PK1d 리뷰 결정으로 바꿨다. PK1a 서비스 테스트의 고아 기대값도 거부로 고쳤다. **남는 한계**: 이메일은 전역 유일하므로 "사전 등록 불가"라는 1비트 존재 신호는 원리상 남는다(관리자 권한·PIN 재인증·기존 속도 제한 뒤에 있다). 응답 본문은 같지만 쿼리 수·응답 시간 차이는 완전히 지우지 못했다(두 조회를 항상 함께 돈다). 재발급(`POST /api/account/members/{userId}/enrollment`)은 passkey가 있으면 409(`has_passkey`), 구성원이 아니면 404다. 권한은 `member.passkey_reset`(소유자·관리자)을 재사용한다. 소유자 계정의 등록 링크는 소유자만 발급한다. 권한 action을 새로 만들지 않아 `shared/src/domain` 권한표를 건드리지 않았다. 결재 PIN 재인증은 권한 확인 뒤에 한다.
 - 2026-10-20 (PK1c): 관리자 초기화는 계정 관리자 이상(소유자·관리자)만 한다. 사업자 관리자는 계정 복구 권한이 없어 제외했다. 소유자의 passkey는 소유자만 초기화한다(관리자가 소유자 계정을 넘겨받는 길을 막는다). 대상이 같은 계정 구성원이 아니면 404다. 재인증은 권한 확인 뒤에 하므로 권한 없는 사람은 428이 아닌 403을 받는다. 초기화 때 미사용 등록 토큰은 기존 재발급 규칙으로 무효가 된다.
 - 2026-10-20 (PK1b): 마지막 passkey는 삭제할 수 없다(409, `canDeletePasskey`). 삭제 전 본인 행을 잠가 동시 삭제에도 1개가 남게 한다. passkey 관리(목록·이름·삭제)는 자체 API(`/api/me/passkeys`)만 쓰고 플러그인의 같은 경로는 `disabledPaths`로 막아 감사 로그를 빠뜨리지 않는다. rpID·origin은 서버 `BETTER_AUTH_URL`에서만 정한다(요청 헤더의 origin은 믿지 않는다).

@@ -18,7 +18,13 @@ import {
 } from "@fmerp/shared/server/http";
 import { createRoute, z } from "@hono/zod-openapi";
 import { and, desc, eq } from "drizzle-orm";
+import { EnrollmentError } from "../domain/enrollment";
 import { createInvitationToken } from "../service/accounts";
+import {
+  issueEnrollmentToken,
+  preRegisterMember,
+  reissueMemberEnrollment,
+} from "../service/enrollment";
 import { resetMemberPasskeys } from "../service/passkey-reset";
 
 const INVITATION_DAYS = 7;
@@ -334,6 +340,158 @@ export function registerAccountRoutes(app: AppRouter, deps: DepsProvider) {
         },
         200,
       );
+    },
+  );
+
+  // ===== 관리자 사전 등록 (PK1d). 계정 관리자 이상만, 결재 PIN 재인증 후 =====
+  // 권한 행위는 passkey 초기화와 같은 `member.passkey_reset`(소유자·관리자)을 쓴다. 사업자 관리자는 제외된다.
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/account/members",
+      tags: ["account"],
+      summary:
+        "구성원 사전 등록 + passkey 등록 링크 발급 (링크는 이때 한 번만 보여 준다). 결재 PIN 재인증 필요",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                email: z.email().max(254),
+                name: z.string().trim().min(1).max(100),
+              }),
+            },
+          },
+        },
+      },
+      responses: {
+        201: json(
+          z.object({
+            userId: z.string(),
+            created: z.boolean(),
+            token: z.string(),
+            expiresAt: z.string(),
+          }),
+        ),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const d = deps();
+      const tenant = c.get("tenant");
+      const session = c.get("session");
+      const body = c.req.valid("json");
+      await withTenant(d.appDb, tenant.accountId, async (tx) => {
+        const { actor } = await loadActor(tx, tenant, session.userId);
+        authorize(actor, "member.passkey_reset", ACCOUNT_TARGET);
+      });
+      await requireStrictReauth(d, session);
+      const enrollDeps = { appDb: d.appDb, authDb: d.authDb };
+      const now = d.now();
+      let pre: Awaited<ReturnType<typeof preRegisterMember>>;
+      try {
+        pre = await preRegisterMember(enrollDeps, {
+          accountId: tenant.accountId,
+          email: body.email,
+          name: body.name,
+          now,
+          actorUserId: session.userId,
+          request: c.get("request"),
+        });
+      } catch (e) {
+        if (e instanceof EnrollmentError) {
+          throw new ApiError(400, "validation_error", e.message);
+        }
+        throw e;
+      }
+      // 다른 회사 소속·passkey 보유·소속 없는 기존 사용자는 모두 같은 응답으로 거부한다 (사유는 감사 로그에만 남는다)
+      if (pre.rejected) {
+        throw new ApiError(409, "enrollment_email_unavailable", "사용할 수 없는 이메일입니다");
+      }
+      if (!pre.joined) {
+        throw new ApiError(
+          409,
+          "member_exists",
+          "이미 이 회사의 구성원입니다. 기기를 잃었다면 passkey 초기화를 사용하세요",
+        );
+      }
+      const issued = await issueEnrollmentToken(enrollDeps, {
+        accountId: tenant.accountId,
+        userId: pre.userId,
+        createdBy: session.userId,
+        now,
+        request: c.get("request"),
+        auditAction: "member.enrollment_issue",
+      });
+      return c.json(
+        {
+          userId: pre.userId,
+          created: pre.created,
+          token: issued.token,
+          expiresAt: issued.expiresAt.toISOString(),
+        },
+        201,
+      );
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/account/members/{userId}/enrollment",
+      tags: ["account"],
+      summary:
+        "passkey가 없는 구성원에게 등록 링크 재발급 (이전 미사용 링크는 무효). passkey가 있으면 거부한다. 결재 PIN 재인증 필요",
+      request: { params: z.object({ userId: z.uuid() }) },
+      responses: {
+        200: json(z.object({ token: z.string(), expiresAt: z.string() })),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const d = deps();
+      const tenant = c.get("tenant");
+      const session = c.get("session");
+      const { userId: targetUserId } = c.req.valid("param");
+      await withTenant(d.appDb, tenant.accountId, async (tx) => {
+        const { actor } = await loadActor(tx, tenant, session.userId);
+        authorize(actor, "member.passkey_reset", ACCOUNT_TARGET);
+        // 소유자 계정은 소유자만 건드린다 (passkey 초기화와 같은 규칙)
+        const [target] = await tx
+          .select({ role: schema.membership.role })
+          .from(schema.membership)
+          .where(
+            and(
+              eq(schema.membership.accountId, tenant.accountId),
+              eq(schema.membership.userId, targetUserId),
+            ),
+          );
+        if (target?.role === "owner" && tenant.role !== "owner") {
+          throw new ApiError(403, "forbidden", "소유자의 등록 링크는 소유자만 발급할 수 있습니다");
+        }
+      });
+      await requireStrictReauth(d, session);
+      const result = await reissueMemberEnrollment(
+        { appDb: d.appDb, authDb: d.authDb },
+        {
+          accountId: tenant.accountId,
+          actorUserId: session.userId,
+          targetUserId,
+          now: d.now(),
+          request: c.get("request"),
+        },
+      );
+      if (result.status === "not_member") {
+        throw new ApiError(404, "not_found", "구성원을 찾을 수 없습니다");
+      }
+      if (result.status === "has_passkey") {
+        throw new ApiError(
+          409,
+          "has_passkey",
+          "이미 passkey가 있습니다. 기기를 잃었다면 passkey 초기화를 사용하세요",
+        );
+      }
+      return c.json({ token: result.token, expiresAt: result.expiresAt.toISOString() }, 200);
     },
   );
 }
