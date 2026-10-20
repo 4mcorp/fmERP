@@ -20,6 +20,10 @@ x-app-env: &app-env
   SYSTEM_ADMIN_EMAILS: ${SYSTEM_ADMIN_EMAILS:-}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+  # 웹 푸시(VAPID): 세 값을 모두 채울 때만 켜진다. 값은 .env에만 둔다
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-}
   # 공개 주소는 tailnet의 MagicDNS FQDN이다. 알림 링크·인증 리디렉션의 기준
   PUBLIC_BASE_URL: https://${PROD_FQDN:?PROD_FQDN 필요}
 

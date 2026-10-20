@@ -125,7 +125,7 @@ async function processEvent(
 
 export interface ConsumeOptions {
   telegram: boolean;
-  /** 새로 만든 알림 중 텔레그램 발송 대상 (telegram이 false이면 호출하지 않는다) */
+  /** 새로 만든 알림. 채널(텔레그램·웹 푸시)별 발송 큐 등록은 호출하는 쪽이 정한다 */
   onCreated: (created: CreatedNotification[]) => Promise<void>;
   onError: (event: PendingEvent, error: unknown) => void;
   limit?: number;
@@ -142,7 +142,7 @@ export async function consumeEvents(appDb: Db, o: ConsumeOptions): Promise<numbe
     try {
       const created = await processEvent(appDb, event, o.telegram);
       done += 1;
-      if (o.telegram && created.length > 0) await o.onCreated(created);
+      if (created.length > 0) await o.onCreated(created);
     } catch (error) {
       o.onError(event, error);
     }

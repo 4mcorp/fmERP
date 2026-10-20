@@ -1018,13 +1018,23 @@
         "수신 방식",
         "웹훅",
         "폴링",
-        "운영 알림"
+        "운영 알림",
+        "웹 푸시",
+        "푸시",
+        "홈 화면",
+        "PWA",
+        "서비스 워커"
       ],
       "access": [
         {
           "who": "모든 구성원",
           "path": "앱 헤더 알림 → /notifications",
           "entry": "ui/pages/notifications"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "내 정보 → 알림 탭 (이 기기 알림 켜기/끄기)",
+          "entry": "ui/components/push-section"
         },
         {
           "who": "모든 구성원",
@@ -1065,12 +1075,13 @@
       },
       "jobs": {
         "entry": "jobs/jobs",
-        "queues": ["notify.telegram"]
+        "queues": ["notify.telegram", "notify.push"]
       },
       "tables": {
         "owns": [
           "event_notified",
           "notification",
+          "push_subscription",
           "system_setting",
           "telegram_link",
           "telegram_link_token"
@@ -1098,15 +1109,32 @@
       "tests": {
         "unit": "tests/*.test.ts",
         "int": "tests/*.int.test.ts",
-        "e2e": "apps/web/e2e/m8.spec.ts"
+        "e2e": "apps/web/e2e/m8.spec.ts, apps/web/e2e/pwa.spec.ts"
       },
       "invariants": [
         "외부 채널(텔레그램) 문구에 문서 제목·내용·의견을 넣지 않는다",
         "연결 토큰은 해시만 저장하고 한 번만 쓴다",
-        "같은 사건은 dedupe_key로 한 번만 알린다"
+        "같은 사건은 dedupe_key로 한 번만 알린다",
+        "웹 푸시 문구에도 문서 제목·내용을 넣지 않는다 (외부 푸시 서버를 거친다)",
+        "웹 푸시 구독은 구성원 본인 기기만 만들고 지운다 (RLS + membership 조건)"
       ],
       "folder": "notification",
       "routes": [
+        {
+          "method": "get",
+          "path": "/me/push/config",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/me/push/subscribe",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/me/push/unsubscribe",
+          "file": "features/notification/src/api/routes.ts"
+        },
         {
           "method": "get",
           "path": "/me/telegram",

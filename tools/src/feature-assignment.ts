@@ -35,6 +35,7 @@ const RULES: readonly Rule[] = [
   [/^apps\/web\/server\/seed\//, "composition"], // 시험·개발 시드: 계정·조직·양식 표를 함께 채운다
   [/^apps\/worker\/src\/main\.ts$/, "composition"],
   [/^apps\/web\/app\/\(app\)\/layout\.tsx$/, "composition"],
+  [/^apps\/web\/app\/manifest\.ts$/, "composition"], // 홈 화면 설치 정보 (PWA): 앱 셸 메타라 합성 루트 소유
   [/^apps\/web\/app\/\(app\)\/admin\/layout\.tsx$/, "composition"],
   // Next 페이지 어댑터: 기능의 화면 진입점을 한 줄로 내보낸다 (내 정보는 계정 화면에 알림 조각을 끼운다)
   [
@@ -50,6 +51,8 @@ const RULES: readonly Rule[] = [
 
   // ── 알림 ── (코드는 features/notification/으로 이동 완료: 경로가 소유자를 알려 준다. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m8\.spec\.ts$/, "notification"],
+  [/^apps\/web\/e2e\/pwa\.spec\.ts$/, "notification"],
+  [/^apps\/web\/app\/sw\.js\/route\.ts$/, "composition"], // 서비스 워커 제공 라우트 (Next 엔트리). 소스는 features/notification/src/sw/
 
   // ── 백업·내보내기 ── (코드는 features/backup/으로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m7\.spec\.ts$/, "backup"],

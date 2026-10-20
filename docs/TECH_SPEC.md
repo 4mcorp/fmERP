@@ -56,6 +56,7 @@
 | ORM | drizzle-orm / drizzle-kit | ~0.45.3 / ~0.31.11 |
 | DB 드라이버 | pg | ~8.23.1 (Drizzle·pg-boss·Better Auth 공용) |
 | 작업 큐 | pg-boss | ~12.35.1 |
+| 웹 푸시 | @block65/webcrypto-web-push | 2.0.0 (정확 고정, MIT, engines node>=22, VAPID). 의존성 uint8array-extras 1.6.0 (MIT). `web-push`·`@types/web-push`는 쓰지 않는다 (MPL-2.0·장기 무배포) |
 | UI 기반 | tailwindcss, @tailwindcss/postcss | ~4.3.3 |
 | | radix-ui | ~1.6.7 |
 | | lucide-react | ~1.50.0 |
@@ -85,7 +86,7 @@
 | 로컬 개발 서비스 (Docker) | `postgres:18-bookworm`, `chrislusf/seaweedfs:4.47`(로컬 S3, MinIO 대체), `axllent/mailpit:v1.31`(개발 메일함) | docker-compose.dev.yml |
 | 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |
 
-**구현 단계에서 추가할 예정인 패키지** (해당 기능을 만들 때 같은 방식으로 검증): `@headless-tree/react`(부서 트리), `@xyflow/react`(조직도), `@dnd-kit/*`(양식 빌더), `serwist`·`web-push`(P1 PWA).
+**구현 단계에서 추가할 예정인 패키지** (해당 기능을 만들 때 같은 방식으로 검증): `@headless-tree/react`(부서 트리), `@xyflow/react`(조직도), `@dnd-kit/*`(양식 빌더), `serwist`(P1 PWA. 서비스 워커는 현재 `apps/web/public/sw.js`를 직접 두었고 serwist는 쓰지 않는다).
 
 ### 3.1 호환성 검증 결과 (2026-10-03)
 - 위 조합으로 `strictPeerDependencies: true`를 켠 상태에서 `pnpm install`이 **성공했고, peer 충돌은 0건**입니다(626개 패키지 해석).

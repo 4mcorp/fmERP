@@ -39,10 +39,10 @@
 - 시험: apps/web/e2e (smoke·m1~m8이 홈을 거친다)
 
 ## notification — 결재 이벤트를 인앱·텔레그램 알림으로 바꾸고, 월간 점검 누락·덤프 문제 같은 운영 알림을 보낸다
-- 키워드: 알림, 벨, 읽음, 텔레그램, 연결, 수신 방식, 웹훅, 폴링, 운영 알림
-- 화면: /notifications, /system/telegram · API 10개 · 폴더 `features/notification/`
-- 표: 소유 event_notified, notification, system_setting, telegram_link, telegram_link_token / 읽기 7개
-- 시험: tests/*.test.ts · tests/*.int.test.ts · apps/web/e2e/m8.spec.ts
+- 키워드: 알림, 벨, 읽음, 텔레그램, 연결, 수신 방식, 웹훅, 폴링, 운영 알림, 웹 푸시, 푸시, 홈 화면, PWA, 서비스 워커
+- 화면: /notifications, /system/telegram · API 13개 · 폴더 `features/notification/`
+- 표: 소유 event_notified, notification, push_subscription, system_setting, telegram_link, telegram_link_token / 읽기 7개
+- 시험: tests/*.test.ts · tests/*.int.test.ts · apps/web/e2e/m8.spec.ts, apps/web/e2e/pwa.spec.ts
 
 ## org — 사업자·부서·직위·직책·구성원·소속(겸직)·역할 부여, 조직도, 부서 CSV 가져오기·내보내기
 - 키워드: 조직, 조직도, 부서, 사업자, 직위, 직책, 구성원, 겸직, 발령, 역할, 권한, 초대, 부서 CSV

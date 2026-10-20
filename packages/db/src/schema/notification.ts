@@ -72,6 +72,33 @@ export const notification = pgTable(
 );
 
 /**
+ * 웹 푸시 구독 (구성원의 기기 하나 = 브라우저 또는 홈 화면 앱 하나). 구독 정보는 계정 소속이라 RLS를 받는다.
+ * 발송이 404·410으로 거절된 구독은 지운다 (만료 정리)
+ *
+ * @owner notification
+ */
+export const pushSubscription = pgTable(
+  "push_subscription",
+  {
+    id: primaryId(),
+    accountId: accountRef(),
+    membershipId: uuid().notNull(),
+    endpoint: text().notNull(),
+    p256dh: text().notNull(),
+    auth: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.membershipId, t.accountId],
+      foreignColumns: [membership.id, membership.accountId],
+    }).onDelete("cascade"),
+    uniqueIndex().on(t.endpoint),
+    index().on(t.membershipId),
+  ],
+);
+
+/**
  * 알림 소비를 마친 결재 이벤트. 커서(id 순서)는 늦게 커밋된 이벤트를 놓칠 수 있어,
  * "아직 처리 표시가 없는 최근 이벤트"를 찾는 방식으로 누락을 막는다 (DB 함수 notification_pending_events).
  *
