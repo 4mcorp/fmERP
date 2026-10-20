@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { createDatabase, schema } from "@fmerp/db";
 import { getTestApp, json, loginAs } from "@fmerp/shared/testing/test-client";
 import { and, eq } from "drizzle-orm";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { issueEnrollmentToken, preRegisterMember } from "../src/service/enrollment";
 import {
   authenticationResponse,
@@ -14,6 +14,7 @@ import {
 const env = process.env;
 const appDb = createDatabase(env.DATABASE_URL ?? "");
 const authDb = createDatabase(env.AUTH_DATABASE_URL ?? "");
+const migratorDb = createDatabase(env.MIGRATION_DATABASE_URL ?? "");
 const deps = { appDb: appDb.db, authDb: authDb.db };
 const request = { ip: "127.0.0.1", userAgent: "vitest", requestId: null };
 
@@ -271,5 +272,185 @@ describe("내 passkey 관리 (소유·마지막 1개 정책)", () => {
       .from(schema.auditLog)
       .where(and(eq(schema.auditLog.action, "passkey.rename"), eq(schema.auditLog.targetId, id)));
     expect(log?.action).toBe("passkey.rename");
+  });
+});
+
+describe("관리자 passkey 초기화 (PK1c: 재인증·권한·감사)", () => {
+  const ADMIN_PIN = "864209";
+  let adminId = "";
+  let ownerId = "";
+  let fourmId = "";
+
+  async function userIdOf(email: string) {
+    const [row] = await authDb.db
+      .select({ id: schema.user.id })
+      .from(schema.user)
+      .where(eq(schema.user.email, email));
+    if (!row) throw new Error(`시드 사용자 없음: ${email}`);
+    return row.id;
+  }
+
+  // 시험 간 상태에 기대지 않도록 관리자 PIN을 비운 뒤 새로 정한다 (다른 시험은 PIN을 직접 맞춘다)
+  // fmerp_auth 역할에는 approval_pin DELETE 권한이 없어 마이그레이션 역할로 지운다 (notification 시험과 같은 방식)
+  async function clearAdminPin() {
+    await migratorDb.pool.query("delete from approval_pin where user_id = $1", [adminId]);
+  }
+
+  /** 관리자 로그인 후 PIN을 확인해 세션에 재인증 시각을 남긴다 */
+  async function adminWithReauth() {
+    const admin = await loginAs("admin@example.com");
+    const verified = await admin.request("/api/me/pin/verify", {
+      method: "POST",
+      body: { pin: ADMIN_PIN },
+    });
+    expect(verified.status).toBe(200);
+    return admin;
+  }
+
+  /** 시드 회사(fourm-test)에 사전 등록하고 등록 링크를 발급한다 */
+  async function enrollMember() {
+    const now = new Date();
+    const { userId } = await preRegisterMember(deps, {
+      accountId: fourmId,
+      email: `pk-reset-${randomUUID()}@example.com`,
+      name: "초기화 대상",
+      now,
+    });
+    const { token } = await issueEnrollmentToken(deps, {
+      accountId: fourmId,
+      userId,
+      createdBy: adminId,
+      now,
+      request,
+    });
+    return { userId, token };
+  }
+
+  beforeAll(async () => {
+    adminId = await userIdOf("admin@example.com");
+    ownerId = await userIdOf("owner@example.com");
+    const [acc] = await authDb.db
+      .select({ id: schema.account.id })
+      .from(schema.account)
+      .where(eq(schema.account.slug, "fourm-test"));
+    if (!acc) throw new Error("시드 회사 없음");
+    fourmId = acc.id;
+
+    await clearAdminPin();
+    const admin = await loginAs("admin@example.com");
+    const set = await admin.request("/api/me/pin", { method: "PUT", body: { pin: ADMIN_PIN } });
+    expect(set.status).toBe(200);
+  });
+
+  afterAll(async () => {
+    await clearAdminPin();
+    await migratorDb.pool.end();
+  });
+
+  it("재인증(PIN 확인)을 하지 않은 세션은 428로 거부한다", async () => {
+    const target = await enrollMember();
+    const admin = await loginAs("admin@example.com");
+    const res = await admin.request(`/api/account/members/${target.userId}/passkey-reset`, {
+      method: "POST",
+    });
+    expect(res.status).toBe(428);
+    expect(await json(res)).toMatchObject({ code: "reauth_required" });
+  });
+
+  it("일반 구성원은 403이고, 대상의 passkey는 지워지지 않는다", async () => {
+    const target = await enrollMember();
+    const keep = await insertPasskey(target.userId);
+    const member = await loginAs("member1@example.com");
+    const res = await member.request(`/api/account/members/${target.userId}/passkey-reset`, {
+      method: "POST",
+    });
+    expect(res.status).toBe(403);
+
+    const [row] = await authDb.db
+      .select({ id: schema.passkey.id })
+      .from(schema.passkey)
+      .where(eq(schema.passkey.id, keep));
+    expect(row?.id).toBe(keep);
+  });
+
+  it("관리자는 소유자의 passkey를 초기화할 수 없다 (403)", async () => {
+    const admin = await adminWithReauth();
+    const keep = await insertPasskey(ownerId);
+    const res = await admin.request(`/api/account/members/${ownerId}/passkey-reset`, {
+      method: "POST",
+    });
+    expect(res.status).toBe(403);
+
+    const [row] = await authDb.db
+      .select({ id: schema.passkey.id })
+      .from(schema.passkey)
+      .where(eq(schema.passkey.id, keep));
+    expect(row?.id).toBe(keep);
+    await authDb.db.delete(schema.passkey).where(eq(schema.passkey.id, keep));
+  });
+
+  it("이 회사 구성원이 아닌 사용자는 404다 (다른 회사 사용자의 존재를 드러내지 않는다)", async () => {
+    const admin = await adminWithReauth();
+    const otherId = await userIdOf("owner-b@example.com");
+    const res = await admin.request(`/api/account/members/${otherId}/passkey-reset`, {
+      method: "POST",
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("초기화하면 기존 passkey·세션이 끊기고, 새 등록 링크로 다시 등록·로그인할 수 있으며 감사 로그가 남는다", async () => {
+    const target = await enrollMember();
+    const oldAuth = createFakeAuthenticator();
+    const enrolled = await registerWithToken(target.token, oldAuth);
+    expect(enrolled.verify?.status).toBe(200);
+    const login = await loginWithPasskey(oldAuth);
+    expect(login.status).toBe(200);
+    const oldSession = cookiesOf(login);
+
+    const admin = await adminWithReauth();
+    const res = await admin.request(`/api/account/members/${target.userId}/passkey-reset`, {
+      method: "POST",
+    });
+    expect(res.status).toBe(200);
+    const body = await json<{ token: string; removedPasskeys: number; endedSessions: number }>(res);
+    expect(body.removedPasskeys).toBe(1);
+    expect(body.endedSessions).toBeGreaterThanOrEqual(1);
+
+    // 기존 세션은 쓸 수 없고, 기존 passkey로는 로그인할 수 없다
+    expect((await call("/api/me", { cookie: oldSession })).status).toBe(401);
+    expect((await loginWithPasskey(oldAuth)).status).toBe(401);
+
+    // 새 링크로 다시 등록하고 그 passkey로 로그인한다
+    const newAuth = createFakeAuthenticator();
+    const reenrolled = await registerWithToken(body.token, newAuth);
+    expect(reenrolled.verify?.status).toBe(200);
+    const again = await loginWithPasskey(newAuth);
+    expect(again.status).toBe(200);
+    const who = await json<{ user: { id: string } }>(again);
+    expect(who.user.id).toBe(target.userId);
+
+    const [log] = await authDb.db
+      .select({ actor: schema.auditLog.actorUserId, result: schema.auditLog.result })
+      .from(schema.auditLog)
+      .where(
+        and(
+          eq(schema.auditLog.action, "passkey.admin_reset"),
+          eq(schema.auditLog.targetId, target.userId),
+        ),
+      );
+    expect(log?.actor).toBe(adminId);
+    expect(log?.result).toBe("success");
+  });
+
+  it("초기화하면 아직 쓰지 않은 이전 등록 링크도 무효가 된다", async () => {
+    const target = await enrollMember();
+    const admin = await adminWithReauth();
+    const res = await admin.request(`/api/account/members/${target.userId}/passkey-reset`, {
+      method: "POST",
+    });
+    expect(res.status).toBe(200);
+
+    const stale = await registerWithToken(target.token, createFakeAuthenticator());
+    expect(stale.options.status).toBe(400);
   });
 });

@@ -46,6 +46,11 @@
           "who": "모든 구성원",
           "path": "/api/me/passkeys (목록·이름 변경·삭제)",
           "entry": "api/passkey-routes"
+        },
+        {
+          "who": "소유자·계정 관리자",
+          "path": "/api/account/members/{userId}/passkey-reset (passkey 초기화, PIN 재인증)",
+          "entry": "api/account-routes"
         }
       ],
       "screens": [
@@ -107,7 +112,8 @@
         "PIN은 해시로만 저장하고 5회 실패 시 15분 잠근다",
         "초대 토큰은 해시만 저장하고 한 번만 쓴다",
         "passkey는 본인 것만 바꾸고, 마지막 1개는 삭제할 수 없다 (passkey 관리는 자체 API로만, 플러그인 경로는 disabledPaths로 막는다)",
-        "passkey 로그인·등록 실패 응답은 이유를 드러내지 않는다 (사용자 열거 방지)"
+        "passkey 로그인·등록 실패 응답은 이유를 드러내지 않는다 (사용자 열거 방지)",
+        "관리자 passkey 초기화는 PIN 재인증을 거치고, 감사 로그(passkey.admin_reset)를 남기며, 소유자의 passkey는 소유자만 초기화한다"
       ],
       "folder": "account",
       "routes": [
@@ -129,6 +135,11 @@
         {
           "method": "delete",
           "path": "/account/invitations/{id}",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/members/{userId}/passkey-reset",
           "file": "features/account/src/api/account-routes.ts"
         },
         {

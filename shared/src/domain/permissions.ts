@@ -47,6 +47,7 @@ export type Action =
   | "department.edit"
   | "member.invite"
   | "member.deactivate"
+  | "member.passkey_reset"
   | "assignment.manage"
   | "position.manage"
   | "form.manage"
@@ -73,6 +74,8 @@ const RULES: Record<Action, Rule> = {
   "department.edit": { owner: true, admin: true, grants: ["business_admin"] },
   "member.invite": { owner: true, admin: true, grants: ["business_admin"] },
   "member.deactivate": { owner: true, admin: true, grants: ["business_admin"] },
+  // 구성원 passkey 초기화 (PK1c). 계정 관리자 전용이다. 사업자 관리자에게는 주지 않는다 (계정 복구 권한)
+  "member.passkey_reset": { owner: true, admin: true },
   "assignment.manage": { owner: true, admin: true, grants: ["business_admin", "hr_admin"] },
   "position.manage": { owner: true, admin: true, grants: ["hr_admin"] },
   "form.manage": { owner: true, admin: true, grants: ["business_admin", "approval_admin"] },

@@ -127,6 +127,21 @@ describe("부재 설정 대행 (APV-052)", () => {
   });
 });
 
+describe("관리자 passkey 초기화 (PK1c)", () => {
+  it("소유자·관리자만 구성원 passkey를 초기화한다. 사업자 관리자와 일반 구성원은 못 한다", () => {
+    expect(can(actor("owner"), "member.passkey_reset", account)).toBe(true);
+    expect(can(actor("admin"), "member.passkey_reset", account)).toBe(true);
+    expect(
+      can(
+        actor("member", [{ role: "business_admin", scopeType: "account", scopeId: null }]),
+        "member.passkey_reset",
+        account,
+      ),
+    ).toBe(false);
+    expect(can(actor("member"), "member.passkey_reset", account)).toBe(false);
+  });
+});
+
 describe("결재 진행 문서 관리", () => {
   it("소유자·관리자·결재 관리자(범위 안)만 하고, 사업자 관리자·감사인은 못 한다", () => {
     const approver = actor("member", [
