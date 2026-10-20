@@ -10,6 +10,7 @@ import { decryptStream, generateKeyPair } from "../src/service/age";
 import { type BackupDeps, runDump, runManualDumpNow } from "../src/service/dump";
 import { type PgToolConfig, toolVersion } from "../src/service/pg-tools";
 import { restoreDump } from "../src/service/restore";
+import { assertDroppableScratchDb, testServerUrl } from "./test-db-url";
 
 const sh = promisify(execFile);
 const CONTAINER = process.env.TEST_DB_CONTAINER ?? "fmerp-dev-postgres-test-1";
@@ -75,9 +76,7 @@ const psql = (sqlText: string, db = "fmerp") =>
   ]);
 
 async function scratchClient(db: string) {
-  const client = new Client({
-    connectionString: `postgres://postgres:postgres@localhost:55433/${db}`,
-  });
+  const client = new Client({ connectionString: testServerUrl(db) });
   await client.connect();
   return client;
 }
@@ -125,6 +124,7 @@ afterAll(async () => {
     .query("delete from system_backup where note like $1", [`${MARK}%`])
     .catch(() => undefined);
   for (const db of scratchDbs) {
+    assertDroppableScratchDb(db, "m7_restore_");
     await psql(`drop database if exists ${db} with (force)`, "postgres").catch(() => undefined);
   }
   await backupDb.pool.end();
