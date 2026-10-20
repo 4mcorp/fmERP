@@ -14,12 +14,13 @@ export class EnrollmentError extends Error {
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_MAX_LENGTH = 254;
 const NAME_MAX_LENGTH = 100;
 
 /** 사전 등록 이메일: 공백 제거 후 소문자로 저장한다 */
 export function normalizeEnrollmentEmail(raw: string): string {
   const email = raw.trim().toLowerCase();
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!EMAIL_PATTERN.test(email) || email.length > EMAIL_MAX_LENGTH) {
     throw new EnrollmentError("enrollment_email_invalid", "이메일 형식이 올바르지 않습니다");
   }
   return email;

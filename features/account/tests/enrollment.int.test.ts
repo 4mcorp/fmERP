@@ -56,13 +56,65 @@ describe("사전 등록 사용자", () => {
       name: "다른 이름",
       now: NOW,
     });
-    expect(again).toEqual({ userId: first.userId, created: false });
+    expect(again).toEqual({ userId: first.userId, created: false, joined: false });
 
     const members = await authDb.db
       .select({ id: schema.membership.id })
       .from(schema.membership)
       .where(eq(schema.membership.userId, first.userId));
     expect(members).toHaveLength(1);
+  });
+
+  it("이 계정에 속하지 않은 기존 사용자(고아 계정·타 회사·passkey 보유)는 구성원으로 붙이지 않고 사유를 돌려준다", async () => {
+    const { accountId } = await makeAccountWithAdmin();
+    const other = await makeAccountWithAdmin();
+
+    // 고아 계정: 사용자만 있고 소속·passkey 없음
+    const orphanEmail = `orphan-${randomUUID()}@example.com`;
+    const [orphan] = await authDb.db
+      .insert(schema.user)
+      .values({ name: "고아", email: orphanEmail, emailVerified: false })
+      .returning({ id: schema.user.id });
+    if (!orphan) throw new Error("고아 사용자 생성 실패");
+    const orphanResult = await preRegisterMember(deps, {
+      accountId,
+      email: orphanEmail,
+      name: "바뀌면 안 됨",
+      now: NOW,
+    });
+    expect(orphanResult).toEqual({
+      userId: orphan.id,
+      created: false,
+      joined: false,
+      rejected: "orphan_account",
+    });
+
+    // 타 회사 소속
+    const otherEmail = `taken-${randomUUID()}@example.com`;
+    const { userId: otherUserId } = await preRegisterMember(deps, {
+      accountId: other.accountId,
+      email: otherEmail,
+      name: "타사",
+      now: NOW,
+    });
+    const takenResult = await preRegisterMember(deps, {
+      accountId,
+      email: otherEmail,
+      name: "넘겨받기",
+      now: NOW,
+    });
+    expect(takenResult).toMatchObject({
+      userId: otherUserId,
+      joined: false,
+      rejected: "other_company",
+    });
+
+    // 이 계정 구성원이 아님을 확인 (세 경우 모두 membership 행이 생기지 않는다)
+    const rows = await authDb.db
+      .select({ id: schema.membership.id })
+      .from(schema.membership)
+      .where(eq(schema.membership.accountId, accountId));
+    expect(rows).toHaveLength(0);
   });
 
   it("잘못된 이메일이면 DB를 건드리지 않고 거부한다", async () => {

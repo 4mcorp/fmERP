@@ -28,14 +28,37 @@ function createEnrollmentToken(): { token: string; tokenHash: string } {
   return { token, tokenHash: hashEnrollmentToken(token) };
 }
 
+/** 사전 등록을 거부한 이유. 감사 로그 `reason`에만 쓰고 응답에는 싣지 않는다 */
+export type PreRegisterRejection = "other_company" | "has_passkey" | "orphan_account";
+
 /**
  * 관리자가 사전 등록한 사람을 만든다: 사용자(없으면) + 이 계정의 구성원 행.
- * 같은 이메일이 이미 있으면 그 사용자를 쓴다. 이 계정에 이미 속해 있으면 이름을 바꾸지 않고 그대로 둔다.
+ * 같은 이메일이 이미 있으면 그 사용자를 쓴다. 이 계정에 이미 속해 있으면 아무것도 바꾸지 않고 `joined: false`를 돌려준다
+ * (라우트는 409 `member_exists`로 답하고 passkey 초기화를 안내한다).
+ * 이 계정에 속하지 않은 기존 사용자(다른 회사 소속, passkey 보유, 소속도 passkey도 없는 고아 계정)는 모두 붙이지 않고
+ * `rejected`로 사유를 돌려준다. 라우트는 세 사유를 같은 409 `enrollment_email_unavailable`로 응답한다.
+ * 이메일로 남의 계정에 등록 링크를 만들면 그 사람의 계정을 넘겨받게 되므로 허용하지 않는다 (CLAUDE.md: 이메일로 자동 병합 금지).
+ * 거부 사유는 `member.pre_register` 감사(result=failure, reason=사유)로 같은 트랜잭션에 남긴다. 응답에는 싣지 않는다.
+ * `request`를 주면 구성원 추가·거부 모두 감사를 남긴다.
  */
 export async function preRegisterMember(
   deps: EnrollmentDeps,
-  input: { accountId: string; email: string; name: string; now: Date },
-): Promise<{ userId: string; created: boolean }> {
+  input: {
+    accountId: string;
+    email: string;
+    name: string;
+    now: Date;
+    /** 사전 등록을 한 관리자. request와 함께 주면 감사 행위자가 된다 */
+    actorUserId?: string;
+    request?: AuditRequestContext;
+  },
+): Promise<{
+  userId: string;
+  created: boolean;
+  joined: boolean;
+  /** 이 계정에 붙이지 않은 사유 (감사 로그용 내부 값). 응답에는 쓰지 않는다 */
+  rejected?: PreRegisterRejection;
+}> {
   const email = normalizeEnrollmentEmail(input.email);
   const name = normalizeEnrollmentName(input.name);
   const { authDb } = deps;
@@ -63,16 +86,59 @@ export async function preRegisterMember(
       .where(
         and(eq(schema.membership.accountId, input.accountId), eq(schema.membership.userId, userId)),
       );
-    if (!member) {
-      await tx.insert(schema.membership).values({
+    if (member) return { userId, created, joined: false };
+
+    if (!created) {
+      // 두 조회를 항상 함께 돌려 사유에 따라 쿼리 수가 달라지지 않게 한다 (응답은 같아도 시간 차는 남는다: plan 참고)
+      const [elsewhere] = await tx
+        .select({ id: schema.membership.id })
+        .from(schema.membership)
+        .where(eq(schema.membership.userId, userId))
+        .limit(1);
+      const [withPasskey] = await tx
+        .select({ id: schema.passkey.id })
+        .from(schema.passkey)
+        .where(eq(schema.passkey.userId, userId))
+        .limit(1);
+      const rejected: PreRegisterRejection = elsewhere
+        ? "other_company"
+        : withPasskey
+          ? "has_passkey"
+          : "orphan_account";
+      if (input.request) {
+        await recordAudit(tx, {
+          accountId: input.accountId,
+          actorUserId: input.actorUserId ?? null,
+          action: "member.pre_register",
+          target: { type: "user", id: userId },
+          subjectUserId: userId,
+          result: "failure",
+          reason: rejected,
+          request: input.request,
+        });
+      }
+      return { userId, created, joined: false, rejected };
+    }
+
+    await tx.insert(schema.membership).values({
+      accountId: input.accountId,
+      userId,
+      role: "member",
+      status: "active",
+      joinedAt: input.now,
+    });
+    if (input.request) {
+      await recordAudit(tx, {
         accountId: input.accountId,
-        userId,
-        role: "member",
-        status: "active",
-        joinedAt: input.now,
+        actorUserId: input.actorUserId ?? null,
+        action: "member.pre_register",
+        target: { type: "user", id: userId },
+        subjectUserId: userId,
+        result: "success",
+        request: input.request,
       });
     }
-    return { userId, created };
+    return { userId, created, joined: true };
   });
 }
 
@@ -89,6 +155,8 @@ export async function issueEnrollmentToken(
     now: Date;
     request: AuditRequestContext;
     ttlMs?: number;
+    /** 감사 행위 이름. 기본은 passkey 초기화와 같은 `passkey.enrollment_issue`다 (PK1d 라우트는 `member.enrollment_issue`) */
+    auditAction?: "passkey.enrollment_issue" | "member.enrollment_issue";
   },
 ): Promise<{ token: string; expiresAt: Date }> {
   const { token, tokenHash } = createEnrollmentToken();
@@ -115,7 +183,7 @@ export async function issueEnrollmentToken(
     await recordAudit(tx, {
       accountId: input.accountId,
       actorUserId: input.createdBy,
-      action: "passkey.enrollment_issue",
+      action: input.auditAction ?? "passkey.enrollment_issue",
       target: { type: "user", id: input.userId },
       subjectUserId: input.userId,
       result: "success",
@@ -123,6 +191,54 @@ export async function issueEnrollmentToken(
     });
   });
   return { token, expiresAt };
+}
+
+type MemberEnrollmentResult =
+  | { status: "not_member" }
+  | { status: "has_passkey" }
+  | { status: "issued"; token: string; expiresAt: Date };
+
+/**
+ * 이 계정 구성원에게 등록 링크를 다시 발급한다 (PK1d). passkey가 이미 있으면 발급하지 않는다: 그때는 passkey 초기화를 쓴다.
+ * 구성원이 아니면 `not_member`. 권한·재인증은 라우트가 먼저 확인한다.
+ */
+export async function reissueMemberEnrollment(
+  deps: EnrollmentDeps,
+  input: {
+    accountId: string;
+    actorUserId: string;
+    targetUserId: string;
+    now: Date;
+    request: AuditRequestContext;
+  },
+): Promise<MemberEnrollmentResult> {
+  const [member] = await deps.authDb
+    .select({ id: schema.membership.id })
+    .from(schema.membership)
+    .where(
+      and(
+        eq(schema.membership.accountId, input.accountId),
+        eq(schema.membership.userId, input.targetUserId),
+      ),
+    );
+  if (!member) return { status: "not_member" };
+
+  const [withPasskey] = await deps.authDb
+    .select({ id: schema.passkey.id })
+    .from(schema.passkey)
+    .where(eq(schema.passkey.userId, input.targetUserId))
+    .limit(1);
+  if (withPasskey) return { status: "has_passkey" };
+
+  const issued = await issueEnrollmentToken(deps, {
+    accountId: input.accountId,
+    userId: input.targetUserId,
+    createdBy: input.actorUserId,
+    now: input.now,
+    request: input.request,
+    auditAction: "member.enrollment_issue",
+  });
+  return { status: "issued", token: issued.token, expiresAt: issued.expiresAt };
 }
 
 /**
