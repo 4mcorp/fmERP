@@ -1,0 +1,142 @@
+name: Deploy prod
+
+# main 병합(push) 또는 수동 실행 때 운영 서버에 배포한다.
+# 배포 대상 커밋의 CI `check` 작업이 성공한 경우에만 배포한다 (gate job).
+# `policy`는 gate에서 확인하지 않는다: policy.yml은 pull_request 전용이라 main push로 생긴 커밋에는
+# policy check run이 없어 gate가 40분 뒤 교착한다. 대신 main ruleset(.github/rulesets/main.json)이
+# check·policy를 둘 다 필수 상태 체크로 요구하므로, main에 도달한 커밋은 PR 단계에서 policy를 이미 통과했다.
+# 근거와 한계: docs/ops/prod.md 9.5.
+# 배포는 Tailscale 임시 노드(tag:ci)로 tailnet에 들어가 SSH로 운영 서버의 스크립트를 실행한다.
+# 설정(vars·secrets·ACL·서버 준비)은 docs/ops/prod.md 9장을 따른다.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 기본 권한 없음. job마다 필요한 권한만 준다
+permissions: {}
+
+# 배포는 한 번에 하나만. 진행 중인 배포를 끊지 않는다 (cancel-in-progress: false)
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: CI 통과 확인
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      checks: read
+    steps:
+      # 운영 배포는 main 커밋만 허용한다. 다른 브랜치에서 수동 실행하면 여기서 실패한다
+      - name: 배포 대상 ref 확인
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::운영 배포는 main에서만 한다 (현재 ref: $GITHUB_REF)"
+            exit 1
+          fi
+
+      - name: CI check 작업 완료·성공 대기
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          # 최대 40분 (20초 간격). CI가 아직 돌고 있으면 기다린다
+          for _ in $(seq 1 120); do
+            state=$(gh api "repos/$REPO/commits/$SHA/check-runs?check_name=check&per_page=5" \
+              --jq '((.check_runs | sort_by(.started_at) | last) // {}) | "\(.status // "none") \(.conclusion // "-")"')
+            case "$state" in
+              "completed success")
+                echo "CI check 통과: $SHA"
+                exit 0
+                ;;
+              completed*)
+                echo "::error::CI check 실패 ($state). 배포하지 않는다: $SHA"
+                exit 1
+                ;;
+              *)
+                echo "대기 중: $state"
+                sleep 20
+                ;;
+            esac
+          done
+          echo "::error::CI check 완료를 40분 안에 확인하지 못했다: $SHA"
+          exit 1
+
+  deploy:
+    name: 운영 배포
+    needs: gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: prod
+    permissions:
+      contents: read
+    env:
+      # PROD_SSH_HOST: 서버 호스트(sshd)의 MagicDNS 이름. PROD_FQDN: compose의 tailscale이 여는 HTTPS 이름 (둘은 다르다)
+      PROD_SSH_HOST: ${{ vars.PROD_SSH_HOST }}
+      PROD_FQDN: ${{ vars.PROD_FQDN }}
+      PROD_SSH_USER: ${{ vars.PROD_SSH_USER }}
+      PROD_DEPLOY_DIR: ${{ vars.PROD_DEPLOY_DIR }}
+    steps:
+      # 공식 액션 tailscale/github-action v4.2.0 (커밋 SHA 고정). 최신 버전 확인: docs/ops/prod.md 9장
+      - name: Tailscale 연결 (임시 노드, tag:ci)
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ vars.PROD_SSH_HOST }}
+
+      - name: SSH 설정 (호스트 키 고정)
+        env:
+          SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.PROD_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/prod_deploy"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/prod_deploy" "$HOME/.ssh/known_hosts"
+          printf '%s\n' \
+            "Host prod" \
+            "  HostName ${PROD_SSH_HOST}" \
+            "  User ${PROD_SSH_USER}" \
+            "  IdentityFile ${HOME}/.ssh/prod_deploy" \
+            "  IdentitiesOnly yes" \
+            "  StrictHostKeyChecking yes" \
+            "  UserKnownHostsFile ${HOME}/.ssh/known_hosts" \
+            "  BatchMode yes" > "$HOME/.ssh/config"
+          chmod 600 "$HOME/.ssh/config"
+
+      # 서버 안에서: git 체크아웃 → 이전 이미지 보관 → migrate 완료 대기 → 나머지 기동 → 컨테이너 안에서 /api/health 확인
+      - name: 배포 (서버의 tools/deploy/deploy-prod.sh)
+        id: deploy
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          ssh prod "cd '${PROD_DEPLOY_DIR}' && bash tools/deploy/deploy-prod.sh deploy '${SHA}'"
+
+      # tailnet 밖이 아니라 CI 러너(tag:ci)에서 실제 HTTPS 경로로 확인한다
+      - name: 외부 헬스체크 (tailnet HTTPS /api/health)
+        run: |
+          for _ in $(seq 1 12); do
+            if curl -fsS --max-time 20 "https://${PROD_FQDN}/api/health" >/dev/null; then
+              echo "헬스체크 통과"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::tailnet HTTPS 헬스체크 실패"
+          exit 1
+
+      # 배포나 외부 헬스체크가 실패하면 직전 이미지로 되돌린다 (배포 자체가 건너뛰어졌다면 되돌리지 않는다)
+      - name: 실패 시 이전 이미지로 롤백
+        if: failure() && steps.deploy.outcome != 'skipped'
+        run: |
+          ssh prod "cd '${PROD_DEPLOY_DIR}' && bash tools/deploy/deploy-prod.sh rollback"
+
+      - name: SSH 설정 파일 정리
+        if: always()
+        run: rm -f "$HOME/.ssh/prod_deploy" "$HOME/.ssh/config"
