@@ -21,36 +21,72 @@ def http_request(method, url, body):
         return json.load(response)
 
 
+class DeliveryError(Exception):
+    """Failure described only by stage, HTTP status, exception class name, and 429 retry_after.
+
+    Never holds or prints the webhook URL, payload text, or exception messages.
+    """
+
+    def __init__(self, stage, *, status=None, cause=None, retry_after=None):
+        super().__init__(stage)
+        self.stage = stage
+        self.status = status
+        self.cause_name = None if cause is None else type(cause).__name__
+        self.retry_after = retry_after
+
+    def describe(self):
+        parts = ['stage=' + self.stage]
+        if self.status is not None:
+            parts.append('status=' + str(self.status))
+        if self.cause_name is not None:
+            parts.append('exc=' + self.cause_name)
+        if self.retry_after is not None:
+            parts.append('retry_after=' + repr(self.retry_after))
+        return ' '.join(parts)
+
+
+def read_retry_after(error):
+    try:
+        if error.code != 429:
+            return None
+        return float(json.load(error)['retry_after'])
+    except (ValueError, KeyError, TypeError):
+        return None
+    finally:
+        error.close()
+
+
 def send_event(webhook, payload, *, request=http_request, sleep=time.sleep):
     if not re.fullmatch(r'https://discord\.com/api(?:/v\d+)?/webhooks/[0-9]+/[A-Za-z0-9._-]+', webhook):
-        raise ValueError('standard Discord webhook URL required')
+        raise DeliveryError('validate')
 
-    def bounded_request(method, url, body):
+    def bounded_request(stage, method, url, body):
         for attempt in range(4):
             try:
                 return request(method, url, body)
             except HTTPError as error:
-                try:
-                    if error.code != 429 or attempt == 3:
-                        raise RuntimeError('Discord request rejected') from None
-                    delay = float(json.load(error)['retry_after'])
-                except (ValueError, KeyError, TypeError):
-                    raise RuntimeError('invalid rate limit response') from None
-                finally:
-                    error.close()
-                if not math.isfinite(delay) or not 0 <= delay <= 30:
-                    raise RuntimeError('rate limit exceeds retry budget')
-                sleep(delay)
-        raise RuntimeError('retry budget exhausted')
+                retry_after = read_retry_after(error)
+                if error.code != 429 or attempt == 3:
+                    raise DeliveryError(stage, status=error.code, retry_after=retry_after) from None
+                if retry_after is None or not math.isfinite(retry_after) or not 0 <= retry_after <= 30:
+                    raise DeliveryError(stage, status=error.code, retry_after=retry_after) from None
+                sleep(retry_after)
+            except Exception as error:
+                raise DeliveryError(stage, cause=error) from None
+        raise DeliveryError(stage, status=429)
 
-    posted = bounded_request('POST', webhook + '?wait=true', payload)
-    message_id = str(posted.get('id', ''))
-    if not re.fullmatch(r'[0-9]+', message_id):
-        raise RuntimeError('missing webhook message id')
-    received = bounded_request('GET', webhook + '/messages/' + message_id, None)
-    if (str(received.get('id')) != message_id or received.get('content') != payload['content']
-            or not int(received.get('flags', 0)) & 4096):
-        raise RuntimeError('webhook readback mismatch')
+    posted = bounded_request('post', 'POST', webhook + '?wait=true', payload)
+    if not isinstance(posted, dict) or not re.fullmatch(r'[0-9]+', str(posted.get('id', ''))):
+        raise DeliveryError('post')
+    message_id = str(posted['id'])
+    received = bounded_request('readback', 'GET', webhook + '/messages/' + message_id, None)
+    try:
+        verified = (str(received.get('id')) == message_id and received.get('content') == payload['content']
+                    and bool(int(received.get('flags', 0)) & 4096))
+    except (AttributeError, TypeError, ValueError):
+        verified = False
+    if not verified:
+        raise DeliveryError('readback')
     return message_id
 
 SENTINEL = 'HERMES_GITHUB_EVENT_V1\n'
@@ -122,10 +158,14 @@ def main(argv=None):
         message_id = send_event(webhook, wire)
         print('notifier verified event_id=' + event['event_id'] + ' message_id=' + message_id)
         return 0
-    except Exception:
+    except DeliveryError as error:
+        # Only stage, HTTP status, exception class name, and 429 retry_after are printed.
+        print('notifier failed: ' + error.describe() + '; no verified receipt')
+        return 1
+    except Exception as error:
         # Exception messages/tracebacks may contain a token-bearing URL.
-        # Never print exception values, payload text, or webhook URLs.
-        print('notifier failed: event validation or delivery; no verified receipt')
+        # Print the class name only; never exception values, payload text, or webhook URLs.
+        print('notifier failed: stage=validate exc=' + type(error).__name__ + '; no verified receipt')
         return 1
 
 

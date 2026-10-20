@@ -121,6 +121,7 @@
 ## 5. 트러블슈팅 (`docs/ts/`) — 작업 전 태그가 겹치는 항목을 읽을 것
 | 파일 | 태그 | 요약 (재발 방지 핵심) |
 |---|---|---|
+| [2026-10-20-discord-pr-events-emit-failures.md](ts/2026-10-20-discord-pr-events-emit-failures.md) | ci, discord, workflow, concurrency, notifier, flaky | discord-pr-events 실패 로그는 stage·status·exc·retry_after만 남기고 원문·URL을 출력하지 않는다. `cancel-in-progress: false`만으로는 무손실이 아니므로 `queue: max`를 쓴다. 알림 스텝은 `continue-on-error`로 PR 체크와 분리한다. 원인은 미확정 |
 | [2026-10-12-ci-isolated-backup-test-db.md](ts/2026-10-12-ci-isolated-backup-test-db.md) | ci, test, db, backup | 격리 DB의 조회·pg_dump DB 이름 일치, 55433 reset 안전 검사 유지 |
 | [2026-10-12-ci-db-readiness-analysis.md](ts/2026-10-12-ci-db-readiness-analysis.md) | ci, e2e, playwright, db, test, flaky | CI 실패는 `gh run view --log-failed`로 확인한다. "connection refused"는 의도된 시험 출력이므로 원인으로 보지 않는다. E2E는 locator를 좁히고 webServer/globalSetup 순서는 실행 로그로 확인 후 바꾼다 |
 | [2026-10-03-windows-npx-mcp-enoent.md](ts/2026-10-03-windows-npx-mcp-enoent.md) | windows, mcp, npx, claude-code | Windows MCP 설정에서 `npx`는 `cmd /c`로 감싼다. 원격 HTTP 방식을 우선한다. 추가 후 `initialize` 응답을 확인한다 |
