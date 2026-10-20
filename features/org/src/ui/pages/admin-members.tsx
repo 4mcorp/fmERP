@@ -39,6 +39,7 @@ import { Users } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { MemberDetail } from "../components/member-detail";
+import { PreRegisterCard } from "../components/pre-register-card";
 import { usePositions } from "../queries";
 
 const NONE = "__none";
@@ -139,6 +140,7 @@ function MembersTab({ caps }: { caps: Capabilities }) {
 
   return (
     <div className="space-y-4">
+      <PreRegisterCard />
       <DataTable
         rows={members ?? []}
         isLoading={!members}

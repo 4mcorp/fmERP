@@ -3,7 +3,7 @@ id: account
 summary: 로그인(개발용 시드 로그인·Better Auth)·세션, 회사 만들기·전환, 초대 수락, 내 정보(프로필·결재 PIN·세션·로그인 이력)
 keywords: [로그인, 계정, 세션, 초대, 온보딩, 회사 전환, PIN, 프로필, 서명, 도장, 로그인 이력]
 access:
-  - { who: 누구나, path: "/login, /dev-login(개발 전용)", entry: ui/pages/login }
+  - { who: 누구나, path: "/login (passkey 로그인), /login?token= (최초 passkey 등록 링크), /dev-login(개발 전용)", entry: ui/pages/login }
   - { who: 초대받은 사용자, path: "/invite/{token}", entry: ui/pages/invite }
   - { who: 소속 없는 사용자, path: "/onboarding (회사 만들기·초대 수락)", entry: ui/pages/onboarding }
   - { who: 모든 구성원, path: "사용자 메뉴 → 내 정보 → /me", entry: ui/components/me-page }

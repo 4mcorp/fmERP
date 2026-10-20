@@ -39,6 +39,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { useDuties, usePositions } from "../queries";
+import { PasskeyResetSection } from "./passkey-reset-section";
 
 const NONE = "__none";
 
@@ -553,6 +554,14 @@ export function MemberDetail({
               역할
             </h2>
             <RolesSection member={member} />
+          </section>
+        )}
+        {caps["member.passkey_reset"] && (
+          <section aria-labelledby="md-passkey" className="space-y-2">
+            <h2 id="md-passkey" className="text-sm font-semibold">
+              passkey
+            </h2>
+            <PasskeyResetSection member={member} />
           </section>
         )}
       </CardContent>
