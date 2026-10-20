@@ -39,7 +39,7 @@ PK1a에서 스키마·마이그레이션·RLS와 사전 등록·등록 토큰 �
 - [x] 도메인 규칙 `features/account/src/domain/enrollment.ts` (이메일·이름 정규화, 토큰 상태, 만료 시각)
 - [x] 서비스 `features/account/src/service/enrollment.ts` (사전 등록, 발급, 검증, 사용 처리)
 - [x] 단위 테스트 `tests/enrollment.test.ts`, 통합 테스트 `tests/enrollment.int.test.ts`
-- [ ] PK1b: `@better-auth/passkey@1.7.7` 추가, passkey 등록·로그인 라우트와 `createAuth` 연결
+- [x] PK1b: `@better-auth/passkey@1.7.7` 추가, passkey 등록·로그인 라우트와 `createAuth` 연결 (구현: service/auth.ts 플러그인, service/passkey.ts, service/passkey-manage.ts, api/passkey-routes.ts)
 - [ ] PK1c: 관리자 초기화
 - [ ] PK2: 로그인 화면·Google 안내 문구 제거
 
@@ -50,3 +50,4 @@ PK1a에서 스키마·마이그레이션·RLS와 사전 등록·등록 토큰 �
 ## 결정·변경 기록
 - 2026-10-20: 카드 범위를 PK1a/1b/1c로 나눈다. 1a는 스키마·마이그레이션·서비스만 한다. 라우트와 관리자 초기화는 뒤 카드에서 한다.
 - 2026-10-20: `@better-auth/passkey`는 PK1b로 옮겼다. PK1a에서 추가하면 knip(미사용 의존성) 게이트가 실패한다. 소유자 결정(knip 예외 추가 대신 의존성 이관). 1.7.11은 `minimumReleaseAgeExclude` 변경과 `better-auth` 상향이 필요해 승인 없이 쓰지 않는다.
+- 2026-10-20 (PK1b): 마지막 passkey는 삭제할 수 없다(409, `canDeletePasskey`). 삭제 전 본인 행을 잠가 동시 삭제에도 1개가 남게 한다. passkey 관리(목록·이름·삭제)는 자체 API(`/api/me/passkeys`)만 쓰고 플러그인의 같은 경로는 `disabledPaths`로 막아 감사 로그를 빠뜨리지 않는다. rpID·origin은 서버 `BETTER_AUTH_URL`에서만 정한다(요청 헤더의 origin은 믿지 않는다).

@@ -51,7 +51,7 @@
 | | @hono/node-server | ~2.1.3 (worker의 헬스체크 서버용) |
 | 검증 | zod | ~4.6.5 |
 | 인증 | better-auth | ~1.7.7 (organization 플러그인 = 계정·테넌트, ADR 0005) |
-| | @better-auth/passkey | 1.7.7 (정확 고정 예정. 1.7.10 이상은 `better-auth ^1.7.10`을 요구해 better-auth 상향 없이는 peer 충돌. PK1b에서 도입: 미사용 의존성은 knip 게이트에 걸리므로 createAuth 연결과 함께 추가) |
+| | @better-auth/passkey | 1.7.7 (정확 고정. 1.7.10 이상은 `better-auth ^1.7.10`을 요구해 better-auth 상향 없이는 peer 충돌. PK1b에서 도입: 미사용 의존성은 knip 게이트에 걸리므로 createAuth 연결과 함께 추가) |
 | 비밀번호·PIN 해시 | @node-rs/argon2 | ~2.2.1 |
 | ORM | drizzle-orm / drizzle-kit | ~0.45.3 / ~0.31.11 |
 | DB 드라이버 | pg | ~8.23.1 (Drizzle·pg-boss·Better Auth 공용) |

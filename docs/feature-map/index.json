@@ -36,6 +36,16 @@
           "who": "모든 구성원",
           "path": "사용자 메뉴 → 내 정보 → /me",
           "entry": "ui/components/me-page"
+        },
+        {
+          "who": "로그인 전 사용자(등록 링크)",
+          "path": "/api/auth/passkey/* (등록 옵션·검증, passkey 로그인)",
+          "entry": "api/auth-routes"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "/api/me/passkeys (목록·이름 변경·삭제)",
+          "entry": "api/passkey-routes"
         }
       ],
       "screens": [
@@ -95,7 +105,9 @@
       "invariants": [
         "세션은 유휴·절대 만료 정책을 적용하고 만료된 세션은 지운다",
         "PIN은 해시로만 저장하고 5회 실패 시 15분 잠근다",
-        "초대 토큰은 해시만 저장하고 한 번만 쓴다"
+        "초대 토큰은 해시만 저장하고 한 번만 쓴다",
+        "passkey는 본인 것만 바꾸고, 마지막 1개는 삭제할 수 없다 (passkey 관리는 자체 API로만, 플러그인 경로는 disabledPaths로 막는다)",
+        "passkey 로그인·등록 실패 응답은 이유를 드러내지 않는다 (사용자 열거 방지)"
       ],
       "folder": "account",
       "routes": [
@@ -178,6 +190,21 @@
           "method": "get",
           "path": "/me/login-history",
           "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/me/passkeys",
+          "file": "features/account/src/api/passkey-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/me/passkeys/{id}",
+          "file": "features/account/src/api/passkey-routes.ts"
+        },
+        {
+          "method": "patch",
+          "path": "/me/passkeys/{id}",
+          "file": "features/account/src/api/passkey-routes.ts"
         },
         {
           "method": "put",
