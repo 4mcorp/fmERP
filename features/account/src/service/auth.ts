@@ -1,7 +1,9 @@
+import { passkey } from "@better-auth/passkey";
 import { type Db, schema } from "@fmerp/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins/organization";
+import { afterPasskeyRegistered, auditRequestOf, resolveEnrollmentUser } from "./passkey";
 
 export interface AuthConfig {
   /** fmerp_auth 역할로 연결한 DB (ADR 0005) */
@@ -73,9 +75,18 @@ const USER_SELF_SERVICE_PATHS = [
   "/unlink-account",
 ];
 
+// passkey 자격 증명 관리는 감사·마지막 1개 정책을 거치는 자체 API(/api/me/passkeys)로만 한다
+const PASSKEY_MANAGE_PATHS = [
+  "/passkey/delete-passkey",
+  "/passkey/update-passkey",
+  "/passkey/list-user-passkeys",
+];
+
 const SESSION_ABSOLUTE_SECONDS = 12 * 60 * 60;
 
 export function createAuth(config: AuthConfig) {
+  // rpID·origin은 서버 설정(baseURL = MagicDNS FQDN)에서만 정한다. 요청 헤더의 origin은 믿지 않는다.
+  const rp = new URL(config.baseURL);
   return betterAuth({
     appName: "4mERP",
     baseURL: config.baseURL,
@@ -92,6 +103,7 @@ export function createAuth(config: AuthConfig) {
         verification: schema.verification,
         account: schema.account,
         membership: schema.membership,
+        passkey: schema.passkey,
       },
     }),
     advanced: {
@@ -127,8 +139,34 @@ export function createAuth(config: AuthConfig) {
       max: 100,
       customRules: { "/sign-in/email": { window: 60, max: 10 } },
     },
-    disabledPaths: [...ORGANIZATION_PATHS, ...USER_SELF_SERVICE_PATHS],
+    disabledPaths: [...ORGANIZATION_PATHS, ...USER_SELF_SERVICE_PATHS, ...PASSKEY_MANAGE_PATHS],
     plugins: [
+      passkey({
+        rpName: "4mERP",
+        rpID: rp.hostname,
+        origin: rp.origin,
+        registration: {
+          // 로그인한 사용자의 추가 등록은 세션으로, 로그인 전 최초 등록은 등록 링크(토큰)로 정한다
+          requireSession: false,
+          resolveUser: async ({ context }) =>
+            resolveEnrollmentUser(
+              { authDb: config.db },
+              { token: context ?? null, now: new Date() },
+            ),
+          afterVerification: async ({ ctx, user, context }) => {
+            await afterPasskeyRegistered(
+              { authDb: config.db },
+              {
+                userId: user.id,
+                token: context ?? null,
+                now: new Date(),
+                request: auditRequestOf(ctx.headers, config.ipAddressHeaders),
+              },
+            );
+          },
+        },
+        authentication: {},
+      }),
       organization({
         creatorRole: "owner",
         disableOrganizationDeletion: true,
