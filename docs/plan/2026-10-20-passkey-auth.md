@@ -42,7 +42,10 @@ PK1a에서 스키마·마이그레이션·RLS와 사전 등록·등록 토큰 �
 - [x] PK1b: `@better-auth/passkey@1.7.7` 추가, passkey 등록·로그인 라우트와 `createAuth` 연결 (구현: service/auth.ts 플러그인, service/passkey.ts, service/passkey-manage.ts, api/passkey-routes.ts)
 - [x] PK1c: 관리자 초기화 (구현: service/passkey-reset.ts, api/account-routes.ts `POST /api/account/members/{userId}/passkey-reset`. 권한 `member.passkey_reset`은 소유자·관리자. PIN 재인증 후 passkey 전체 삭제·세션 종료·새 등록 토큰 발급, `passkey.admin_reset` 감사 기록)
 - [x] PK1d: 관리자 사전 등록·등록 링크 재발급 (구현: api/account-routes.ts `POST /api/account/members`, `POST /api/account/members/{userId}/enrollment`, service/enrollment.ts `preRegisterMember`·`reissueMemberEnrollment`. 권한·재인증은 `member.passkey_reset`과 같다. 감사 `member.pre_register`·`member.enrollment_issue`)
-- [ ] PK2: 로그인 화면·Google 안내 문구 제거
+- [x] PK2: 로그인 화면(passkey 로그인·최초 등록·내 기기·관리자 사전 등록·passkey 초기화 화면), Google 안내 문구 제거. 메뉴 노출 키 `member.passkey_reset`을 `/account/capabilities`에 추가했다(서버 실행 시 재판정, 권한 확대 없음). 로그아웃 fetch에 JSON content-type·`{}` body를 넣었다(415 원인: 헤더·body 없는 POST).
+
+### 알려진 한계 (PK2)
+- 등록 직후 세션은 `afterLogin`을 타지 않아 활성 회사(`activeAccountId`)가 설정되지 않는다. 등록 화면이 `/api/me` → `/api/accounts/active`로 첫 재직 회사를 골라 설정하는 UI 우회로 막는다. 서버 쪽 근본 수정(등록 세션 생성 경로에서 `afterLogin` 호출)은 `features/account/src/api|service/**` 밖이라 후속 과제다.
 
 ## 완료 기준
 - `pnpm typecheck`, `pnpm lint`, `pnpm test:unit`, `pnpm test:int`(변경 관련 파일), `pnpm arch:check` 위반 0

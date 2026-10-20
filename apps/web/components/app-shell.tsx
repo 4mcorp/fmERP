@@ -70,7 +70,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   async function signOut() {
     // 이 브라우저에 남은 기안 로컬 사본을 지운다 (BAK-001)
     await clearLocalDrafts();
-    await fetch("/api/auth/sign-out", { method: "POST" });
+    await fetch("/api/auth/sign-out", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
     window.location.href = me?.devTestLogin ? "/dev-login" : "/login";
   }
 

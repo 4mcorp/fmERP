@@ -19,7 +19,7 @@
       "access": [
         {
           "who": "누구나",
-          "path": "/login, /dev-login(개발 전용)",
+          "path": "/login (passkey 로그인), /login?token= (최초 passkey 등록 링크), /dev-login(개발 전용)",
           "entry": "ui/pages/login"
         },
         {
