@@ -68,6 +68,7 @@
 | DB 덤프·복구 절차·이관 절차·로컬 사본 | DEPLOYMENT_PLAN 8장, [ops/migration.md](ops/migration.md)(운영자 절차), ADR 0011 |
 | 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
 | 스테이징 구축·배포·Access 절차 (초안, 미검증) | [ops/staging.md](ops/staging.md), `docker-compose.staging.yml`, `apps/web/Dockerfile`, `.env.staging.example` |
+| k3s 동적 테스트 러너 (Job으로 격리 DB·S3 파드 실행) | [ops/k8s-test.md](ops/k8s-test.md), `deploy/k8s/test/` |
 | 운영 구축·Tailscale MagicDNS 접속·tailnet ACL·사용자 흐름 (초안, 미검증) | [ops/prod.md](ops/prod.md), `docker-compose.prod.yml`, `docker/tailscale/serve.json.tmpl`, `.env.prod.example` |
 | 운영 자동 배포 (GitHub Actions → Tailscale 임시 노드 → SSH, 롤백·비밀 목록·OAuth 발급·ACL 예시) (초안, 미검증) | [ops/prod.md](ops/prod.md) 9장, `.github/workflows/deploy-prod.yml`, `tools/deploy/deploy-prod.sh` |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
