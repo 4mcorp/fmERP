@@ -43,6 +43,32 @@ spec:
               cp -a /src/. /work/ 2>/dev/null || true
               rm -rf /work/node_modules /work/.git
               corepack enable
+              # 백업 통합 테스트가 `docker exec -i -e PGPASSWORD=.. <컨테이너> <pg 도구> ..` 를 쓴다. 파드엔 docker 가 없으므로
+              # 같은 파드의 pg 도구를 직접 실행하는 호환 shim 을 둔다 (컨테이너 안 5432 → 이 파드의 55433)
+              mkdir -p /tmp/bin
+              cat > /tmp/bin/docker <<'SHIM'
+              #!/bin/bash
+              [ "$1" = exec ] || { echo "docker shim: exec 만 지원" >&2; exit 127; }
+              shift
+              while [ $# -gt 0 ]; do
+                case "$1" in
+                  -i|-t|-it) shift;;
+                  -e) export "$2"; shift 2;;
+                  *) shift; break;;   # 컨테이너 이름
+                esac
+              done
+              # 컨테이너 안 주소(-h localhost -p 5432)를 이 파드의 DB 포트(55433)로 바꾼다. 127.0.0.1 로 고정해 ::1 접속을 피한다
+              # -h/-p 없이 소켓으로 접속하는 psql 등을 위해 기본 접속처를 이 파드의 DB로 둔다
+              export PGHOST=127.0.0.1 PGPORT=55433
+              args=(); prev=""
+              for a in "$@"; do
+                if [ "$prev" = "-p" ] && [ "$a" = 5432 ]; then a=55433; fi
+                if [ "$prev" = "-h" ] && [ "$a" = localhost ]; then a=127.0.0.1; fi
+                args+=("$a"); prev="$a"
+              done
+              exec "${args[@]}"
+              SHIM
+              chmod +x /tmp/bin/docker; export PATH=/tmp/bin:$PATH
               pnpm pkg delete scripts.prepare >/dev/null
               pnpm install --frozen-lockfile >/tmp/install.log 2>&1 || { tail -30 /tmp/install.log; exit 1; }
               for i in $(seq 60); do (echo > /dev/tcp/127.0.0.1/55433) 2>/dev/null && (echo > /dev/tcp/127.0.0.1/58333) 2>/dev/null && break; sleep 2; done
@@ -50,12 +76,14 @@ spec:
               ${TEST_CMD}
           env:
             - {name: CI, value: "true"}
+            # 이미지가 NODE_ENV=production 으로 고정돼 있어 테스트 서버가 DEV_TEST_LOGIN 과 충돌해 기동하지 않는다
+            - {name: NODE_ENV, value: development}
             - {name: HOME, value: /tmp}
           volumeMounts:
             - {name: src, mountPath: /src, readOnly: true}
             - {name: work, mountPath: /work}
             - {name: dshm, mountPath: /dev/shm}
-          resources: {requests: {cpu: 500m, memory: 1Gi}, limits: {cpu: "2", memory: 4Gi}}
+          resources: {requests: {cpu: 500m, memory: 3Gi}, limits: {cpu: "3", memory: 10Gi}}
       volumes:
         - name: src
           hostPath: {path: "${WORKTREE}", type: Directory}
