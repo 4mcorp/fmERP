@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: fmerp
+    includeSelectors: false
+resources:
+  - ../../../docker/postgres
+  - postgres.yaml
+  - web.yaml
+  - worker.yaml
+  - migrate-job.yaml
+  - ingress.yaml
+patches:
+  # 서비스 이름(s3, postgres …)에서 S3_PORT=tcp://… 같은 환경변수가 주입돼 앱·weed 가 오작동하는 것을 막는다
+  - target: {kind: Deployment}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/enableServiceLinks
+        value: false
+  - target: {kind: StatefulSet}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/enableServiceLinks
+        value: false
+  - target: {kind: Job}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/enableServiceLinks
+        value: false

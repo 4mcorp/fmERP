@@ -1,0 +1,9 @@
+# k8s 용: initdb 스크립트를 ConfigMap 으로 만든다 (원본 initdb/01-roles.sh 를 그대로 쓴다). deploy/k8s/base 가 참조
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: fmerp-postgres-initdb
+    files:
+      - initdb/01-roles.sh

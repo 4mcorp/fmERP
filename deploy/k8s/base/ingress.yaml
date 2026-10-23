@@ -1,0 +1,15 @@
+# 호스트 이름은 overlay 에서 정한다. TLS 는 운영에서 Cloudflare 가 끝낸다 (docs/DEPLOYMENT_PLAN.md 7장)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: fmerp.invalid
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: web, port: {name: http}}

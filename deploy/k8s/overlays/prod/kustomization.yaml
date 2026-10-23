@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: prod
+resources:
+  - ../../base
+configMapGenerator:
+  - name: fmerp-app-config
+    literals:
+      - NODE_ENV=production
+      # DEV_TEST_LOGIN·APP_ENV 는 두지 않는다 (운영에서 테스트 로그인 금지)
+      - BETTER_AUTH_URL=https://erp.CHANGE-ME.example      # TODO 도메인 확정 후 교체
+      - PUBLIC_BASE_URL=https://erp.CHANGE-ME.example
+      - S3_REGION=auto
+      - S3_BUCKET=fmerp-prod                                # TODO 외부 버킷(R2 등) 확정 후 S3_ENDPOINT 추가
+      - S3_FORCE_PATH_STYLE=false
+      - WORKER_PORT=3001
+generatorOptions:
+  disableNameSuffixHash: true
+patches:
+  - target: {kind: Ingress, name: web}
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: erp.CHANGE-ME.example
+  - target: {kind: StatefulSet, name: postgres}
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        value: 20Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 4Gi
+  - target: {kind: Deployment, name: worker}
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 2Gi
+images:
+  - {name: fmerp-web, newTag: prod}
+  - {name: fmerp-worker, newTag: prod}
+  - {name: fmerp-web-builder, newTag: prod}
