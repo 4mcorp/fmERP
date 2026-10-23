@@ -16,14 +16,14 @@
 
 비밀값은 이 저장소(public)에 두지 않는다. infra의 `secrets.sops.yaml`(age 암호화)에만 둔다.
 
-## 이미지
-레지스트리 없이 colima docker에서 직접 빌드한다(k3s가 같은 docker 런타임 사용, DEPLOYMENT_PLAN 9.4).
-```
-deploy/k8s/build-images.sh dev     # origin/dev  → fmerp-web:dev, fmerp-web-builder:dev, fmerp-worker:dev
-deploy/k8s/build-images.sh prod    # origin/main → fmerp-web:prod, ...
-```
-환경별 기준 브랜치는 **dev 환경 = `dev` 브랜치, prod 환경 = `main` 브랜치**다. 스크립트가 체크아웃 상태와 무관하게 `origin/<기준>`을 fetch해 `git archive`로 빌드하고, 이미지 라벨 `fmerp.git-sha`에 커밋을 남긴다(`docker inspect fmerp-web:dev --format '{{index .Config.Labels "fmerp.git-sha"}}'`). Flux의 `GitRepository`도 dev용은 `dev`, prod용은 `main`을 본다(infra `apps/{dev,prod}/fmerp/sync.yaml`).
-worker 이미지는 Playwright 기반이라 첫 빌드가 약 15분 걸린다.
+## 이미지 (GHCR + Flux image automation)
+`dev`·`main` 푸시 때 `.github/workflows/build-images.yml`이 `ghcr.io/4mcorp/fmerp-{web,worker,web-builder}`를 빌드·푸시한다. 패키지는 public이다(이미지에 비밀 없음, 시크릿은 클러스터 SOPS Secret으로만 주입).
+- 태그: `<브랜치>-<run_number>-<sha7>` (예: `dev-123-9751deb`). 세 이미지가 같은 태그를 쓰고, web을 마지막에 올린다.
+- 배포: infra 저장소의 `ImageRepository`·`ImagePolicy`(`dev-` 태그 중 run_number 최대)·`ImageUpdateAutomation`이 새 태그를 감지해 `apps/dev/fmerp/sync.yaml`의 `spec.images`를 커밋하고, Flux가 `fmerp-dev`에 적용한다. `migrate` Job은 이미지가 바뀌면 `force`로 재생성되어 마이그레이션이 자동 실행된다. 시드는 자동이 아니다.
+- 지금 배포된 태그 확인: `kubectl -n dev get deploy web -o jsonpath='{.spec.template.spec.containers[0].image}'`
+- prod(`main-` 태그)는 빌드만 한다. 자동 배포는 prod 활성화 때 같은 방식으로 추가한다.
+- 폴백(로컬 빌드): `deploy/k8s/build-images.sh dev|prod` — `origin/dev`(dev) 또는 `origin/main`(prod)을 `git archive`로 colima docker에 직접 빌드하고 라벨 `fmerp.git-sha`에 커밋을 남긴다. 평소에는 쓰지 않는다.
+worker 이미지는 Playwright 기반이라 6GB다(PDF 렌더링용 Chromium). 슬림화는 후속 작업.
 
 ## dev 적용 순서
 1. `kubectl apply -f <(sops -d ~/SW/infra/apps/dev/fmerp/secrets.sops.yaml)`
