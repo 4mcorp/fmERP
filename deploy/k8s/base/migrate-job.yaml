@@ -1,0 +1,28 @@
+# 배포마다 1회 마이그레이션. 이름에 이미지 태그가 붙지 않으므로 Flux 가 Job 을 재생성하도록 force 를 켠다
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: fmerp-web-builder
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          command: [pnpm, --filter, "@fmerp/db", migrate]
+          envFrom:
+            - configMapRef: {name: fmerp-app-config}
+            - secretRef: {name: fmerp-app-env}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}

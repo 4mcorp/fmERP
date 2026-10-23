@@ -1,0 +1,43 @@
+# PDF·패키지·큐·예약 작업·DB 덤프 (apps/worker/Dockerfile). pg-boss 큐는 DB 에 있어 외부 브로커가 없다
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: worker}
+  template:
+    metadata:
+      labels: {app: worker}
+    spec:
+      containers:
+        - name: worker
+          image: fmerp-worker
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: {name: fmerp-app-config}
+            - secretRef: {name: fmerp-app-env}
+          ports:
+            - {name: health, containerPort: 3001}
+          readinessProbe:
+            httpGet: {path: /health, port: health}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health, port: health}
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {cpu: "2", memory: 1536Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: dshm, mountPath: /dev/shm}   # Chromium 공유 메모리
+      volumes:
+        - name: dshm
+          emptyDir: {medium: Memory, sizeLimit: 256Mi}
