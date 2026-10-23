@@ -19,8 +19,10 @@
 ## 이미지
 레지스트리 없이 colima docker에서 직접 빌드한다(k3s가 같은 docker 런타임 사용, DEPLOYMENT_PLAN 9.4).
 ```
-deploy/k8s/build-images.sh dev     # fmerp-web:dev, fmerp-web-builder:dev, fmerp-worker:dev
+deploy/k8s/build-images.sh dev     # origin/dev  → fmerp-web:dev, fmerp-web-builder:dev, fmerp-worker:dev
+deploy/k8s/build-images.sh prod    # origin/main → fmerp-web:prod, ...
 ```
+환경별 기준 브랜치는 **dev 환경 = `dev` 브랜치, prod 환경 = `main` 브랜치**다. 스크립트가 체크아웃 상태와 무관하게 `origin/<기준>`을 fetch해 `git archive`로 빌드하고, 이미지 라벨 `fmerp.git-sha`에 커밋을 남긴다(`docker inspect fmerp-web:dev --format '{{index .Config.Labels "fmerp.git-sha"}}'`). Flux의 `GitRepository`도 dev용은 `dev`, prod용은 `main`을 본다(infra `apps/{dev,prod}/fmerp/sync.yaml`).
 worker 이미지는 Playwright 기반이라 첫 빌드가 약 15분 걸린다.
 
 ## dev 적용 순서
