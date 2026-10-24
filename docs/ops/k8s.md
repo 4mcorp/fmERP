@@ -32,6 +32,7 @@ worker 이미지는 Playwright 기반이라 6GB다(PDF 렌더링용 Chromium). �
 4. S3 버킷 생성(아래 주의 1). 호스트 접근: `deploy/k8s/dev-forward.sh` (compose 때와 같은 127.0.0.1 포트)
 
 ## 주의 (실제로 겪은 것)
+0. **dev의 `BETTER_AUTH_URL`·`PUBLIC_BASE_URL`은 접속 주소(tailnet `https://fmerp-dev.taile82113.ts.net`)와 같아야 한다.** 다르면 로그인 POST가 `forbidden_origin` 403이 되고, 패스키 RP ID가 어긋나며 http 비로컬 주소에서는 브라우저가 패스키를 지원하지 않아 버튼이 꺼진다. 이 값을 바꾸면 ConfigMap은 해시 접미사가 없어 파드가 자동 재시작되지 않으므로 `kubectl -n dev rollout restart deploy/web deploy/worker`가 필요하다. `fmerp.dev.localhost` 주소로는 로그인할 수 없다(출처 불일치).
 1. **dev 버킷은 수동 생성이 필요하다.** `ensure-bucket` CLI는 `localhost` 엔드포인트만 허용해 클러스터 안(`http://s3:8333`)에서는 거부된다. 버킷이 없으면 worker 자동 덤프가 FAILED가 된다. 생성: worker 파드에서 `PUT http://s3:8333/fmerp-dev`. (자동화 후보: 초기화 Job)
 2. **서비스 링크 환경변수를 끈다(`enableServiceLinks: false`).** Service 이름이 `s3`라 `S3_PORT=tcp://…`가 주입되어 SeaweedFS가 기동 실패한다.
 3. **worker는 `NODE_ENV=production`이면 `BACKUP_DATABASE_URL`·`BACKUP_AGE_RECIPIENTS`가 없을 때 기동하지 않는다.** dev에도 age 공개키가 필요하다. 개인키는 서버 밖(`~/.config/sops/age/fmerp-dev-backup.key`)에 둔다.
