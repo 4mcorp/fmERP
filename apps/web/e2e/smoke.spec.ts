@@ -1,7 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("로그인하지 않으면 테스트 로그인 화면으로 이동한다", async ({ page }) => {
+test("로그인하지 않으면 로그인 화면으로 이동하고 테스트 로그인 링크가 보인다", async ({ page }) => {
   await page.goto("/");
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByRole("heading", { level: 1, name: "4mERP 로그인" })).toBeVisible();
+  await page.getByRole("link", { name: /테스트 계정으로 로그인/ }).click();
   await expect(page).toHaveURL(/\/dev-login/);
   await expect(page.getByRole("heading", { level: 1, name: "4mERP 테스트 로그인" })).toBeVisible();
 });

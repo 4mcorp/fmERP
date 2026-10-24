@@ -17,7 +17,7 @@ async function signOut(page: Page) {
   await page.getByRole("menuitem", { name: "로그아웃" }).click();
   const res = await done;
   expect(res.status(), "로그아웃 응답은 성공이어야 한다").toBeLessThan(300);
-  await expect(page).toHaveURL(/\/dev-login/);
+  await expect(page).toHaveURL(/\/login/);
   // 로그아웃 뒤 세션 쿠키가 남아 있으면 다음 사람(등록 링크 사용자)이 관리자 세션으로 들어간다
   const names = (await page.context().cookies()).map((c) => c.name);
   expect(names).not.toContain("fmerp.session_token");

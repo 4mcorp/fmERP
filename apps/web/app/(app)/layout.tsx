@@ -10,6 +10,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const requestHeaders = await headers();
   const deps = getServerDeps();
   const session = await deps.auth.api.getSession({ headers: requestHeaders });
-  if (!session) redirect(deps.devTestLogin ? "/dev-login" : "/login");
+  if (!session) redirect("/login");
   return <AppShell>{children}</AppShell>;
 }

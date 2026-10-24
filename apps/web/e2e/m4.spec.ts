@@ -9,7 +9,7 @@ async function loginAs(page: Page, name: string) {
 async function signOut(page: Page) {
   await page.getByRole("button", { name: "사용자 메뉴" }).click();
   await page.getByRole("menuitem", { name: "로그아웃" }).click();
-  await expect(page).toHaveURL(/\/dev-login/);
+  await expect(page).toHaveURL(/\/login/);
 }
 
 const EMPTY_DOC = { type: "doc", content: [] };

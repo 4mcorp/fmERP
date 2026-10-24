@@ -34,11 +34,27 @@ export default function LoginPage() {
   return params.token ? <EnrollPanel token={params.token} /> : <LoginPanel next={params.next} />;
 }
 
+/** 테스트 계정 로그인이 켜진 환경인지 확인한다. 꺼져 있으면 서버가 404를 주므로 링크를 숨긴다 */
+function useDevTestLoginEnabled(): boolean {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/dev/test-accounts")
+      .then((res) => alive && setEnabled(res.ok))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return enabled;
+}
+
 /** ID 입력 없이 passkey(discoverable credential)로 로그인한다. Google 안내 문구는 PK2에서 뺐다 */
 function LoginPanel({ next }: { next: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supported = usePasskeySupport();
+  const devLogin = useDevTestLoginEnabled();
 
   async function login() {
     if (!supported) return;
@@ -86,6 +102,14 @@ function LoginPanel({ next }: { next: string }) {
           <p className="text-xs text-muted-foreground">
             패스키가 아직 없다면 관리자가 보낸 등록 링크를 여세요.
           </p>
+          {devLogin && (
+            <a
+              href={`/dev-login?next=${encodeURIComponent(next)}`}
+              className="block text-center text-sm text-muted-foreground underline underline-offset-4"
+            >
+              테스트 계정으로 로그인 (개발·테스트 환경 전용)
+            </a>
+          )}
         </CardContent>
       </Card>
     </AuthLayout>

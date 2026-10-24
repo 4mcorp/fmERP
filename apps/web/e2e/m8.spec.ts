@@ -84,7 +84,7 @@ async function verifyPin(page: Page) {
 async function signOut(page: Page) {
   await page.getByRole("button", { name: "사용자 메뉴" }).click();
   await page.getByRole("menuitem", { name: "로그아웃" }).click();
-  await expect(page).toHaveURL(/dev-login/);
+  await expect(page).toHaveURL(/\/login/);
 }
 
 // 홈 대시보드 (DSH-001): 기안·상신·승인하며 결재 대기 → 진행 중 → 최근 완료로 옮겨 가는지 본다
