@@ -13,6 +13,7 @@ permissions:
   contents: write
   pull-requests: write
   checks: read
+  actions: write   # 병합 후 build-images 를 workflow_dispatch 로 호출 (push 이벤트는 GITHUB_TOKEN 병합에서 워크플로를 깨우지 않는다)
 
 jobs:
   merge:
@@ -57,3 +58,6 @@ jobs:
           done <<<"$owners"
 
           gh pr merge "$pr" --squash --delete-branch --match-head-commit "$SHA"
+
+          # 이미지 빌드 호출. 이미지 입력 변경이 없으면 build-images 의 changes 잡이 건너뛴다
+          gh workflow run build-images.yml --repo "$REPO" --ref dev
