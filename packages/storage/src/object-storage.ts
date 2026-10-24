@@ -17,6 +17,12 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export interface S3StorageConfig {
   endpoint?: string;
+  /**
+   * 브라우저가 접근하는 S3 주소. 서명 URL(presign*)만 이 주소로 만든다. 서버 간 통신은 `endpoint`를 쓴다.
+   * 클러스터 안 Service 주소(http://s3:8333)는 브라우저에서 열리지 않으므로, 사용자가 접속하는 공개 주소를 둔다.
+   * 서명이 호스트·포트에 묶이므로 경로 prefix를 떼어 내는 프록시 뒤에 두면 안 된다.
+   */
+  publicEndpoint?: string;
   region: string;
   bucket: string;
   accessKeyId: string;
@@ -41,21 +47,26 @@ export class ObjectAlreadyExistsError extends Error {
 /** S3 호환 저장소 어댑터. S3 SDK는 이 패키지 밖에서 쓰지 않는다 (docs/rules/storage-backup.md). */
 export class ObjectStorage {
   private readonly client: S3Client;
+  /** 서명 URL 전용 클라이언트. 공개 주소가 없으면 `client`와 같다 */
+  private readonly signer: S3Client;
   private readonly bucket: string;
 
   constructor(config: S3StorageConfig) {
     this.bucket = config.bucket;
-    this.client = new S3Client({
-      endpoint: config.endpoint,
-      region: config.region,
-      forcePathStyle: config.forcePathStyle,
-      credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
-      // SDK 기본값(WHEN_SUPPORTED)은 서명 URL에 빈 본문의 CRC32를 넣어, 브라우저 직접 업로드가
-      // BadDigest로 거부된다. R2·SeaweedFS 등 S3 호환 저장소에서는 필요할 때만 계산한다.
-      // (docs/ts/2026-10-03-s3-presigned-checksum.md)
-      requestChecksumCalculation: "WHEN_REQUIRED",
-      responseChecksumValidation: "WHEN_REQUIRED",
-    });
+    const create = (endpoint: string | undefined) =>
+      new S3Client({
+        endpoint,
+        region: config.region,
+        forcePathStyle: config.forcePathStyle,
+        credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
+        // SDK 기본값(WHEN_SUPPORTED)은 서명 URL에 빈 본문의 CRC32를 넣어, 브라우저 직접 업로드가
+        // BadDigest로 거부된다. R2·SeaweedFS 등 S3 호환 저장소에서는 필요할 때만 계산한다.
+        // (docs/ts/2026-10-03-s3-presigned-checksum.md)
+        requestChecksumCalculation: "WHEN_REQUIRED",
+        responseChecksumValidation: "WHEN_REQUIRED",
+      });
+    this.client = create(config.endpoint);
+    this.signer = config.publicEndpoint ? create(config.publicEndpoint) : this.client;
   }
 
   async put(key: string, body: Uint8Array | string, contentType?: string): Promise<void> {
@@ -217,7 +228,7 @@ export class ObjectStorage {
     options: { downloadName?: string; inline?: boolean; contentType?: string } = {},
   ): Promise<string> {
     return getSignedUrl(
-      this.client,
+      this.signer,
       new GetObjectCommand({
         Bucket: this.bucket,
         Key: key,
@@ -243,7 +254,7 @@ export class ObjectStorage {
     expiresInSeconds = 300,
   ): Promise<string> {
     return getSignedUrl(
-      this.client,
+      this.signer,
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
@@ -257,7 +268,7 @@ export class ObjectStorage {
   /** 브라우저 직접 업로드용 서명 URL. */
   presignPut(key: string, contentType: string, expiresInSeconds = 300): Promise<string> {
     return getSignedUrl(
-      this.client,
+      this.signer,
       new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: contentType }),
       { expiresIn: expiresInSeconds },
     );

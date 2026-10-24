@@ -17,6 +17,8 @@ const schema = z
     /** 스테이징만 "staging". 운영 모드에서 테스트 로그인을 켜는 유일한 예외 (resolveDevTestLogin) */
     APP_ENV: z.string().optional(),
     S3_ENDPOINT: z.url().optional(),
+    /** 브라우저가 접근하는 S3 주소(서명 URL용). 없으면 S3_ENDPOINT를 쓴다 */
+    S3_PUBLIC_ENDPOINT: z.url().optional(),
     S3_REGION: z.string().default("auto"),
     S3_BUCKET: z.string().min(1),
     S3_ACCESS_KEY_ID: z.string().min(1),
