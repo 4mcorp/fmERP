@@ -9,7 +9,7 @@ async function loginAs(page: Page, name: string) {
 async function signOut(page: Page) {
   await page.getByRole("button", { name: "사용자 메뉴" }).click();
   await page.getByRole("menuitem", { name: "로그아웃" }).click();
-  await expect(page).toHaveURL(/\/dev-login/);
+  await expect(page).toHaveURL(/\/login/);
 }
 
 test("테스트 계정으로 로그인하면 소속 회사 홈이 열린다", async ({ page }) => {

@@ -75,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       headers: { "content-type": "application/json" },
       body: "{}",
     });
-    window.location.href = me?.devTestLogin ? "/dev-login" : "/login";
+    window.location.href = "/login";
   }
 
   // 각 기능의 진입점을 합성 루트에서 모아 셸에 주입한다 (셸은 기능을 알지 못한다)

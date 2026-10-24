@@ -29,7 +29,7 @@ export async function api<T>(path: string, init?: { method?: string; body?: unkn
     };
     const code = body.code ?? "error";
     if (res.status === 401 && LOGIN_REQUIRED.has(code) && typeof window !== "undefined") {
-      window.location.href = `/dev-login?next=${encodeURIComponent(window.location.pathname)}`;
+      window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
     }
     throw new ApiProblem(
       res.status,
