@@ -2,6 +2,10 @@ name: Build images
 
 # dev·main 푸시 때 web·worker·web-builder 이미지를 빌드해 GHCR(ghcr.io/4mcorp)에 올린다.
 # 태그: <브랜치>-<run_number>-<sha7>  (예: dev-123-9751deb). run_number가 단조 증가해 Flux ImagePolicy가 최신을 고른다.
+# 빌드 조건: 마지막 성공 실행(빌드 또는 건너뜀)의 커밋 이후로 이미지에 들어가는 파일이 바뀐 경우에만 빌드한다 (changes 잡).
+#   문서·CI·배포 매니페스트·테스트·도구 변경만 있으면 건너뛰어 새 태그가 생기지 않는다(= Flux가 이미지를 교체하지 않는다).
+# 트리거: 사람 병합(push)과 수동 실행. 자동병합(automerge-dev)은 기본 GITHUB_TOKEN으로 병합해 push 워크플로가 돌지 않으므로
+#   병합 직후 workflow_dispatch 로 이 워크플로를 호출한다(workflow_dispatch 는 GITHUB_TOKEN 이벤트 제한의 예외라 별도 키가 필요 없다).
 # 배포는 이 워크플로가 하지 않는다. infra 저장소의 Flux image automation이 새 태그를 감지해 적용한다 (docs/ops/k8s.md).
 # web을 마지막에 올린다: Flux는 web 저장소의 태그를 보고 세 이미지에 같은 태그를 쓰므로, web이 보이면 나머지는 이미 있어야 한다.
 
@@ -9,6 +13,11 @@ on:
   push:
     branches: [dev, main]
   workflow_dispatch:
+    inputs:
+      force:
+        description: "변경 판정과 무관하게 빌드한다"
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -20,8 +29,40 @@ env:
   REGISTRY: ghcr.io/4mcorp
 
 jobs:
+  changes:
+    name: 이미지 변경 판정
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      build: ${{ steps.decide.outputs.build }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: 마지막 성공 실행 이후 이미지 입력 변경 확인
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -eu
+          emit() { echo "build=$1" >> "$GITHUB_OUTPUT"; echo "판정: build=$1 ($2)"; }
+          [ "$FORCE" = "true" ] && { emit true "force"; exit 0; }
+          base=$(gh run list --workflow build-images.yml --branch "$GITHUB_REF_NAME" --status success --limit 1 --json headSha --jq '.[0].headSha // empty')
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then emit true "비교 기준 없음"; exit 0; fi
+          if [ "$base" = "$GITHUB_SHA" ]; then emit false "이미 처리한 커밋"; exit 0; fi
+          # 이미지에 들어가지 않는 경로. 여기에 없는 파일이 바뀌면 보수적으로 빌드한다
+          ignore='^(docs/|\.github/|\.claude/|deploy/|tools/|docker/|\.worktrees/)|(^|/)(tests?|e2e)/|\.test\.tsx?$|\.md$|^docker-compose[^/]*\.yml$|^(lefthook\.yml|commitlint\.config\.mjs|biome[^/]*\.json|knip\.json|vitest\.config\.ts|tsconfig\.depcruise\.json|\.dependency-cruiser\.cjs|skills-lock\.json|GLOSSARY\.md)$'
+          changed=$(git diff --name-only "$base" "$GITHUB_SHA" | grep -Ev "$ignore" || true)
+          if [ -n "$changed" ]; then echo "$changed" | head -20; emit true "이미지 입력 변경 $(echo "$changed" | wc -l)개"; else emit false "이미지 입력 변경 없음 ($base..${GITHUB_SHA::7})"; fi
+
   build:
     name: 이미지 빌드·푸시
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
