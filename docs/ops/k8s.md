@@ -47,3 +47,9 @@ worker 이미지는 Playwright 기반이라 6GB다(PDF 렌더링용 Chromium). �
 - [ ] cloudflared Tunnel 토큰과 배포 (현재 Ingress는 로컬 HTTP만)
 - [ ] 운영 이미지 `build-images.sh prod`, 이후 `apps/prod/fmerp/sync.yaml`의 `suspend: true` 제거
 - [ ] 단일 노드·단일 Postgres라 가용성은 compose 때와 같다. 백업·복구 리허설(`docs/ops/migration.md`)을 k8s 환경에서 다시 수행
+
+## 브라우저에 내려가는 주소 (S3 서명 URL)
+- 서명 URL(PDF·첨부·직인·내보내기)은 브라우저가 연다. `S3_ENDPOINT`는 클러스터 내부 주소(`http://s3:8333`)라 브라우저에서 열리지 않으므로, 서명 URL만 `S3_PUBLIC_ENDPOINT`로 만든다. 없으면 `S3_ENDPOINT`를 쓴다 (`packages/storage`).
+- 서명은 호스트·포트에 묶인다. S3는 경로 prefix(`/s3`)가 아니라 **포트**로 나눈다: `https://<호스트>:8443` → `s3:8333`. prefix를 떼는 프록시 뒤에는 둘 수 없다.
+- tailnet(계정)마다 Tailscale 파드 1개(`tailscale-gateway`, infra 저장소 `apps/<env>/fmerp/tailscale-gateway.yaml`)가 web(443)과 S3(8443)을 함께 serve한다. 서비스를 늘리면 그 파드의 serve.json에 포트를 추가한다.
+- 브라우저 직접 업로드는 CORS가 필요하다: SeaweedFS `-s3.allowedOrigins=<web 주소>`.

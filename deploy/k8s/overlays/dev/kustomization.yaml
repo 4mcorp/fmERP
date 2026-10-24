@@ -12,7 +12,8 @@ configMapGenerator:
       - DEV_TEST_LOGIN=true
       - BETTER_AUTH_URL=https://fmerp-dev.taile82113.ts.net
       - PUBLIC_BASE_URL=https://fmerp-dev.taile82113.ts.net
-      - S3_ENDPOINT=http://s3:8333
+      - S3_ENDPOINT=http://s3:8333                                  # 서버 간 통신(클러스터 내부)
+      - S3_PUBLIC_ENDPOINT=https://fmerp-dev.taile82113.ts.net:8443 # 브라우저용 서명 URL (tailscale-gateway 8443 → s3:8333)
       - S3_REGION=us-east-1
       - S3_BUCKET=fmerp-dev
       - S3_FORCE_PATH_STYLE=true

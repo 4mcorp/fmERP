@@ -25,7 +25,7 @@ spec:
       containers:
         - name: seaweedfs
           image: chrislusf/seaweedfs:4.47
-          args: [server, -s3, -dir=/data, -ip.bind=0.0.0.0]
+          args: [server, -s3, -dir=/data, -ip.bind=0.0.0.0, -s3.allowedOrigins=https://fmerp-dev.taile82113.ts.net]
           ports:
             - {name: s3, containerPort: 8333}
           readinessProbe:
