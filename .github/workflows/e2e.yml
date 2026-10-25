@@ -56,6 +56,15 @@ jobs:
       # E2E는 테스트 DB(55433)를 초기화·시드해서 쓴다 (apps/web/e2e/test-env.ts)
       - name: 테스트 서비스 기동 (PostgreSQL 18 테스트 DB, SeaweedFS)
         run: docker compose -f docker-compose.dev.yml up -d --wait postgres-test s3
+      # 버킷이 없으면 SeaweedFS가 403을 돌려주고 저장소 계층이 이를 revision_conflict로 보이게 한다
+      - name: 테스트 버킷 생성 (localhost 테스트 S3 전용)
+        env:
+          S3_ENDPOINT: http://localhost:58333
+          S3_REGION: us-east-1
+          S3_BUCKET: fmerp-test
+          S3_ACCESS_KEY_ID: test
+          S3_SECRET_ACCESS_KEY: test
+        run: pnpm --filter @fmerp/storage ensure-bucket
       - name: 브라우저 설치 (Playwright Chromium)
         run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
 
