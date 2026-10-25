@@ -17,10 +17,12 @@ class WorkflowContractTest(unittest.TestCase):
     def test_feature_jobs_run_only_unit_tests(self):
         self.assertIn('-- pnpm exec vitest run --project unit features/${{ matrix.feature }}/', self.ci)
 
-    def test_main_e2e_is_required_by_check(self):
+    def test_dev_and_main_e2e_are_required_by_check(self):
         self.assertIn('needs: [scope, static, test-feature, test-core, test-integration, e2e]', self.ci)
-        self.assertIn("if: github.event_name == 'pull_request' && github.base_ref == 'main'\n    uses: ./.github/workflows/e2e.yml", self.ci)
-        self.assertIn("e2e: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}", self.ci)
+        predicate = "github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main')"
+        self.assertIn(f"if: {predicate}\n    uses: ./.github/workflows/e2e.yml", self.ci)
+        self.assertIn("e2e: ${{ " + predicate + " }}", self.ci)
+        self.assertIn("full: ${{ github.base_ref != 'dev' }}", self.ci)
 
     def test_e2e_is_callable_without_duplicate_pr_runs(self):
         self.assertIn('  workflow_call:', self.e2e)

@@ -1,5 +1,4 @@
-# 한 파드 안에 격리 DB(55433)·S3(58333)·러너를 함께 띄운다. 서로 localhost 로 통하므로 앱 기본 테스트 설정을 그대로 쓴다.
-# 소스는 colima 마운트(~/SW)의 worktree 를 읽기 전용으로 받아 emptyDir 로 복사한다 (Linux 용 node_modules 를 따로 설치)
+# 현재 실행기 템플릿 + -w 읽기 전용 코드 소스.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -17,6 +16,18 @@ spec:
       restartPolicy: Never
       enableServiceLinks: false
       initContainers:
+        # root 권한은 source·DB·Secret이 없는 실행 전용 볼륨 초기화에만 쓴다.
+        - name: prepare-runner
+          image: ${RUNNER_IMAGE}
+          imagePullPolicy: IfNotPresent
+          securityContext: {runAsUser: 0, runAsGroup: 0}
+          command: [bash, -ec, 'chown 1001:1001 /work /artifacts /pnpm-store /cache; chmod 700 /work /artifacts /pnpm-store /cache']
+          volumeMounts:
+            - {name: work, mountPath: /work}
+            - {name: artifacts, mountPath: /artifacts}
+            - {name: store, mountPath: /pnpm-store}
+            - {name: cache, mountPath: /cache}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 64Mi}}
         - name: postgres
           restartPolicy: Always
           image: postgres:18-bookworm
@@ -34,62 +45,41 @@ spec:
           resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: "1", memory: 1Gi}}
       containers:
         - name: runner
-          image: fmerp-worker:dev
+          image: ${RUNNER_IMAGE}
+          securityContext: {runAsUser: 1001, runAsGroup: 1001, runAsNonRoot: true, allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
           imagePullPolicy: IfNotPresent
           workingDir: /work
           command: [bash, -ec]
           args:
-            - |
-              cp -a /src/. /work/ 2>/dev/null || true
-              rm -rf /work/node_modules /work/.git
-              corepack enable
-              # 백업 통합 테스트가 `docker exec -i -e PGPASSWORD=.. <컨테이너> <pg 도구> ..` 를 쓴다. 파드엔 docker 가 없으므로
-              # 같은 파드의 pg 도구를 직접 실행하는 호환 shim 을 둔다 (컨테이너 안 5432 → 이 파드의 55433)
-              mkdir -p /tmp/bin
-              cat > /tmp/bin/docker <<'SHIM'
-              #!/bin/bash
-              [ "$1" = exec ] || { echo "docker shim: exec 만 지원" >&2; exit 127; }
-              shift
-              while [ $# -gt 0 ]; do
-                case "$1" in
-                  -i|-t|-it) shift;;
-                  -e) export "$2"; shift 2;;
-                  *) shift; break;;   # 컨테이너 이름
-                esac
-              done
-              # 컨테이너 안 주소(-h localhost -p 5432)를 이 파드의 DB 포트(55433)로 바꾼다. 127.0.0.1 로 고정해 ::1 접속을 피한다
-              # -h/-p 없이 소켓으로 접속하는 psql 등을 위해 기본 접속처를 이 파드의 DB로 둔다
-              export PGHOST=127.0.0.1 PGPORT=55433
-              args=(); prev=""
-              for a in "$@"; do
-                if [ "$prev" = "-p" ] && [ "$a" = 5432 ]; then a=55433; fi
-                if [ "$prev" = "-h" ] && [ "$a" = localhost ]; then a=127.0.0.1; fi
-                args+=("$a"); prev="$a"
-              done
-              exec "${args[@]}"
-              SHIM
-              chmod +x /tmp/bin/docker; export PATH=/tmp/bin:$PATH
-              pnpm pkg delete scripts.prepare >/dev/null
-              pnpm install --frozen-lockfile >/tmp/install.log 2>&1 || { tail -30 /tmp/install.log; exit 1; }
-              for i in $(seq 60); do (echo > /dev/tcp/127.0.0.1/55433) 2>/dev/null && (echo > /dev/tcp/127.0.0.1/58333) 2>/dev/null && break; sleep 2; done
-              node -e "fetch('http://127.0.0.1:58333/fmerp-test',{method:'PUT'}).then(r=>{console.log('bucket',r.status);process.exit(r.ok?0:1)})"
-              ${TEST_CMD}
+            - ${RUNNER_SCRIPT}
           env:
+            - name: TEST_CMD
+              value: ${TEST_CMD}
+            - name: RUNNER_CACHE
+              value: ${RUNNER_CACHE}
             - {name: CI, value: "true"}
-            # 이미지가 NODE_ENV=production 으로 고정돼 있어 테스트 서버가 DEV_TEST_LOGIN 과 충돌해 기동하지 않는다
             - {name: NODE_ENV, value: development}
             - {name: HOME, value: /tmp}
           volumeMounts:
             - {name: src, mountPath: /src, readOnly: true}
             - {name: work, mountPath: /work}
+            - {name: artifacts, mountPath: /artifacts}
+            - {name: store, mountPath: /pnpm-store}
+            - {name: cache, mountPath: /cache}
             - {name: dshm, mountPath: /dev/shm}
-          # 실측(2026-10-25, origin/dev 1bd9616): 회수 불가 메모리(anon) 최대 e2e 3.99GiB · int 0.79 · unit 0.55, OOM 0.
-          # 4Gi는 e2e에서 OOMKilled(#61)이므로 여유 50%를 둔 6Gi. 파드 합계 8Gi라 test quota(20Gi) 안에서 2개가 동시에 뜬다
+          # runner 6Gi + DB/S3 각 1Gi: 기존 quota 내 두 파드, 증설 없음.
           resources: {requests: {cpu: 500m, memory: 2Gi}, limits: {cpu: "3", memory: 6Gi}}
       volumes:
         - name: src
-          hostPath: {path: "${WORKTREE}", type: Directory}
+          hostPath:
+            path: ${WORKTREE}
+            type: Directory
         - name: work
           emptyDir: {sizeLimit: 4Gi}
+        - name: artifacts
+          emptyDir: {sizeLimit: 2Gi}
+        - name: store
+          emptyDir: {sizeLimit: 4Gi}
+        - ${CACHE_VOLUME}
         - name: dshm
           emptyDir: {medium: Memory, sizeLimit: 512Mi}

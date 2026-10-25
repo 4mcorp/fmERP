@@ -1,9 +1,22 @@
 name: E2E
 
-# CI가 main PR에서 호출하고 check가 결과를 검증한다. 수동 실행도 허용한다.
+# CI가 dev·main PR에서 호출하고 check가 결과를 검증한다. 수동 실행은 항상 전체다.
 on:
   workflow_call:
+    inputs:
+      full:
+        type: boolean
+        default: true
+      base-sha:
+        type: string
+        default: ''
+      head-sha:
+        type: string
+        default: HEAD
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
@@ -13,14 +26,32 @@ jobs:
   e2e:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      # 입력은 환경변수·인자 배열로만 전달한다. fork PR에도 별도 secret은 필요 없다.
+      E2E_FULL: ${{ github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || inputs.full }}
+      E2E_BASE: ${{ inputs.base-sha }}
+      E2E_HEAD: ${{ inputs.head-sha || 'HEAD' }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
+      - name: E2E 선택 계획 (JSON)
+        shell: bash
+        run: |
+          args=(--head "$E2E_HEAD")
+          if [[ -n "$E2E_BASE" ]]; then args+=(--base "$E2E_BASE"); fi
+          if [[ "$E2E_FULL" == 'true' ]]; then args=(--full); fi
+          mkdir -p artifacts
+          node tools/src/cli/e2e-select.ts "${args[@]}" > artifacts/e2e-selection.json
+          cat artifacts/e2e-selection.json
 
       # E2E는 테스트 DB(55433)를 초기화·시드해서 쓴다 (apps/web/e2e/test-env.ts)
       - name: 테스트 서비스 기동 (PostgreSQL 18 테스트 DB, SeaweedFS)
@@ -29,7 +60,12 @@ jobs:
         run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
 
       - name: E2E 테스트
-        run: pnpm exec tsx tools/src/cli/run-gate.ts e2e -- pnpm test:e2e
+        shell: bash
+        run: |
+          args=(--head "$E2E_HEAD")
+          if [[ -n "$E2E_BASE" ]]; then args+=(--base "$E2E_BASE"); fi
+          if [[ "$E2E_FULL" == 'true' ]]; then args=(--full); fi
+          pnpm exec tsx tools/src/cli/run-gate.ts e2e -- node tools/src/cli/e2e-select.ts "${args[@]}" --run
 
       - name: 품질 리포트
         if: always()
@@ -41,10 +77,12 @@ jobs:
           name: quality-report-e2e
           path: artifacts
           retention-days: 30
-      - name: 실패 시 Playwright 리포트 보관
-        if: failure()
+      - name: Playwright 실행 결과 보관 (JSON·실패 trace)
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
-          path: apps/web/test-results
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
           retention-days: 7
