@@ -3,6 +3,7 @@
 import { ApiProblem, errorMessage } from "@fmerp/shared/lib/api";
 import { useDepartments, useForms } from "@fmerp/shared/lib/queries";
 import { DOC_STATUS_LABEL } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
@@ -245,13 +246,15 @@ function SearchView() {
               />
             </div>
             <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-              <Button type="submit">
-                <SearchIcon aria-hidden />
-                검색
-              </Button>
-              <Button type="button" variant="outline" onClick={reset}>
-                조건 지우기
-              </Button>
+              <ActionBar className="w-full">
+                <Button type="button" variant="outline" onClick={reset}>
+                  조건 지우기
+                </Button>
+                <Button type="submit" variant="default">
+                  <SearchIcon aria-hidden />
+                  검색
+                </Button>
+              </ActionBar>
             </div>
           </form>
         </CardContent>
@@ -261,25 +264,27 @@ function SearchView() {
           {error}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportAs("csv")}
-          disabled={exporting !== null || rows.length === 0}
-        >
-          <Download aria-hidden />
-          {exporting === "csv" ? "내보내는 중…" : "CSV 내보내기"}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportAs("xlsx")}
-          disabled={exporting !== null || rows.length === 0}
-        >
-          <Download aria-hidden />
-          {exporting === "xlsx" ? "내보내는 중…" : "엑셀 내보내기"}
-        </Button>
+      <div className="space-y-2">
+        <ActionBar className="justify-start">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportAs("csv")}
+            disabled={exporting !== null || rows.length === 0}
+          >
+            <Download aria-hidden />
+            {exporting === "csv" ? "내보내는 중…" : "CSV 내보내기"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportAs("xlsx")}
+            disabled={exporting !== null || rows.length === 0}
+          >
+            <Download aria-hidden />
+            {exporting === "xlsx" ? "내보내는 중…" : "엑셀 내보내기"}
+          </Button>
+        </ActionBar>
         <p className="text-xs text-muted-foreground">
           현재 조건에 맞는 문서를 최대 10,000건까지 내보냅니다.
         </p>

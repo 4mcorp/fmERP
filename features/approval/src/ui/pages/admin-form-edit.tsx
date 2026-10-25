@@ -9,6 +9,7 @@ import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { useBusinesses, useDepartments, useMembers } from "@fmerp/shared/lib/queries";
 import type { FormDefinition, SecurityLevel } from "@fmerp/shared/lib/types";
 import { SECURITY_LABEL } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -931,14 +932,14 @@ export default function FormBuilderPage() {
             <FormPrintPreview def={def} name={name} />
           </div>
         </div>
-        <div className="sticky bottom-0 flex gap-2 border-t bg-background py-3">
-          <Button type="submit" disabled={saving || !schemaCheck.ok}>
-            {saving ? "저장 중…" : isNew ? "양식 만들기" : "새 버전으로 저장"}
-          </Button>
+        <ActionBar className="sticky bottom-0 border-t bg-background py-3">
           <Button type="button" variant="outline" onClick={() => router.push("/admin/forms")}>
             목록
           </Button>
-        </div>
+          <Button type="submit" variant="default" disabled={saving || !schemaCheck.ok}>
+            {saving ? "저장 중…" : isNew ? "양식 만들기" : "새 버전으로 저장"}
+          </Button>
+        </ActionBar>
       </ApprovalPageLayout>
     </form>
   );

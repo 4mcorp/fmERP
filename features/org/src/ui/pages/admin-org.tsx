@@ -3,6 +3,7 @@
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { useMembers } from "@fmerp/shared/lib/queries";
 import type { Department } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
@@ -214,14 +215,14 @@ function DepartmentForm({
               최대 {maxDepth}단계까지 만들 수 있습니다. 계정 설정에서 최대 뎁스를 높일 수 있습니다.
             </p>
           )}
-          <div className="flex gap-2">
-            <Button type="submit" disabled={saving || tooDeep}>
-              {saving ? "저장 중…" : editing ? "저장" : "만들기"}
-            </Button>
+          <ActionBar>
             <Button type="button" variant="outline" onClick={onDone}>
               취소
             </Button>
-          </div>
+            <Button type="submit" variant="default" disabled={saving || tooDeep}>
+              {saving ? "저장 중…" : editing ? "저장" : "만들기"}
+            </Button>
+          </ActionBar>
         </form>
       </CardContent>
     </Card>

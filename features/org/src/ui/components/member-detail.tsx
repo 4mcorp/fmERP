@@ -14,6 +14,7 @@ import {
   type ScopeType,
   STATUS_LABEL,
 } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -287,7 +288,7 @@ function AssignmentsSection({ member }: { member: Member }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2 sm:col-span-4">
+          <ActionBar className="sm:col-span-4">
             {!r.isPrimary && (
               <Button type="button" size="sm" variant="outline" onClick={() => setPrimary(r.key)}>
                 주소속으로 지정
@@ -301,7 +302,7 @@ function AssignmentsSection({ member }: { member: Member }) {
             >
               소속 제거
             </Button>
-          </div>
+          </ActionBar>
         </fieldset>
       ))}
       <div className="flex flex-wrap items-end gap-3">

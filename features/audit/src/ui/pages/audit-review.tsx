@@ -2,6 +2,7 @@
 
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { formatDateTime } from "@fmerp/shared/lib/format";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Label } from "@fmerp/shared/ui/label";
@@ -127,14 +128,14 @@ function ReviewDialog({ period, onClose }: { period: string | null; onClose: () 
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2">
+        <ActionBar>
           <Button type="button" variant="outline" onClick={close}>
             취소
           </Button>
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" variant="default" disabled={busy}>
             {busy ? "기록하는 중…" : "점검 완료"}
           </Button>
-        </div>
+        </ActionBar>
       </form>
     </Modal>
   );

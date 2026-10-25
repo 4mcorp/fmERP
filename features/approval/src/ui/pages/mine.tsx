@@ -80,7 +80,7 @@ export default function MyDocumentsPage() {
     <div className="space-y-4">
       <PageHeader title="기안함" />
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex-wrap">
+        <TabsList variant="line" className="flex-wrap">
           {TABS.map((t) => (
             <TabsTrigger key={t.value} value={t.value}>
               {t.label}

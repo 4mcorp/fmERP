@@ -145,7 +145,7 @@ export default function OrgPage() {
       </div>
 
       <Tabs defaultValue="tree">
-        <TabsList>
+        <TabsList variant="line">
           <TabsTrigger value="tree">트리 보기</TabsTrigger>
           <TabsTrigger value="chart">차트 보기</TabsTrigger>
         </TabsList>

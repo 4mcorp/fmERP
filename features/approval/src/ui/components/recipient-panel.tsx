@@ -3,6 +3,7 @@
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { useDepartments, useMembers } from "@fmerp/shared/lib/queries";
 import { formatDateTime, RECIPIENT_KIND_LABEL, type RecipientInfo } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { CollapsibleCard } from "@fmerp/shared/ui/collapsible-card";
@@ -185,14 +186,14 @@ export function RecipientPanel({
               <li className="text-sm text-muted-foreground">배부할 수 있는 구성원이 없습니다.</li>
             )}
           </ul>
-          <div className="flex justify-end gap-2">
+          <ActionBar>
             <Button type="button" variant="outline" onClick={() => setDistribute(null)}>
               취소
             </Button>
-            <Button type="submit" disabled={picked.length === 0}>
+            <Button type="submit" variant="default" disabled={picked.length === 0}>
               배부
             </Button>
-          </div>
+          </ActionBar>
         </form>
       </Modal>
 
@@ -259,14 +260,14 @@ export function RecipientPanel({
               </li>
             ))}
           </ul>
-          <div className="flex justify-end gap-2">
+          <ActionBar>
             <Button type="button" variant="outline" onClick={() => setCirculateOpen(false)}>
               취소
             </Button>
-            <Button type="submit" disabled={circulateTargets.length === 0}>
+            <Button type="submit" variant="default" disabled={circulateTargets.length === 0}>
               지정
             </Button>
-          </div>
+          </ActionBar>
         </form>
       </Modal>
     </CollapsibleCard>

@@ -2,6 +2,7 @@
 
 import { ApiProblem, errorMessage } from "@fmerp/shared/lib/api";
 import { formatDateTime } from "@fmerp/shared/lib/format";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
@@ -352,17 +353,19 @@ function AuditLogView() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-              <Button type="submit">
-                <SearchIcon aria-hidden />
-                조회
-              </Button>
-              <Button type="button" variant="outline" onClick={reset}>
-                조건 지우기
-              </Button>
+            <div className="flex flex-wrap items-end justify-between gap-2 sm:col-span-2 lg:col-span-3">
               <p className="text-xs text-muted-foreground">
                 시작일을 비우면 최근 30일을 보여 줍니다. 조회한 사실도 로그에 남습니다.
               </p>
+              <ActionBar>
+                <Button type="button" variant="outline" onClick={reset}>
+                  조건 지우기
+                </Button>
+                <Button type="submit" variant="default">
+                  <SearchIcon aria-hidden />
+                  조회
+                </Button>
+              </ActionBar>
             </div>
           </form>
         </CardContent>

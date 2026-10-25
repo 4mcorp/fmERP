@@ -423,7 +423,7 @@ export default function MembersPage() {
     <div>
       <PageHeader title="구성원 관리" breadcrumbs={[{ label: "관리" }, { label: "구성원 관리" }]} />
       <Tabs defaultValue={canMembers ? "members" : "invitations"} className="gap-4">
-        <TabsList>
+        <TabsList variant="line">
           {canMembers && <TabsTrigger value="members">구성원</TabsTrigger>}
           {canInvite && <TabsTrigger value="invitations">초대</TabsTrigger>}
         </TabsList>

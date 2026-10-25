@@ -3,6 +3,7 @@
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { useForms } from "@fmerp/shared/lib/queries";
 import type { FormSummary } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
@@ -252,12 +253,14 @@ export default function AdminFormsPage() {
               autoComplete="off"
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <ActionBar>
             <Button type="button" variant="outline" onClick={() => setDup(null)}>
               취소
             </Button>
-            <Button type="submit">복제</Button>
-          </div>
+            <Button type="submit" variant="default">
+              복제
+            </Button>
+          </ActionBar>
         </form>
       </Modal>
     </div>
