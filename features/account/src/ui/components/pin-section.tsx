@@ -5,6 +5,7 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PinSetupForm } from "@fmerp/shared/ui/pin-setup-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -25,6 +26,11 @@ export function PinSection({ hasPin }: { hasPin: boolean }) {
   const [currentPin, setCurrentPin] = useState("");
   const [pin, setPin] = useState("");
   const [checkPin, setCheckPin] = useState("");
+
+  async function onPinSet() {
+    await queryClient.invalidateQueries({ queryKey: ["me"] });
+    toast.success("PIN을 설정했습니다");
+  }
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -63,8 +69,8 @@ export function PinSection({ hasPin }: { hasPin: boolean }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <form onSubmit={save} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          {hasPin && (
+        {hasPin ? (
+          <form onSubmit={save} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <div className="space-y-2">
               <Label htmlFor="pin-current">현재 PIN</Label>
               <Input
@@ -74,18 +80,20 @@ export function PinSection({ hasPin }: { hasPin: boolean }) {
                 onChange={(e) => setCurrentPin(e.target.value)}
               />
             </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="pin-new">{hasPin ? "새 PIN" : "PIN"}</Label>
-            <Input
-              id="pin-new"
-              {...pinInput}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-            />
-          </div>
-          <Button type="submit">{hasPin ? "변경" : "설정"}</Button>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="pin-new">새 PIN</Label>
+              <Input
+                id="pin-new"
+                {...pinInput}
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+              />
+            </div>
+            <Button type="submit">변경</Button>
+          </form>
+        ) : (
+          <PinSetupForm onSaved={onPinSet} />
+        )}
 
         {hasPin && (
           <form onSubmit={verify} className="flex items-end gap-2">
