@@ -69,7 +69,8 @@ test.describe("관리자 초대 → 신규 사용자 합류 → 계정 전환·P
     await loginAs(page, "최대리");
     await page.goto("/me");
     await page.getByRole("tab", { name: "결재 PIN" }).click();
-    await page.getByLabel("PIN", { exact: true }).fill("482915");
+    await page.getByLabel("새 PIN (숫자 6~12자리)").fill("482915");
+    await page.getByLabel("PIN 다시 입력").fill("482915");
     await page.getByRole("button", { name: "설정" }).click();
     await expect(page.getByText("PIN을 설정했습니다")).toBeVisible();
 

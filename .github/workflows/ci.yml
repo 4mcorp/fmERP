@@ -1,8 +1,8 @@
 name: CI
 
 # dev PR: 기능별 단위 테스트 선택 + 전체 통합 테스트(주입된 기능 간 계약 포함). 정적 게이트는 항상 실행.
-# push·main PR: 전체 단위 테스트. main PR의 E2E는 재사용 워크플로를 호출하고 필수 check가 기다린다.
-# check는 범위상 예상된 skip만 허용하며 필요한 잡·리포트·게이트 누락을 실패시킨다.
+# dev PR: core smoke + 영향 E2E(공유·불명 경로는 전체), main PR: 전체 E2E.
+# check는 필요한 E2E 잡·리포트·게이트 누락도 실패시킨다.
 on:
   push:
     branches: [main, dev]
@@ -19,7 +19,7 @@ jobs:
     outputs:
       features: ${{ steps.scope.outputs.features }}
       core: ${{ steps.scope.outputs.core }}
-      e2e: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+      e2e: ${{ github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -50,6 +50,13 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
+      - name: 격리 러너·Compose CLI 계약 테스트
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 -m unittest discover -s deploy/k8s/test -p 'test_*.py' -v
+          python3 -m unittest discover -s deploy/e2e -p 'test_*.py' -v
 
       - name: 린트 (Biome)
         run: pnpm exec tsx tools/src/cli/run-gate.ts biome -- pnpm exec biome ci .
@@ -168,10 +175,16 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  # 기존 main 필수 체크 check에 연결하므로 원격 보호 규칙을 따로 변경할 필요가 없다.
+  # dev·main 모두 기존 필수 check가 E2E의 실패·취소·누락을 확인한다.
   e2e:
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main')
     uses: ./.github/workflows/e2e.yml
+    permissions:
+      contents: read
+    with:
+      full: ${{ github.base_ref != 'dev' }}
+      base-sha: ${{ github.event.pull_request.base.sha }}
+      head-sha: ${{ github.event.pull_request.head.sha }}
 
   # 안정적인 필수 체크: 예상된 skip만 허용하고 선택된 잡·게이트의 누락도 실패시킨다.
   check:

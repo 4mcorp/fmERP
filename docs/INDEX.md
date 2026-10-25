@@ -153,6 +153,7 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
+| [2026-10-26-e2e-pipeline.md](plan/2026-10-26-e2e-pipeline.md) | done | E2E 러너 계측·캐시·산출물, dev 변경 관련/main 전체 필수 CI, production·Compose 동일조건 비교 |
 | [2026-10-12-feature-scoped-ci.md](plan/2026-10-12-feature-scoped-ci.md) | done | 기능별 단위 선택·전체 통합 병렬 실행, main E2E를 필수 check에 연결. 로컬 검증 완료, 원격 실행 미검증 |
 | [2026-10-15-ui-ux-refactor-round2.md](plan/2026-10-15-ui-ux-refactor-round2.md) | draft | UI/UX 2차: 결재 상세 토글·다열 카드, 출력물 결재란 자동 맞춤(최대 15칸·2줄)·테두리·줄바꿈, 진행 중 문서 A4 미리보기, 목록 화면 통일·읽음 표시, 양식 선택·편집 미리보기, 관리콘솔 정리, action 버튼·탭 표준 (카드 U0~U10) |
 | [2026-10-20-passkey-auth.md](plan/2026-10-20-passkey-auth.md) | in-progress | passkey 인증 전환 PK1a: passkey·등록 토큰 스키마·마이그레이션(0024)·RLS, 사전 등록·토큰 발급·검증·재사용 거부 서비스. Google은 현재 구성에 없음(문서화). PK1b: passkey 등록·로그인 라우트, 자체 관리 API(목록·이름 변경·삭제, 마지막 1개 삭제 차단), createAuth 연결. PK1c: 관리자 passkey 초기화(재인증·감사·세션 폐기·새 등록 토큰, 소유자 보호). PK1d: 관리자 사전 등록(`POST /api/account/members`)·등록 링크 재발급(`POST /api/account/members/{userId}/enrollment`), 다른 회사·passkey 보유자·고아 계정 이메일을 같은 409로 거부(사유는 감사 로그에만). PK2(로그인 화면·Google 안내 제거)는 남음 |

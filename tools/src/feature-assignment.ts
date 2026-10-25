@@ -82,6 +82,7 @@ const RULES: readonly Rule[] = [
     "shared",
   ],
   [/^apps\/web\/e2e\/(smoke)\.spec\.ts$/, "shared"],
+  [/^apps\/web\/server\/e2e-server-mode\.test\.ts$/, "shared"], // E2E 러너 공개 설정 계약
   [/^tools\//, "shared"],
   [/\.(css|d\.ts)$|^apps\/web\/postcss\.config\.mjs$/, "shared"],
 
