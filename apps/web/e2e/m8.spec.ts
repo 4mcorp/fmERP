@@ -234,7 +234,13 @@ test.describe("대결 (S5)", () => {
       await page.goto("/approval/pending");
       const row = page.getByRole("link", { name: new RegExp(title) });
       await expect(row).toBeVisible();
-      await expect(row.getByText("대결", { exact: true })).toBeVisible();
+      // "대결" 배지는 제목 링크 밖(같은 행)에 있으므로 행 단위로 찾는다
+      await expect(
+        page
+          .getByRole("row")
+          .filter({ has: page.getByRole("link", { name: new RegExp(title) }) })
+          .getByText("대결", { exact: true }),
+      ).toBeVisible();
       await verifyPin(page);
       const view = await get<{ steps: { id: string; status: string; version: number }[] }>(
         `/api/approvals/${documentId}`,
