@@ -17,6 +17,7 @@ import {
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
 import {
@@ -329,6 +330,7 @@ function RolesSection({ member }: { member: Member }) {
   const [role, setRole] = useState<GrantRole>("hr_admin");
   const [scopeType, setScopeType] = useState<ScopeType>("account");
   const [scopeId, setScopeId] = useState("");
+  const [revoking, setRevoking] = useState<Member["grants"][number] | null>(null);
   const allowedScopes = GRANT_ROLE_SCOPES[role];
 
   function changeRole(next: GrantRole) {
@@ -358,7 +360,6 @@ function RolesSection({ member }: { member: Member }) {
   }
 
   async function revoke(id: string) {
-    if (!window.confirm("이 역할을 회수할까요?")) return;
     try {
       await api(`/api/account/members/${member.userId}/roles/${id}`, { method: "DELETE" });
       await refresh();
@@ -383,13 +384,25 @@ function RolesSection({ member }: { member: Member }) {
             <li key={g.id} className="flex flex-wrap items-center gap-2 text-sm">
               <Badge variant="secondary">{GRANT_ROLE_LABEL[g.role]}</Badge>
               <span>{g.scopeLabel}</span>
-              <Button size="sm" variant="outline" onClick={() => revoke(g.id)}>
+              <Button size="sm" variant="outline" onClick={() => setRevoking(g)}>
                 회수
               </Button>
             </li>
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={revoking !== null}
+        title="이 역할을 회수할까요?"
+        description={
+          revoking
+            ? `${GRANT_ROLE_LABEL[revoking.role]} · ${revoking.scopeLabel} 범위의 권한이 바로 없어집니다.`
+            : undefined
+        }
+        confirmLabel="회수"
+        onConfirm={() => (revoking ? revoke(revoking.id) : undefined)}
+        onClose={() => setRevoking(null)}
+      />
       <form onSubmit={grant} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
         <div className="space-y-1">
           <Label htmlFor="g-role">역할</Label>

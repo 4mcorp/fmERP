@@ -127,8 +127,8 @@ test.describe("조직 구성 흐름 (M2)", { tag: "@stateful" }, () => {
     await page.getByRole("button", { name: "부여" }).click();
     await expect(page.getByText("역할을 부여했습니다")).toBeVisible();
     await expect(page.getByRole("listitem").filter({ hasText: "감사인" })).toBeVisible();
-    page.once("dialog", (d) => d.accept());
     await page.getByRole("button", { name: "회수" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "회수", exact: true }).click();
     await expect(page.getByText("역할을 회수했습니다")).toBeVisible();
   });
 
