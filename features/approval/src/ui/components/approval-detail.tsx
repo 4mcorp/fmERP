@@ -19,6 +19,7 @@ import {
   STEP_STATUS_LABEL,
   STEP_TYPE_LABEL,
 } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
@@ -669,7 +670,7 @@ export function ApprovalDetailPage({
               maxLength={2000}
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <ActionBar>
             <Button type="button" variant="outline" onClick={() => setReason(null)}>
               취소
             </Button>
@@ -680,7 +681,7 @@ export function ApprovalDetailPage({
             >
               {reason?.button.label}
             </Button>
-          </div>
+          </ActionBar>
         </form>
       </Modal>
 
@@ -746,17 +747,18 @@ export function ApprovalDetailPage({
               </AlertDescription>
             </Alert>
           )}
-          <div className="flex justify-end gap-2">
+          <ActionBar>
             <Button type="button" variant="outline" onClick={() => setLineOpen(false)}>
               취소
             </Button>
             <Button
               type="submit"
+              variant="default"
               disabled={busy || (lineRows.length === 0 && lineRemove.length === 0)}
             >
               변경
             </Button>
-          </div>
+          </ActionBar>
         </form>
       </Modal>
 

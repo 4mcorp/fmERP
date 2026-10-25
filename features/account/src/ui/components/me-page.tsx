@@ -17,7 +17,7 @@ export function MePage({ notifySection }: { notifySection: ReactNode }) {
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">내 정보</h1>
       <Tabs defaultValue="profile">
-        <TabsList className="flex-wrap">
+        <TabsList variant="line" className="flex-wrap">
           <TabsTrigger value="profile">프로필</TabsTrigger>
           <TabsTrigger value="pin">결재 PIN</TabsTrigger>
           <TabsTrigger value="passkeys">내 기기</TabsTrigger>

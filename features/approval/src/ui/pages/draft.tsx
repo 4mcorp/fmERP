@@ -11,6 +11,7 @@ import {
   useMembers,
 } from "@fmerp/shared/lib/queries";
 import { type FormDefinition, SECURITY_LABEL, type SecurityLevel } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
@@ -473,7 +474,15 @@ export default function DraftEditorPage() {
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-0 flex flex-wrap gap-2 border-t bg-background py-3">
+      <ActionBar className="sticky bottom-0 border-t bg-background py-3">
+        {lineDirty && (
+          <span className="self-center text-sm text-muted-foreground">
+            결재선을 먼저 저장하세요.
+          </span>
+        )}
+        {account && (
+          <span className="self-center text-xs text-muted-foreground">{account.name}</span>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -485,15 +494,7 @@ export default function DraftEditorPage() {
         <Button type="button" onClick={submit} disabled={submitting || lineDirty}>
           {submitting ? "상신 중…" : "상신"}
         </Button>
-        {lineDirty && (
-          <span className="self-center text-sm text-muted-foreground">
-            결재선을 먼저 저장하세요.
-          </span>
-        )}
-        {account && (
-          <span className="ml-auto self-center text-xs text-muted-foreground">{account.name}</span>
-        )}
-      </div>
+      </ActionBar>
     </div>
   );
 }

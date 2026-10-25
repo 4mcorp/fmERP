@@ -196,7 +196,7 @@ export default function PositionsPage() {
     <div>
       <PageHeader title="직위·직책" breadcrumbs={[{ label: "관리" }, { label: "직위·직책" }]} />
       <Tabs defaultValue="positions" className="gap-4">
-        <TabsList>
+        <TabsList variant="line">
           <TabsTrigger value="positions">직위</TabsTrigger>
           <TabsTrigger value="duties">직책</TabsTrigger>
         </TabsList>

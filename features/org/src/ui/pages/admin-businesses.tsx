@@ -3,6 +3,7 @@
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { useBusinesses } from "@fmerp/shared/lib/queries";
 import type { Business } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { BusinessForm } from "@fmerp/shared/ui/business-form";
 import { Button } from "@fmerp/shared/ui/button";
@@ -129,7 +130,7 @@ function BusinessCard({ business }: { business: Business }) {
               ))}
             </dl>
             <SealField business={business} />
-            <div className="flex gap-2">
+            <ActionBar>
               <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
                 수정
               </Button>
@@ -140,7 +141,7 @@ function BusinessCard({ business }: { business: Business }) {
               >
                 {business.active ? "비활성화" : "다시 사용"}
               </Button>
-            </div>
+            </ActionBar>
           </>
         )}
         <ConfirmDialog
