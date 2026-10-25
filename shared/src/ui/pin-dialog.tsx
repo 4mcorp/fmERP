@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { api, errorMessage } from "../lib/api";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
 import { Modal } from "./modal";
+import { PIN_INPUT_PROPS, PinSetupForm } from "./pin-setup-form";
 
 /**
  * 결재 PIN 재인증 대화상자 (AUTH-009, APV-043). 확인에 성공하면 30분 동안 다시 묻지 않는다.
@@ -19,6 +19,7 @@ export function PinDialog({
   onVerified,
   description,
   setupDescription,
+  onPinSetup,
 }: {
   open: boolean;
   needsSetup: boolean;
@@ -27,6 +28,8 @@ export function PinDialog({
   /** 확인 안내 문구. 결재 처리가 아닌 곳(백업·내보내기)에서 바꿔 쓴다 */
   description?: string;
   setupDescription?: string;
+  /** PIN 설정 성공 후 후속 화면 진입 처리. 생략 시 대화상자만 닫는다 */
+  onPinSetup?: () => void;
 }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -64,13 +67,16 @@ export function PinDialog({
       }
     >
       {needsSetup ? (
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
-            닫기
-          </Button>
-          <Button asChild>
-            <Link href="/me">내 정보에서 설정</Link>
-          </Button>
+        <div className="space-y-3">
+          <PinSetupForm
+            onSaved={() => {
+              onClose();
+              onPinSetup?.();
+            }}
+            onCancel={onClose}
+            idPrefix="reauth-setup"
+            submitLabel="설정하고 계속"
+          />
         </div>
       ) : (
         <form onSubmit={verify} className="space-y-3">
@@ -78,14 +84,10 @@ export function PinDialog({
             <Label htmlFor="reauth-pin">결재 PIN</Label>
             <Input
               id="reauth-pin"
-              type="password"
-              inputMode="numeric"
+              {...PIN_INPUT_PROPS}
               autoComplete="one-time-code"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              minLength={6}
-              maxLength={12}
-              required
               aria-invalid={error !== null}
               aria-describedby={error ? "reauth-pin-error" : undefined}
             />
