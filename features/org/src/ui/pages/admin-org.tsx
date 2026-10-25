@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
@@ -246,8 +247,10 @@ function Row({
 }) {
   const canAddChild = node.depth < maxDepth;
 
+  const [confirmingAbolish, setConfirmingAbolish] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
   async function toggleActive() {
-    if (node.active && !window.confirm(`${node.name} 부서를 폐지할까요?`)) return;
     try {
       await api(`/api/departments/${node.id}/${node.active ? "deactivate" : "activate"}`, {
         method: "POST",
@@ -260,7 +263,6 @@ function Row({
   }
 
   async function remove() {
-    if (!window.confirm(`${node.name} 부서를 삭제할까요?`)) return;
     try {
       await api(`/api/departments/${node.id}`, { method: "DELETE" });
       await onChanged();
@@ -322,15 +324,36 @@ function Row({
             size="sm"
             variant="outline"
             aria-label={`${node.name} ${node.active ? "폐지" : "다시 사용"}`}
-            onClick={toggleActive}
+            onClick={() => (node.active ? setConfirmingAbolish(true) : toggleActive())}
           >
             {node.active ? "폐지" : "다시 사용"}
           </Button>
-          <Button size="sm" variant="destructive" aria-label={`${node.name} 삭제`} onClick={remove}>
+          <Button
+            size="sm"
+            variant="destructive"
+            aria-label={`${node.name} 삭제`}
+            onClick={() => setConfirmingDelete(true)}
+          >
             삭제
           </Button>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmingAbolish}
+        title={`${node.name} 부서를 폐지할까요?`}
+        description="폐지하면 새 발령에 이 부서를 고를 수 없습니다. 언제든 다시 사용할 수 있습니다."
+        confirmLabel="폐지"
+        onConfirm={() => toggleActive()}
+        onClose={() => setConfirmingAbolish(false)}
+      />
+      <ConfirmDialog
+        open={confirmingDelete}
+        title={`${node.name} 부서를 삭제할까요?`}
+        description="삭제하면 되돌릴 수 없습니다."
+        confirmLabel="삭제"
+        onConfirm={() => remove()}
+        onClose={() => setConfirmingDelete(false)}
+      />
       {node.children.length > 0 && (
         <ul className="mt-1 ml-5 space-y-1 border-l pl-3">
           {node.children.map((c) => (
