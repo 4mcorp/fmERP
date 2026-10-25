@@ -13,4 +13,6 @@ deploy/k8s/test/run-tests.sh [-w <worktree 절대경로>] [-t <초>] pnpm test:u
 - 주의: SeaweedFS는 gRPC 포트를 S3 포트+10000으로 잡아 65535를 넘으므로 `-s3.port.grpc=18333`을 명시한다. 네임스페이스 quota(limits.cpu 12) 때문에 동시 Job은 약 3개까지.
 - 러너 이미지는 `NODE_ENV=production` 고정이라 테스트 서버가 `DEV_TEST_LOGIN`과 충돌한다 → Job에서 `NODE_ENV=development`로 덮는다.
 - 백업 통합 테스트는 `docker exec <컨테이너> pg_dump` 형태로 호출한다. 파드엔 docker가 없어 `/tmp/bin/docker` shim이 같은 파드의 pg 도구를 직접 실행하고(`-p 5432`→55433, `localhost`→127.0.0.1), `PGHOST/PGPORT`를 설정한다.
-- E2E의 `next dev`+Chromium은 메모리를 많이 쓴다. 러너 limits 4Gi에서는 OOMKilled → 10Gi로 둔다. `test` 네임스페이스 quota는 limits.memory 20Gi.
+- E2E의 `next dev`+Chromium은 메모리를 많이 쓴다. 러너 limits 4Gi에서는 OOMKilled(#61)였다.
+- 실측(2026-10-25, origin/dev 1bd9616, 러너 cgroup `memory.stat` anon 1초 간격 최대치·`memory.peak`): `test:e2e` anon 3.99GiB / peak 6.57GiB(파일 캐시 포함), `test:int` 0.79 / 2.17, `test:unit` 0.55 / 2.23, OOM 0건. 그래서 러너는 requests 2Gi·limits 6Gi로 둔다(파일 캐시는 한도에 닿으면 회수된다). 파드 합계 limits 8Gi라 `test` quota(limits.memory 20Gi, requests.memory 8Gi) 안에서 Job 2개가 동시에 뜬다. 이전 10Gi(파드 12Gi)에서는 quota 때문에 한 번에 1개만 떴다.
+- 테스트 구성이 바뀌어 OOMKilled가 나면 같은 방식으로 다시 재고 limits를 올린다.

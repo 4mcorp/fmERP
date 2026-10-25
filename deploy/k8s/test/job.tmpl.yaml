@@ -83,7 +83,9 @@ spec:
             - {name: src, mountPath: /src, readOnly: true}
             - {name: work, mountPath: /work}
             - {name: dshm, mountPath: /dev/shm}
-          resources: {requests: {cpu: 500m, memory: 3Gi}, limits: {cpu: "3", memory: 10Gi}}
+          # 실측(2026-10-25, origin/dev 1bd9616): 회수 불가 메모리(anon) 최대 e2e 3.99GiB · int 0.79 · unit 0.55, OOM 0.
+          # 4Gi는 e2e에서 OOMKilled(#61)이므로 여유 50%를 둔 6Gi. 파드 합계 8Gi라 test quota(20Gi) 안에서 2개가 동시에 뜬다
+          resources: {requests: {cpu: 500m, memory: 2Gi}, limits: {cpu: "3", memory: 6Gi}}
       volumes:
         - name: src
           hostPath: {path: "${WORKTREE}", type: Directory}
