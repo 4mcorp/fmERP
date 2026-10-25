@@ -12,6 +12,16 @@ async function signOut(page: Page) {
   await expect(page).toHaveURL(/\/login/);
 }
 
+/** 접힌 CollapsibleCard를 펼친다. 머리줄(토글 버튼)이 그려질 때까지 기다린 뒤, 접혀 있을 때만 누른다 */
+async function expandCard(page: Page, name: RegExp) {
+  const toggle = page
+    .locator('[data-slot="collapsible-card"] button[aria-expanded]')
+    .filter({ hasText: name })
+    .first();
+  await toggle.waitFor();
+  if ((await toggle.getAttribute("aria-expanded")) === "false") await toggle.click();
+}
+
 const EMPTY_DOC = { type: "doc", content: [] };
 
 /** 로그인한 사용자의 PIN을 확인 상태로 만든다. 이미 PIN이 있으면(M1 테스트 등) 알려진 값으로 확인한다 */
@@ -59,6 +69,8 @@ async function submitDoc(page: Page, title: string, approverEmail: string) {
 test("임시저장한 입력은 새로고침해도 이 브라우저에서 복구할 수 있다", async ({ page }) => {
   await loginAs(page, "박사원");
   await page.getByRole("link", { name: "새 결재" }).first().click();
+  // 양식은 분류 카드(일반) 안에 있고 기본으로 접혀 있다
+  await expandCard(page, /^일반/);
   await page
     .getByRole("button", { name: /^일반 기안v1$/ })
     .first()
@@ -100,6 +112,7 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     // 기안: 일반 기안은 기본 결재선이 기안자의 부서장(최대리)이다
     await loginAs(page, "박사원");
     await page.getByRole("link", { name: "새 결재" }).first().click();
+    await expandCard(page, /^일반/);
     await page
       .getByRole("button", { name: /^일반 기안v1$/ })
       .first()
@@ -129,6 +142,7 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     await page.getByRole("button", { name: "상신", exact: true }).click();
     await expect(page).toHaveURL(/\/approval\/[0-9a-f-]{36}$/);
     await expect(page.getByText("진행 중").first()).toBeVisible();
+    await expandCard(page, /^첨부/);
     await expect(page.getByText("영수증.pdf", { exact: true })).toBeVisible();
     await signOut(page);
 
@@ -145,6 +159,7 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     await expect(page).toHaveURL(/\/approval\/pending/);
     await page.getByRole("link", { name: /출장비 정산 안내/ }).click();
     await expect(page.getByText("10월 출장비를 정산합니다.")).toBeVisible();
+    await expandCard(page, /^첨부/);
     await expect(page.getByText("영수증.pdf", { exact: true })).toBeVisible();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -204,6 +219,7 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     await loginAs(page, "박사원");
     const docId = await submitDoc(page, "의견 확인 문서", "hr@example.com");
     await page.goto(`/approval/${docId}`);
+    await expandCard(page, /^의견/);
     await page.getByLabel("의견 추가").fill("검토 부탁드립니다");
     await page.getByRole("button", { name: "의견 등록" }).click();
     await expect(page.getByText("검토 부탁드립니다")).toBeVisible();
@@ -234,10 +250,18 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     await expect(page.getByText("지출결의서")).toBeVisible();
 
     await page.getByRole("link", { name: "새 양식" }).click();
-    await page.getByLabel("양식 이름").fill("회의록");
-    await page.getByLabel(/^양식 코드/).fill("MINUTES");
+    // 양식 코드는 계정 안에서 유일해야 한다. 이전 실행이 남긴 양식과 겹치지 않게 실행마다 다르게 쓴다
+    const code = `MINUTES${Date.now().toString(36).toUpperCase()}`;
+    // 하이드레이션 전 입력은 컴포넌트 초기값("")으로 되돌아가므로, 페이지 데이터 로딩이 끝난 뒤 채우고 값이 유지될 때까지 확인한다
+    await page.waitForLoadState("networkidle");
+    await expect(async () => {
+      await page.getByLabel("양식 이름").fill("회의록");
+      await expect(page.getByLabel("양식 이름")).toHaveValue("회의록");
+    }).toPass();
+    await page.getByLabel(/^양식 코드/).fill(code);
     await page.getByRole("button", { name: "필드 추가" }).click();
     await expect(page.getByText("2. 텍스트")).toBeVisible();
+    await expect(page.getByLabel("양식 이름")).toHaveValue("회의록");
     await page.getByRole("button", { name: "양식 만들기" }).click();
     await expect(page).toHaveURL(/\/admin\/forms\/[0-9a-f-]{36}$/);
     await expect(page.getByRole("heading", { level: 1, name: /회의록 편집/ })).toBeVisible();
