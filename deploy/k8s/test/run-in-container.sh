@@ -63,11 +63,32 @@ JS
 trap finish EXIT
 trap 'exit 143' TERM
 trap 'exit 130' INT
-# 복사 오류는 fatal이며 호스트 node_modules·환경 파일·출력은 가져오지 않는다.
-tar -C "$SRC" --exclude=node_modules --exclude=.git --exclude=.worktrees \
-  --exclude='.env*' --exclude=.npmrc --exclude='*.pem' --exclude='*.key' \
-  --exclude=.next --exclude=.pnpm-store --exclude=artifacts --exclude=test-results \
-  --exclude=playwright-report --exclude=coverage -cf - . | tar -C "$WORK" -xf -
+# 호스트 node_modules·환경 파일·출력은 가져오지 않는다.
+# 호스트 worktree는 실행 중에도 바뀔 수 있다(artifacts 생성 등으로 "." mtime 변경 → tar exit 1).
+# 변경 감지(exit 1)만 전체 스냅샷을 다시 찍고, 실제 오류(그 외 exit)는 즉시 fatal이다.
+copy_source() {
+  local attempt p
+  for attempt in 1 2 3; do
+    find "$WORK" -mindepth 1 -delete
+    set +e
+    tar -C "$SRC" --exclude=node_modules --exclude=.git --exclude=.worktrees \
+      --exclude='.env*' --exclude=.npmrc --exclude='*.pem' --exclude='*.key' \
+      --exclude=.next --exclude=.pnpm-store --exclude=artifacts --exclude=test-results \
+      --exclude=playwright-report --exclude=coverage -cf - . | tar -C "$WORK" -xf -
+    p=("${PIPESTATUS[@]}")
+    set -e
+    if [ "${p[0]}" = 0 ] && [ "${p[1]}" = 0 ]; then return 0; fi
+    if [ "${p[0]}" != 1 ] || [ "${p[1]}" != 0 ]; then
+      echo "소스 복사 실패(tar=${p[0]}, extract=${p[1]})" >&2
+      return 1
+    fi
+    echo "소스 스냅샷이 복사 중 변경됨 (시도 $attempt/3), 다시 복사" >&2
+    sleep 2
+  done
+  echo '소스가 3회 연속 복사 중 변경되어 중단' >&2
+  return 1
+}
+copy_source || exit 74
 cd "$WORK"
 # 누적 cgroup 값과 프로세스 RSS를 1초 간격으로 기록한다. 단순 비율을 wall-time으로 해석하지 않는다.
 node - "$ART/metrics.jsonl" <<'JS' &
