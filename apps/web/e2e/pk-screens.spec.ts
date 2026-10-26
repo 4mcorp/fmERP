@@ -89,10 +89,19 @@ test.describe("passkey 화면 캡처 (1280px·360px)", { tag: "@stateful" }, () 
     await loginAs(page, "이관리");
     await page.goto("/me");
     await page.getByRole("tab", { name: "결재 PIN" }).click();
-    await page.getByLabel("새 PIN (숫자 6~12자리)").fill(PIN);
-    await page.getByLabel("PIN 다시 입력").fill(PIN);
-    await page.getByRole("button", { name: "설정" }).click();
-    await expect(page.getByText("PIN을 설정했습니다").first()).toBeVisible();
+    // passkey.spec.ts(PK2)가 같은 DB에서 먼저 관리자 PIN을 설정했을 수 있다(파일명 순서: passkey.spec → pk-screens). 미설정일 때만 설정한다.
+    const newPin = page.getByLabel("새 PIN (숫자 6~12자리)");
+    if (
+      await newPin
+        .waitFor({ state: "visible", timeout: 3000 })
+        .then(() => true)
+        .catch(() => false)
+    ) {
+      await newPin.fill(PIN);
+      await page.getByLabel("PIN 다시 입력").fill(PIN);
+      await page.getByRole("button", { name: "설정" }).click();
+      await expect(page.getByText("PIN을 설정했습니다").first()).toBeVisible();
+    }
 
     await page.goto("/admin/members");
     await page.getByLabel("이메일", { exact: true }).fill(NEW_EMAIL);
