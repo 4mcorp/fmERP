@@ -136,7 +136,8 @@ test.describe("패스키 흐름 (PK2)", { tag: "@stateful" }, () => {
     await page.getByLabel("새 PIN (숫자 6~12자리)").fill(PIN);
     await page.getByLabel("PIN 다시 입력").fill(PIN);
     await page.getByRole("button", { name: "설정" }).click();
-    await expect(page.getByText("PIN을 설정했습니다")).toBeVisible();
+    // 설정 토스트는 폼과 섹션에서 각각 한 번씩 떠 2건이 된다(strict mode 충돌) → 첫 건으로 본다
+    await expect(page.getByText("PIN을 설정했습니다").first()).toBeVisible();
 
     await page.goto("/admin/members");
     await page.getByLabel("이메일", { exact: true }).fill(NEW_EMAIL);
