@@ -13,7 +13,8 @@ deploy/k8s/test/run-tests.sh -w <worktree 절대경로> -q 900 -t 7200 -a <새 �
 ## 실행·격리 계약
 
 - 전제: Python 3·kubectl, `test` 네임스페이스(infra 저장소 정의), Linux 테스트 이미지 `fmerp-worker:dev`, VM에서 읽을 수 있는 worktree 경로. 최신 실행기 템플릿과 `-w`의 시험 소스는 분리한다. 오래된 worktree의 10Gi 템플릿을 재사용하지 않는다.
-- 테스트 소스는 읽기 전용으로 받고, `node_modules`·`.next`·`.worktrees`·`.git`·`.env*`·`.npmrc` 등을 복사에서 제외한 뒤 파드 안에서 Linux 의존성을 설치한다. **소스 준비가 끝날 때까지 worktree를 수정하지 않는다.** 불변 입력이 필요하면 고정된 체크아웃을 사용한다.
+- 테스트 소스는 호스트 `run_tests.py`가 실행 시작 시 worktree를 **고정 스냅샷**(`<산출물>/source-snapshot`)으로 한 번 복사해 `/src`로 마운트한다. `node_modules`·`.next`·`.worktrees`·`.git`·`.env*`·`.npmrc`·키 파일 등은 복사에서 제외하고, 파드 안에서 Linux 의존성을 설치한다. 파드는 라이브 worktree를 직접 읽지 않으므로 prep 중 편집이 `tar: file changed as we read it`을 만들지 않는다.
+- **prep 중 worktree 수정 금지(복사 구간에 한정).** 복사 전후 경로·종류·크기·mtime 지문이 달라지면 Job을 만들지 않고 종료코드 70, outcome `source_changed`로 실패한다. 그 밖의 실행 중 편집은 막지 않는다. 실행마다 자기 스냅샷을 쓰므로 같은 worktree의 여러 실행이 서로의 소스를 바꾸지 않는다.
 - 기본 이미지의 `pwuser` UID/GID 1001을 사용한다. root 초기화는 source·DB·Secret을 마운트하지 않은 실행 전용 볼륨의 소유권 설정으로 한정한다. 실제 러너는 non-root이며, corepack shim도 실행 전용 `/work/.runner-bin`에 만든다. 다른 `-i` 이미지는 이 UID와 Node·pnpm·브라우저·PostgreSQL 도구 호환성을 확인해야 한다.
 - runner의 실제 종료코드와 Job terminal을 확인한다. 성공/실패 산출물·로그·단계 시간·metrics를 러너가 살아 있는 동안 로컬에 회수한 뒤 release한다. Job TTL은 회수 이후 정리 수단이지 산출물 저장소가 아니다.
 - queue/runtime 시간 초과는 124이며 해당 실행의 Job만 취소한다. 복사·회수 오류를 성공으로 취급하지 않는다. `UNKNOWN`을 최종 결과로 보고하지 않는다.
