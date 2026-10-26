@@ -2,12 +2,15 @@
 """격리 Job 실행/수집. env·Secret·Pod 원문을 아티팩트에 저장하지 않는다."""
 import argparse
 import datetime
+import fnmatch
 import hashlib
 import json
+import os
 from pathlib import Path
 import shlex
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tarfile
@@ -15,6 +18,10 @@ import time
 
 HERE = Path(__file__).resolve().parent
 SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
+# Job에 넘기지 않는 소스 항목(이름 기준, 하위 경로 어디에 있어도 제외). run-in-container.sh의 tar 제외 규칙과 같다.
+EXCLUDED_NAMES = {'node_modules', '.git', '.worktrees', '.next', '.pnpm-store', 'artifacts',
+                  'test-results', 'playwright-report', 'coverage'}
+EXCLUDED_PATTERNS = ('.env*', '.npmrc', '*.pem', '*.key')
 
 
 class Terminated(BaseException):
@@ -23,6 +30,48 @@ class Terminated(BaseException):
     def __init__(self, signum):
         super().__init__(signum)
         self.signum = signum
+
+
+class SourceChanged(RuntimeError):
+    """prep 중 라이브 worktree가 바뀌어 스냅샷을 신뢰할 수 없음."""
+
+
+def is_excluded(name):
+    return name in EXCLUDED_NAMES or any(fnmatch.fnmatch(name, pattern) for pattern in EXCLUDED_PATTERNS)
+
+
+def tree_fingerprint(root):
+    """복사 대상 항목의 경로·종류·크기·mtime 해시. 파일 내용은 읽지 않는다."""
+    digest = hashlib.sha256()
+
+    def visit(path, rel):
+        info = os.lstat(path)
+        if stat.S_ISLNK(info.st_mode):
+            kind = 'l'
+        elif stat.S_ISDIR(info.st_mode):
+            kind = 'd'
+        else:
+            kind = 'f'
+        digest.update(f'{rel}\0{kind}\0{info.st_size}\0{info.st_mtime_ns}\n'.encode('utf-8', 'surrogateescape'))
+        if kind == 'd':
+            for name in sorted(os.listdir(path)):
+                if not is_excluded(name):
+                    visit(os.path.join(path, name), os.path.join(rel, name))
+
+    visit(root, '.')
+    return digest.hexdigest()
+
+
+def snapshot_source(source, dest):
+    """라이브 worktree를 dest로 한 번 복사한다. 복사 전후 메타데이터가 다르면 SourceChanged를 올린다."""
+    before = tree_fingerprint(source)
+    shutil.copytree(source, dest, symlinks=True, ignore=lambda _dir, names: {n for n in names if is_excluded(n)})
+    try:
+        after = tree_fingerprint(source)
+    except OSError:
+        after = None  # 복사 중 사라지거나 읽을 수 없게 된 항목은 변경으로 본다
+    if after != before:
+        raise SourceChanged('prep 중 worktree가 바뀌어 스냅샷을 버렸습니다(source_changed). 편집을 멈추고 다시 실행하세요')
 
 
 def main():
@@ -193,6 +242,10 @@ def main():
     run_started = None
     result_code = None
     try:
+        # Job은 라이브 worktree가 아니라 고정 스냅샷을 /src로 마운트한다(prep 중 파일 변경으로 tar가 실패하지 않도록).
+        snapshot = output/'source-snapshot'
+        snapshot_source(source, snapshot)
+        summary['source_snapshot_manifest_sha256'] = tree_fingerprint(snapshot)
         cache_volume = {'name': 'cache', 'emptyDir': {'sizeLimit': '4Gi'}}
         if opts.c:
             from pathlib import PurePosixPath
@@ -200,7 +253,7 @@ def main():
             if not cache_path.is_absolute() or len(cache_path.parts) < 4 or '..' in cache_path.parts:
                 raise ValueError('캐시는 /var/lib/fmerp-e2e-cache 같은 전용 Linux 절대경로여야 합니다')
             cache_volume = {'name': 'cache', 'hostPath': {'path': str(cache_path/'test'), 'type': 'DirectoryOrCreate'}}
-        replacements = {'WORKTREE': json.dumps(str(source)), 'TIMEOUT': str(opts.t+opts.q+420),
+        replacements = {'WORKTREE': json.dumps(str(snapshot)), 'TIMEOUT': str(opts.t+opts.q+420),
                         'RUNNER_SCRIPT': json.dumps((HERE/'run-in-container.sh').read_text()),
                         'TEST_CMD': json.dumps(shlex.join(opts.command)), 'RUNNER_IMAGE': json.dumps(opts.i),
                         'CACHE_VOLUME': json.dumps(cache_volume),
@@ -281,6 +334,13 @@ def main():
             summary['artifact_errors'].append(str(collection_error))
         cancel_after_error()
         result_code = 130 if signum == signal.SIGINT else 128 + signum
+        return result_code
+    except SourceChanged as exc:
+        # 아직 Job을 만들기 전에 실패한다. 이전 실행의 산출물이나 부분 스냅샷을 쓰지 않는다.
+        summary['error'] = str(exc)
+        summary['outcome'] = 'source_changed'
+        print(str(exc), file=sys.stderr)
+        result_code = 70
         return result_code
     except Exception as exc:
         summary['error'] = str(exc)
