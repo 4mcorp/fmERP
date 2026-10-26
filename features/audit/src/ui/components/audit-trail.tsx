@@ -133,14 +133,17 @@ export function PrintButton({ documentId }: { documentId: string }) {
               불러오는 중…
             </p>
           ) : (
-            <A4PreviewFrame
-              title="출력 미리보기"
-              html={preview.html}
-              orientation={preview.orientation}
-              iframeRef={frame}
-              sandbox="allow-same-origin allow-modals"
-              className="h-[70vh] w-full rounded border bg-white"
-            />
+            // A4 폭(794px)을 유지하고 좁은 화면에서는 가로로 밀어 본다. 줄여 그리면 결재란 칸이 찌그러진다
+            <div className="w-full overflow-x-auto rounded border">
+              <A4PreviewFrame
+                title="출력 미리보기"
+                html={preview.html}
+                orientation={preview.orientation}
+                iframeRef={frame}
+                sandbox="allow-same-origin allow-modals"
+                className="h-[70vh] min-w-[794px] w-full bg-white"
+              />
+            </div>
           )}
           <ActionBar>
             <Button variant="outline" onClick={() => setOpen(false)}>
