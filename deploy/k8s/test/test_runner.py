@@ -3,8 +3,10 @@
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import tempfile
+import time
 import unittest
 
 HERE = Path(__file__).resolve().parent
@@ -22,6 +24,8 @@ if 'get' in args and 'pods' in args:
     print(json.dumps({'items':[] if mode=='queue' else [{'metadata':{'name':'mock-pod'},'status':status}]})); sys.exit(0)
 if 'delete' in args:
     (root/'deleted').touch(); sys.exit(0)
+if mode=='notfound' and 'get' in args and 'job' in args:
+    print('Error from server (NotFound): jobs.batch "mock" not found', file=sys.stderr); sys.exit(1)
 if 'get' in args and 'job' in args:
     if (root/'deleted').exists() and '--ignore-not-found' in args: sys.exit(0)
     if mode=='postcreate-error' and not (root/'failed-job-get').exists() and '--ignore-not-found' not in args:
@@ -114,6 +118,7 @@ class RunnerContract(unittest.TestCase):
         summary=json.loads((self.artifacts/'summary.json').read_text())
         self.assertEqual(summary['outcome'], 'queue_timeout')
         self.assertTrue(summary['job_cancelled'])
+        self.assertIn('EXIT 124', result.stdout)
         self.assertIn('exceeded quota', (self.artifacts/'events.json').read_text())
 
     def test_artifact_copy_failure_is_not_reported_as_pass(self):
@@ -124,7 +129,41 @@ class RunnerContract(unittest.TestCase):
     def test_runtime_is_bounded_without_unknown(self):
         result=self.invoke('running')
         self.assertEqual(result.returncode,124,result.stderr+result.stdout)
+        self.assertIn('EXIT 124',result.stdout)
         self.assertNotIn('UNKNOWN',result.stdout)
+
+    def test_job_notfound_ends_wait_immediately_with_exit_line(self):
+        result = self.invoke('notfound')
+        self.assertEqual(result.returncode, 70, result.stderr+result.stdout)
+        summary = json.loads((self.artifacts/'summary.json').read_text())
+        self.assertEqual(summary['outcome'], 'job_lost')
+        self.assertIn('EXIT 70', result.stdout)
+        calls = (self.root/'calls').read_text().splitlines()
+        self.assertLess(sum('job' in c and 'get' in c for c in calls), 10, 'wait loop must not repeat NotFound')
+
+    def test_sigterm_cancels_only_own_job_and_exits_143(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix='runner-contract-', dir=os.environ.get('RUNNER_TEST_TMPDIR'))
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        mock = root / 'kubectl'
+        mock.write_text(MOCK)
+        mock.chmod(0o755)
+        artifacts = root / 'output'
+        env = dict(os.environ, PATH=str(root)+os.pathsep+os.environ['PATH'], MOCK_ROOT=str(root), MOCK_MODE='running')
+        proc = subprocess.Popen([str(HERE/'run-tests.sh'), '-a', str(artifacts), '-q', '5', '-t', '600', '-p', '0.05',
+                                 'printf', '%s', 'x'], env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        deadline = time.monotonic() + 20
+        while not (root/'polls').exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        proc.send_signal(signal.SIGTERM)
+        out, err = proc.communicate(timeout=60)
+        self.assertEqual(proc.returncode, 143, err+out)
+        self.assertIn('EXIT 143', out)
+        self.assertTrue((root/'deleted').exists(), 'own Job must be deleted')
+        summary = json.loads((artifacts/'summary.json').read_text())
+        self.assertEqual(summary['outcome'], 'interrupted')
+        self.assertEqual(summary['signal'], 'SIGTERM')
+        self.assertTrue(summary.get('job_cancelled'))
 
     def test_requested_worktree_does_not_select_old_runner_template(self):
         result=self.invoke('oldsource', extra=('-c','/var/lib/fmerp-e2e-cache'))
