@@ -7,12 +7,22 @@ import json
 from pathlib import Path
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tarfile
 import time
 
 HERE = Path(__file__).resolve().parent
+SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
+
+
+class Terminated(BaseException):
+    """SIGINT/SIGTERM/SIGHUP을 finally와 같은 정리 경로로 보내기 위한 신호 예외."""
+
+    def __init__(self, signum):
+        super().__init__(signum)
+        self.signum = signum
 
 
 def main():
@@ -61,6 +71,15 @@ def main():
         if result.returncode:
             raise RuntimeError('kubectl get 실패: '+ ' '.join(args))
         return json.loads(result.stdout)
+
+    def get_job_or_none(name):
+        # 자기 Job이 사라졌으면 None(NotFound), 그 밖의 조회 실패는 예외로 올린다.
+        result = kube('get', 'job', name, '-o', 'json')
+        if result.returncode == 0:
+            return json.loads(result.stdout)
+        if b'NotFound' in result.stderr or b'not found' in result.stderr:
+            return None
+        raise RuntimeError('kubectl get 실패: job '+name)
 
     job = pod = None
     collected = False
@@ -162,8 +181,17 @@ def main():
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
             summary['artifact_errors'].append('Job cancellation could not be verified; server deadline remains: '+str(exc))
 
+    def on_signal(signum, frame):
+        # 정리 중 추가 신호는 무시한다. 정리 자체는 kubectl 타임아웃으로 상한이 있다.
+        for sig in SIGNALS:
+            signal.signal(sig, signal.SIG_IGN)
+        raise Terminated(signum)
+
+    for sig in SIGNALS:
+        signal.signal(sig, on_signal)
     started = time.monotonic()
     run_started = None
+    result_code = None
     try:
         cache_volume = {'name': 'cache', 'emptyDir': {'sizeLimit': '4Gi'}}
         if opts.c:
@@ -189,7 +217,15 @@ def main():
         result_code = None
         while True:
             now = time.monotonic()
-            state = get('job', job).get('status', {})
+            current = get_job_or_none(job)
+            if current is None:
+                # NotFound: Job이 사라졌으니 더 기다리지 않는다(무한 대기 금지).
+                summary['outcome'] = 'job_lost'
+                summary['error'] = 'Job이 NotFound가 되어 대기를 중단했습니다'
+                collect()
+                result_code = 70
+                break
+            state = current.get('status', {})
             pods = get('pods', '-l', 'job-name='+job).get('items', [])
             runner = None
             if pods:
@@ -233,15 +269,19 @@ def main():
             result_code = 74
             summary['outcome'] = 'artifact_error'
         return result_code
-    except KeyboardInterrupt as exc:
+    except (KeyboardInterrupt, Terminated) as exc:
+        signum = getattr(exc, 'signum', signal.SIGINT)
         summary['error'] = str(exc) or 'KeyboardInterrupt'
+        summary['outcome'] = 'interrupted'
+        summary['signal'] = signal.Signals(signum).name
         print(summary['error'], file=sys.stderr)
         try:
             collect()
         except Exception as collection_error:
             summary['artifact_errors'].append(str(collection_error))
         cancel_after_error()
-        return 130
+        result_code = 130 if signum == signal.SIGINT else 128 + signum
+        return result_code
     except Exception as exc:
         summary['error'] = str(exc)
         print(str(exc), file=sys.stderr)
@@ -250,11 +290,13 @@ def main():
         except Exception as collection_error:
             summary['artifact_errors'].append(str(collection_error))
         cancel_after_error()
-        return 70
+        result_code = 70
+        return result_code
     finally:
         summary['total_seconds'] = round(time.monotonic()-started, 3)
         (output/'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2)+'\n')
         print('결과:', summary['outcome'], '; summary:', output/'summary.json', flush=True)
+        print('EXIT', 70 if result_code is None else result_code, flush=True)
 
 
 if __name__ == '__main__':
