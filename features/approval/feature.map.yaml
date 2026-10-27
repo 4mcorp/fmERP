@@ -24,6 +24,7 @@ screens:
   - { route: /admin/approvals, file: src/ui/pages/admin-approvals.tsx }
   - { route: /admin/forms, file: src/ui/pages/admin-forms.tsx }
   - { route: "/admin/forms/[id]", file: src/ui/pages/admin-form-edit.tsx }
+  - { route: "/admin/forms/[id]", file: src/ui/components/form-print-preview.tsx } # A4 출력 미리보기
 adapters:
   - apps/web/app/(app)/approval/{new,pending,mine}/page.tsx
   - apps/web/app/(app)/approval/draft/[id]/page.tsx

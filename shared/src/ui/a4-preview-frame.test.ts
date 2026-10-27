@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render } from "@testing-library/react";
-import { createElement } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { createElement, createRef } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { A4PreviewFrame } from "./a4-preview-frame";
 
 afterEach(() => cleanup());
@@ -16,6 +16,33 @@ describe("A4PreviewFrame", () => {
     expect(container.querySelector('[data-slot="a4-preview-frame"]')).toBeTruthy();
     expect(iframe?.getAttribute("srcdoc")).toBe("<p>본문</p>");
     expect(iframe?.getAttribute("sandbox")).toBe("allow-same-origin allow-modals");
+  });
+
+  it("iframeRef는 실제 렌더된 iframe DOM을 가리킨다", () => {
+    const iframeRef = createRef<HTMLIFrameElement>();
+    const { container } = render(
+      createElement(A4PreviewFrame, {
+        html: "<p>인쇄</p>",
+        orientation: "portrait",
+        iframeRef,
+      }),
+    );
+
+    const iframe = iframeRef.current;
+    expect(iframe).toBe(container.querySelector("iframe"));
+    if (!iframe) throw new Error("iframe ref was not assigned");
+
+    const focus = vi.fn();
+    const print = vi.fn();
+    Object.defineProperty(iframe, "contentWindow", {
+      configurable: true,
+      value: { focus, print },
+    });
+    iframe.contentWindow?.focus();
+    iframe.contentWindow?.print();
+
+    expect(focus).toHaveBeenCalledOnce();
+    expect(print).toHaveBeenCalledOnce();
   });
 
   it("호출자가 넘긴 sandbox 값을 그대로 쓴다", () => {

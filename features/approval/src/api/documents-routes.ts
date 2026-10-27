@@ -27,7 +27,7 @@ import { loadBody, saveDraft } from "../service/drafts";
 import { getForm, getFormVersion, versionToInput } from "../service/forms";
 import { listMyDocuments, listPending } from "../service/inbox";
 import { changeLine } from "../service/line-change";
-import { buildPrintPreview } from "../service/print-preview";
+import { buildPrintPreview, previewOrientation } from "../service/print-preview";
 import {
   actOnStep,
   isParticipant,
@@ -133,13 +133,16 @@ export function registerDocumentRoutes(app: AppRouter, deps: DepsProvider) {
       const d = deps();
       const tenant = c.get("tenant");
       const { id } = c.req.valid("param");
-      const html = await withTenant(d.appDb, tenant.accountId, async (tx) => {
+      const { html, orientation } = await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
-        return buildPrintPreview(serviceContext(c, d, tx), id, { membershipId, actor }, d.authDb);
+        const ctx = serviceContext(c, d, tx);
+        const html = await buildPrintPreview(ctx, id, { membershipId, actor }, d.authDb);
+        return { html, orientation: await previewOrientation(ctx, id) };
       });
       return c.body(html, 200, {
         "content-type": "text/html; charset=utf-8",
         "cache-control": "no-store",
+        "x-print-orientation": orientation,
       });
     },
   );

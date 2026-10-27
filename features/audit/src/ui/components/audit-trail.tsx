@@ -2,6 +2,7 @@
 
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { formatDateTime } from "@fmerp/shared/lib/format";
+import { A4PreviewFrame } from "@fmerp/shared/ui/a4-preview-frame";
 import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Button } from "@fmerp/shared/ui/button";
 import { CollapsibleCard } from "@fmerp/shared/ui/collapsible-card";
@@ -14,8 +15,17 @@ import { type TimelineItem, useTimeline } from "../queries";
 /** 같은 인쇄를 버튼 클릭과 브라우저의 beforeprint 이벤트가 겹쳐 두 번 기록하지 않도록 두는 간격 */
 const PRINT_LOG_GAP_MS = 5_000;
 
-/** 출력 미리보기 HTML을 가져온다 (저장하지 않는다). 실패하면 서버 응답을 ApiProblem으로 바꾼다 */
-async function fetchPreviewHtml(documentId: string): Promise<string> {
+type PreviewOrientation = "portrait" | "landscape";
+
+/** 서버 X-Print-Orientation 헤더를 읽는다. 없거나 잘못된 값이면 portrait */
+function orientationFrom(res: Response): PreviewOrientation {
+  return res.headers.get("x-print-orientation") === "landscape" ? "landscape" : "portrait";
+}
+
+/** 출력 미리보기 HTML과 방향을 가져온다 (저장하지 않는다). 실패하면 서버 응답을 ApiProblem으로 바꾼다 */
+async function fetchPreview(
+  documentId: string,
+): Promise<{ html: string; orientation: PreviewOrientation }> {
   const res = await fetch(`/api/approvals/${documentId}/print-preview`, {
     credentials: "same-origin",
   });
@@ -32,7 +42,20 @@ async function fetchPreviewHtml(documentId: string): Promise<string> {
       body.detail,
     );
   }
-  return res.text();
+  return { html: await res.text(), orientation: orientationFrom(res) };
+}
+
+/**
+ * 인쇄 처리: 인쇄 기록 → iframe 포커스 → iframe 인쇄. 기록에 실패하면 인쇄하지 않는다.
+ * 훅을 쓰지 않으므로 PrintButton 밖에서 직접 테스트할 수 있다.
+ */
+export async function runPrint(
+  frame: { current: HTMLIFrameElement | null },
+  log: () => Promise<boolean>,
+): Promise<void> {
+  if (!(await log())) return;
+  frame.current?.contentWindow?.focus();
+  frame.current?.contentWindow?.print();
 }
 
 /**
@@ -45,7 +68,9 @@ export function PrintButton({ documentId }: { documentId: string }) {
   const last = useRef(0);
   const frame = useRef<HTMLIFrameElement>(null);
   const [open, setOpen] = useState(false);
-  const [html, setHtml] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ html: string; orientation: PreviewOrientation } | null>(
+    null,
+  );
   const [loadError, setLoadError] = useState<string | null>(null);
 
   async function log(): Promise<boolean> {
@@ -72,19 +97,17 @@ export function PrintButton({ documentId }: { documentId: string }) {
 
   async function openPreview() {
     setOpen(true);
-    setHtml(null);
+    setPreview(null);
     setLoadError(null);
     try {
-      setHtml(await fetchPreviewHtml(documentId));
+      setPreview(await fetchPreview(documentId));
     } catch (e) {
       setLoadError(errorMessage(e));
     }
   }
 
   async function printPreview() {
-    if (!(await log())) return;
-    frame.current?.contentWindow?.focus();
-    frame.current?.contentWindow?.print();
+    await runPrint(frame, log);
   }
 
   return (
@@ -105,16 +128,16 @@ export function PrintButton({ documentId }: { documentId: string }) {
             <p role="alert" className="text-sm text-destructive">
               {loadError}
             </p>
-          ) : html === null ? (
+          ) : preview === null ? (
             <p className="text-sm text-muted-foreground" aria-live="polite">
               불러오는 중…
             </p>
           ) : (
-            // 스크립트를 실행하지 않는 샌드박스. print()만 허용한다
-            <iframe
-              ref={frame}
+            <A4PreviewFrame
               title="출력 미리보기"
-              srcDoc={html}
+              html={preview.html}
+              orientation={preview.orientation}
+              iframeRef={frame}
               sandbox="allow-same-origin allow-modals"
               className="h-[70vh] w-full rounded border bg-white"
             />
@@ -123,7 +146,7 @@ export function PrintButton({ documentId }: { documentId: string }) {
             <Button variant="outline" onClick={() => setOpen(false)}>
               닫기
             </Button>
-            <Button variant="default" onClick={printPreview} disabled={html === null}>
+            <Button variant="default" onClick={printPreview} disabled={preview === null}>
               <Printer aria-hidden />
               인쇄
             </Button>

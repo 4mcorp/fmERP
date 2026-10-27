@@ -1,4 +1,4 @@
-import { type CSSProperties, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, type Ref, useLayoutEffect, useRef, useState } from "react";
 import {
   computePreviewScale,
   MM_TO_CSS_PX,
@@ -22,6 +22,8 @@ export interface A4PreviewFrameProps {
   sandbox?: string;
   title?: string;
   className?: string;
+  /** Rendered iframe ref, for callers that need to focus or print its content window. */
+  iframeRef?: Ref<HTMLIFrameElement>;
 }
 
 const DEFAULT_SANDBOX = "allow-same-origin allow-modals";
@@ -32,6 +34,7 @@ export function A4PreviewFrame({
   sandbox = DEFAULT_SANDBOX,
   title = "문서 미리보기",
   className,
+  iframeRef,
 }: A4PreviewFrameProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidthPx, setContainerWidthPx] = useState(0);
@@ -89,7 +92,7 @@ export function A4PreviewFrame({
   return (
     <div ref={containerRef} className={className} data-slot="a4-preview-frame" style={outerStyle}>
       <div style={innerStyle}>
-        <iframe title={title} srcDoc={html} sandbox={sandbox} style={iframeStyle} />
+        <iframe ref={iframeRef} title={title} srcDoc={html} sandbox={sandbox} style={iframeStyle} />
       </div>
     </div>
   );

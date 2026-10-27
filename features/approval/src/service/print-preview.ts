@@ -65,6 +65,30 @@ function personCard(snapshot: unknown, fallbackId: string) {
   };
 }
 
+/** 출력 방향 (buildPdfHtml의 @page 규칙과 같다). 미리보기 프레임이 같은 방향으로 그리도록 응답 헤더로 노출한다 */
+export type PrintOrientation = "portrait" | "landscape";
+
+/** 양식 layout에서 출력 방향을 정한다. buildPdfHtml과 같은 규칙: landscape가 아니면 portrait */
+function orientationOf(layout: Record<string, unknown> | null | undefined): PrintOrientation {
+  return layout?.orientation === "landscape" ? "landscape" : "portrait";
+}
+
+/**
+ * 문서의 출력 방향만 읽는다. 열람 권한은 호출 전에 buildPrintPreview가 이미 확인하므로 여기서 다시 보지 않는다.
+ * 문서·양식이 없으면 portrait
+ */
+export async function previewOrientation(
+  ctx: Pick<ServiceContext, "tx">,
+  documentId: string,
+): Promise<PrintOrientation> {
+  const [row] = await ctx.tx
+    .select({ layout: schema.formVersion.layout })
+    .from(schema.document)
+    .innerJoin(schema.formVersion, eq(schema.formVersion.id, schema.document.formVersionId))
+    .where(eq(schema.document.id, documentId));
+  return orientationOf(row?.layout as Record<string, unknown> | undefined);
+}
+
 /**
  * 상신한 문서의 A4 HTML. 완료 전이면 워터마크와 미결 칸으로 진행 상태를 보인다.
  * 열람할 수 없으면 404(not_found), 상신 전 문서는 409(invalid_state)다.
