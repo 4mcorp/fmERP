@@ -15,6 +15,8 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -471,7 +473,11 @@ export default function FormBuilderPage() {
   const isNew = id === "new";
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: detail } = useFormDetail(isNew ? undefined : id);
+  const {
+    data: detail,
+    isError: detailError,
+    refetch: refetchDetail,
+  } = useFormDetail(isNew ? undefined : id);
   const { data: policy } = useApprovalPolicy();
   const { data: members } = useMembers();
   const { data: departments } = useDepartments();
@@ -544,7 +550,8 @@ export default function FormBuilderPage() {
     }
   }
 
-  if (!loaded) return null;
+  if (detailError && !loaded) return <QueryErrorState onRetry={() => refetchDetail()} />;
+  if (!loaded) return <LoadingState />;
   const moveField = (from: number, to: number) => {
     const next = [...fields];
     const [item] = next.splice(from, 1);

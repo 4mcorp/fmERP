@@ -28,8 +28,10 @@ import { CardGrid } from "@fmerp/shared/ui/card-grid";
 import { CollapsibleCard } from "@fmerp/shared/ui/collapsible-card";
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { Modal } from "@fmerp/shared/ui/modal";
 import { PinDialog } from "@fmerp/shared/ui/pin-dialog";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -189,7 +191,7 @@ export function ApprovalDetailPage({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: me } = useMe();
-  const { data: view, error: viewError } = useApproval(id);
+  const { data: view, error: viewError, refetch: refetchView } = useApproval(id);
   const { data: serverBody } = useApprovalBody(id);
   const { data: linePolicy } = useApprovalPolicy();
   const { data: attachments } = useAttachments(id);
@@ -306,15 +308,27 @@ export function ApprovalDetailPage({
   }, [redirectToDraft, router, id]);
 
   if (viewError && !view) {
-    // 없는 문서이거나 열람 권한이 없으면 같은 안내를 준다 (문서가 있는지도 알려 주지 않는다)
+    // 404는 존재 여부를 노출하지 않는 안내를 유지하고, 403을 포함한 그 외 오류는 서버 메시지를 보여 준다.
     const notFound = viewError instanceof ApiProblem && viewError.status === 404;
+    if (!notFound && viewError instanceof ApiProblem && viewError.status === 403) {
+      return (
+        <div className="space-y-3">
+          <h1 className="text-2xl font-semibold">문서를 열 수 없습니다</h1>
+          <p role="alert" className="text-sm text-muted-foreground">
+            {errorMessage(viewError)}
+          </p>
+          <Link href="/mailbox" className="text-sm underline underline-offset-4">
+            문서함으로 이동
+          </Link>
+        </div>
+      );
+    }
+    if (!notFound) return <QueryErrorState onRetry={() => void refetchView()} />;
     return (
       <div className="space-y-3">
         <h1 className="text-2xl font-semibold">문서를 열 수 없습니다</h1>
         <p role="alert" className="text-sm text-muted-foreground">
-          {notFound
-            ? "문서가 없거나 열람 권한이 없습니다. 문서함이나 검색에서 다시 찾아 보세요."
-            : errorMessage(viewError)}
+          문서가 없거나 열람 권한이 없습니다. 문서함이나 검색에서 다시 찾아 보세요.
         </p>
         <Link href="/mailbox" className="text-sm underline underline-offset-4">
           문서함으로 이동
@@ -322,7 +336,7 @@ export function ApprovalDetailPage({
       </div>
     );
   }
-  if (!view || !me || redirectToDraft) return null;
+  if (!view || !me || redirectToDraft) return <LoadingState />;
 
   const isDrafter = view.drafterMembershipId === myMembershipId;
   // 기안자·결재선 참여자만 의견을 쓸 수 있다. 감사인·참조자 같은 열람자는 읽기 전용이다

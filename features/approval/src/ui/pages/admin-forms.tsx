@@ -10,8 +10,10 @@ import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
 import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { Modal } from "@fmerp/shared/ui/modal";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { useQueryClient } from "@tanstack/react-query";
 import { Download, FileText, Upload } from "lucide-react";
 import Link from "next/link";
@@ -64,7 +66,7 @@ const COLUMNS: DataTableColumn<FormSummary>[] = [
 /** 양식 관리: 목록, 복제, 사용 중지, JSON 내보내기·가져오기 (APV-006, ADM-004) */
 export default function AdminFormsPage() {
   const queryClient = useQueryClient();
-  const { data: forms } = useForms(true);
+  const { data: forms, isError, refetch } = useForms(true);
   const [dup, setDup] = useState<FormSummary | null>(null);
   const [dupCode, setDupCode] = useState("");
   const [dupName, setDupName] = useState("");
@@ -133,7 +135,8 @@ export default function AdminFormsPage() {
     }
   }
 
-  if (!forms) return null;
+  if (isError) return <QueryErrorState onRetry={() => refetch()} />;
+  if (!forms) return <LoadingState />;
 
   const columns: DataTableColumn<FormSummary>[] = [
     ...COLUMNS,

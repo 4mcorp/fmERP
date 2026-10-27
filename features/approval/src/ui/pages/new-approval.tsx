@@ -17,7 +17,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmer
 import { CollapsibleCard } from "@fmerp/shared/ui/collapsible-card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -55,7 +57,7 @@ export default function NewApprovalPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: me } = useMe();
-  const { data: forms } = useForms();
+  const { data: forms, isError: formsIsError, refetch: refetchForms } = useForms();
   const { data: members } = useMembers();
   const { data: departments } = useDepartments();
   const { data: businesses } = useBusinesses();
@@ -156,7 +158,8 @@ export default function NewApprovalPage() {
     if (wanted && forms.some((f) => f.id === wanted)) setFormId(wanted);
   }, [forms, formId]);
 
-  if (!forms) return null;
+  if (formsIsError) return <QueryErrorState onRetry={() => void refetchForms()} />;
+  if (!forms) return <LoadingState />;
 
   const FormCard = ({ f }: { f: FormSummary }) => (
     <li

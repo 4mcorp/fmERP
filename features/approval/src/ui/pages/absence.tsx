@@ -9,7 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmer
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -46,7 +48,7 @@ const toIso = (local: string) => new Date(`${local}:00+09:00`).toISOString();
 export default function AbsencePage() {
   const queryClient = useQueryClient();
   const { data: me } = useMe();
-  const { data: members } = useMembers();
+  const { data: members, isError: membersIsError, refetch: refetchMembers } = useMembers();
   const { data: forms } = useForms();
   const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
   const { data: list } = useQuery({
@@ -105,7 +107,8 @@ export default function AbsencePage() {
     }
   }
 
-  if (!me || !members) return null;
+  if (membersIsError) return <QueryErrorState onRetry={() => void refetchMembers()} />;
+  if (!me || !members) return <LoadingState />;
   const now = new Date();
 
   return (

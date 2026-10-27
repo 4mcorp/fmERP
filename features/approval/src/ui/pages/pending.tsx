@@ -9,7 +9,9 @@ import {
 } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import type { DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import Link from "next/link";
 import { DocumentStatusBadge, DocumentTable } from "../components/document-table";
 
@@ -79,8 +81,9 @@ const COLUMNS: DataTableColumn<PendingItem>[] = [
  * 제목을 누르면 바로 문서로 들어간다
  */
 export default function PendingPage() {
-  const { data } = usePending();
-  if (!data) return null;
+  const { data, isError, refetch } = usePending();
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (!data) return <LoadingState />;
   return (
     <div className="space-y-4">
       <PageHeader title="결재 대기" />

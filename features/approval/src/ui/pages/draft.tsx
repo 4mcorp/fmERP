@@ -18,7 +18,9 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -70,14 +72,18 @@ export default function DraftEditorPage() {
   const queryClient = useQueryClient();
   const { data: me } = useMe();
   const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
-  const { data: view } = useApproval(id);
+  const { data: view, isError: viewIsError, refetch: refetchView } = useApproval(id);
   const { data: serverBody } = useApprovalBody(id);
   const { data: attachments } = useAttachments(id);
   const { data: policy } = useApprovalPolicy();
   const { data: members } = useMembers();
   const { data: departments } = useDepartments();
   const { data: businesses } = useBusinesses();
-  const { data: docForm } = useQuery({
+  const {
+    data: docForm,
+    isError: docFormIsError,
+    refetch: refetchDocForm,
+  } = useQuery({
     queryKey: ["approval-form", id],
     queryFn: () => api<DocForm>(`/api/approvals/${id}/form`),
   });
@@ -281,7 +287,17 @@ export default function DraftEditorPage() {
     }
   }
 
-  if (!view || !docForm || !schema || !me) return null;
+  if (viewIsError || docFormIsError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (viewIsError) void refetchView();
+          if (docFormIsError) void refetchDocForm();
+        }}
+      />
+    );
+  }
+  if (!view || !docForm || !schema || !me) return <LoadingState />;
   const allowLineEdit = docForm.definition.allowLineEdit;
   const hasAttachmentField = schema.fields.some((f) => f.type === "attachment");
 
