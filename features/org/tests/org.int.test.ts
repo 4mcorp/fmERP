@@ -174,6 +174,17 @@ describe("접근 제어 (비로그인·일반 구성원)", () => {
     expect((await caps(hr))["member.passkey_reset"]).toBe(false);
     expect((await caps(auditor))["member.passkey_reset"]).toBe(false);
   });
+
+  it("member.pin_reset 메뉴 노출 키는 소유자·관리자만 true다", async () => {
+    const caps = async (c: TestClient) =>
+      json<Record<string, boolean>>(await c.request("/api/account/capabilities"));
+    expect((await caps(owner))["member.pin_reset"]).toBe(true);
+    expect((await caps(admin))["member.pin_reset"]).toBe(true);
+    expect((await caps(member1))["member.pin_reset"]).toBe(false);
+    expect((await caps(bizadmin))["member.pin_reset"]).toBe(false);
+    expect((await caps(hr))["member.pin_reset"]).toBe(false);
+    expect((await caps(auditor))["member.pin_reset"]).toBe(false);
+  });
 });
 
 describe("사업자 (ORG-002~005)", () => {
