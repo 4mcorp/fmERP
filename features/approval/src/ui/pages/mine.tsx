@@ -4,7 +4,9 @@ import { useMine } from "@fmerp/shared/lib/queries";
 import { formatDateTime, type MineItem } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import type { DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { Tabs, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -66,7 +68,7 @@ const COLUMNS: DataTableColumn<MineItem>[] = [
 
 /** 기안함: 내가 기안한 문서 (APV-080 일부) */
 export default function MyDocumentsPage() {
-  const { data } = useMine();
+  const { data, isError, refetch } = useMine();
   const [tab, setTab] = useState<string>("all");
   const rows = useMemo(() => {
     const t = TABS.find((x) => x.value === tab);
@@ -74,7 +76,8 @@ export default function MyDocumentsPage() {
       (d) => !t?.statuses || (t.statuses as readonly string[]).includes(d.status),
     );
   }, [data, tab]);
-  if (!data) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (!data) return <LoadingState />;
 
   return (
     <div className="space-y-4">

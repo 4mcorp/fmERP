@@ -1,6 +1,8 @@
 "use client";
 
 import { useMe } from "@fmerp/shared/lib/queries";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useMemo } from "react";
@@ -14,7 +16,7 @@ type TabValue = (typeof TABS)[number];
 
 /** `notifySection`은 알림 기능의 화면 조각이다. 합성 루트(app/(app)/me/page.tsx)가 끼워 넣는다 */
 export function MePage({ notifySection }: { notifySection: ReactNode }) {
-  const { data: me } = useMe();
+  const { data: me, isError, refetch } = useMe();
   const requested = useSearchParams().get("tab");
   const tab: TabValue = TABS.includes(requested as TabValue) ? (requested as TabValue) : "profile";
   const tabs = useMemo(
@@ -44,7 +46,8 @@ export function MePage({ notifySection }: { notifySection: ReactNode }) {
     ),
     [me, notifySection, tab],
   );
-  if (!me) return null;
+  if (isError) return <QueryErrorState onRetry={() => refetch()} />;
+  if (!me) return <LoadingState />;
 
   return (
     <div className="space-y-4">
