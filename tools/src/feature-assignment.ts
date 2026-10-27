@@ -94,6 +94,10 @@ const RULES: readonly Rule[] = [
 
   // ── 홈 ── (코드는 features/home/으로 이동 완료. app/(app)/page.tsx는 한 줄 어댑터)
   [/^apps\/web\/app\/\(app\)\/page\.tsx$/, "composition"],
+
+  // ── 앱 셸 경계 (에러·로딩·404 화면) ──
+  [/^apps\/web\/app\/\(app\)\/(error|loading)\.tsx$/, "composition"],
+  [/^apps\/web\/app\/not-found\.tsx$/, "composition"],
 ];
 
 /** 파일의 소유자. 배정되지 않은 파일이면 `null` */

@@ -8,7 +8,9 @@ import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -37,7 +39,7 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { data: me } = useMe();
   const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
-  const { data } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["settings"],
     queryFn: () => api<AccountSettings>("/api/account/settings"),
   });
@@ -111,7 +113,8 @@ export default function SettingsPage() {
     }
   }
 
-  if (!data) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (isLoading || !data) return <LoadingState />;
 
   return (
     <form onSubmit={save} className="space-y-4">

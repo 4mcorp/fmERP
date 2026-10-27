@@ -13,7 +13,9 @@ import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
 import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@fmerp/shared/ui/sheet";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
@@ -159,10 +161,11 @@ function BusinessCard({ business }: { business: Business }) {
 
 /** 사업자 관리: 등록·수정·비활성화 (PRD ORG-002~005, ADM-002) */
 export default function BusinessesPage() {
-  const { data: businesses } = useBusinesses();
+  const { data: businesses, isLoading, isError, refetch } = useBusinesses();
   const [adding, setAdding] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  if (!businesses) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (isLoading || !businesses) return <LoadingState />;
   const selected = businesses.find((b) => b.id === selectedId);
 
   const columns: DataTableColumn<Business>[] = [

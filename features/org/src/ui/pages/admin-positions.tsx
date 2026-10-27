@@ -9,7 +9,9 @@ import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
 import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
@@ -189,9 +191,21 @@ function MasterTab({
 
 /** 직위·직책 마스터 관리 (PRD ORG-030·031). 구성원 관리와 같은 제목·탭·표 구성 */
 export default function PositionsPage() {
-  const { data: positions } = usePositions();
-  const { data: duties } = useDuties();
-  if (!positions || !duties) return null;
+  const {
+    data: positions,
+    isLoading: positionsLoading,
+    isError: positionsError,
+    refetch: refetchPositions,
+  } = usePositions();
+  const {
+    data: duties,
+    isLoading: dutiesLoading,
+    isError: dutiesError,
+    refetch: refetchDuties,
+  } = useDuties();
+  if (positionsError) return <QueryErrorState onRetry={() => void refetchPositions()} />;
+  if (dutiesError) return <QueryErrorState onRetry={() => void refetchDuties()} />;
+  if (positionsLoading || dutiesLoading || !positions || !duties) return <LoadingState />;
   return (
     <div>
       <PageHeader title="직위·직책" breadcrumbs={[{ label: "관리" }, { label: "직위·직책" }]} />
