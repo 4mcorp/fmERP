@@ -103,6 +103,16 @@ describe("출력 미리보기 응답 (계획 2.3)", () => {
     }
   });
 
+  it("응답 헤더 X-Print-Orientation은 양식 layout 방향(기본 portrait)을 알린다", async () => {
+    const id = await createDoc();
+    await submit(id);
+    const res = await preview("member1", id);
+    expect(res.status).toBe(200);
+    // 이 테스트 양식(GENERAL)은 layout.orientation이 없어 portrait다. landscape 분기는 print-preview.test.ts의 단위 테스트가 맡는다
+    expect(res.headers.get("x-print-orientation")).toBe("portrait");
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
   it("미리보기는 저장하지 않는다: 인쇄 기록과 본문 리비전이 늘지 않는다", async () => {
     const id = await createDoc();
     await submit(id);

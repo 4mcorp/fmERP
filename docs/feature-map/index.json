@@ -373,6 +373,10 @@
         {
           "route": "/admin/forms/[id]",
           "file": "src/ui/pages/admin-form-edit.tsx"
+        },
+        {
+          "route": "/admin/forms/[id]",
+          "file": "src/ui/components/form-print-preview.tsx"
         }
       ],
       "adapters": [
@@ -685,6 +689,10 @@
         {
           "route": "/admin/audit/review",
           "file": "src/ui/pages/audit-review.tsx"
+        },
+        {
+          "route": "/approval/[id]",
+          "file": "src/ui/components/audit-trail.tsx"
         }
       ],
       "adapters": [

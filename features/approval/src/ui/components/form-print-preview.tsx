@@ -3,6 +3,7 @@
 import { buildPdfHtml, type PdfApprover, type PdfInput } from "@fmerp/shared/domain/document-print";
 import { type FormField, validateFormSchema } from "@fmerp/shared/domain/form-schema";
 import { type FormDefinition, STEP_TYPE_LABEL } from "@fmerp/shared/lib/types";
+import { A4PreviewFrame } from "@fmerp/shared/ui/a4-preview-frame";
 import { useEffect, useState } from "react";
 
 /** 편집 입력이 멈춘 뒤 미리보기를 다시 그리는 지연 시간 (ms) */
@@ -109,9 +110,10 @@ export function FormPrintPreview({ def, name }: { def: FormDefinition; name: str
           필드 정의를 고치면 출력 미리보기가 표시됩니다.
         </p>
       ) : (
-        <iframe
+        <A4PreviewFrame
           title="양식 출력 미리보기"
-          srcDoc={html}
+          html={html}
+          orientation={def.layout?.orientation === "landscape" ? "landscape" : "portrait"}
           sandbox=""
           className="h-[70vh] w-full rounded-md border bg-white"
         />

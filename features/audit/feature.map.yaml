@@ -9,6 +9,7 @@ access:
 screens:
   - { route: /admin/audit, file: src/ui/pages/audit-logs.tsx }
   - { route: /admin/audit/review, file: src/ui/pages/audit-review.tsx }
+  - { route: "/approval/[id]", file: src/ui/components/audit-trail.tsx } # 인쇄 미리보기·이력 슬롯
 adapters:
   - apps/web/app/(app)/admin/audit/page.tsx
   - apps/web/app/(app)/admin/audit/review/page.tsx

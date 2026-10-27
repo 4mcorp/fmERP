@@ -74,6 +74,9 @@
 | 날짜 | date-fns | ~4.4.0 |
 | 테스트 | vitest | ~4.1.11 |
 | | @playwright/test | ~1.63.0 (PDF 생성에도 같은 버전 사용) |
+| | @testing-library/react | ~16.3.3 (features/audit devDependency, 컴포넌트 DOM 검증. 2026-10-27 사용자 승인) |
+| | @testing-library/dom | ~10.4.2 (features/audit devDependency, @testing-library/react 피어. 2026-10-27 사용자 승인) |
+| | jsdom | ~30.1.3 (features/audit devDependency, 테스트용 DOM 환경. 2026-10-27 사용자 승인) |
 | 린트·포맷 | @biomejs/biome | ~2.5.15 |
 | Git hook·커밋 규칙 | lefthook / @commitlint/cli·config-conventional | ~2.1.16 / ~21.2.3 |
 | TS 실행 (worker·스크립트) | tsx | ~4.23.15 |
