@@ -1,6 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
 async function loginAs(page: Page, name: string) {
+  // 시드 계정은 PIN이 없어 로그인 직후 PIN 설정 안내 모달이 뜨고 이후 클릭을 가로챈다 — 안내는 닫은 상태로 시작한다
+  await page.addInitScript(() => window.sessionStorage.setItem("pin-setup-remind-dismissed", "1"));
   await page.goto("/dev-login");
   await page.getByRole("button", { name: `${name}(으)로 로그인` }).click();
   await expect(page).not.toHaveURL(/\/dev-login/);
@@ -99,7 +101,7 @@ test.describe("감사 기능 (M6)", () => {
     await page.goto("/admin/audit");
     await expect(page.getByRole("heading", { level: 1, name: "감사 로그" })).toBeVisible();
     await page.getByLabel("대상 ID").fill(id);
-    await page.getByRole("button", { name: "조회" }).click();
+    await page.getByRole("button", { name: "조회", exact: true }).click();
     await expect(page).toHaveURL(/targetId=/);
     await expect(page.getByRole("button", { name: /결재 작성 상세 보기/ })).toBeVisible();
     await page.getByRole("button", { name: /상신 상세 보기/ }).click();

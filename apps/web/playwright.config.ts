@@ -14,6 +14,8 @@ export default defineConfig({
   workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // 공통 원인으로 연쇄 실패하면 30분을 채우지 않고 일찍 끊는다
+  maxFailures: process.env.CI ? 10 : 0,
   reporter: [
     [process.env.CI ? "github" : "list"],
     ["json", { outputFile: "playwright-report/results.json" }],
