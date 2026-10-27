@@ -90,6 +90,7 @@ export function CompletionFiles({ documentId }: { documentId: string }) {
       <PinDialog
         open={pin !== null}
         needsSetup={pin?.needsSetup ?? false}
+        setupDescription="결재 PIN을 설정하면 요청한 작업을 계속 진행합니다."
         onClose={() => setPin(null)}
         onVerified={() => {
           setPin(null);

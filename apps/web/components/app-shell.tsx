@@ -22,6 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@fmerp/shared/ui/dropdown-menu";
+import { Modal } from "@fmerp/shared/ui/modal";
+import { PinSetupForm } from "@fmerp/shared/ui/pin-setup-form";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -42,12 +44,31 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+/** "나중에"를 누른 PIN 설정 안내를 이 탭 세션 동안만 기억한다 (서버 상태는 바꾸지 않는다) */
+const PIN_REMIND_DISMISSED_KEY = "pin-setup-remind-dismissed";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const { data: me } = useMe();
+  const [pinRemindOpen, setPinRemindOpen] = useState(false);
+
+  // 소속 회사가 있는데 결재 PIN이 없으면 한 번 안내한다. 설정을 마치면 me가 갱신되어 자연히 닫힌다
+  const needsPinSetup = Boolean(me?.activeAccountId) && me?.hasPin === false;
+  useEffect(() => {
+    if (!needsPinSetup) {
+      setPinRemindOpen(false);
+      return;
+    }
+    if (window.sessionStorage.getItem(PIN_REMIND_DISMISSED_KEY) !== "1") setPinRemindOpen(true);
+  }, [needsPinSetup]);
+
+  function dismissPinRemind() {
+    window.sessionStorage.setItem(PIN_REMIND_DISMISSED_KEY, "1");
+    setPinRemindOpen(false);
+  }
   const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
   const activeAccounts = me?.accounts.filter((a) => a.status === "active") ?? [];
   const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
@@ -239,6 +260,28 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
     >
       {children}
+      <Modal
+        open={pinRemindOpen}
+        onClose={dismissPinRemind}
+        title="결재 PIN을 설정해 주세요"
+        description="결재·백업 다운로드 같은 중요한 작업 전에 본인 확인을 위해 결재 PIN이 필요합니다. 숫자 6~12자리입니다."
+      >
+        <div className="space-y-3">
+          <PinSetupForm
+            onSaved={() => setPinRemindOpen(false)}
+            onCancel={dismissPinRemind}
+            idPrefix="pin-remind"
+            submitLabel="설정"
+          />
+          <p className="text-xs text-muted-foreground">
+            나중에 설정하려면 취소를 누르세요. 설정은{" "}
+            <Link href="/me?tab=pin" className="underline" onClick={dismissPinRemind}>
+              내 정보 › 결재 PIN
+            </Link>
+            에서도 할 수 있습니다.
+          </p>
+        </div>
+      </Modal>
     </AppFrame>
   );
 }
