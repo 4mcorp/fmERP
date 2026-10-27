@@ -11,7 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmer
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -378,7 +380,7 @@ function Row({
 /** 부서 트리 편집: 생성·수정·이동(드래그 앤 드롭)·폐지·삭제, CSV 내보내기·가져오기 (PRD ORG-010~016) */
 export default function AdminOrgPage() {
   const queryClient = useQueryClient();
-  const { data: chart } = useOrgChart();
+  const { data: chart, isLoading, isError, refetch } = useOrgChart();
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -390,7 +392,8 @@ export default function AdminOrgPage() {
 
   const business = chart?.businesses.find((b) => b.id === businessId);
   const tree = useMemo(() => buildDeptTree(business?.departments ?? []), [business]);
-  if (!chart) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (isLoading || !chart) return <LoadingState />;
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["org-chart"] });

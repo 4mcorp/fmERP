@@ -21,6 +21,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmer
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -139,10 +141,30 @@ function BasicSection({
 
 function AssignmentsSection({ member }: { member: Member }) {
   const queryClient = useQueryClient();
-  const { data: businesses } = useBusinesses();
-  const { data: departments } = useDepartments();
-  const { data: positions } = usePositions();
-  const { data: duties } = useDuties();
+  const {
+    data: businesses,
+    isLoading: businessesLoading,
+    isError: businessesError,
+    refetch: refetchBusinesses,
+  } = useBusinesses();
+  const {
+    data: departments,
+    isLoading: departmentsLoading,
+    isError: departmentsError,
+    refetch: refetchDepartments,
+  } = useDepartments();
+  const {
+    data: positions,
+    isLoading: positionsLoading,
+    isError: positionsError,
+    refetch: refetchPositions,
+  } = usePositions();
+  const {
+    data: duties,
+    isLoading: dutiesLoading,
+    isError: dutiesError,
+    refetch: refetchDuties,
+  } = useDuties();
   const [reason, setReason] = useState("");
   const [rows, setRows] = useState<Row[]>(
     member.assignments.map((a) => ({
@@ -154,6 +176,21 @@ function AssignmentsSection({ member }: { member: Member }) {
       isPrimary: a.isPrimary,
     })),
   );
+
+  if (businessesError || departmentsError || positionsError || dutiesError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (businessesError) void refetchBusinesses();
+          if (departmentsError) void refetchDepartments();
+          if (positionsError) void refetchPositions();
+          if (dutiesError) void refetchDuties();
+        }}
+      />
+    );
+  }
+  if (businessesLoading || departmentsLoading || positionsLoading || dutiesLoading)
+    return <LoadingState />;
 
   const update = (key: string, patch: Partial<Row>) =>
     setRows((list) => list.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -326,13 +363,35 @@ function AssignmentsSection({ member }: { member: Member }) {
 
 function RolesSection({ member }: { member: Member }) {
   const queryClient = useQueryClient();
-  const { data: businesses } = useBusinesses();
-  const { data: departments } = useDepartments();
+  const {
+    data: businesses,
+    isLoading: businessesLoading,
+    isError: businessesError,
+    refetch: refetchBusinesses,
+  } = useBusinesses();
+  const {
+    data: departments,
+    isLoading: departmentsLoading,
+    isError: departmentsError,
+    refetch: refetchDepartments,
+  } = useDepartments();
   const [role, setRole] = useState<GrantRole>("hr_admin");
   const [scopeType, setScopeType] = useState<ScopeType>("account");
   const [scopeId, setScopeId] = useState("");
   const [revoking, setRevoking] = useState<Member["grants"][number] | null>(null);
   const allowedScopes = GRANT_ROLE_SCOPES[role];
+
+  if (businessesError || departmentsError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (businessesError) void refetchBusinesses();
+          if (departmentsError) void refetchDepartments();
+        }}
+      />
+    );
+  }
+  if (businessesLoading || departmentsLoading) return <LoadingState />;
 
   function changeRole(next: GrantRole) {
     setRole(next);
@@ -473,12 +532,13 @@ function RolesSection({ member }: { member: Member }) {
 }
 
 function HistorySection({ member }: { member: Member }) {
-  const { data } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["assignment-history", member.userId],
     queryFn: () =>
       api<AssignmentHistoryItem[]>(`/api/account/members/${member.userId}/assignment-history`),
   });
-  if (!data) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (isLoading || !data) return <LoadingState variant="inline" />;
   if (data.length === 0)
     return <p className="text-sm text-muted-foreground">발령 이력이 없습니다.</p>;
   return (
