@@ -183,6 +183,13 @@
       "when": 1792457844954,
       "tag": "0025_push_subscription",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793097866668,
+      "tag": "0026_approval_pin_delete",
+      "breakpoints": true
     }
   ]
 }
