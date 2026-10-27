@@ -56,7 +56,8 @@ export type Action =
   | "org.read"
   | "approval.act"
   | "delegation.manage"
-  | "approval.manage";
+  | "approval.manage"
+  | "member.pin_reset";
 
 interface Rule {
   owner?: boolean;
@@ -76,6 +77,8 @@ const RULES: Record<Action, Rule> = {
   "member.deactivate": { owner: true, admin: true, grants: ["business_admin"] },
   // 구성원 passkey 초기화 (PK1c). 계정 관리자 전용이다. 사업자 관리자에게는 주지 않는다 (계정 복구 권한)
   "member.passkey_reset": { owner: true, admin: true },
+  // 구성원 PIN 초기화: 소유자·계정 관리자만 (역할 부여로는 위임하지 않는다)
+  "member.pin_reset": { owner: true, admin: true },
   "assignment.manage": { owner: true, admin: true, grants: ["business_admin", "hr_admin"] },
   "position.manage": { owner: true, admin: true, grants: ["hr_admin"] },
   "form.manage": { owner: true, admin: true, grants: ["business_admin", "approval_admin"] },

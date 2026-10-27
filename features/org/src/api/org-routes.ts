@@ -708,6 +708,7 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
         "approval.manage",
         "delegation.manage",
         "member.passkey_reset",
+        "member.pin_reset",
       ];
       const result = await withTenant(deps().appDb, tenant.accountId, async (tx) => {
         const { actor } = await loadActor(tx, tenant, c.get("session").userId);

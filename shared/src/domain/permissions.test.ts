@@ -142,6 +142,41 @@ describe("관리자 passkey 초기화 (PK1c)", () => {
   });
 });
 
+describe("구성원 PIN 초기화 (member.pin_reset)", () => {
+  it("소유자·계정 관리자는 가능하다", () => {
+    expect(can(actor("owner"), "member.pin_reset", account)).toBe(true);
+    expect(can(actor("admin"), "member.pin_reset", account)).toBe(true);
+    expect(can(actor("owner"), "member.pin_reset", bizA)).toBe(true);
+    expect(can(actor("admin"), "member.pin_reset", bizA)).toBe(true);
+  });
+
+  it("사업자 관리자·인사 관리자·감사인·결재 관리자·일반 구성원은 거부한다", () => {
+    const bizAdmin = actor("member", [
+      { role: "business_admin", scopeType: "business", scopeId: A },
+    ]);
+    const hr = actor("member", [{ role: "hr_admin", scopeType: "account", scopeId: null }]);
+    const auditor = actor("member", [{ role: "auditor", scopeType: "account", scopeId: null }]);
+    const approver = actor("member", [
+      { role: "approval_admin", scopeType: "account", scopeId: null },
+    ]);
+    for (const a of [bizAdmin, hr, auditor, approver, actor("member")]) {
+      expect(can(a, "member.pin_reset", account)).toBe(false);
+      expect(can(a, "member.pin_reset", bizA)).toBe(false);
+    }
+  });
+
+  it("메뉴 노출도 소유자·계정 관리자만 된다", () => {
+    expect(canInAnyScope(actor("owner"), "member.pin_reset")).toBe(true);
+    expect(canInAnyScope(actor("admin"), "member.pin_reset")).toBe(true);
+    expect(
+      canInAnyScope(
+        actor("member", [{ role: "business_admin", scopeType: "business", scopeId: A }]),
+        "member.pin_reset",
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("결재 진행 문서 관리", () => {
   it("소유자·관리자·결재 관리자(범위 안)만 하고, 사업자 관리자·감사인은 못 한다", () => {
     const approver = actor("member", [
