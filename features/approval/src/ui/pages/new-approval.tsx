@@ -332,14 +332,16 @@ export default function NewApprovalPage() {
               </AlertDescription>
             </Alert>
           )}
-          <Button type="submit" disabled={saving}>
-            {saving ? "만드는 중…" : "작성 시작"}
-          </Button>
-          {detail.definition.numbering && (
-            <Badge variant="outline" className="ml-2">
-              문서번호 자동 부여
-            </Badge>
-          )}
+          <div className="flex items-center justify-end">
+            <Button type="submit" disabled={saving}>
+              {saving ? "만드는 중…" : "작성 시작"}
+            </Button>
+            {detail.definition.numbering && (
+              <Badge variant="outline" className="ml-2">
+                문서번호 자동 부여
+              </Badge>
+            )}
+          </div>
         </form>
       )}
     </div>

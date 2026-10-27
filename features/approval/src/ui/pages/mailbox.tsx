@@ -23,15 +23,19 @@ export default function MailboxPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="문서함" />
-      <nav aria-label="문서함 종류" className="flex flex-wrap gap-1">
+      <nav
+        aria-label="문서함 종류"
+        className="flex gap-1 overflow-x-auto whitespace-nowrap border-b"
+      >
         {tabs.map((t) => (
           <Link
             key={t.id}
             href={`/mailbox/${t.id}`}
             aria-current={t.id === box ? "page" : undefined}
             className={cn(
-              "rounded-md border px-3 py-1.5 text-sm hover:bg-muted",
-              t.id === box && "bg-muted font-medium",
+              "relative inline-flex items-center px-1.5 py-1.5 text-sm font-medium whitespace-nowrap text-foreground/60 hover:text-foreground",
+              "after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-foreground after:opacity-0",
+              t.id === box && "text-foreground after:opacity-100",
             )}
           >
             {t.label}
