@@ -94,6 +94,7 @@ const RULES: readonly Rule[] = [
 
   // ── 홈 ── (코드는 features/home/으로 이동 완료. app/(app)/page.tsx는 한 줄 어댑터)
   [/^apps\/web\/app\/\(app\)\/page\.tsx$/, "composition"],
+  [/^apps\/web\/e2e\/loading-error\.spec\.ts$/, "home"], // 홈·앱 셸의 로딩·오류·404 시험
 
   // ── 앱 셸 경계 (에러·로딩·404 화면) ──
   [/^apps\/web\/app\/\(app\)\/(error|loading)\.tsx$/, "composition"],
