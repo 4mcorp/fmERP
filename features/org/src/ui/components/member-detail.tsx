@@ -642,7 +642,7 @@ export function MemberDetail({
         {caps["member.pin_reset"] && (
           <section aria-labelledby="md-pin" className="space-y-2">
             <h2 id="md-pin" className="text-sm font-semibold">
-              결재 PIN
+              결재 PIN 초기화
             </h2>
             <PinResetSection member={member} />
           </section>
