@@ -1009,7 +1009,7 @@
       },
       "contracts": [],
       "tests": {
-        "e2e": "apps/web/e2e (smoke·m1~m8이 홈을 거친다)"
+        "e2e": "apps/web/e2e (smoke·m1~m8이 홈을 거친다, loading-error는 홈 로딩·오류·404)"
       },
       "invariants": [],
       "folder": "home",
