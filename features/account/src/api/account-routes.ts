@@ -26,6 +26,7 @@ import {
   reissueMemberEnrollment,
 } from "../service/enrollment";
 import { resetMemberPasskeys } from "../service/passkey-reset";
+import { resetMemberPin } from "../service/pin-reset";
 
 const INVITATION_DAYS = 7;
 
@@ -340,6 +341,62 @@ export function registerAccountRoutes(app: AppRouter, deps: DepsProvider) {
         },
         200,
       );
+    },
+  );
+
+  // ===== 구성원 결재 PIN 초기화. member.pin_reset(소유자·관리자), 결재 PIN 재인증 후. 본인 PIN은 여기서 바꾸지 않는다 =====
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/account/members/{userId}/pin/reset",
+      tags: ["account"],
+      summary: "구성원 결재 PIN 초기화 (PIN 미설정 상태로 되돌린다). 결재 PIN 재인증 필요",
+      request: { params: z.object({ userId: z.uuid() }) },
+      responses: {
+        200: json(z.object({ removed: z.number() })),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const d = deps();
+      const tenant = c.get("tenant");
+      const session = c.get("session");
+      const { userId: targetUserId } = c.req.valid("param");
+      // 권한 확인을 먼저 한다: 권한 없는 사람에게 재인증 요구(428)로 응답하지 않는다
+      await withTenant(d.appDb, tenant.accountId, async (tx) => {
+        const { actor } = await loadActor(tx, tenant, session.userId);
+        authorize(actor, "member.pin_reset", ACCOUNT_TARGET);
+        // 소유자의 PIN은 소유자만 초기화한다 (passkey 초기화와 같은 이유)
+        const [target] = await tx
+          .select({ role: schema.membership.role })
+          .from(schema.membership)
+          .where(
+            and(
+              eq(schema.membership.accountId, tenant.accountId),
+              eq(schema.membership.userId, targetUserId),
+            ),
+          );
+        if (target?.role === "owner" && tenant.role !== "owner") {
+          throw new ApiError(403, "forbidden", "소유자의 PIN은 소유자만 초기화할 수 있습니다");
+        }
+      });
+      // 자기 자신의 PIN은 이 경로로 바꿀 수 없다. PIN 변경은 내 정보 화면에서 현재 PIN을 확인하고 해야 한다
+      if (targetUserId === session.userId) {
+        throw new ApiError(400, "validation_error", "본인 PIN은 내 정보 화면에서 변경하세요");
+      }
+      await requireStrictReauth(d, session);
+      const result = await resetMemberPin(
+        { authDb: d.authDb },
+        {
+          accountId: tenant.accountId,
+          actorUserId: session.userId,
+          targetUserId,
+          now: d.now(),
+          request: c.get("request"),
+        },
+      );
+      if (!result) throw new ApiError(404, "not_found", "구성원을 찾을 수 없습니다");
+      return c.json({ removed: result.removed }, 200);
     },
   );
 

@@ -44,6 +44,7 @@ import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { useDuties, usePositions } from "../queries";
 import { PasskeyResetSection } from "./passkey-reset-section";
+import { PinResetSection } from "./pin-reset-section";
 
 const NONE = "__none";
 
@@ -636,6 +637,14 @@ export function MemberDetail({
               passkey
             </h2>
             <PasskeyResetSection member={member} />
+          </section>
+        )}
+        {caps["member.pin_reset"] && (
+          <section aria-labelledby="md-pin" className="space-y-2">
+            <h2 id="md-pin" className="text-sm font-semibold">
+              결재 PIN
+            </h2>
+            <PinResetSection member={member} />
           </section>
         )}
       </CardContent>
