@@ -27,7 +27,10 @@ interface Biz {
 interface Member {
   userId: string;
   membershipId: string;
+  name: string;
   email: string;
+  employeeNo: string | null;
+  formerNames: string[];
   status: string;
   assignments: { departmentId: string; businessId: string; isPrimary: boolean }[];
   grants: { id: string; role: string; scopeType: string; scopeId: string | null }[];
@@ -556,19 +559,50 @@ describe("소속·겸직·발령 (ORG-032~035)", () => {
     expect(res.status).toBe(403);
   });
 
-  it("사번은 계정 안에서 고유하다 (ORG-034)", async () => {
+  it("사번은 P0000 형식으로 자동 부여되고 계정 안에서 고유하며 바꿀 수 없다 (ORG-034)", async () => {
+    const members = await memberList(owner);
+    const nos = members.map((x) => x.employeeNo);
+    expect(nos.every((n) => /^P\d{4,}$/.test(n ?? ""))).toBe(true);
+    expect(new Set(nos).size).toBe(nos.length);
+    const m1 = members.find((x) => x.email === "member1@example.com");
+    // 사번 필드는 더 이상 받지 않는다 (알 수 없는 키는 무시되고, 변경할 값이 없어 400)
+    const res = await patch(hr, `/api/account/members/${m1?.userId}`, { employeeNo: "E-100" });
+    expect(res.status).toBe(400);
+    const after = (await memberList(owner)).find((x) => x.email === "member1@example.com");
+    expect(after?.employeeNo).toBe(m1?.employeeNo);
+  });
+
+  it("관리자는 이름·메일을 바꿀 수 있고 이력이 남는다", async () => {
+    const members = await memberList(owner);
+    const m2 = members.find((x) => x.email === "member2@example.com");
+    const res = await patch(hr, `/api/account/members/${m2?.userId}`, { name: "새이름" });
+    expect(res.status).toBe(200);
+    const after = (await memberList(owner)).find((x) => x.userId === m2?.userId);
+    expect(after?.name).toBe("새이름");
+    expect(after?.employeeNo).toBe(m2?.employeeNo);
+    // 이전 이름이 목록에 남아 과거 이름으로도 같은 사람을 알아볼 수 있다
+    expect(after?.formerNames).toContain(m2?.name);
+    // 원래대로 되돌린다 (다른 테스트가 이름에 기대지 않도록)
+    expect((await patch(hr, `/api/account/members/${m2?.userId}`, { name: m2?.name })).status).toBe(
+      200,
+    );
+    const restored = (await memberList(owner)).find((x) => x.userId === m2?.userId);
+    expect(restored?.name).toBe(m2?.name);
+    expect(restored?.formerNames).toContain("새이름");
+    // 관리자는 변경 이력을 조회할 수 있다
+    const hist = await json<{ field: string; oldValue: string; newValue: string }[]>(
+      await hr.request(`/api/account/members/${m2?.userId}/identity-history`),
+    );
+    expect(hist.some((h) => h.field === "name" && h.newValue === "새이름")).toBe(true);
+  });
+
+  it("이미 쓰는 메일로는 바꿀 수 없다", async () => {
     const members = await memberList(owner);
     const m1 = members.find((x) => x.email === "member1@example.com");
-    const m2 = members.find((x) => x.email === "member2@example.com");
-    expect(
-      (await patch(hr, `/api/account/members/${m1?.userId}`, { employeeNo: "E-100" })).status,
-    ).toBe(200);
-    expect(
-      (await patch(hr, `/api/account/members/${m2?.userId}`, { employeeNo: "E-100" })).status,
-    ).toBe(409);
-    expect(
-      (await patch(hr, `/api/account/members/${m1?.userId}`, { employeeNo: null })).status,
-    ).toBe(200);
+    const res = await patch(hr, `/api/account/members/${m1?.userId}`, {
+      email: "member2@example.com",
+    });
+    expect(res.status).toBe(409);
   });
 });
 

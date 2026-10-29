@@ -2,7 +2,7 @@
 // 실제 PDF 변환(Playwright)은 worker가 이 HTML을 받아 한다.
 
 import type { PersonCard } from "./completion-package";
-import type { FormField, FormSchema } from "./form-schema";
+import { type FormField, type FormSchema, formatPerson, type PersonInfo } from "./form-schema";
 import { tableSums } from "./form-values";
 
 export interface PdfApprover {
@@ -32,6 +32,8 @@ export interface PdfInput {
   values: Record<string, unknown>;
   /** 구성원·부서 id → 이름 (user·dept 필드 표시용) */
   names: Record<string, string>;
+  /** 구성원 id → 완료 시점의 이름·메일·사번 (user 필드 표시 방식용). 없으면 names의 이름을 쓴다 */
+  people?: Record<string, PersonInfo>;
   drafter: PersonCard & { signatureUri?: string | null; stampUri?: string | null };
   approvers: PdfApprover[];
   submittedAt: string | null;
@@ -171,6 +173,17 @@ function refNames(value: unknown, names: Record<string, string>): string {
     .join(", ");
 }
 
+function userNames(value: unknown, display: Parameters<typeof formatPerson>[0], input: PdfInput) {
+  const ids = Array.isArray(value) ? value : [value];
+  return ids
+    .filter((v): v is string => typeof v === "string")
+    .map((id) => {
+      const person = input.people?.[id];
+      return person ? formatPerson(display, person) : (input.names[id] ?? "(알 수 없음)");
+    })
+    .join(", ");
+}
+
 function renderTable(
   field: Extract<FormField, { type: "table" }>,
   value: unknown,
@@ -248,6 +261,8 @@ function renderField(
       );
       break;
     case "user":
+      html = esc(userNames(value, field.display, input));
+      break;
     case "dept":
       html = esc(refNames(value, input.names));
       break;
@@ -322,7 +337,7 @@ function approvalBox(input: PdfInput): string {
 
 const CSS = `
   @page { margin: 14mm 12mm; }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-family: "Pretendard", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; font-size: 10.5pt; color: #111; line-height: 1.5; margin: 0; padding: 0 0.6mm; }
   h1.title { font-size: 20pt; text-align: center; margin: 4mm 0 6mm; }
   .meta { display: flex; justify-content: space-between; font-size: 9.5pt; color: #333; margin-bottom: 4mm; }
@@ -347,6 +362,7 @@ const CSS = `
   .sub { font-size: 7.5pt; color: #555; font-weight: 400; }
   .fields { display: flex; flex-wrap: wrap; border-top: 1px solid #333; width: 100%; box-sizing: border-box; }
   .field { width: 50%; display: flex; border-bottom: 1px solid #ccc; }
+  .field:not(.wide) { border-right: 1px solid #ccc; }
   .field.wide { width: 100%; display: block; }
   .field .label { width: 30mm; background: #f6f6f6; padding: 1.5mm 2mm; font-weight: 600; font-size: 9.5pt; border-right: 1px solid #ddd; flex-shrink: 0; }
   .field.wide .label { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }

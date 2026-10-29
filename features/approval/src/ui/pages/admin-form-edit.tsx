@@ -3,6 +3,9 @@
 import {
   type FormField,
   type FormSchema,
+  USER_DISPLAY_LABEL,
+  USER_DISPLAYS,
+  type UserDisplay,
   validateFormSchema,
 } from "@fmerp/shared/domain/form-schema";
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
@@ -240,6 +243,23 @@ function FieldEditor({
           />
           여러 명(개) 선택
         </label>
+      )}
+      {field.type === "user" && (
+        <div className="max-w-48 space-y-1">
+          <Label htmlFor={`${id}-display`}>표시 방식</Label>
+          <select
+            id={`${id}-display`}
+            className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            value={field.display ?? "name"}
+            onChange={(e) => set({ display: e.target.value as UserDisplay })}
+          >
+            {USER_DISPLAYS.map((d) => (
+              <option key={d} value={d}>
+                {USER_DISPLAY_LABEL[d]}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
       {field.type === "attachment" && (
         <div className="max-w-40 space-y-1">

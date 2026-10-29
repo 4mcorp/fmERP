@@ -46,6 +46,6 @@
 
 ## org — 사업자·부서·직위·직책·구성원·소속(겸직)·역할 부여, 조직도, 부서 CSV 가져오기·내보내기
 - 키워드: 조직, 조직도, 부서, 사업자, 직위, 직책, 구성원, 겸직, 발령, 역할, 권한, 초대, 부서 CSV
-- 화면: /org, /admin/settings, /admin/businesses, /admin/org, /admin/members, /admin/positions · API 24개 · 폴더 `features/org/`
-- 표: 소유 assignment, assignment_history, business, department, duty, position, role_grant / 읽기 2개
+- 화면: /org, /admin/settings, /admin/businesses, /admin/org, /admin/members, /admin/positions · API 25개 · 폴더 `features/org/`
+- 표: 소유 assignment, assignment_history, business, department, duty, member_identity_history, position, role_grant / 읽기 2개
 - 시험: tests/*.test.ts · tests/org.int.test.ts, tests/org-db.int.test.ts · apps/web/e2e/m2.spec.ts

@@ -49,6 +49,8 @@ export const account = pgTable(
     allowedDomains: text().array().notNull().default(sql`'{}'::text[]`),
     timezone: text().notNull().default("Asia/Seoul"),
     locale: text().notNull().default("ko"),
+    /** 다음에 부여할 사번 번호 (P0000부터). 멤버십 INSERT 트리거가 올린다. 되돌리거나 재사용하지 않는다 */
+    employeeSeq: integer().notNull().default(0),
     createdAt: createdAt(),
   },
   (t) => [
@@ -77,6 +79,7 @@ export const membership = pgTable(
     role: text().notNull(),
     /** active: 재직, leave: 휴직, left: 퇴사·비활성 (PRD ORG-034, AUTH-015) */
     status: text({ enum: MEMBERSHIP_STATUSES }).notNull().default("active"),
+    /** 사번 P0000~. DB 트리거(0022)가 INSERT 때 부여하고, 이후 바꿀 수 없다 */
     employeeNo: text(),
     joinedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     leftAt: timestamp({ withTimezone: true }),

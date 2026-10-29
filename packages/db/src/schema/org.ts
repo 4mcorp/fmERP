@@ -251,3 +251,32 @@ export const roleGrant = pgTable(
     index().on(t.membershipId),
   ],
 );
+
+export const MEMBER_IDENTITY_FIELDS = ["name", "email"] as const;
+export type MemberIdentityField = (typeof MEMBER_IDENTITY_FIELDS)[number];
+
+/**
+ * 구성원 이름·메일 변경 이력. 추가만 가능 (과거 이름으로도 같은 사람을 알아보기 위함)
+ *
+ * @owner org
+ */
+export const memberIdentityHistory = pgTable(
+  "member_identity_history",
+  {
+    id: primaryId(),
+    accountId: accountRef(),
+    membershipId: uuid().notNull(),
+    field: text({ enum: MEMBER_IDENTITY_FIELDS }).notNull(),
+    oldValue: text().notNull(),
+    newValue: text().notNull(),
+    actorUserId: uuid().references(() => user.id),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.membershipId, t.accountId],
+      foreignColumns: [membership.id, membership.accountId],
+    }).onDelete("cascade"),
+    index().on(t.membershipId),
+  ],
+);

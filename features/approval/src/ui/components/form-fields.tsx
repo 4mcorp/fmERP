@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
+import { type FormField, type FormSchema, formatPerson } from "@fmerp/shared/domain/form-schema";
 import { tableSums } from "@fmerp/shared/domain/form-values";
 import type { Department, Member } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
@@ -463,7 +463,7 @@ function FieldBody({
         field.type === "user"
           ? ctx.members
               .filter((m) => m.status === "active")
-              .map((m) => ({ value: m.membershipId, label: m.name }))
+              .map((m) => ({ value: m.membershipId, label: formatPerson(field.display, m) }))
           : ctx.departments
               .filter((d) => d.active)
               .map((d) => ({ value: d.id, label: `${"　".repeat(d.depth - 1)}${d.name}` }));
