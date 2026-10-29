@@ -160,6 +160,7 @@ export async function generatePackage(
         },
         values: data.values,
         names: data.names,
+        people: data.people,
         drafter: {
           ...data.drafter,
           signatureUri: data.images.signatures[drafterId] ?? null,

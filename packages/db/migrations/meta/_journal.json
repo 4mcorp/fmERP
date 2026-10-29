@@ -190,6 +190,13 @@
       "when": 1793097866668,
       "tag": "0026_approval_pin_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793291844287,
+      "tag": "0027_member_identity",
+      "breakpoints": true
     }
   ]
 }

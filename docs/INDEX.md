@@ -175,6 +175,7 @@
 | [2026-10-06-m8-security-review.md](plan/2026-10-06-m8-security-review.md) | done | M8 보안 리뷰: 계정 교차 조회의 이벤트 내용 노출(S1)·연결 완료 미감사(S2)·오류 문구의 매개변수(S3) 수정, 후속 FU-M8-1~5 |
 | [2026-10-06-feature-architecture-refactor.md](plan/2026-10-06-feature-architecture-refactor.md) | done | 기능(feature) 단위 구조 전환 + 정적 분석 강제 체계(경계 4겹, Knip, feature map, 우회 방지) 계획과 도구 지정. **사용자 승인 대기** |
 | [2026-10-09-ui-redesign-erpnext-reference.md](plan/2026-10-09-ui-redesign-erpnext-reference.md) | accepted | UI 재설계 스펙: ERPNext(frappe-ui) 패턴 추출, 색상 토큰(확정 oklch/hex·대비), 레이아웃 셸·`DataTable`·`StatusBadge` 컴포넌트 이름·props, 하위 작업 3건 파일 소유 |
+| [2026-10-30-member-identity-history.md](plan/2026-10-30-member-identity-history.md) | in-progress | 구성원 사번 자동 채번(`P0000`부터, 불변), 관리자 이름·메일 변경 + 변경 이력, 양식 `user` 필드 표시 옵션 |
 
 ---
 

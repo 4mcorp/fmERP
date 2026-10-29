@@ -1298,6 +1298,7 @@
           "business",
           "department",
           "duty",
+          "member_identity_history",
           "position",
           "role_grant"
         ],
@@ -1349,6 +1350,11 @@
         {
           "method": "put",
           "path": "/account/members/{userId}/assignments",
+          "file": "features/org/src/api/members-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/account/members/{userId}/identity-history",
           "file": "features/org/src/api/members-routes.ts"
         },
         {

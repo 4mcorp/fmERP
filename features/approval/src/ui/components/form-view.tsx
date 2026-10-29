@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
+import { type FormField, type FormSchema, formatPerson } from "@fmerp/shared/domain/form-schema";
 import { tableSums } from "@fmerp/shared/domain/form-values";
 import type { ReactNode } from "react";
 import { type FieldContext, formatWon } from "./form-fields";
@@ -27,7 +27,10 @@ function display(field: FormField, value: unknown, ctx: FieldContext): ReactNode
     case "user": {
       const ids = field.multiple ? (value as string[]) : [value as string];
       return ids
-        .map((id) => ctx.members.find((m) => m.membershipId === id)?.name ?? "(알 수 없음)")
+        .map((id) => {
+          const m = ctx.members.find((x) => x.membershipId === id);
+          return m ? formatPerson(field.display, m) : "(알 수 없음)";
+        })
         .join(", ");
     }
     case "dept": {
@@ -102,14 +105,22 @@ export function FormValuesView({
   values: Record<string, unknown>;
   ctx: FieldContext;
 }) {
+  const wide = (t: FormField["type"]) => t === "table" || t === "richtext" || t === "textarea";
   return (
-    <dl className="space-y-4">
+    <dl className="grid grid-cols-1 border-y border-l print:[print-color-adjust:exact] sm:grid-cols-2">
       {schema.fields
         .filter((f) => f.type !== "attachment")
         .map((f) => (
-          <div key={f.key} className="space-y-1">
-            <dt className="text-sm font-medium text-muted-foreground">{f.label}</dt>
-            <dd className="min-w-0 text-sm">{display(f, values[f.key], ctx)}</dd>
+          <div
+            key={f.key}
+            className={`flex border-r border-b ${wide(f.type) ? "flex-col sm:col-span-2" : ""}`}
+          >
+            <dt
+              className={`bg-muted px-3 py-2 text-sm font-medium ${wide(f.type) ? "border-b" : "w-32 shrink-0 border-r"}`}
+            >
+              {f.label}
+            </dt>
+            <dd className="min-w-0 flex-1 px-3 py-2 text-sm">{display(f, values[f.key], ctx)}</dd>
           </div>
         ))}
     </dl>

@@ -8,7 +8,7 @@ import type {
   RecordStep,
   RestoreInfo,
 } from "@fmerp/shared/domain/completion-package";
-import type { FormSchema } from "@fmerp/shared/domain/form-schema";
+import type { FormSchema, PersonInfo } from "@fmerp/shared/domain/form-schema";
 import { sha256Hex } from "@fmerp/shared/server/hash";
 import { docPrefix, type ObjectStorage } from "@fmerp/storage";
 import { asc, eq, inArray } from "drizzle-orm";
@@ -46,6 +46,7 @@ export interface PackageData {
   values: Record<string, unknown>;
   attachments: AttachmentRef[];
   names: Record<string, string>;
+  people: Record<string, PersonInfo>;
   approvers: PdfApprover[];
   images: {
     seal: string | null;
@@ -195,6 +196,8 @@ export async function loadPackageData(
         .select({
           id: schema.membership.id,
           name: schema.user.name,
+          email: schema.user.email,
+          employeeNo: schema.membership.employeeNo,
           userId: schema.membership.userId,
         })
         .from(schema.membership)
@@ -325,6 +328,9 @@ export async function loadPackageData(
       mime: a.mime,
     })),
     names,
+    people: Object.fromEntries(
+      members.map((m) => [m.id, { name: m.name, email: m.email, employeeNo: m.employeeNo }]),
+    ),
     approvers,
     images,
     restore: {

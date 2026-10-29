@@ -80,7 +80,12 @@ const FieldSchema = z.discriminatedUnion("type", [
     options: z.array(Option).max(100),
     default: z.union([z.string(), z.array(z.string())]).optional(),
   }),
-  z.object({ ...base, type: z.enum(["user", "dept"]), multiple: z.boolean().optional() }),
+  z.object({
+    ...base,
+    type: z.enum(["user", "dept"]),
+    multiple: z.boolean().optional(),
+    display: z.enum(["name", "name_email", "employee_no"]).optional(),
+  }),
   z.object({
     ...base,
     type: z.literal("table"),

@@ -53,3 +53,6 @@ next-env.d.ts
 
 # 품질 게이트 결과 (CI가 만든다)
 artifacts/
+
+# git worktree 작업 디렉터리 (린트·knip이 복사본을 검사하지 않도록)
+.worktrees/

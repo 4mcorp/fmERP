@@ -128,3 +128,15 @@ describe("양식 스키마 검증 (APV-001)", () => {
     ).toMatchObject({ ok: false });
   });
 });
+
+describe("formatPerson", () => {
+  const p = { name: "홍길동", email: "hong@example.com", employeeNo: "P0007" };
+  it("표시 방식에 따라 이름·이름+메일·사번을 돌려준다", async () => {
+    const { formatPerson } = await import("./form-schema");
+    expect(formatPerson(undefined, p)).toBe("홍길동");
+    expect(formatPerson("name", p)).toBe("홍길동");
+    expect(formatPerson("name_email", p)).toBe("홍길동 (hong@example.com)");
+    expect(formatPerson("employee_no", p)).toBe("P0007");
+    expect(formatPerson("employee_no", { ...p, employeeNo: null })).toBe("홍길동");
+  });
+});
