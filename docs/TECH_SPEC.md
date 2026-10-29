@@ -50,11 +50,13 @@
 | | @hono/zod-openapi | ~1.6.3 |
 | | @hono/node-server | ~2.1.3 (worker의 헬스체크 서버용) |
 | 검증 | zod | ~4.6.5 |
-| 인증 | better-auth | ~1.7.7 (organization 플러그인 = 계정·테넌트, ADR 0005). `@better-auth/passkey`는 P1에서 같은 버전으로 추가 |
+| 인증 | better-auth | ~1.7.7 (organization 플러그인 = 계정·테넌트, ADR 0005) |
+| | @better-auth/passkey | 1.7.7 (정확 고정. 1.7.10 이상은 `better-auth ^1.7.10`을 요구해 better-auth 상향 없이는 peer 충돌. PK1b에서 도입: 미사용 의존성은 knip 게이트에 걸리므로 createAuth 연결과 함께 추가) |
 | 비밀번호·PIN 해시 | @node-rs/argon2 | ~2.2.1 |
 | ORM | drizzle-orm / drizzle-kit | ~0.45.3 / ~0.31.11 |
 | DB 드라이버 | pg | ~8.23.1 (Drizzle·pg-boss·Better Auth 공용) |
 | 작업 큐 | pg-boss | ~12.35.1 |
+| 웹 푸시 | @block65/webcrypto-web-push | 2.0.0 (정확 고정, MIT, engines node>=22, VAPID). 의존성 uint8array-extras 1.6.0 (MIT). `web-push`·`@types/web-push`는 쓰지 않는다 (MPL-2.0·장기 무배포) |
 | UI 기반 | tailwindcss, @tailwindcss/postcss | ~4.3.3 |
 | | radix-ui | ~1.6.7 |
 | | lucide-react | ~1.50.0 |
@@ -72,6 +74,9 @@
 | 날짜 | date-fns | ~4.4.0 |
 | 테스트 | vitest | ~4.1.11 |
 | | @playwright/test | ~1.63.0 (PDF 생성에도 같은 버전 사용) |
+| | @testing-library/react | ~16.3.3 (features/audit devDependency, 컴포넌트 DOM 검증. 2026-10-27 사용자 승인) |
+| | @testing-library/dom | ~10.4.2 (features/audit devDependency, @testing-library/react 피어. 2026-10-27 사용자 승인) |
+| | jsdom | ~30.1.3 (features/audit devDependency, 테스트용 DOM 환경. 2026-10-27 사용자 승인) |
 | 린트·포맷 | @biomejs/biome | ~2.5.15 |
 | Git hook·커밋 규칙 | lefthook / @commitlint/cli·config-conventional | ~2.1.16 / ~21.2.3 |
 | TS 실행 (worker·스크립트) | tsx | ~4.23.15 |
@@ -84,7 +89,7 @@
 | 로컬 개발 서비스 (Docker) | `postgres:18-bookworm`, `chrislusf/seaweedfs:4.47`(로컬 S3, MinIO 대체), `axllent/mailpit:v1.31`(개발 메일함) | docker-compose.dev.yml |
 | 타입 | @types/node ~24, @types/react·@types/react-dom ~19.3.0, @types/pg | |
 
-**구현 단계에서 추가할 예정인 패키지** (해당 기능을 만들 때 같은 방식으로 검증): `@headless-tree/react`(부서 트리), `@xyflow/react`(조직도), `@dnd-kit/*`(양식 빌더), `serwist`·`web-push`(P1 PWA).
+**구현 단계에서 추가할 예정인 패키지** (해당 기능을 만들 때 같은 방식으로 검증): `@headless-tree/react`(부서 트리), `@xyflow/react`(조직도), `@dnd-kit/*`(양식 빌더), `serwist`(P1 PWA. 서비스 워커는 현재 `apps/web/public/sw.js`를 직접 두었고 serwist는 쓰지 않는다).
 
 ### 3.1 호환성 검증 결과 (2026-10-03)
 - 위 조합으로 `strictPeerDependencies: true`를 켠 상태에서 `pnpm install`이 **성공했고, peer 충돌은 0건**입니다(626개 패키지 해석).

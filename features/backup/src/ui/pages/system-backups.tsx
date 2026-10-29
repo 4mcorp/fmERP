@@ -7,16 +7,11 @@ import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
+import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@fmerp/shared/ui/table";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import { useReauth } from "@fmerp/shared/ui/use-reauth";
 import { useQueryClient } from "@tanstack/react-query";
 import { DatabaseBackup, Download, Trash2 } from "lucide-react";
@@ -77,6 +72,106 @@ export default function SystemBackupsPage() {
       await refresh();
     });
 
+  const columns: DataTableColumn<SystemBackupItem>[] = [
+    {
+      id: "requestedAt",
+      header: "일시",
+      cell: (b) => <span className="whitespace-nowrap">{formatDateTime(b.requestedAt)}</span>,
+      sortValue: (b) => b.requestedAt,
+    },
+    {
+      id: "kind",
+      header: "유형",
+      cell: (b) => (b.kind === "auto" ? "자동" : "수동"),
+      sortValue: (b) => b.kind,
+    },
+    {
+      id: "status",
+      header: "상태",
+      cell: (b) => (
+        <>
+          <Badge variant={statusVariant(b.status)}>{STATUS_LABEL[b.status]}</Badge>
+          {b.deleteRequestedAt && <p className="mt-1 text-xs text-muted-foreground">삭제 요청됨</p>}
+          {b.status === "FAILED" && b.error && (
+            <p className="mt-1 max-w-56 text-xs break-words text-destructive">{b.error}</p>
+          )}
+        </>
+      ),
+      sortValue: (b) => b.status,
+    },
+    {
+      id: "size",
+      header: "크기",
+      align: "right",
+      cell: (b) => <span className="whitespace-nowrap">{formatBytes(b.size)}</span>,
+      sortValue: (b) => b.size,
+      hideBelow: "md",
+    },
+    {
+      id: "sha256",
+      header: "해시(SHA-256)",
+      cell: (b) =>
+        b.sha256 ? (
+          <span className="font-mono text-xs" title={b.sha256}>
+            {b.sha256.slice(0, 12)}…
+          </span>
+        ) : (
+          "—"
+        ),
+      hideBelow: "md",
+    },
+    {
+      id: "requester",
+      header: "실행자·메모",
+      cell: (b) =>
+        [b.requestedByName ?? (b.kind === "auto" ? "시스템" : null), b.note]
+          .filter(Boolean)
+          .join(" · ") || "—",
+      className: "max-w-48 break-words",
+      hideBelow: "md",
+    },
+    {
+      id: "downloads",
+      header: "내려받은 기록",
+      cell: (b) =>
+        b.downloads.length === 0
+          ? "—"
+          : `${b.downloads.length}회 (최근 ${b.downloads[0]?.userName ?? "알 수 없음"}, ${formatDateTime(b.downloads[0]?.at ?? "")})`,
+      hideBelow: "md",
+    },
+    {
+      id: "actions",
+      header: "작업",
+      align: "right",
+      cell: (b) => (
+        <span className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
+          {b.status === "SUCCEEDED" && !b.deleteRequestedAt && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => download(b.id)}
+              aria-label={`${formatDateTime(b.requestedAt)} 덤프 내려받기`}
+            >
+              <Download aria-hidden />
+              내려받기
+            </Button>
+          )}
+          {b.kind === "manual" && b.status === "SUCCEEDED" && !b.deleteRequestedAt && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDeleting(b)}
+              aria-label={`${formatDateTime(b.requestedAt)} 덤프 삭제 요청`}
+            >
+              <Trash2 aria-hidden />
+              삭제
+            </Button>
+          )}
+        </span>
+      ),
+    },
+  ];
+
   if (notFound) {
     return (
       <div className="space-y-2">
@@ -88,7 +183,7 @@ export default function SystemBackupsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">시스템 덤프</h1>
+      <PageHeader title="시스템 덤프" />
       {dialog}
 
       {data &&
@@ -151,91 +246,14 @@ export default function SystemBackupsPage() {
           {errorMessage(error)}
         </p>
       )}
-      {isPending ? (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          불러오는 중…
-        </p>
-      ) : data?.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">아직 덤프 기록이 없습니다.</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead scope="col">일시</TableHead>
-              <TableHead scope="col">유형</TableHead>
-              <TableHead scope="col">상태</TableHead>
-              <TableHead scope="col">크기</TableHead>
-              <TableHead scope="col">해시(SHA-256)</TableHead>
-              <TableHead scope="col">실행자·메모</TableHead>
-              <TableHead scope="col">내려받은 기록</TableHead>
-              <TableHead scope="col">
-                <span className="sr-only">작업</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.items.map((b) => (
-              <TableRow key={b.id}>
-                <TableCell className="whitespace-nowrap">{formatDateTime(b.requestedAt)}</TableCell>
-                <TableCell>{b.kind === "auto" ? "자동" : "수동"}</TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant(b.status)}>{STATUS_LABEL[b.status]}</Badge>
-                  {b.deleteRequestedAt && (
-                    <p className="mt-1 text-xs text-muted-foreground">삭제 요청됨</p>
-                  )}
-                  {b.status === "FAILED" && b.error && (
-                    <p className="mt-1 max-w-56 text-xs break-words text-destructive">{b.error}</p>
-                  )}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">{formatBytes(b.size)}</TableCell>
-                <TableCell>
-                  {b.sha256 ? (
-                    <span className="font-mono text-xs" title={b.sha256}>
-                      {b.sha256.slice(0, 12)}…
-                    </span>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell className="max-w-48 break-words">
-                  {[b.requestedByName ?? (b.kind === "auto" ? "시스템" : null), b.note]
-                    .filter(Boolean)
-                    .join(" · ") || "—"}
-                </TableCell>
-                <TableCell>
-                  {b.downloads.length === 0
-                    ? "—"
-                    : `${b.downloads.length}회 (최근 ${b.downloads[0]?.userName ?? "알 수 없음"}, ${formatDateTime(b.downloads[0]?.at ?? "")})`}
-                </TableCell>
-                <TableCell className="space-x-1 whitespace-nowrap">
-                  {b.status === "SUCCEEDED" && !b.deleteRequestedAt && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => download(b.id)}
-                      aria-label={`${formatDateTime(b.requestedAt)} 덤프 내려받기`}
-                    >
-                      <Download aria-hidden />
-                      내려받기
-                    </Button>
-                  )}
-                  {b.kind === "manual" && b.status === "SUCCEEDED" && !b.deleteRequestedAt && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setDeleting(b)}
-                      aria-label={`${formatDateTime(b.requestedAt)} 덤프 삭제 요청`}
-                    >
-                      <Trash2 aria-hidden />
-                      삭제
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+      <DataTable
+        rows={data?.items ?? []}
+        columns={columns}
+        rowKey={(b) => b.id}
+        caption="시스템 덤프 이력"
+        isLoading={isPending}
+        empty={<EmptyState title="아직 덤프 기록이 없습니다" />}
+      />
 
       <ConfirmDialog
         open={deleting !== null}

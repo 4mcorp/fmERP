@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: dev
+resources:
+  - ../../base
+  - deps
+configMapGenerator:
+  - name: fmerp-app-config
+    literals:
+      - NODE_ENV=production
+      - APP_ENV=staging            # 운영 모드에서 /dev-login 을 켜는 유일한 예외 (shared/src/server/env.ts)
+      - DEV_TEST_LOGIN=true
+      - BETTER_AUTH_URL=https://fmerp-dev.taile82113.ts.net
+      - PUBLIC_BASE_URL=https://fmerp-dev.taile82113.ts.net
+      - S3_ENDPOINT=http://s3:8333                                  # 서버 간 통신(클러스터 내부)
+      - S3_PUBLIC_ENDPOINT=https://fmerp-dev.taile82113.ts.net:8443 # 브라우저용 서명 URL (tailscale-gateway 8443 → s3:8333)
+      - S3_REGION=us-east-1
+      - S3_BUCKET=fmerp-dev
+      - S3_FORCE_PATH_STYLE=true
+      - WORKER_PORT=3001
+generatorOptions:
+  disableNameSuffixHash: true
+patches:
+  - target: {kind: Ingress, name: web}
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: fmerp.dev.localhost
+  # base 밖의 dev 전용 Deployment 도 서비스 링크 환경변수를 끈다 (s3 의 S3_PORT 가 weed 인자로 해석되어 기동 실패)
+  - target: {kind: Deployment, name: "s3|mailpit|postgres-test"}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/enableServiceLinks
+        value: false
+images:
+  - {name: fmerp-web, newTag: dev}
+  - {name: fmerp-worker, newTag: dev}
+  - {name: fmerp-web-builder, newTag: dev}

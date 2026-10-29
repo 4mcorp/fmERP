@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { generateKeyPair } from "../src/service/age";
 import { runManualDumpNow } from "../src/service/dump";
 import { type RehearseDeps, rehearseRestore } from "../src/service/rehearse";
+import { assertDroppableScratchDb, testServerUrl } from "./test-db-url";
 
 const CONTAINER = process.env.TEST_DB_CONTAINER ?? "fmerp-dev-postgres-test-1";
 const need = (name: string) => {
@@ -41,8 +42,8 @@ const MARK = `m7-rehearse-${Date.now().toString(36)}`;
 
 const rehearseDeps = (): RehearseDeps => ({
   storage,
-  // 임시 DB를 만들고 지우는 연결(호스트에서 접속하는 주소)
-  adminUrl: "postgres://postgres:postgres@localhost:55433/postgres",
+  // 임시 DB를 만들고 지우는 연결(호스트에서 접속하는 주소). 대상 서버는 TEST_DB_PORT로 정한다
+  adminUrl: testServerUrl("postgres"),
   // pg_restore는 컨테이너 안에서 실행하므로 컨테이너 안에서 보이는 주소를 쓴다
   restoreTool: (db) => ({
     command: `docker exec -i -e PGPASSWORD=postgres ${CONTAINER} pg_restore`,
@@ -53,9 +54,8 @@ const rehearseDeps = (): RehearseDeps => ({
 
 /** 임시 DB는 만든 사람(관리 연결)만 지울 수 있다 */
 async function dropDb(db: string) {
-  const admin = new Client({
-    connectionString: "postgres://postgres:postgres@localhost:55433/postgres",
-  });
+  assertDroppableScratchDb(db, "fmerp_rehearse_");
+  const admin = new Client({ connectionString: testServerUrl("postgres") });
   await admin.connect();
   try {
     await admin.query(`drop database if exists "${db}" with (force)`);
@@ -97,7 +97,7 @@ beforeAll(async () => {
       recipients: [keys.recipient],
       pgDump: {
         command: `docker exec -i -e PGPASSWORD=fmerp_backup_dev ${CONTAINER} pg_dump`,
-        url: "postgres://fmerp_backup:fmerp_backup_dev@localhost:5432/fmerp",
+        url: `postgres://fmerp_backup:fmerp_backup_dev@localhost:5432/${new URL(need("BACKUP_DATABASE_URL")).pathname.slice(1)}`,
       },
     },
     { note: MARK },

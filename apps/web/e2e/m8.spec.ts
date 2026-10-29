@@ -1,6 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
 async function loginAs(page: Page, name: string) {
+  // 시드 계정은 PIN이 없어 로그인 직후 PIN 설정 안내 모달이 뜨고 이후 클릭을 가로챈다 — 안내는 닫은 상태로 시작한다
+  await page.addInitScript(() => window.sessionStorage.setItem("pin-setup-remind-dismissed", "1"));
   await page.goto("/dev-login");
   await page.getByRole("button", { name: `${name}(으)로 로그인` }).click();
   await expect(page).not.toHaveURL(/\/dev-login/);
@@ -84,7 +86,7 @@ async function verifyPin(page: Page) {
 async function signOut(page: Page) {
   await page.getByRole("button", { name: "사용자 메뉴" }).click();
   await page.getByRole("menuitem", { name: "로그아웃" }).click();
-  await expect(page).toHaveURL(/dev-login/);
+  await expect(page).toHaveURL(/\/login/);
 }
 
 // 홈 대시보드 (DSH-001): 기안·상신·승인하며 결재 대기 → 진행 중 → 최근 완료로 옮겨 가는지 본다
@@ -234,7 +236,13 @@ test.describe("대결 (S5)", () => {
       await page.goto("/approval/pending");
       const row = page.getByRole("link", { name: new RegExp(title) });
       await expect(row).toBeVisible();
-      await expect(row.getByText("대결", { exact: true })).toBeVisible();
+      // "대결" 배지는 제목 링크 밖(같은 행)에 있으므로 행 단위로 찾는다
+      await expect(
+        page
+          .getByRole("row")
+          .filter({ has: page.getByRole("link", { name: new RegExp(title) }) })
+          .getByText("대결", { exact: true }),
+      ).toBeVisible();
       await verifyPin(page);
       const view = await get<{ steps: { id: string; status: string; version: number }[] }>(
         `/api/approvals/${documentId}`,

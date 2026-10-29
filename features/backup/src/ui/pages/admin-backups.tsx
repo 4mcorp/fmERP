@@ -6,14 +6,9 @@ import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@fmerp/shared/ui/table";
+import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import { useReauth } from "@fmerp/shared/ui/use-reauth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Download, PackagePlus } from "lucide-react";
@@ -57,6 +52,89 @@ export default function BackupsPage() {
       window.location.assign(url);
     });
 
+  const columns: DataTableColumn<AccountExportItem>[] = [
+    {
+      id: "createdAt",
+      header: "요청 일시",
+      cell: (j) => <span className="whitespace-nowrap">{formatDateTime(j.createdAt)}</span>,
+      sortValue: (j) => j.createdAt,
+    },
+    {
+      id: "requester",
+      header: "요청자",
+      cell: (j) => j.requestedByName ?? "—",
+      sortValue: (j) => j.requestedByName ?? "",
+    },
+    {
+      id: "status",
+      header: "상태",
+      cell: (j) => (
+        <>
+          <Badge variant={statusVariant(j.status)}>{STATUS_LABEL[j.status]}</Badge>
+          {j.status === "FAILED" && j.error && (
+            <p className="mt-1 max-w-56 text-xs break-words text-destructive">{j.error}</p>
+          )}
+        </>
+      ),
+      sortValue: (j) => j.status,
+    },
+    {
+      id: "size",
+      header: "크기",
+      align: "right",
+      cell: (j) => <span className="whitespace-nowrap">{formatBytes(j.size)}</span>,
+      sortValue: (j) => j.size,
+      hideBelow: "md",
+    },
+    {
+      id: "sha256",
+      header: "해시(SHA-256)",
+      cell: (j) =>
+        j.sha256 ? (
+          <span className="font-mono text-xs" title={j.sha256}>
+            {j.sha256.slice(0, 12)}…
+          </span>
+        ) : (
+          "—"
+        ),
+      hideBelow: "md",
+    },
+    {
+      id: "expiresAt",
+      header: "보관 기한",
+      cell: (j) => (
+        <span className="whitespace-nowrap">{j.expiresAt ? formatDateTime(j.expiresAt) : "—"}</span>
+      ),
+      hideBelow: "md",
+    },
+    {
+      id: "downloads",
+      header: "내려받은 기록",
+      cell: (j) =>
+        j.downloads.length === 0
+          ? "—"
+          : `${j.downloads.length}회 (최근 ${j.downloads[0]?.userName ?? "알 수 없음"}, ${formatDateTime(j.downloads[0]?.at ?? "")})`,
+      hideBelow: "md",
+    },
+    {
+      id: "actions",
+      header: "작업",
+      align: "right",
+      cell: (j) =>
+        j.status === "READY" && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => download(j.id)}
+            aria-label={`${formatDateTime(j.createdAt)} 내보내기 내려받기`}
+          >
+            <Download aria-hidden />
+            내려받기
+          </Button>
+        ),
+    },
+  ];
+
   if (forbidden) {
     return (
       <p role="alert" className="text-muted-foreground">
@@ -68,7 +146,7 @@ export default function BackupsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">계정 내보내기</h1>
+      <PageHeader title="계정 내보내기" />
       {dialog}
       <Card>
         <CardHeader>
@@ -106,75 +184,14 @@ export default function BackupsPage() {
           {errorMessage(error)}
         </p>
       )}
-      {isPending ? (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          불러오는 중…
-        </p>
-      ) : data?.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">아직 내보낸 기록이 없습니다.</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead scope="col">요청 일시</TableHead>
-              <TableHead scope="col">요청자</TableHead>
-              <TableHead scope="col">상태</TableHead>
-              <TableHead scope="col">크기</TableHead>
-              <TableHead scope="col">해시(SHA-256)</TableHead>
-              <TableHead scope="col">보관 기한</TableHead>
-              <TableHead scope="col">내려받은 기록</TableHead>
-              <TableHead scope="col">
-                <span className="sr-only">작업</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.items.map((j) => (
-              <TableRow key={j.id}>
-                <TableCell className="whitespace-nowrap">{formatDateTime(j.createdAt)}</TableCell>
-                <TableCell>{j.requestedByName ?? "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant(j.status)}>{STATUS_LABEL[j.status]}</Badge>
-                  {j.status === "FAILED" && j.error && (
-                    <p className="mt-1 max-w-56 text-xs break-words text-destructive">{j.error}</p>
-                  )}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">{formatBytes(j.size)}</TableCell>
-                <TableCell>
-                  {j.sha256 ? (
-                    <span className="font-mono text-xs" title={j.sha256}>
-                      {j.sha256.slice(0, 12)}…
-                    </span>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
-                  {j.expiresAt ? formatDateTime(j.expiresAt) : "—"}
-                </TableCell>
-                <TableCell>
-                  {j.downloads.length === 0
-                    ? "—"
-                    : `${j.downloads.length}회 (최근 ${j.downloads[0]?.userName ?? "알 수 없음"}, ${formatDateTime(j.downloads[0]?.at ?? "")})`}
-                </TableCell>
-                <TableCell>
-                  {j.status === "READY" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => download(j.id)}
-                      aria-label={`${formatDateTime(j.createdAt)} 내보내기 내려받기`}
-                    >
-                      <Download aria-hidden />
-                      내려받기
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+      <DataTable
+        rows={data?.items ?? []}
+        columns={columns}
+        rowKey={(j) => j.id}
+        caption="계정 내보내기 이력"
+        isLoading={isPending}
+        empty={<EmptyState title="아직 내보낸 기록이 없습니다" />}
+      />
     </div>
   );
 }

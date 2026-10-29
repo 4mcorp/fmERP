@@ -78,6 +78,27 @@ export function registerAuthRoutes(app: AppRouter, deps: DepsProvider) {
       return res;
     }
 
+    // passkey 로그인: 성공하면 이메일 로그인과 같은 후처리(활성 회사·로그인 기록)를 한다.
+    // 실패는 찾지 못한 passkey와 검증 실패를 구분하지 않는 같은 응답으로 돌려준다 (사용자 열거 방지)
+    if (c.req.method === "POST" && path === "/passkey/verify-authentication") {
+      const res = await authOf(d).handler(c.req.raw);
+      if (!res.ok) {
+        return new Response(
+          JSON.stringify({ code: "unauthorized", message: "패스키 로그인에 실패했습니다" }),
+          {
+            status: 401,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      }
+      const body = (await res.clone().json()) as {
+        session?: { token?: string };
+        user?: { id?: string };
+      };
+      await afterLogin(d, { token: body.session?.token, user: body.user }, request);
+      return res;
+    }
+
     if (c.req.method === "POST" && path === "/sign-out") {
       const before = await authOf(d).api.getSession({ headers: c.req.raw.headers });
       const res = await authOf(d).handler(c.req.raw);

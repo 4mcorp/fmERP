@@ -1,0 +1,85 @@
+# 현재 실행기 템플릿 + -w 읽기 전용 코드 소스.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: fmerp-test-
+  namespace: test
+  labels: {app.kubernetes.io/part-of: fmerp, fmerp/test: "true"}
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+  activeDeadlineSeconds: ${TIMEOUT}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/part-of: fmerp, fmerp/test: "true"}
+    spec:
+      restartPolicy: Never
+      enableServiceLinks: false
+      initContainers:
+        # root 권한은 source·DB·Secret이 없는 실행 전용 볼륨 초기화에만 쓴다.
+        - name: prepare-runner
+          image: ${RUNNER_IMAGE}
+          imagePullPolicy: IfNotPresent
+          securityContext: {runAsUser: 0, runAsGroup: 0}
+          command: [bash, -ec, 'chown 1001:1001 /work /artifacts /pnpm-store /cache; chmod 700 /work /artifacts /pnpm-store /cache']
+          volumeMounts:
+            - {name: work, mountPath: /work}
+            - {name: artifacts, mountPath: /artifacts}
+            - {name: store, mountPath: /pnpm-store}
+            - {name: cache, mountPath: /cache}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 64Mi}}
+        - name: postgres
+          restartPolicy: Always
+          image: postgres:18-bookworm
+          env:
+            - {name: PGPORT, value: "55433"}
+            - {name: POSTGRES_PASSWORD, value: postgres}
+            - {name: POSTGRES_DB, value: fmerp}
+          volumeMounts:
+            - {name: src, mountPath: /docker-entrypoint-initdb.d, subPath: docker/postgres/initdb, readOnly: true}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: "1", memory: 1Gi}}
+        - name: s3
+          restartPolicy: Always
+          image: chrislusf/seaweedfs:4.47
+          args: [server, -s3, -s3.port=58333, -s3.port.grpc=18333, -dir=/data, -ip.bind=0.0.0.0]
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: "1", memory: 1Gi}}
+      containers:
+        - name: runner
+          image: ${RUNNER_IMAGE}
+          securityContext: {runAsUser: 1001, runAsGroup: 1001, runAsNonRoot: true, allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          imagePullPolicy: IfNotPresent
+          workingDir: /work
+          command: [bash, -ec]
+          args:
+            - ${RUNNER_SCRIPT}
+          env:
+            - name: TEST_CMD
+              value: ${TEST_CMD}
+            - name: RUNNER_CACHE
+              value: ${RUNNER_CACHE}
+            - {name: CI, value: "true"}
+            - {name: NODE_ENV, value: development}
+            - {name: HOME, value: /tmp}
+          volumeMounts:
+            - {name: src, mountPath: /src, readOnly: true}
+            - {name: work, mountPath: /work}
+            - {name: artifacts, mountPath: /artifacts}
+            - {name: store, mountPath: /pnpm-store}
+            - {name: cache, mountPath: /cache}
+            - {name: dshm, mountPath: /dev/shm}
+          # runner 6Gi + DB/S3 각 1Gi: 기존 quota 내 두 파드, 증설 없음.
+          resources: {requests: {cpu: 500m, memory: 2Gi}, limits: {cpu: "3", memory: 6Gi}}
+      volumes:
+        - name: src
+          hostPath:
+            path: ${WORKTREE}
+            type: Directory
+        - name: work
+          emptyDir: {sizeLimit: 4Gi}
+        - name: artifacts
+          emptyDir: {sizeLimit: 2Gi}
+        - name: store
+          emptyDir: {sizeLimit: 4Gi}
+        - ${CACHE_VOLUME}
+        - name: dshm
+          emptyDir: {medium: Memory, sizeLimit: 512Mi}

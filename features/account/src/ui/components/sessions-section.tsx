@@ -34,7 +34,7 @@ export function SessionsSection() {
     try {
       await api(`/api/me/sessions/${session.id}`, { method: "DELETE" });
       if (session.current) {
-        window.location.href = "/dev-login";
+        window.location.href = "/login";
         return;
       }
       await queryClient.invalidateQueries({ queryKey: ["me-sessions"] });

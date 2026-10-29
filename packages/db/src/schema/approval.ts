@@ -284,3 +284,32 @@ export const delegation = pgTable(
     index().on(t.membershipId),
   ],
 );
+
+/**
+ * 결재 문서 상세를 연 사람의 첫·마지막 열람 시각 (R8 읽음 표시). 감사 로그가 아니다 — 열람 감사는 audit 경로가 맡는다.
+ * 참조·공람 읽음은 document_recipient_read가 맡는다.
+ * @owner approval
+ */
+export const documentView = pgTable(
+  "document_view",
+  {
+    id: primaryId(),
+    accountId: accountRef(),
+    documentId: uuid().notNull(),
+    membershipId: uuid().notNull(),
+    firstViewedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    lastViewedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.documentId, t.membershipId),
+    foreignKey({
+      columns: [t.documentId, t.accountId],
+      foreignColumns: [document.id, document.accountId],
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [t.membershipId, t.accountId],
+      foreignColumns: [membership.id, membership.accountId],
+    }),
+    index().on(t.membershipId),
+  ],
+);

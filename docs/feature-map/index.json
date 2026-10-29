@@ -19,7 +19,7 @@
       "access": [
         {
           "who": "누구나",
-          "path": "/login, /dev-login(개발 전용)",
+          "path": "/login (passkey 로그인), /login?token= (최초 passkey 등록 링크), /dev-login(개발 전용)",
           "entry": "ui/pages/login"
         },
         {
@@ -36,6 +36,36 @@
           "who": "모든 구성원",
           "path": "사용자 메뉴 → 내 정보 → /me",
           "entry": "ui/components/me-page"
+        },
+        {
+          "who": "로그인 전 사용자(등록 링크)",
+          "path": "/api/auth/passkey/* (등록 옵션·검증, passkey 로그인)",
+          "entry": "api/auth-routes"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "/api/me/passkeys (목록·이름 변경·삭제)",
+          "entry": "api/passkey-routes"
+        },
+        {
+          "who": "소유자·계정 관리자",
+          "path": "/api/account/members/{userId}/passkey-reset (passkey 초기화, PIN 재인증)",
+          "entry": "api/account-routes"
+        },
+        {
+          "who": "소유자·계정 관리자",
+          "path": "/api/account/members/{userId}/pin/reset (결재 PIN 초기화, PIN 재인증)",
+          "entry": "api/account-routes"
+        },
+        {
+          "who": "소유자·계정 관리자",
+          "path": "/api/account/members (POST, 사전 등록 + 등록 링크, PIN 재인증)",
+          "entry": "api/account-routes"
+        },
+        {
+          "who": "소유자·계정 관리자",
+          "path": "/api/account/members/{userId}/enrollment (POST, passkey 없는 구성원 등록 링크 재발급, PIN 재인증)",
+          "entry": "api/account-routes"
         }
       ],
       "screens": [
@@ -74,7 +104,7 @@
       "auth_setup": "auth-setup",
       "seed": "apps/web/server/seed/",
       "tables": {
-        "owns": ["invitation"],
+        "owns": ["enrollment_token", "invitation"],
         "reads": ["assignment", "business", "department", "duty", "position"],
         "writes": []
       },
@@ -95,7 +125,11 @@
       "invariants": [
         "세션은 유휴·절대 만료 정책을 적용하고 만료된 세션은 지운다",
         "PIN은 해시로만 저장하고 5회 실패 시 15분 잠근다",
-        "초대 토큰은 해시만 저장하고 한 번만 쓴다"
+        "초대 토큰은 해시만 저장하고 한 번만 쓴다",
+        "passkey는 본인 것만 바꾸고, 마지막 1개는 삭제할 수 없다 (passkey 관리는 자체 API로만, 플러그인 경로는 disabledPaths로 막는다)",
+        "passkey 로그인·등록 실패 응답은 이유를 드러내지 않는다 (사용자 열거 방지)",
+        "관리자 passkey 초기화는 PIN 재인증을 거치고, 감사 로그(passkey.admin_reset)를 남기며, 소유자의 passkey는 소유자만 초기화한다",
+        "관리자 결재 PIN 초기화는 PIN 재인증을 거치고, 감사 로그(pin.admin_reset)를 남기며, 소유자의 PIN은 소유자만 초기화하고, 본인 PIN은 이 경로로 바꾸지 않는다"
       ],
       "folder": "account",
       "routes": [
@@ -117,6 +151,26 @@
         {
           "method": "delete",
           "path": "/account/invitations/{id}",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/members",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/members/{userId}/enrollment",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/members/{userId}/passkey-reset",
+          "file": "features/account/src/api/account-routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/account/members/{userId}/pin/reset",
           "file": "features/account/src/api/account-routes.ts"
         },
         {
@@ -178,6 +232,21 @@
           "method": "get",
           "path": "/me/login-history",
           "file": "features/account/src/api/me-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/me/passkeys",
+          "file": "features/account/src/api/passkey-routes.ts"
+        },
+        {
+          "method": "delete",
+          "path": "/me/passkeys/{id}",
+          "file": "features/account/src/api/passkey-routes.ts"
+        },
+        {
+          "method": "patch",
+          "path": "/me/passkeys/{id}",
+          "file": "features/account/src/api/passkey-routes.ts"
         },
         {
           "method": "put",
@@ -315,6 +384,10 @@
         {
           "route": "/admin/forms/[id]",
           "file": "src/ui/pages/admin-form-edit.tsx"
+        },
+        {
+          "route": "/admin/forms/[id]",
+          "file": "src/ui/components/form-print-preview.tsx"
         }
       ],
       "adapters": [
@@ -350,6 +423,7 @@
           "document_recipient_read",
           "document_revision",
           "document_search",
+          "document_view",
           "form",
           "form_version",
           "user_form_pref"
@@ -374,6 +448,7 @@
       "invariants": [
         "상신 이후 본문·첨부가 바뀌면 거부한다 (content_changed)",
         "열람할 수 없는 문서는 존재도 알리지 않는다 (404)",
+        "상세 403은 서버 안내를 보존하고, 조회 실패는 재시도로 해당 쿼리를 다시 불러온다 (로딩·오류 UI 분기 단위 테스트)",
         "결재 처리·이관·내려받기는 PIN 재인증을 요구한다",
         "처리 기록·문서번호 채번은 한 트랜잭션에서 낙관적 잠금과 함께 처리한다"
       ],
@@ -477,6 +552,11 @@
         {
           "method": "put",
           "path": "/approvals/{id}/line",
+          "file": "features/approval/src/api/documents-routes.ts"
+        },
+        {
+          "method": "get",
+          "path": "/approvals/{id}/print-preview",
           "file": "features/approval/src/api/documents-routes.ts"
         },
         {
@@ -620,6 +700,10 @@
         {
           "route": "/admin/audit/review",
           "file": "src/ui/pages/audit-review.tsx"
+        },
+        {
+          "route": "/approval/[id]",
+          "file": "src/ui/components/audit-trail.tsx"
         }
       ],
       "adapters": [
@@ -853,6 +937,7 @@
       "tables": {
         "owns": ["document_package"],
         "reads": [
+          "account",
           "approval_action",
           "approval_step",
           "attachment",
@@ -935,7 +1020,7 @@
       },
       "contracts": [],
       "tests": {
-        "e2e": "apps/web/e2e (smoke·m1~m8이 홈을 거친다)"
+        "e2e": "apps/web/e2e (smoke·m1~m8이 홈을 거친다, loading-error는 홈 로딩·오류·404)"
       },
       "invariants": [],
       "folder": "home",
@@ -953,13 +1038,23 @@
         "수신 방식",
         "웹훅",
         "폴링",
-        "운영 알림"
+        "운영 알림",
+        "웹 푸시",
+        "푸시",
+        "홈 화면",
+        "PWA",
+        "서비스 워커"
       ],
       "access": [
         {
           "who": "모든 구성원",
           "path": "앱 헤더 알림 → /notifications",
           "entry": "ui/pages/notifications"
+        },
+        {
+          "who": "모든 구성원",
+          "path": "내 정보 → 알림 탭 (이 기기 알림 켜기/끄기)",
+          "entry": "ui/components/push-section"
         },
         {
           "who": "모든 구성원",
@@ -1000,12 +1095,13 @@
       },
       "jobs": {
         "entry": "jobs/jobs",
-        "queues": ["notify.telegram"]
+        "queues": ["notify.telegram", "notify.push"]
       },
       "tables": {
         "owns": [
           "event_notified",
           "notification",
+          "push_subscription",
           "system_setting",
           "telegram_link",
           "telegram_link_token"
@@ -1033,15 +1129,32 @@
       "tests": {
         "unit": "tests/*.test.ts",
         "int": "tests/*.int.test.ts",
-        "e2e": "apps/web/e2e/m8.spec.ts"
+        "e2e": "apps/web/e2e/m8.spec.ts, apps/web/e2e/pwa.spec.ts"
       },
       "invariants": [
         "외부 채널(텔레그램) 문구에 문서 제목·내용·의견을 넣지 않는다",
         "연결 토큰은 해시만 저장하고 한 번만 쓴다",
-        "같은 사건은 dedupe_key로 한 번만 알린다"
+        "같은 사건은 dedupe_key로 한 번만 알린다",
+        "웹 푸시 문구에도 문서 제목·내용을 넣지 않는다 (외부 푸시 서버를 거친다)",
+        "웹 푸시 구독은 구성원 본인 기기만 만들고 지운다 (RLS + membership 조건)"
       ],
       "folder": "notification",
       "routes": [
+        {
+          "method": "get",
+          "path": "/me/push/config",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/me/push/subscribe",
+          "file": "features/notification/src/api/routes.ts"
+        },
+        {
+          "method": "post",
+          "path": "/me/push/unsubscribe",
+          "file": "features/notification/src/api/routes.ts"
+        },
         {
           "method": "get",
           "path": "/me/telegram",
@@ -1208,6 +1321,11 @@
       ],
       "folder": "org",
       "routes": [
+        {
+          "method": "get",
+          "path": "/account/approval-policy",
+          "file": "features/org/src/api/org-routes.ts"
+        },
         {
           "method": "get",
           "path": "/account/capabilities",

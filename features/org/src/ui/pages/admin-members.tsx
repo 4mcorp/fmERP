@@ -25,7 +25,9 @@ import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
 import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -39,6 +41,7 @@ import { Users } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { MemberDetail } from "../components/member-detail";
+import { PreRegisterCard } from "../components/pre-register-card";
 import { usePositions } from "../queries";
 
 const NONE = "__none";
@@ -59,9 +62,17 @@ const INVITATION_TONE = {
 
 /** 구성원 목록과 상세 편집: 상태·사번, 소속·발령, 역할 (AUTH-015, ORG-032~035, PERM-001) */
 function MembersTab({ caps }: { caps: Capabilities }) {
-  const { data: members } = useMembers();
+  const {
+    data: members,
+    isLoading: membersLoading,
+    isError: membersError,
+    refetch: refetchMembers,
+  } = useMembers();
   const [selected, setSelected] = useState<string | null>(null);
   const current = members?.find((m) => m.userId === selected);
+
+  if (membersError) return <QueryErrorState onRetry={() => void refetchMembers()} />;
+  if (membersLoading || !members) return <LoadingState />;
 
   const columns: DataTableColumn<Member>[] = [
     {
@@ -139,9 +150,9 @@ function MembersTab({ caps }: { caps: Capabilities }) {
 
   return (
     <div className="space-y-4">
+      <PreRegisterCard />
       <DataTable
-        rows={members ?? []}
-        isLoading={!members}
+        rows={members}
         columns={columns}
         rowKey={(m) => m.userId}
         caption="구성원 목록"
@@ -176,16 +187,36 @@ function MembersTab({ caps }: { caps: Capabilities }) {
 /** 초대 링크 만들기·목록·취소 (AUTH-006). 링크는 만들 때 한 번만 보여 준다 */
 function InvitationsTab({ caps }: { caps: Capabilities }) {
   const queryClient = useQueryClient();
-  const { data: businesses } = useBusinesses();
-  const { data: departments } = useDepartments();
-  const { data: positions } = usePositions();
+  const {
+    data: businesses,
+    isLoading: businessesLoading,
+    isError: businessesError,
+    refetch: refetchBusinesses,
+  } = useBusinesses();
+  const {
+    data: departments,
+    isLoading: departmentsLoading,
+    isError: departmentsError,
+    refetch: refetchDepartments,
+  } = useDepartments();
+  const {
+    data: positions,
+    isLoading: positionsLoading,
+    isError: positionsError,
+    refetch: refetchPositions,
+  } = usePositions();
   const [businessId, setBusinessId] = useState(NONE);
   const [departmentId, setDepartmentId] = useState(NONE);
   const [positionId, setPositionId] = useState(NONE);
   const [role, setRole] = useState<"member" | "admin">("member");
   const [email, setEmail] = useState("");
   const [link, setLink] = useState<string | null>(null);
-  const { data: invitations } = useQuery({
+  const {
+    data: invitations,
+    isLoading: invitationsLoading,
+    isError: invitationsError,
+    refetch: refetchInvitations,
+  } = useQuery({
     queryKey: ["invitations"],
     queryFn: () => api<Invitation[]>("/api/account/invitations"),
   });
@@ -229,6 +260,31 @@ function InvitationsTab({ caps }: { caps: Capabilities }) {
     if (!link) return;
     await navigator.clipboard.writeText(link);
     toast.success("초대 링크를 복사했습니다");
+  }
+
+  if (businessesError || departmentsError || positionsError || invitationsError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (businessesError) void refetchBusinesses();
+          if (departmentsError) void refetchDepartments();
+          if (positionsError) void refetchPositions();
+          if (invitationsError) void refetchInvitations();
+        }}
+      />
+    );
+  }
+  if (
+    businessesLoading ||
+    departmentsLoading ||
+    positionsLoading ||
+    invitationsLoading ||
+    !businesses ||
+    !departments ||
+    !positions ||
+    !invitations
+  ) {
+    return <LoadingState />;
   }
 
   return (
@@ -281,7 +337,7 @@ function InvitationsTab({ caps }: { caps: Capabilities }) {
                   <SelectContent>
                     <SelectItem value={NONE}>(지정 안 함)</SelectItem>
                     {businesses
-                      ?.filter((b) => b.active)
+                      .filter((b) => b.active)
                       .map((b) => (
                         <SelectItem key={b.id} value={b.id}>
                           {b.name}
@@ -303,7 +359,7 @@ function InvitationsTab({ caps }: { caps: Capabilities }) {
                   <SelectContent>
                     <SelectItem value={NONE}>(선택)</SelectItem>
                     {departments
-                      ?.filter((d) => d.businessId === businessId && d.active)
+                      .filter((d) => d.businessId === businessId && d.active)
                       .map((d) => (
                         <SelectItem key={d.id} value={d.id}>
                           {"　".repeat(d.depth - 1)}
@@ -326,7 +382,7 @@ function InvitationsTab({ caps }: { caps: Capabilities }) {
                   <SelectContent>
                     <SelectItem value={NONE}>(없음)</SelectItem>
                     {positions
-                      ?.filter((p) => p.active)
+                      .filter((p) => p.active)
                       .map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.name}
@@ -352,8 +408,7 @@ function InvitationsTab({ caps }: { caps: Capabilities }) {
       </Card>
 
       <DataTable
-        rows={invitations ?? []}
-        isLoading={!invitations}
+        rows={invitations}
         rowKey={(inv) => inv.id}
         caption="초대 목록"
         columns={[
@@ -363,7 +418,7 @@ function InvitationsTab({ caps }: { caps: Capabilities }) {
             id: "dept",
             header: "지정 소속",
             hideBelow: "md",
-            cell: (inv) => departments?.find((d) => d.id === inv.preset.departmentId)?.name ?? "-",
+            cell: (inv) => departments.find((d) => d.id === inv.preset.departmentId)?.name ?? "-",
           },
           {
             id: "status",
@@ -408,9 +463,25 @@ function InvitationsTab({ caps }: { caps: Capabilities }) {
 }
 
 export default function MembersPage() {
-  const { data: me } = useMe();
-  const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
-  if (!me || !caps) return null;
+  const { data: me, isLoading: meLoading, isError: meError, refetch: refetchMe } = useMe();
+  const {
+    data: caps,
+    isLoading: capsLoading,
+    isError: capsError,
+    refetch: refetchCaps,
+  } = useCapabilities(Boolean(me?.activeAccountId));
+  if (meError || capsError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (meError) void refetchMe();
+          if (capsError) void refetchCaps();
+        }}
+      />
+    );
+  }
+  if (meLoading || !me || (me.activeAccountId && (capsLoading || !caps))) return <LoadingState />;
+  if (!caps) return <p className="text-muted-foreground">관리 권한이 없습니다.</p>;
   const canMembers = caps["assignment.manage"] || caps["member.deactivate"] || caps["role.grant"];
   const canInvite = caps["member.invite"];
   if (!canMembers && !canInvite) {
@@ -421,7 +492,7 @@ export default function MembersPage() {
     <div>
       <PageHeader title="구성원 관리" breadcrumbs={[{ label: "관리" }, { label: "구성원 관리" }]} />
       <Tabs defaultValue={canMembers ? "members" : "invitations"} className="gap-4">
-        <TabsList>
+        <TabsList variant="line">
           {canMembers && <TabsTrigger value="members">구성원</TabsTrigger>}
           {canInvite && <TabsTrigger value="invitations">초대</TabsTrigger>}
         </TabsList>

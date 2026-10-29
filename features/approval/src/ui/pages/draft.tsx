@@ -11,12 +11,16 @@ import {
   useMembers,
 } from "@fmerp/shared/lib/queries";
 import { type FormDefinition, SECURITY_LABEL, type SecurityLevel } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -40,7 +44,7 @@ import {
 } from "../components/line-editor";
 import { RecipientEditor } from "../components/recipient-editor";
 import { loadLocalDraft, removeLocalDraft, saveLocalDraft } from "../local-drafts";
-import { useApproval, useApprovalBody, useAttachments } from "../queries";
+import { useApproval, useApprovalBody, useApprovalPolicy, useAttachments } from "../queries";
 
 const AUTOSAVE_MS = 30_000;
 const LOCAL_SAVE_MS = 1_000;
@@ -68,13 +72,18 @@ export default function DraftEditorPage() {
   const queryClient = useQueryClient();
   const { data: me } = useMe();
   const { data: account } = useCurrentAccount(Boolean(me?.activeAccountId));
-  const { data: view } = useApproval(id);
+  const { data: view, isError: viewIsError, refetch: refetchView } = useApproval(id);
   const { data: serverBody } = useApprovalBody(id);
   const { data: attachments } = useAttachments(id);
+  const { data: policy } = useApprovalPolicy();
   const { data: members } = useMembers();
   const { data: departments } = useDepartments();
   const { data: businesses } = useBusinesses();
-  const { data: docForm } = useQuery({
+  const {
+    data: docForm,
+    isError: docFormIsError,
+    refetch: refetchDocForm,
+  } = useQuery({
     queryKey: ["approval-form", id],
     queryFn: () => api<DocForm>(`/api/approvals/${id}/form`),
   });
@@ -278,21 +287,36 @@ export default function DraftEditorPage() {
     }
   }
 
-  if (!view || !docForm || !schema || !me) return null;
+  if (viewIsError || docFormIsError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (viewIsError) void refetchView();
+          if (docFormIsError) void refetchDocForm();
+        }}
+      />
+    );
+  }
+  if (!view || !docForm || !schema || !me) return <LoadingState />;
   const allowLineEdit = docForm.definition.allowLineEdit;
   const hasAttachmentField = schema.fields.some((f) => f.type === "attachment");
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold">{docForm.name} 작성</h1>
-        <Badge variant="outline">임시저장</Badge>
-        <span role="status" aria-live="polite" className="text-sm text-muted-foreground">
-          {saveState.kind === "saving" && "저장 중…"}
-          {saveState.kind === "saved" && `저장됨 ${clock.format(saveState.at)}`}
-          {saveState.kind === "failed" && "저장하지 못했습니다. 입력은 이 브라우저에 보관됩니다."}
-        </span>
-      </div>
+    <div className="w-full min-w-0 space-y-4">
+      <PageHeader
+        title={`${docForm.name} 작성`}
+        actions={
+          <>
+            <Badge variant="outline">임시저장</Badge>
+            <span role="status" aria-live="polite" className="text-sm text-muted-foreground">
+              {saveState.kind === "saving" && "저장 중…"}
+              {saveState.kind === "saved" && `저장됨 ${clock.format(saveState.at)}`}
+              {saveState.kind === "failed" &&
+                "저장하지 못했습니다. 입력은 이 브라우저에 보관됩니다."}
+            </span>
+          </>
+        }
+      />
 
       {restore && (
         <Alert>
@@ -429,6 +453,7 @@ export default function DraftEditorPage() {
                   setLineDirty(true);
                 }}
                 ctx={ctx}
+                maxCells={policy?.approvalLineMaxCells}
                 allowPost={docForm.definition.defaultLine.some((i) => i.type === "post")}
               />
               {lineErrors.length > 0 && (
@@ -465,7 +490,15 @@ export default function DraftEditorPage() {
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-0 flex flex-wrap gap-2 border-t bg-background py-3">
+      <ActionBar className="sticky bottom-0 border-t bg-background py-3">
+        {lineDirty && (
+          <span className="self-center text-sm text-muted-foreground">
+            결재선을 먼저 저장하세요.
+          </span>
+        )}
+        {account && (
+          <span className="self-center text-xs text-muted-foreground">{account.name}</span>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -477,15 +510,7 @@ export default function DraftEditorPage() {
         <Button type="button" onClick={submit} disabled={submitting || lineDirty}>
           {submitting ? "상신 중…" : "상신"}
         </Button>
-        {lineDirty && (
-          <span className="self-center text-sm text-muted-foreground">
-            결재선을 먼저 저장하세요.
-          </span>
-        )}
-        {account && (
-          <span className="ml-auto self-center text-xs text-muted-foreground">{account.name}</span>
-        )}
-      </div>
+      </ActionBar>
     </div>
   );
 }

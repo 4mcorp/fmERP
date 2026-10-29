@@ -51,6 +51,7 @@ const baseDeps = () => ({
   authDb: authDb.db,
   baseUrl: "https://erp.test",
   webhook: null,
+  vapid: null,
   rules: testOpsRules,
   logger,
 });

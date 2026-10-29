@@ -171,6 +171,7 @@ export async function generatePackage(
         contentHash: data.doc.contentHash,
         attachments: data.attachments.map((a) => ({ filename: a.filename, size: a.size })),
         fontCss: deps.fontCss,
+        approvalLineMaxCells: data.approvalLineMaxCells,
       });
       pdf = await deps.renderPdf(html);
       try {

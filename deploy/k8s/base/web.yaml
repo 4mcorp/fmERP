@@ -1,0 +1,44 @@
+# Next.js UI + Hono API (apps/web/Dockerfile target=runner)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: web}
+  template:
+    metadata:
+      labels: {app: web}
+    spec:
+      containers:
+        - name: web
+          image: fmerp-web
+          imagePullPolicy: IfNotPresent   # 이미지는 colima docker 에서 직접 빌드한다 (build-images.sh)
+          envFrom:
+            - configMapRef: {name: fmerp-app-config}
+            - secretRef: {name: fmerp-app-env}
+          ports:
+            - {name: http, containerPort: 3000}
+          readinessProbe:
+            httpGet: {path: /api/health, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /api/health, port: http}
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector: {app: web}
+  ports:
+    - {name: http, port: 3000, targetPort: http}

@@ -1,9 +1,21 @@
 import { expect, type Page, test } from "@playwright/test";
 
 async function loginAs(page: Page, name: string) {
+  // 시드 계정은 PIN이 없어 로그인 직후 PIN 설정 안내 모달이 뜨고 이후 클릭을 가로챈다 — 안내는 닫은 상태로 시작한다
+  await page.addInitScript(() => window.sessionStorage.setItem("pin-setup-remind-dismissed", "1"));
   await page.goto("/dev-login");
   await page.getByRole("button", { name: `${name}(으)로 로그인` }).click();
   await expect(page).not.toHaveURL(/\/dev-login/);
+}
+
+/** 접힌 CollapsibleCard를 펼친다. 머리줄(토글 버튼)이 그려질 때까지 기다린 뒤, 접혀 있을 때만 누른다 */
+async function expandCard(page: Page, name: RegExp) {
+  const toggle = page
+    .locator('[data-slot="collapsible-card"] button[aria-expanded]')
+    .filter({ hasText: name })
+    .first();
+  await toggle.waitFor();
+  if ((await toggle.getAttribute("aria-expanded")) === "false") await toggle.click();
 }
 
 const EMPTY_DOC = { type: "doc", content: [] };
@@ -149,6 +161,8 @@ test.describe("완료 처리·문서함 (M5)", () => {
     await loginAs(page, "오사업");
     await page.goto("/mailbox/receive");
     await page.getByRole("link", { name: title }).click();
+    // 수신·참조 상태는 접힌 "참조·수신·공람" 카드 안에 있다
+    await expandCard(page, /^참조·수신·공람/);
     await expect(page.getByText("접수 대기")).toBeVisible();
     await page.getByRole("button", { name: "접수", exact: true }).click();
     await expect(page.getByText(/오사업 접수/)).toBeVisible();
@@ -161,6 +175,7 @@ test.describe("완료 처리·문서함 (M5)", () => {
     // 기안자는 접수·배부 상태를 본다
     await loginAs(page, "박사원");
     await page.goto(`/approval/${id}`);
+    await expandCard(page, /^참조·수신·공람/);
     await expect(page.getByText(/오사업 접수/)).toBeVisible();
     await expect(page.getByText(/배부: 김대표/)).toBeVisible();
   });
@@ -173,6 +188,7 @@ test.describe("완료 처리·문서함 (M5)", () => {
 
     await loginAs(page, "박사원");
     await page.goto(`/approval/${id}`);
+    await expandCard(page, /^참조·수신·공람/);
     await page.getByRole("button", { name: "공람 지정" }).click();
     await page.getByRole("combobox", { name: "공람 대상 추가" }).click();
     await page.getByRole("option", { name: "송인사" }).click();
@@ -186,6 +202,7 @@ test.describe("완료 처리·문서함 (M5)", () => {
 
     await loginAs(page, "박사원");
     await page.goto(`/approval/${id}`);
+    await expandCard(page, /^참조·수신·공람/);
     await expect(page.getByText(/송인사 · .* 열람/)).toBeVisible();
   });
 

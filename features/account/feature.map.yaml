@@ -3,10 +3,16 @@ id: account
 summary: 로그인(개발용 시드 로그인·Better Auth)·세션, 회사 만들기·전환, 초대 수락, 내 정보(프로필·결재 PIN·세션·로그인 이력)
 keywords: [로그인, 계정, 세션, 초대, 온보딩, 회사 전환, PIN, 프로필, 서명, 도장, 로그인 이력]
 access:
-  - { who: 누구나, path: "/login, /dev-login(개발 전용)", entry: ui/pages/login }
+  - { who: 누구나, path: "/login (passkey 로그인), /login?token= (최초 passkey 등록 링크), /dev-login(개발 전용)", entry: ui/pages/login }
   - { who: 초대받은 사용자, path: "/invite/{token}", entry: ui/pages/invite }
   - { who: 소속 없는 사용자, path: "/onboarding (회사 만들기·초대 수락)", entry: ui/pages/onboarding }
   - { who: 모든 구성원, path: "사용자 메뉴 → 내 정보 → /me", entry: ui/components/me-page }
+  - { who: 로그인 전 사용자(등록 링크), path: "/api/auth/passkey/* (등록 옵션·검증, passkey 로그인)", entry: api/auth-routes }
+  - { who: 모든 구성원, path: "/api/me/passkeys (목록·이름 변경·삭제)", entry: api/passkey-routes }
+  - { who: 소유자·계정 관리자, path: "/api/account/members/{userId}/passkey-reset (passkey 초기화, PIN 재인증)", entry: api/account-routes }
+  - { who: 소유자·계정 관리자, path: "/api/account/members/{userId}/pin/reset (결재 PIN 초기화, PIN 재인증)", entry: api/account-routes }
+  - { who: 소유자·계정 관리자, path: "/api/account/members (POST, 사전 등록 + 등록 링크, PIN 재인증)", entry: api/account-routes }
+  - { who: 소유자·계정 관리자, path: "/api/account/members/{userId}/enrollment (POST, passkey 없는 구성원 등록 링크 재발급, PIN 재인증)", entry: api/account-routes }
 screens:
   - { route: /login, file: src/ui/pages/login.tsx }
   - { route: /dev-login, file: src/ui/pages/dev-login.tsx }
@@ -38,3 +44,7 @@ invariants:
   - 세션은 유휴·절대 만료 정책을 적용하고 만료된 세션은 지운다
   - PIN은 해시로만 저장하고 5회 실패 시 15분 잠근다
   - 초대 토큰은 해시만 저장하고 한 번만 쓴다
+  - passkey는 본인 것만 바꾸고, 마지막 1개는 삭제할 수 없다 (passkey 관리는 자체 API로만, 플러그인 경로는 disabledPaths로 막는다)
+  - passkey 로그인·등록 실패 응답은 이유를 드러내지 않는다 (사용자 열거 방지)
+  - 관리자 passkey 초기화는 PIN 재인증을 거치고, 감사 로그(passkey.admin_reset)를 남기며, 소유자의 passkey는 소유자만 초기화한다
+  - 관리자 결재 PIN 초기화는 PIN 재인증을 거치고, 감사 로그(pin.admin_reset)를 남기며, 소유자의 PIN은 소유자만 초기화하고, 본인 PIN은 이 경로로 바꾸지 않는다

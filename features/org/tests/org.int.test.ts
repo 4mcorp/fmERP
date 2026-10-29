@@ -114,6 +114,7 @@ describe("접근 제어 (비로그인·일반 구성원)", () => {
       ["GET", "/api/duties"],
       ["GET", "/api/account/settings"],
       ["GET", "/api/account/capabilities"],
+      ["GET", "/api/account/approval-policy"],
     ] as const) {
       const res = await app.request(path, { method });
       expect(res.status, path).toBe(401);
@@ -124,6 +125,10 @@ describe("접근 제어 (비로그인·일반 구성원)", () => {
     expect((await member1.request("/api/org-chart")).status).toBe(200);
     expect((await member1.request("/api/account/members")).status).toBe(200);
     expect((await member1.request("/api/account/settings")).status).toBe(403);
+    // 결재선 정책은 구성원도 읽는다 (응답은 칸 수 하나뿐)
+    const policy = await member1.request("/api/account/approval-policy");
+    expect(policy.status).toBe(200);
+    expect(Object.keys(await policy.json())).toEqual(["approvalLineMaxCells"]);
     expect(
       (await post(member1, "/api/businesses", { name: "x", bizRegNo: "2208162517", code: "X" }))
         .status,
@@ -157,6 +162,28 @@ describe("접근 제어 (비로그인·일반 구성원)", () => {
     expect(b["account.settings"]).toBe(false);
     expect((await caps(hr))["position.manage"]).toBe(true);
     expect((await caps(auditor))["audit.read"]).toBe(true);
+  });
+
+  it("member.passkey_reset 메뉴 노출 키는 소유자·관리자만 true다", async () => {
+    const caps = async (c: TestClient) =>
+      json<Record<string, boolean>>(await c.request("/api/account/capabilities"));
+    expect((await caps(owner))["member.passkey_reset"]).toBe(true);
+    expect((await caps(admin))["member.passkey_reset"]).toBe(true);
+    expect((await caps(member1))["member.passkey_reset"]).toBe(false);
+    expect((await caps(bizadmin))["member.passkey_reset"]).toBe(false);
+    expect((await caps(hr))["member.passkey_reset"]).toBe(false);
+    expect((await caps(auditor))["member.passkey_reset"]).toBe(false);
+  });
+
+  it("member.pin_reset 메뉴 노출 키는 소유자·관리자만 true다", async () => {
+    const caps = async (c: TestClient) =>
+      json<Record<string, boolean>>(await c.request("/api/account/capabilities"));
+    expect((await caps(owner))["member.pin_reset"]).toBe(true);
+    expect((await caps(admin))["member.pin_reset"]).toBe(true);
+    expect((await caps(member1))["member.pin_reset"]).toBe(false);
+    expect((await caps(bizadmin))["member.pin_reset"]).toBe(false);
+    expect((await caps(hr))["member.pin_reset"]).toBe(false);
+    expect((await caps(auditor))["member.pin_reset"]).toBe(false);
   });
 });
 

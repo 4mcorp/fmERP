@@ -5,24 +5,21 @@ import type { MasterItem } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@fmerp/shared/ui/table";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { useDuties, usePositions } from "../queries";
 
-/** 직위(서열 있음)·직책 마스터 한 종류의 목록과 추가 폼 */
-function MasterSection({
+/** 직위(서열 있음)·직책 마스터 한 종류의 추가 폼과 목록 */
+function MasterTab({
   kind,
   title,
   description,
@@ -77,116 +74,163 @@ function MasterSection({
     }
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={add} className="flex flex-wrap items-end gap-3">
-          <div className="space-y-2">
-            <Label htmlFor={`${kind}-name`}>이름</Label>
-            <Input
-              id={`${kind}-name`}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={50}
-              required
-            />
-          </div>
-          {withRank && (
-            <div className="w-28 space-y-2">
-              <Label htmlFor={`${kind}-rank`}>서열</Label>
+  const columns: DataTableColumn<MasterItem>[] = [
+    {
+      id: "name",
+      header: "이름",
+      sortValue: (m) => m.name,
+      cell: (m) => <div className="font-medium">{m.name}</div>,
+    },
+    ...(withRank
+      ? [
+          {
+            id: "rank",
+            header: "서열 (클수록 상위)",
+            sortValue: (m: MasterItem) => m.rank ?? 0,
+            cell: (m: MasterItem) => (
               <Input
-                id={`${kind}-rank`}
+                aria-label={`${m.name} 서열`}
                 type="number"
                 min={0}
-                value={rank}
-                onChange={(e) => setRank(e.target.value)}
+                defaultValue={m.rank}
+                className="h-8 w-24"
+                onBlur={(e) => changeRank(m, e.target.value)}
+              />
+            ),
+          },
+        ]
+      : []),
+    {
+      id: "status",
+      header: "상태",
+      sortValue: (m) => (m.active ? "사용" : "사용 안 함"),
+      cell: (m) => (
+        <Badge variant={m.active ? "success" : "outline"}>{m.active ? "사용" : "사용 안 함"}</Badge>
+      ),
+    },
+    {
+      id: "actions",
+      header: "작업",
+      align: "right",
+      cell: (m) => (
+        <Button
+          size="sm"
+          variant="outline"
+          aria-label={`${m.name} ${m.active ? "사용 안 함" : "사용"}`}
+          onClick={() => toggle(m)}
+        >
+          {m.active ? "사용 안 함" : "사용"}
+        </Button>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{title} 추가</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={add} className="flex flex-wrap items-end gap-3">
+            <div className="space-y-2">
+              <Label htmlFor={`${kind}-name`}>이름</Label>
+              <Input
+                id={`${kind}-name`}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={50}
                 required
               />
             </div>
-          )}
-          <Button type="submit">추가</Button>
-        </form>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>이름</TableHead>
-                {withRank && <TableHead className="w-32">서열 (클수록 상위)</TableHead>}
-                <TableHead>상태</TableHead>
-                <TableHead className="text-right">작업</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.name}</TableCell>
-                  {withRank && (
-                    <TableCell>
-                      <Input
-                        aria-label={`${item.name} 서열`}
-                        type="number"
-                        min={0}
-                        defaultValue={item.rank}
-                        className="h-8 w-24"
-                        onBlur={(e) => changeRank(item, e.target.value)}
-                      />
-                    </TableCell>
-                  )}
-                  <TableCell>
-                    <Badge variant={item.active ? "success" : "outline"}>
-                      {item.active ? "사용" : "사용 안 함"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="outline" onClick={() => toggle(item)}>
-                      {item.active ? "사용 안 함" : "사용"}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {items.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={withRank ? 4 : 3} className="text-muted-foreground">
-                    등록된 항목이 없습니다.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+            {withRank && (
+              <div className="w-28 space-y-2">
+                <Label htmlFor={`${kind}-rank`}>서열</Label>
+                <Input
+                  id={`${kind}-rank`}
+                  type="number"
+                  min={0}
+                  value={rank}
+                  onChange={(e) => setRank(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+            <Button type="submit">추가</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <DataTable
+        rows={items}
+        columns={columns}
+        rowKey={(m) => m.id}
+        caption={`${title} 목록`}
+        search={{
+          placeholder: `${title} 이름 검색`,
+          text: (m) => m.name,
+        }}
+        filters={[
+          {
+            id: "status",
+            label: "상태",
+            allLabel: "전체 상태",
+            options: [
+              { value: "active", label: "사용" },
+              { value: "inactive", label: "사용 안 함" },
+            ],
+            predicate: (m, v) => (v === "active" ? m.active : !m.active),
+          },
+        ]}
+        empty={<EmptyState title="등록된 항목이 없습니다." />}
+      />
+    </div>
   );
 }
 
-/** 직위·직책 마스터 관리 (PRD ORG-030·031) */
+/** 직위·직책 마스터 관리 (PRD ORG-030·031). 구성원 관리와 같은 제목·탭·표 구성 */
 export default function PositionsPage() {
-  const { data: positions } = usePositions();
-  const { data: duties } = useDuties();
-  if (!positions || !duties) return null;
+  const {
+    data: positions,
+    isLoading: positionsLoading,
+    isError: positionsError,
+    refetch: refetchPositions,
+  } = usePositions();
+  const {
+    data: duties,
+    isLoading: dutiesLoading,
+    isError: dutiesError,
+    refetch: refetchDuties,
+  } = useDuties();
+  if (positionsError) return <QueryErrorState onRetry={() => void refetchPositions()} />;
+  if (dutiesError) return <QueryErrorState onRetry={() => void refetchDuties()} />;
+  if (positionsLoading || dutiesLoading || !positions || !duties) return <LoadingState />;
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title="직위·직책"
-        breadcrumbs={[{ label: "관리" }, { label: "직위·직책" }]}
-        className="pb-0"
-      />
-      <MasterSection
-        kind="positions"
-        title="직위"
-        description="서열이 클수록 상위입니다. 사용 중인 직위는 삭제하지 않고 사용 안 함으로 바꿉니다."
-        items={positions}
-      />
-      <MasterSection
-        kind="duties"
-        title="직책"
-        description="팀장·본부장 등. 부서장 지정과 함께 씁니다."
-        items={duties}
-      />
+    <div>
+      <PageHeader title="직위·직책" breadcrumbs={[{ label: "관리" }, { label: "직위·직책" }]} />
+      <Tabs defaultValue="positions" className="gap-4">
+        <TabsList variant="line">
+          <TabsTrigger value="positions">직위</TabsTrigger>
+          <TabsTrigger value="duties">직책</TabsTrigger>
+        </TabsList>
+        <TabsContent value="positions">
+          <MasterTab
+            kind="positions"
+            title="직위"
+            description="서열이 클수록 상위입니다. 사용 중인 직위는 삭제하지 않고 사용 안 함으로 바꿉니다."
+            items={positions}
+          />
+        </TabsContent>
+        <TabsContent value="duties">
+          <MasterTab
+            kind="duties"
+            title="직책"
+            description="팀장·본부장 등. 부서장 지정과 함께 씁니다."
+            items={duties}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -14,11 +14,15 @@ import {
   type ScopeType,
   STATUS_LABEL,
 } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -39,6 +43,8 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { useDuties, usePositions } from "../queries";
+import { PasskeyResetSection } from "./passkey-reset-section";
+import { PinResetSection } from "./pin-reset-section";
 
 const NONE = "__none";
 
@@ -136,10 +142,30 @@ function BasicSection({
 
 function AssignmentsSection({ member }: { member: Member }) {
   const queryClient = useQueryClient();
-  const { data: businesses } = useBusinesses();
-  const { data: departments } = useDepartments();
-  const { data: positions } = usePositions();
-  const { data: duties } = useDuties();
+  const {
+    data: businesses,
+    isLoading: businessesLoading,
+    isError: businessesError,
+    refetch: refetchBusinesses,
+  } = useBusinesses();
+  const {
+    data: departments,
+    isLoading: departmentsLoading,
+    isError: departmentsError,
+    refetch: refetchDepartments,
+  } = useDepartments();
+  const {
+    data: positions,
+    isLoading: positionsLoading,
+    isError: positionsError,
+    refetch: refetchPositions,
+  } = usePositions();
+  const {
+    data: duties,
+    isLoading: dutiesLoading,
+    isError: dutiesError,
+    refetch: refetchDuties,
+  } = useDuties();
   const [reason, setReason] = useState("");
   const [rows, setRows] = useState<Row[]>(
     member.assignments.map((a) => ({
@@ -151,6 +177,21 @@ function AssignmentsSection({ member }: { member: Member }) {
       isPrimary: a.isPrimary,
     })),
   );
+
+  if (businessesError || departmentsError || positionsError || dutiesError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (businessesError) void refetchBusinesses();
+          if (departmentsError) void refetchDepartments();
+          if (positionsError) void refetchPositions();
+          if (dutiesError) void refetchDuties();
+        }}
+      />
+    );
+  }
+  if (businessesLoading || departmentsLoading || positionsLoading || dutiesLoading)
+    return <LoadingState />;
 
   const update = (key: string, patch: Partial<Row>) =>
     setRows((list) => list.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -285,7 +326,7 @@ function AssignmentsSection({ member }: { member: Member }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2 sm:col-span-4">
+          <ActionBar className="sm:col-span-4">
             {!r.isPrimary && (
               <Button type="button" size="sm" variant="outline" onClick={() => setPrimary(r.key)}>
                 주소속으로 지정
@@ -299,7 +340,7 @@ function AssignmentsSection({ member }: { member: Member }) {
             >
               소속 제거
             </Button>
-          </div>
+          </ActionBar>
         </fieldset>
       ))}
       <div className="flex flex-wrap items-end gap-3">
@@ -323,12 +364,35 @@ function AssignmentsSection({ member }: { member: Member }) {
 
 function RolesSection({ member }: { member: Member }) {
   const queryClient = useQueryClient();
-  const { data: businesses } = useBusinesses();
-  const { data: departments } = useDepartments();
+  const {
+    data: businesses,
+    isLoading: businessesLoading,
+    isError: businessesError,
+    refetch: refetchBusinesses,
+  } = useBusinesses();
+  const {
+    data: departments,
+    isLoading: departmentsLoading,
+    isError: departmentsError,
+    refetch: refetchDepartments,
+  } = useDepartments();
   const [role, setRole] = useState<GrantRole>("hr_admin");
   const [scopeType, setScopeType] = useState<ScopeType>("account");
   const [scopeId, setScopeId] = useState("");
+  const [revoking, setRevoking] = useState<Member["grants"][number] | null>(null);
   const allowedScopes = GRANT_ROLE_SCOPES[role];
+
+  if (businessesError || departmentsError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (businessesError) void refetchBusinesses();
+          if (departmentsError) void refetchDepartments();
+        }}
+      />
+    );
+  }
+  if (businessesLoading || departmentsLoading) return <LoadingState />;
 
   function changeRole(next: GrantRole) {
     setRole(next);
@@ -357,7 +421,6 @@ function RolesSection({ member }: { member: Member }) {
   }
 
   async function revoke(id: string) {
-    if (!window.confirm("이 역할을 회수할까요?")) return;
     try {
       await api(`/api/account/members/${member.userId}/roles/${id}`, { method: "DELETE" });
       await refresh();
@@ -382,13 +445,25 @@ function RolesSection({ member }: { member: Member }) {
             <li key={g.id} className="flex flex-wrap items-center gap-2 text-sm">
               <Badge variant="secondary">{GRANT_ROLE_LABEL[g.role]}</Badge>
               <span>{g.scopeLabel}</span>
-              <Button size="sm" variant="outline" onClick={() => revoke(g.id)}>
+              <Button size="sm" variant="outline" onClick={() => setRevoking(g)}>
                 회수
               </Button>
             </li>
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={revoking !== null}
+        title="이 역할을 회수할까요?"
+        description={
+          revoking
+            ? `${GRANT_ROLE_LABEL[revoking.role]} · ${revoking.scopeLabel} 범위의 권한이 바로 없어집니다.`
+            : undefined
+        }
+        confirmLabel="회수"
+        onConfirm={() => (revoking ? revoke(revoking.id) : undefined)}
+        onClose={() => setRevoking(null)}
+      />
       <form onSubmit={grant} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
         <div className="space-y-1">
           <Label htmlFor="g-role">역할</Label>
@@ -458,12 +533,13 @@ function RolesSection({ member }: { member: Member }) {
 }
 
 function HistorySection({ member }: { member: Member }) {
-  const { data } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["assignment-history", member.userId],
     queryFn: () =>
       api<AssignmentHistoryItem[]>(`/api/account/members/${member.userId}/assignment-history`),
   });
-  if (!data) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (isLoading || !data) return <LoadingState variant="inline" />;
   if (data.length === 0)
     return <p className="text-sm text-muted-foreground">발령 이력이 없습니다.</p>;
   return (
@@ -553,6 +629,22 @@ export function MemberDetail({
               역할
             </h2>
             <RolesSection member={member} />
+          </section>
+        )}
+        {caps["member.passkey_reset"] && (
+          <section aria-labelledby="md-passkey" className="space-y-2">
+            <h2 id="md-passkey" className="text-sm font-semibold">
+              passkey
+            </h2>
+            <PasskeyResetSection member={member} />
+          </section>
+        )}
+        {caps["member.pin_reset"] && (
+          <section aria-labelledby="md-pin" className="space-y-2">
+            <h2 id="md-pin" className="text-sm font-semibold">
+              결재 PIN 초기화
+            </h2>
+            <PinResetSection member={member} />
           </section>
         )}
       </CardContent>

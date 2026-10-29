@@ -21,6 +21,7 @@ test-results/
 .env.*
 !.env.example
 !.env.staging.example
+!.env.prod.example
 *.pem
 *.key
 
@@ -33,6 +34,9 @@ exports/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Hermes 작업 사본 (칸반 카드·서브에이전트·hermes -w worktree, 로컬 전용)
+.worktrees/
 
 # OS / editor
 .DS_Store

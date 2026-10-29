@@ -1,0 +1,64 @@
+# 업무 DB. 호스트 접근은 deploy/k8s/dev-forward.sh (dev). 비밀번호는 Secret fmerp-db 에서 읽는다
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: {app: postgres}
+  template:
+    metadata:
+      labels: {app: postgres}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18-bookworm
+          env:
+            - {name: POSTGRES_DB, value: fmerp}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: fmerp-db, key: POSTGRES_PASSWORD}}
+            - name: MIGRATOR_DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: fmerp-db, key: MIGRATOR_DB_PASSWORD}}
+            - name: APP_DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: fmerp-db, key: APP_DB_PASSWORD}}
+            - name: AUTH_DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: fmerp-db, key: AUTH_DB_PASSWORD}}
+            - name: BACKUP_DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: fmerp-db, key: BACKUP_DB_PASSWORD}}
+          ports:
+            - {name: pg, containerPort: 5432}
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, postgres, -d, fmerp]
+            periodSeconds: 3
+            failureThreshold: 20
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql}
+            - {name: initdb, mountPath: /docker-entrypoint-initdb.d, readOnly: true}
+      volumes:
+        - name: initdb
+          configMap:
+            name: fmerp-postgres-initdb
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector: {app: postgres}
+  ports:
+    - {name: pg, port: 5432, targetPort: pg}

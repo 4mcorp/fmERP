@@ -19,7 +19,9 @@ import {
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { FilePlus2, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -84,9 +86,13 @@ const byUpdatedDesc = (a: MineItem, b: MineItem) => b.updatedAt.localeCompare(a.
 /** 홈: 결재 대기, 진행 중 문서, 최근 완료 문서, 자주 쓰는 양식 바로가기 (PRD DSH-001) */
 export default function HomePage() {
   const router = useRouter();
-  const { data: me } = useMe();
+  const { data: me, isError: meError, refetch: refetchMe } = useMe();
   const enabled = Boolean(me?.activeAccountId);
-  const { data: account } = useCurrentAccount(enabled);
+  const {
+    data: account,
+    isError: accountError,
+    refetch: refetchAccount,
+  } = useCurrentAccount(enabled);
   const { data: caps } = useCapabilities(enabled);
   const { data: pending } = usePending(enabled);
   const { data: mine } = useMine();
@@ -119,7 +125,9 @@ export default function HomePage() {
     return [...favorites, ...recent].slice(0, SHORTCUT_SIZE);
   }, [forms]);
 
-  if (!me || !account) return null;
+  if (meError) return <QueryErrorState onRetry={() => refetchMe()} />;
+  if (accountError) return <QueryErrorState onRetry={() => refetchAccount()} />;
+  if (!me || !account) return <LoadingState />;
   const adminLink = adminEntry(caps);
 
   return (

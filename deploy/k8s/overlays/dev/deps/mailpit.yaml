@@ -1,0 +1,34 @@
+# 개발용 메일 수신함. 호스트에서는 UI localhost:58025, SMTP localhost:51025
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: mailpit}
+  template:
+    metadata:
+      labels: {app: mailpit}
+    spec:
+      containers:
+        - name: mailpit
+          image: axllent/mailpit:v1.31
+          ports:
+            - {name: http, containerPort: 8025}
+            - {name: smtp, containerPort: 1025}
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 250m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit
+spec:
+  selector: {app: mailpit}
+  ports:
+    - {name: http, port: 8025, targetPort: http}
+    - {name: smtp, port: 1025, targetPort: smtp}

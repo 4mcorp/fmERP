@@ -15,6 +15,7 @@ import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { requireView } from "../service/access";
 import { createDelegation, listDelegations, revokeDelegation } from "../service/delegation";
 import { touchFormPref } from "../service/forms";
+import { recordDocumentView } from "../service/mailbox";
 import { markRead } from "../service/recipients";
 import { createApproval, submitDocument } from "../service/service";
 
@@ -187,6 +188,8 @@ export function registerApprovalRoutes(app: AppRouter, deps: DepsProvider) {
         await requireView(viewCtx, id, { membershipId, actor });
         // 참조·공람 대상이 열면 열람 일시를 남긴다 (APV-072·073)
         await markRead(viewCtx, id, { membershipId, actor });
+        // 결재 문서 열람 표 (R8 읽음 표시). 감사 로그는 아니다
+        await recordDocumentView(viewCtx, id, membershipId);
         const steps = await tx
           .select()
           .from(schema.approvalStep)

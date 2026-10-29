@@ -68,6 +68,10 @@
 | DB 덤프·복구 절차·이관 절차·로컬 사본 | DEPLOYMENT_PLAN 8장, [ops/migration.md](ops/migration.md)(운영자 절차), ADR 0011 |
 | 서버 보안·원격 관리·모니터링·배포 절차 | DEPLOYMENT_PLAN 9장 |
 | 스테이징 구축·배포·Access 절차 (초안, 미검증) | [ops/staging.md](ops/staging.md), `docker-compose.staging.yml`, `apps/web/Dockerfile`, `.env.staging.example` |
+| k3s(colima) dev/prod 네임스페이스 배포 (dev 검증, prod 정의만) | [ops/k8s.md](ops/k8s.md), `deploy/k8s/`, `docker/postgres/kustomization.yaml` |
+| k3s 동적 테스트 러너 (Job으로 격리 DB·S3 파드 실행) | [ops/k8s-test.md](ops/k8s-test.md), `deploy/k8s/test/` |
+| 운영 구축·Tailscale MagicDNS 접속·tailnet ACL·사용자 흐름 (초안, 미검증) | [ops/prod.md](ops/prod.md), `docker-compose.prod.yml`, `docker/tailscale/serve.json.tmpl`, `.env.prod.example` |
+| 운영 자동 배포 (GitHub Actions → Tailscale 임시 노드 → SSH, 롤백·비밀 목록·OAuth 발급·ACL 예시) (초안, 미검증) | [ops/prod.md](ops/prod.md) 9장, `.github/workflows/deploy-prod.yml`, `tools/deploy/deploy-prod.sh` |
 | 확정 결정 D1~D9 | TECH_SPEC 1장 |
 | 개발용 테스트 계정 목록·비밀번호 | `features/account/src/service/test-accounts.ts` (시드: `pnpm db:seed` → `apps/web/server/seed-cli.ts`) |
 | 테넌트(계정)·구성원·초대 구조, DB 역할 3개 | ADR 0005, rules/database.md 4장 |
@@ -119,6 +123,9 @@
 ## 5. 트러블슈팅 (`docs/ts/`) — 작업 전 태그가 겹치는 항목을 읽을 것
 | 파일 | 태그 | 요약 (재발 방지 핵심) |
 |---|---|---|
+| [2026-10-20-discord-pr-events-emit-failures.md](ts/2026-10-20-discord-pr-events-emit-failures.md) | ci, discord, workflow, concurrency, notifier, flaky | discord-pr-events 실패 로그는 stage·status·exc·retry_after만 남기고 원문·URL을 출력하지 않는다. `cancel-in-progress: false`만으로는 무손실이 아니므로 `queue: max`를 쓴다. 알림 스텝은 `continue-on-error`로 PR 체크와 분리한다. 원인은 미확정 |
+| [2026-10-12-ci-isolated-backup-test-db.md](ts/2026-10-12-ci-isolated-backup-test-db.md) | ci, test, db, backup | 격리 DB의 조회·pg_dump DB 이름 일치, 55433 reset 안전 검사 유지 |
+| [2026-10-12-ci-db-readiness-analysis.md](ts/2026-10-12-ci-db-readiness-analysis.md) | ci, e2e, playwright, db, test, flaky | CI 실패는 `gh run view --log-failed`로 확인한다. "connection refused"는 의도된 시험 출력이므로 원인으로 보지 않는다. E2E는 locator를 좁히고 webServer/globalSetup 순서는 실행 로그로 확인 후 바꾼다 |
 | [2026-10-03-windows-npx-mcp-enoent.md](ts/2026-10-03-windows-npx-mcp-enoent.md) | windows, mcp, npx, claude-code | Windows MCP 설정에서 `npx`는 `cmd /c`로 감싼다. 원격 HTTP 방식을 우선한다. 추가 후 `initialize` 응답을 확인한다 |
 | [2026-10-03-pnpm11-config-location.md](ts/2026-10-03-pnpm11-config-location.md) | pnpm, deps, config | pnpm 설정은 `pnpm-workspace.yaml`에 둔다. 적용 값은 `pnpm config get`으로 확인한다 |
 | [2026-10-03-skill-dependency-and-session-load.md](ts/2026-10-03-skill-dependency-and-session-load.md) | skills, claude-code | 스킬 설치 후 참조하는 스킬이 빠졌는지 확인한다. 설치 직후 인식되지 않으면 SKILL.md 절차를 직접 따른다 |
@@ -146,6 +153,10 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
+| [2026-10-26-e2e-pipeline.md](plan/2026-10-26-e2e-pipeline.md) | done | E2E 러너 계측·캐시·산출물, dev 변경 관련/main 전체 필수 CI, production·Compose 동일조건 비교 |
+| [2026-10-12-feature-scoped-ci.md](plan/2026-10-12-feature-scoped-ci.md) | done | 기능별 단위 선택·전체 통합 병렬 실행, main E2E를 필수 check에 연결. 로컬 검증 완료, 원격 실행 미검증 |
+| [2026-10-15-ui-ux-refactor-round2.md](plan/2026-10-15-ui-ux-refactor-round2.md) | draft | UI/UX 2차: 결재 상세 토글·다열 카드, 출력물 결재란 자동 맞춤(최대 15칸·2줄)·테두리·줄바꿈, 진행 중 문서 A4 미리보기, 목록 화면 통일·읽음 표시, 양식 선택·편집 미리보기, 관리콘솔 정리, action 버튼·탭 표준 (카드 U0~U10) |
+| [2026-10-20-passkey-auth.md](plan/2026-10-20-passkey-auth.md) | in-progress | passkey 인증 전환 PK1a: passkey·등록 토큰 스키마·마이그레이션(0024)·RLS, 사전 등록·토큰 발급·검증·재사용 거부 서비스. Google은 현재 구성에 없음(문서화). PK1b: passkey 등록·로그인 라우트, 자체 관리 API(목록·이름 변경·삭제, 마지막 1개 삭제 차단), createAuth 연결. PK1c: 관리자 passkey 초기화(재인증·감사·세션 폐기·새 등록 토큰, 소유자 보호). PK1d: 관리자 사전 등록(`POST /api/account/members`)·등록 링크 재발급(`POST /api/account/members/{userId}/enrollment`), 다른 회사·passkey 보유자·고아 계정 이메일을 같은 409로 거부(사유는 감사 로그에만). PK2(로그인 화면·Google 안내 제거)는 남음 |
 | [2026-10-03-mvp-roadmap.md](plan/2026-10-03-mvp-roadmap.md) | accepted | MVP 마일스톤 M0~M8, P0 요구사항 118개 배정, 선행 작업·위험 |
 | [2026-10-03-m0-scaffold.md](plan/2026-10-03-m0-scaffold.md) | done | M0 골격·개발 환경: 단계, 완료 기준, 결정 P1~P4 (ADR·로컬 S3·hook 도구) |
 | [2026-10-03-m1-security-review.md](plan/2026-10-03-m1-security-review.md) | done | M1 보안 리뷰: 지적 SR-1~5 조치, 후속 FU-1~5 (업로드 크기·형식 검증은 M4) |

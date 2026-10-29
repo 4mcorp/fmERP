@@ -13,6 +13,6 @@ tables: { owns: [], reads: [] }
 events: { publishes: [], consumes: [] }
 contracts: []
 tests:
-  e2e: apps/web/e2e (smoke·m1~m8이 홈을 거친다)
+  e2e: apps/web/e2e (smoke·m1~m8이 홈을 거친다, loading-error는 홈 로딩·오류·404)
 invariants: []
 # 부채: 홈이 쓰는 useMine·usePending·useForms는 결재 데이터라 결재 이전(S8~9) 때 계약 훅으로 바꾼다

@@ -3,6 +3,7 @@ import { registerAccountRoutes } from "./account-routes";
 import { type AccountProvisioning, registerAccountsRoutes } from "./accounts-routes";
 import { registerAuthRoutes } from "./auth-routes";
 import { registerMeRoutes } from "./me-routes";
+import { registerPasskeyRoutes } from "./passkey-routes";
 
 /**
  * 로그인·내 정보·회사 만들기/전환·초대 라우트를 등록한다. 순서가 중요하다: /account/* 인증·테넌트 미들웨어를
@@ -15,6 +16,7 @@ export function registerAccountApi(
 ) {
   registerAuthRoutes(app, deps);
   registerMeRoutes(app, deps);
+  registerPasskeyRoutes(app, deps);
   registerAccountsRoutes(app, deps, provisioning);
   registerAccountRoutes(app, deps);
 }

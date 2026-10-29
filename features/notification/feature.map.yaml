@@ -2,9 +2,10 @@
 # 사람이 쓰는 것은 의도(summary·keywords·access·dom.where)뿐이고, `generated: true`는 도구가 채운다.
 id: notification
 summary: 결재 이벤트를 인앱·텔레그램 알림으로 바꾸고, 월간 점검 누락·덤프 문제 같은 운영 알림을 보낸다
-keywords: [알림, 벨, 읽음, 텔레그램, 연결, 수신 방식, 웹훅, 폴링, 운영 알림]
+keywords: [알림, 벨, 읽음, 텔레그램, 연결, 수신 방식, 웹훅, 폴링, 운영 알림, 웹 푸시, 푸시, 홈 화면, PWA, 서비스 워커]
 access:
   - { who: 모든 구성원, path: "앱 헤더 알림 → /notifications", entry: ui/pages/notifications }
+  - { who: 모든 구성원, path: "내 정보 → 알림 탭 (이 기기 알림 켜기/끄기)", entry: ui/components/push-section }
   - { who: 모든 구성원, path: "내 정보 → 알림 탭", entry: ui/components/telegram-section }
   - { who: 시스템 관리자, path: "/system/telegram", entry: ui/pages/system-telegram }
 screens:
@@ -21,7 +22,7 @@ adapters:                                  # Next app/ 쪽 한 줄 어댑터 (�
 api: { generated: true, entry: api/routes } # registerNotificationRoutes(router, deps, guards)
 jobs:
   entry: jobs/jobs                          # registerNotificationJobs(boss, deps)
-  queues: [notify.telegram]
+  queues: [notify.telegram, notify.push]
 tables:
   owns: { generated: true }                 # notification, event_notified, telegram_link, telegram_link_token, system_setting (P7에서 @owner로 채움)
   reads: [approval_event, approval_step, audit_review, document, document_recipient, role_grant, system_backup]
@@ -33,8 +34,10 @@ contracts:                                  # 이 기능이 쓰는 공통 계약
 tests:
   unit: tests/*.test.ts
   int: tests/*.int.test.ts
-  e2e: apps/web/e2e/m8.spec.ts
+  e2e: apps/web/e2e/m8.spec.ts, apps/web/e2e/pwa.spec.ts
 invariants:
   - 외부 채널(텔레그램) 문구에 문서 제목·내용·의견을 넣지 않는다
   - 연결 토큰은 해시만 저장하고 한 번만 쓴다
   - 같은 사건은 dedupe_key로 한 번만 알린다
+  - 웹 푸시 문구에도 문서 제목·내용을 넣지 않는다 (외부 푸시 서버를 거친다)
+  - 웹 푸시 구독은 구성원 본인 기기만 만들고 지운다 (RLS + membership 조건)

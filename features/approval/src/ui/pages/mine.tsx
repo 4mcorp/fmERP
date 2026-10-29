@@ -1,20 +1,16 @@
 "use client";
 
 import { useMine } from "@fmerp/shared/lib/queries";
-import { DOC_STATUS_LABEL, formatDateTime } from "@fmerp/shared/lib/types";
+import { formatDateTime, type MineItem } from "@fmerp/shared/lib/types";
 import { Badge } from "@fmerp/shared/ui/badge";
-import { Card, CardContent } from "@fmerp/shared/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@fmerp/shared/ui/table";
+import type { DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { Tabs, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { DocumentStatusBadge, DocumentTable } from "../components/document-table";
 
 const TABS = [
   { value: "all", label: "전체", statuses: null },
@@ -24,9 +20,55 @@ const TABS = [
   { value: "done", label: "완료", statuses: ["COMPLETED", "CANCELED", "ARCHIVED"] },
 ] as const;
 
+const COLUMNS: DataTableColumn<MineItem>[] = [
+  {
+    id: "title",
+    header: "제목",
+    className: "max-w-72",
+    cell: (d) => (
+      <>
+        <Link
+          href={d.status === "DRAFT" ? `/approval/draft/${d.id}` : `/approval/${d.id}`}
+          className="break-words font-medium underline-offset-4 hover:underline"
+        >
+          {d.title}
+        </Link>
+        {d.urgent && (
+          <Badge variant="destructive" className="ml-2">
+            긴급
+          </Badge>
+        )}
+        {d.supersedes && <span className="ml-2 text-xs text-muted-foreground">재기안</span>}
+      </>
+    ),
+  },
+  {
+    id: "formCategory",
+    header: "분류",
+    cell: (d) => d.formCategory ?? "-",
+  },
+  {
+    id: "status",
+    header: "상태",
+    cell: (d) => <DocumentStatusBadge status={d.status} />,
+  },
+  {
+    id: "docNo",
+    header: "문서번호",
+    cell: (d) => d.docNo ?? "-",
+    className: "tabular-nums",
+  },
+  {
+    id: "updatedAt",
+    header: "수정",
+    cell: (d) => formatDateTime(d.updatedAt),
+    className: "whitespace-nowrap",
+  },
+];
+
 /** 기안함: 내가 기안한 문서 (APV-080 일부) */
 export default function MyDocumentsPage() {
-  const { data } = useMine();
+  const { data, isError, refetch } = useMine();
   const [tab, setTab] = useState<string>("all");
   const rows = useMemo(() => {
     const t = TABS.find((x) => x.value === tab);
@@ -34,13 +76,14 @@ export default function MyDocumentsPage() {
       (d) => !t?.statuses || (t.statuses as readonly string[]).includes(d.status),
     );
   }, [data, tab]);
-  if (!data) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (!data) return <LoadingState />;
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">기안함</h1>
+      <PageHeader title="기안함" />
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex-wrap">
+        <TabsList variant="line" className="flex-wrap">
           {TABS.map((t) => (
             <TabsTrigger key={t.value} value={t.value}>
               {t.label}
@@ -48,58 +91,12 @@ export default function MyDocumentsPage() {
           ))}
         </TabsList>
       </Tabs>
-      <Card>
-        <CardContent className="overflow-x-auto pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>제목</TableHead>
-                <TableHead>분류</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>문서번호</TableHead>
-                <TableHead>수정</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((d) => (
-                <TableRow key={d.id}>
-                  <TableCell className="max-w-72">
-                    <Link
-                      href={d.status === "DRAFT" ? `/approval/draft/${d.id}` : `/approval/${d.id}`}
-                      className="break-words font-medium underline-offset-4 hover:underline"
-                    >
-                      {d.title}
-                    </Link>
-                    {d.urgent && (
-                      <Badge variant="destructive" className="ml-2">
-                        긴급
-                      </Badge>
-                    )}
-                    {d.supersedes && (
-                      <span className="ml-2 text-xs text-muted-foreground">재기안</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{d.formCategory ?? "-"}</TableCell>
-                  <TableCell>
-                    <Badge variant={d.status === "COMPLETED" ? "secondary" : "outline"}>
-                      {DOC_STATUS_LABEL[d.status] ?? d.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="tabular-nums">{d.docNo ?? "-"}</TableCell>
-                  <TableCell className="whitespace-nowrap">{formatDateTime(d.updatedAt)}</TableCell>
-                </TableRow>
-              ))}
-              {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-muted-foreground">
-                    문서가 없습니다.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <DocumentTable
+        rows={rows}
+        columns={COLUMNS}
+        rowKey={(d) => d.id}
+        caption="내가 기안한 문서 목록"
+      />
     </div>
   );
 }

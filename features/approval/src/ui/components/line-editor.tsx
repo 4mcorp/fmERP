@@ -298,11 +298,14 @@ export function LineEditor({
   ctx,
   disabled,
   allowPost = false,
+  maxCells = 15,
 }: {
   rows: LineRow[];
   onChange: (rows: LineRow[]) => void;
   ctx: LineContext;
   disabled?: boolean;
+  /** 기안 칸을 포함한 최대 결재란 칸 수 */
+  maxCells?: number;
   /** 후결 단계 유형을 고를 수 있는지 (양식 기본 결재선에 후결이 있을 때만) */
   allowPost?: boolean;
 }) {
@@ -532,6 +535,11 @@ export function LineEditor({
         <div className="space-y-1">
           <p className="text-sm font-medium">결재란 미리보기</p>
           <LinePreview rows={rows} ctx={ctx} />
+          {rows.length + 1 > maxCells && (
+            <p role="alert" className="text-sm text-destructive">
+              결재란은 최대 {maxCells}칸까지입니다
+            </p>
+          )}
         </div>
       )}
     </div>

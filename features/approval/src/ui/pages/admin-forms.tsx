@@ -3,30 +3,70 @@
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { useForms } from "@fmerp/shared/lib/queries";
 import type { FormSummary } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
-import { Card, CardContent } from "@fmerp/shared/ui/card";
+import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
+import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { Modal } from "@fmerp/shared/ui/modal";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@fmerp/shared/ui/table";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { useQueryClient } from "@tanstack/react-query";
-import { Download, Upload } from "lucide-react";
+import { Download, FileText, Upload } from "lucide-react";
 import Link from "next/link";
 import { type ChangeEvent, type FormEvent, useState } from "react";
 import { toast } from "sonner";
 
+const COLUMNS: DataTableColumn<FormSummary>[] = [
+  {
+    id: "name",
+    header: "양식",
+    sortValue: (f) => f.name,
+    cell: (f) => (
+      <>
+        <div className="font-medium">{f.name}</div>
+        <div className="text-xs text-muted-foreground">{f.code}</div>
+      </>
+    ),
+  },
+  {
+    id: "category",
+    header: "분류",
+    hideBelow: "md",
+    sortValue: (f) => f.category,
+    cell: (f) => f.category,
+  },
+  {
+    id: "version",
+    header: "버전",
+    hideBelow: "sm",
+    sortValue: (f) => f.version,
+    cell: (f) => `v${f.version}`,
+  },
+  {
+    id: "retention",
+    header: "보존연한",
+    hideBelow: "md",
+    sortValue: (f) => f.retentionYears,
+    cell: (f) => (f.retentionYears === 0 ? "영구" : `${f.retentionYears}년`),
+  },
+  {
+    id: "status",
+    header: "상태",
+    sortValue: (f) => (f.active ? "사용" : "중지"),
+    cell: (f) => (
+      <Badge variant={f.active ? "secondary" : "outline"}>{f.active ? "사용" : "중지"}</Badge>
+    ),
+  },
+];
+
 /** 양식 관리: 목록, 복제, 사용 중지, JSON 내보내기·가져오기 (APV-006, ADM-004) */
 export default function AdminFormsPage() {
   const queryClient = useQueryClient();
-  const { data: forms } = useForms(true);
+  const { data: forms, isError, refetch } = useForms(true);
   const [dup, setDup] = useState<FormSummary | null>(null);
   const [dupCode, setDupCode] = useState("");
   const [dupName, setDupName] = useState("");
@@ -95,97 +135,97 @@ export default function AdminFormsPage() {
     }
   }
 
-  if (!forms) return null;
+  if (isError) return <QueryErrorState onRetry={() => refetch()} />;
+  if (!forms) return <LoadingState />;
+
+  const columns: DataTableColumn<FormSummary>[] = [
+    ...COLUMNS,
+    {
+      id: "actions",
+      header: "작업",
+      align: "right",
+      cell: (f) => (
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/admin/forms/${f.id}`} aria-label={`${f.name} 편집`}>
+              편집
+            </Link>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            aria-label={`${f.name} 복제`}
+            onClick={() => {
+              setDup(f);
+              setDupCode(`${f.code}-COPY`);
+              setDupName(`${f.name} 사본`);
+            }}
+          >
+            복제
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label={`${f.name} JSON 내보내기`}
+            onClick={() => exportForm(f)}
+          >
+            <Download aria-hidden />
+          </Button>
+          <Button
+            size="sm"
+            variant={f.active ? "destructive" : "outline"}
+            aria-label={`${f.name} ${f.active ? "사용 중지" : "다시 사용"}`}
+            onClick={() => toggle(f)}
+          >
+            {f.active ? "중지" : "사용"}
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-2xl font-semibold">양식 관리</h1>
-        <Button asChild>
-          <Link href="/admin/forms/new">새 양식</Link>
-        </Button>
-        <Button variant="outline" asChild>
-          <label htmlFor="form-import" className="cursor-pointer">
-            <Upload aria-hidden />
-            JSON 가져오기
-          </label>
-        </Button>
-        <input
-          id="form-import"
-          type="file"
-          accept="application/json,.json"
-          className="sr-only"
-          onChange={importFile}
-        />
-      </div>
-      <Card>
-        <CardContent className="overflow-x-auto pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>양식</TableHead>
-                <TableHead>분류</TableHead>
-                <TableHead>버전</TableHead>
-                <TableHead>보존연한</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead className="text-right">작업</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {forms.map((f) => (
-                <TableRow key={f.id}>
-                  <TableCell>
-                    <div className="font-medium">{f.name}</div>
-                    <div className="text-xs text-muted-foreground">{f.code}</div>
-                  </TableCell>
-                  <TableCell>{f.category}</TableCell>
-                  <TableCell>v{f.version}</TableCell>
-                  <TableCell>{f.retentionYears === 0 ? "영구" : `${f.retentionYears}년`}</TableCell>
-                  <TableCell>
-                    <Badge variant={f.active ? "secondary" : "outline"}>
-                      {f.active ? "사용" : "중지"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="space-x-1 text-right whitespace-nowrap">
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href={`/admin/forms/${f.id}`} aria-label={`${f.name} 편집`}>
-                        편집
-                      </Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      aria-label={`${f.name} 복제`}
-                      onClick={() => {
-                        setDup(f);
-                        setDupCode(`${f.code}-COPY`);
-                        setDupName(`${f.name} 사본`);
-                      }}
-                    >
-                      복제
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`${f.name} JSON 내보내기`}
-                      onClick={() => exportForm(f)}
-                    >
-                      <Download aria-hidden />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={f.active ? "destructive" : "outline"}
-                      aria-label={`${f.name} ${f.active ? "사용 중지" : "다시 사용"}`}
-                      onClick={() => toggle(f)}
-                    >
-                      {f.active ? "중지" : "사용"}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <PageHeader
+        title="양식 관리"
+        actions={
+          <>
+            <Button asChild>
+              <Link href="/admin/forms/new">새 양식</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <label htmlFor="form-import" className="cursor-pointer">
+                <Upload aria-hidden />
+                JSON 가져오기
+              </label>
+            </Button>
+            <input
+              id="form-import"
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={importFile}
+            />
+          </>
+        }
+      />
+      <DataTable
+        rows={forms}
+        columns={columns}
+        rowKey={(f) => String(f.id)}
+        caption="양식 목록"
+        search={{
+          placeholder: "양식 이름·코드 검색",
+          text: (f) => `${f.name} ${f.code} ${f.category}`,
+        }}
+        empty={
+          <EmptyState
+            icon={FileText}
+            title="등록된 양식이 없습니다"
+            description="새 양식을 만들거나 JSON 파일을 가져오세요"
+          />
+        }
+      />
 
       <Modal
         open={dup !== null}
@@ -216,12 +256,14 @@ export default function AdminFormsPage() {
               autoComplete="off"
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <ActionBar>
             <Button type="button" variant="outline" onClick={() => setDup(null)}>
               취소
             </Button>
-            <Button type="submit">복제</Button>
-          </div>
+            <Button type="submit" variant="default">
+              복제
+            </Button>
+          </ActionBar>
         </form>
       </Modal>
     </div>

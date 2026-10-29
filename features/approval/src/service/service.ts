@@ -252,6 +252,11 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
       errors: resolved.errors,
     });
   }
+  const [account] = await tx
+    .select({ approvalLineMaxCells: schema.account.approvalLineMaxCells })
+    .from(schema.account)
+    .where(eq(schema.account.id, ctx.accountId));
+  const maxCells = account?.approvalLineMaxCells ?? 15;
   const ranks = new Map<string, number>();
   for (const a of org.assignments) {
     if (a.positionRank !== null)
@@ -266,6 +271,7 @@ export async function createApproval(ctx: ServiceContext, input: CreateApprovalI
     ranks,
     inactive,
     auditors: await loadAuditorIds(tx),
+    maxCells,
   });
   if (validation.errors.length > 0) {
     throw new ServiceError("line_invalid", validation.errors.join("; "), {
@@ -367,6 +373,11 @@ export async function replaceDraftLine(
       errors: resolved.errors,
     });
   }
+  const [account] = await tx
+    .select({ approvalLineMaxCells: schema.account.approvalLineMaxCells })
+    .from(schema.account)
+    .where(eq(schema.account.id, ctx.accountId));
+  const maxCells = account?.approvalLineMaxCells ?? 15;
   const ranks = new Map<string, number>();
   for (const a of org.assignments) {
     if (a.positionRank !== null)
@@ -381,6 +392,7 @@ export async function replaceDraftLine(
     ranks,
     inactive,
     auditors: await loadAuditorIds(tx),
+    maxCells,
   });
   if (validation.errors.length > 0) {
     throw new ServiceError("line_invalid", validation.errors.join("; "), {

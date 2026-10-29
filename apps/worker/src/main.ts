@@ -73,6 +73,15 @@ const notificationJobs = await registerNotificationJobs(boss, {
     env.TELEGRAM_WEBHOOK_SECRET && publicBase.startsWith("https://")
       ? { url: `${publicBase}/api/telegram/webhook`, secret: env.TELEGRAM_WEBHOOK_SECRET }
       : null,
+  // 웹 푸시는 VAPID 세 값이 모두 있을 때만 켠다 (없으면 텔레그램·인앱만)
+  vapid:
+    env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_SUBJECT
+      ? {
+          publicKey: env.VAPID_PUBLIC_KEY,
+          privateKey: env.VAPID_PRIVATE_KEY,
+          subject: env.VAPID_SUBJECT,
+        }
+      : null,
   systemAdminEmails: env.SYSTEM_ADMIN_EMAILS,
   // 운영 알림이 쓰는 감사·백업 판정 규칙은 합성 루트에서 주입한다 (기능끼리 직접 import하지 않는다)
   rules: { reviewStatuses, backupHealth, isSystemAdmin },

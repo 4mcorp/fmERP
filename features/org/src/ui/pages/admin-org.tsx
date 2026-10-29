@@ -3,13 +3,17 @@
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { useMembers } from "@fmerp/shared/lib/queries";
 import type { Department } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@fmerp/shared/ui/alert";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import {
   Select,
   SelectContent,
@@ -213,14 +217,14 @@ function DepartmentForm({
               최대 {maxDepth}단계까지 만들 수 있습니다. 계정 설정에서 최대 뎁스를 높일 수 있습니다.
             </p>
           )}
-          <div className="flex gap-2">
-            <Button type="submit" disabled={saving || tooDeep}>
-              {saving ? "저장 중…" : editing ? "저장" : "만들기"}
-            </Button>
+          <ActionBar>
             <Button type="button" variant="outline" onClick={onDone}>
               취소
             </Button>
-          </div>
+            <Button type="submit" variant="default" disabled={saving || tooDeep}>
+              {saving ? "저장 중…" : editing ? "저장" : "만들기"}
+            </Button>
+          </ActionBar>
         </form>
       </CardContent>
     </Card>
@@ -246,8 +250,10 @@ function Row({
 }) {
   const canAddChild = node.depth < maxDepth;
 
+  const [confirmingAbolish, setConfirmingAbolish] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
   async function toggleActive() {
-    if (node.active && !window.confirm(`${node.name} 부서를 폐지할까요?`)) return;
     try {
       await api(`/api/departments/${node.id}/${node.active ? "deactivate" : "activate"}`, {
         method: "POST",
@@ -260,7 +266,6 @@ function Row({
   }
 
   async function remove() {
-    if (!window.confirm(`${node.name} 부서를 삭제할까요?`)) return;
     try {
       await api(`/api/departments/${node.id}`, { method: "DELETE" });
       await onChanged();
@@ -322,15 +327,36 @@ function Row({
             size="sm"
             variant="outline"
             aria-label={`${node.name} ${node.active ? "폐지" : "다시 사용"}`}
-            onClick={toggleActive}
+            onClick={() => (node.active ? setConfirmingAbolish(true) : toggleActive())}
           >
             {node.active ? "폐지" : "다시 사용"}
           </Button>
-          <Button size="sm" variant="destructive" aria-label={`${node.name} 삭제`} onClick={remove}>
+          <Button
+            size="sm"
+            variant="destructive"
+            aria-label={`${node.name} 삭제`}
+            onClick={() => setConfirmingDelete(true)}
+          >
             삭제
           </Button>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmingAbolish}
+        title={`${node.name} 부서를 폐지할까요?`}
+        description="폐지하면 새 발령에 이 부서를 고를 수 없습니다. 언제든 다시 사용할 수 있습니다."
+        confirmLabel="폐지"
+        onConfirm={() => toggleActive()}
+        onClose={() => setConfirmingAbolish(false)}
+      />
+      <ConfirmDialog
+        open={confirmingDelete}
+        title={`${node.name} 부서를 삭제할까요?`}
+        description="삭제하면 되돌릴 수 없습니다."
+        confirmLabel="삭제"
+        onConfirm={() => remove()}
+        onClose={() => setConfirmingDelete(false)}
+      />
       {node.children.length > 0 && (
         <ul className="mt-1 ml-5 space-y-1 border-l pl-3">
           {node.children.map((c) => (
@@ -354,7 +380,7 @@ function Row({
 /** 부서 트리 편집: 생성·수정·이동(드래그 앤 드롭)·폐지·삭제, CSV 내보내기·가져오기 (PRD ORG-010~016) */
 export default function AdminOrgPage() {
   const queryClient = useQueryClient();
-  const { data: chart } = useOrgChart();
+  const { data: chart, isLoading, isError, refetch } = useOrgChart();
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -366,7 +392,8 @@ export default function AdminOrgPage() {
 
   const business = chart?.businesses.find((b) => b.id === businessId);
   const tree = useMemo(() => buildDeptTree(business?.departments ?? []), [business]);
-  if (!chart) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (isLoading || !chart) return <LoadingState />;
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["org-chart"] });
@@ -449,24 +476,22 @@ export default function AdminOrgPage() {
                 CSV 내보내기
               </a>
             </Button>
-            <div className="space-y-1">
-              <Label htmlFor="org-import" className="sr-only">
+            <Label htmlFor="org-import" className="sr-only">
+              CSV 가져오기
+            </Label>
+            <Button variant="outline" asChild>
+              <label htmlFor="org-import" className="cursor-pointer">
+                <Upload className="size-4" aria-hidden />
                 CSV 가져오기
-              </Label>
-              <Button variant="outline" asChild>
-                <label htmlFor="org-import" className="cursor-pointer">
-                  <Upload className="size-4" aria-hidden />
-                  CSV 가져오기
-                </label>
-              </Button>
-              <input
-                id="org-import"
-                type="file"
-                accept=".csv,text/csv"
-                onChange={onImport}
-                className="sr-only"
-              />
-            </div>
+              </label>
+            </Button>
+            <input
+              id="org-import"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={onImport}
+              className="sr-only"
+            />
           </div>
           <p className="text-sm text-muted-foreground">
             최대 {chart.maxDeptDepth}단계. 부서를 끌어서 다른 부서 위에 놓으면 그 아래로 이동합니다.

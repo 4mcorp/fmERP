@@ -8,12 +8,14 @@
     "./jobs/jobs": "./src/jobs/jobs.ts",
     "./ui/pages/*": "./src/ui/pages/*.tsx",
     "./ui/components/*": "./src/ui/components/*.tsx",
-    "./ui/queries": "./src/ui/queries.ts"
+    "./ui/queries": "./src/ui/queries.ts",
+    "./sw/service-worker": "./src/sw/service-worker.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@block65/webcrypto-web-push": "2.0.0",
     "@fmerp/audit": "workspace:*",
     "@fmerp/db": "workspace:*",
     "@fmerp/shared": "workspace:*",

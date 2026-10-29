@@ -1,0 +1,89 @@
+name: Discord PR events
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, closed, ready_for_review, converted_to_draft, edited]
+  pull_request_review:
+    types: [submitted, dismissed, edited]
+  workflow_run:
+    workflows: [CI, Policy, E2E, Automerge dev]
+    types: [requested, in_progress, completed]
+
+permissions:
+  contents: read
+
+# Serialized and lossless: one shared group, never cancelled. `queue: max` lets later
+# events wait (up to 100) instead of replacing a pending run; `cancel-in-progress: false`
+# alone is not enough because the default queue is `single`, which replaces the pending run.
+concurrency:
+  group: discord-pr-events
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  emit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Notifier steps are isolated: a Discord/notifier failure is reported in the job
+      # summary and a warning, and never turns the PR check red. Later notifier steps
+      # run only when the previous one succeeded.
+      - name: Resolve trusted protected dev commit
+        id: trusted
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request
+          assert os.environ['GITHUB_REPOSITORY'] == '4mcorp/fmERP'
+          request = urllib.request.Request(
+              'https://api.github.com/repos/4mcorp/fmERP/git/ref/heads/dev',
+              headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                       'Accept': 'application/vnd.github+json',
+                       'X-GitHub-Api-Version': '2022-11-28'})
+          with urllib.request.urlopen(request, timeout=20) as response:
+              sha = json.load(response)['object']['sha']
+          assert re.fullmatch('[0-9a-f]{40}', sha)
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write('sha=' + sha + '\n')
+          PY
+      - name: Checkout only trusted protected branch commit
+        id: checkout
+        if: steps.trusted.outcome == 'success'
+        continue-on-error: true
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2; verified upstream tag
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ steps.trusted.outputs.sha }}
+          path: _trusted
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout: .github/scripts
+      - name: Send metadata event and verify Discord receipt
+        id: send
+        if: steps.checkout.outcome == 'success'
+        continue-on-error: true
+        env:
+          HERMES_DISCORD_EVENTS_WEBHOOK: ${{ secrets.HERMES_DISCORD_EVENTS_WEBHOOK }}
+        shell: bash
+        run: python3 _trusted/.github/scripts/discord_pr_event.py
+      - name: Summarize notifier outcome (non-blocking)
+        if: always()
+        env:
+          TRUSTED_OUTCOME: ${{ steps.trusted.outcome }}
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          SEND_OUTCOME: ${{ steps.send.outcome }}
+        shell: bash
+        run: |
+          {
+            echo "### Discord PR event notifier"
+            echo "- resolve: ${TRUSTED_OUTCOME:-skipped}"
+            echo "- checkout: ${CHECKOUT_OUTCOME:-skipped}"
+            echo "- send+verify: ${SEND_OUTCOME:-skipped}"
+            echo "Failure details (stage/status only) are in the 'Send metadata event' step log."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${SEND_OUTCOME}" != "success" ] || [ "${TRUSTED_OUTCOME}" != "success" ] || [ "${CHECKOUT_OUTCOME}" != "success" ]; then
+            echo "::warning title=Discord notifier::notifier did not verify an event; PR checks are not affected"
+          fi

@@ -2,6 +2,8 @@ import { makeBusinessNumber } from "@fmerp/feature-org/domain/business-number";
 import { expect, type Page, test } from "@playwright/test";
 
 async function loginAs(page: Page, name: string) {
+  // 시드 계정은 PIN이 없어 로그인 직후 PIN 설정 안내 모달이 뜨고 이후 클릭을 가로챈다 — 안내는 닫은 상태로 시작한다
+  await page.addInitScript(() => window.sessionStorage.setItem("pin-setup-remind-dismissed", "1"));
   await page.goto("/dev-login");
   await page.getByRole("button", { name: `${name}(으)로 로그인` }).click();
   await expect(page).not.toHaveURL(/\/dev-login/);
@@ -127,8 +129,8 @@ test.describe("조직 구성 흐름 (M2)", { tag: "@stateful" }, () => {
     await page.getByRole("button", { name: "부여" }).click();
     await expect(page.getByText("역할을 부여했습니다")).toBeVisible();
     await expect(page.getByRole("listitem").filter({ hasText: "감사인" })).toBeVisible();
-    page.once("dialog", (d) => d.accept());
     await page.getByRole("button", { name: "회수" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "회수", exact: true }).click();
     await expect(page.getByText("역할을 회수했습니다")).toBeVisible();
   });
 

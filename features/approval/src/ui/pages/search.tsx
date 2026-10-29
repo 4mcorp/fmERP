@@ -3,10 +3,12 @@
 import { ApiProblem, errorMessage } from "@fmerp/shared/lib/api";
 import { useDepartments, useForms } from "@fmerp/shared/lib/queries";
 import { DOC_STATUS_LABEL } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { PageHeader } from "@fmerp/shared/ui/page-header";
 import {
   Select,
   SelectContent,
@@ -63,7 +65,8 @@ function SearchView() {
   const [form, setForm] = useState<Filters>(() => fromParams(params));
   const { data: departments } = useDepartments();
   const { data: forms } = useForms(true);
-  const query = useSearch(applied);
+  // 조건이 없어도 열람 가능 문서를 바로 보여 준다. useSearch는 빈 조건이면 요청하지 않으므로 무시되는 자리표시 조건을 넣는다
+  const query = useSearch(applied === "" ? "all=1" : applied);
   const rows = query.data?.pages.flatMap((p) => p.items) ?? [];
   const set = (key: FilterKey) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -116,7 +119,7 @@ function SearchView() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">검색</h1>
+      <PageHeader title="검색" />
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -243,13 +246,15 @@ function SearchView() {
               />
             </div>
             <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-              <Button type="submit">
-                <SearchIcon aria-hidden />
-                검색
-              </Button>
-              <Button type="button" variant="outline" onClick={reset}>
-                조건 지우기
-              </Button>
+              <ActionBar className="w-full">
+                <Button type="button" variant="outline" onClick={reset}>
+                  조건 지우기
+                </Button>
+                <Button type="submit" variant="default">
+                  <SearchIcon aria-hidden />
+                  검색
+                </Button>
+              </ActionBar>
             </div>
           </form>
         </CardContent>
@@ -259,45 +264,41 @@ function SearchView() {
           {error}
         </p>
       )}
-      {applied === "" ? (
-        <p className="text-sm text-muted-foreground">
-          검색어나 조건을 입력하고 검색하세요. 내가 열람할 수 있는 문서만 나옵니다.
+      <div className="space-y-2">
+        <ActionBar className="justify-start">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportAs("csv")}
+            disabled={exporting !== null || rows.length === 0}
+          >
+            <Download aria-hidden />
+            {exporting === "csv" ? "내보내는 중…" : "CSV 내보내기"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportAs("xlsx")}
+            disabled={exporting !== null || rows.length === 0}
+          >
+            <Download aria-hidden />
+            {exporting === "xlsx" ? "내보내는 중…" : "엑셀 내보내기"}
+          </Button>
+        </ActionBar>
+        <p className="text-xs text-muted-foreground">
+          현재 조건에 맞는 문서를 최대 10,000건까지 내보냅니다.
         </p>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportAs("csv")}
-              disabled={exporting !== null || rows.length === 0}
-            >
-              <Download aria-hidden />
-              {exporting === "csv" ? "내보내는 중…" : "CSV 내보내기"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportAs("xlsx")}
-              disabled={exporting !== null || rows.length === 0}
-            >
-              <Download aria-hidden />
-              {exporting === "xlsx" ? "내보내는 중…" : "엑셀 내보내기"}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              현재 조건에 맞는 문서를 최대 10,000건까지 내보냅니다.
-            </p>
-          </div>
-          <DocumentTable
-            rows={rows}
-            loading={query.isLoading}
-            hasMore={Boolean(query.hasNextPage)}
-            loadingMore={query.isFetchingNextPage}
-            onMore={() => query.fetchNextPage()}
-            emptyText="조건에 맞는 문서가 없습니다."
-          />
-        </>
-      )}
+      </div>
+      <DocumentTable
+        rows={rows}
+        loading={query.isLoading}
+        hasMore={Boolean(query.hasNextPage)}
+        loadingMore={query.isFetchingNextPage}
+        onMore={() => query.fetchNextPage()}
+        emptyText={
+          applied === "" ? "열람할 수 있는 문서가 없습니다." : "조건에 맞는 문서가 없습니다."
+        }
+      />
     </div>
   );
 }

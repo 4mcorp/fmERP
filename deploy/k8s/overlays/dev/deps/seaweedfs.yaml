@@ -1,0 +1,50 @@
+# 로컬 S3 (결정 P2). 호스트에서는 localhost:58333. 버킷은 `pnpm --filter @fmerp/storage ensure-bucket` 으로 만든다
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s3-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: s3}
+  template:
+    metadata:
+      labels: {app: s3}
+    spec:
+      containers:
+        - name: seaweedfs
+          image: chrislusf/seaweedfs:4.47
+          args: [server, -s3, -dir=/data, -ip.bind=0.0.0.0, -s3.allowedOrigins=https://fmerp-dev.taile82113.ts.net]
+          ports:
+            - {name: s3, containerPort: 8333}
+          readinessProbe:
+            tcpSocket: {port: s3}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: s3-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3
+spec:
+  selector: {app: s3}
+  ports:
+    - {name: s3, port: 8333, targetPort: s3}

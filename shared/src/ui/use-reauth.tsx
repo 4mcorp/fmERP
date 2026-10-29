@@ -31,7 +31,7 @@ export function useReauth() {
       open={pin !== null}
       needsSetup={pin?.needsSetup ?? false}
       description="데이터를 내보내거나 내려받기 전에 본인 확인을 위해 결재 PIN을 입력하세요. 확인 후 30분 동안은 다시 묻지 않습니다."
-      setupDescription="백업·내보내기를 하려면 먼저 내 정보에서 결재 PIN을 설정하세요."
+      setupDescription="백업·내보내기를 하려면 새 결재 PIN을 설정하세요. 설정 후 요청한 작업을 계속 진행합니다."
       onClose={() => {
         retry.current = null;
         setPin(null);

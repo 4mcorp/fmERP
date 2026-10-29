@@ -6,7 +6,9 @@ import { Badge } from "@fmerp/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@fmerp/shared/ui/tabs";
 import { ChevronRight, Search } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -104,8 +106,18 @@ function ChartNode({ node }: { node: DeptTreeNode }) {
 
 /** 조직도 조회·검색 (PRD IA 조직도, ORG-016). 전 구성원이 볼 수 있다 */
 export default function OrgPage() {
-  const { data: chart } = useOrgChart();
-  const { data: members } = useMembers();
+  const {
+    data: chart,
+    isLoading: chartLoading,
+    isError: chartError,
+    refetch: refetchChart,
+  } = useOrgChart();
+  const {
+    data: members,
+    isLoading: membersLoading,
+    isError: membersError,
+    refetch: refetchMembers,
+  } = useMembers();
   const [query, setQuery] = useState("");
 
   const trees = useMemo(
@@ -117,7 +129,17 @@ export default function OrgPage() {
     [chart, query],
   );
 
-  if (!chart) return null;
+  if (chartError || membersError) {
+    return (
+      <QueryErrorState
+        onRetry={() => {
+          if (chartError) void refetchChart();
+          if (membersError) void refetchMembers();
+        }}
+      />
+    );
+  }
+  if (chartLoading || membersLoading || !chart || !members) return <LoadingState />;
   const empty = trees.every((t) => t.tree.length === 0);
 
   return (
@@ -145,7 +167,7 @@ export default function OrgPage() {
       </div>
 
       <Tabs defaultValue="tree">
-        <TabsList>
+        <TabsList variant="line">
           <TabsTrigger value="tree">트리 보기</TabsTrigger>
           <TabsTrigger value="chart">차트 보기</TabsTrigger>
         </TabsList>

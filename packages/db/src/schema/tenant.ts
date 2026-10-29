@@ -44,12 +44,17 @@ export const account = pgTable(
     securityPolicy: jsonb().$type<SecurityPolicy>().notNull().default({}),
     /** 부서 최대 뎁스 1~5 (ORG-010). 낮추기는 core 검사와 DB 트리거가 막는다 */
     maxDeptDepth: integer().notNull().default(1),
+    /** 결재란 최대 칸 수(기안 포함). 2~30, 기본 15 (설계 2.4 R3). 한 줄 최대는 ceil(값/2) */
+    approvalLineMaxCells: integer().notNull().default(15),
     allowedDomains: text().array().notNull().default(sql`'{}'::text[]`),
     timezone: text().notNull().default("Asia/Seoul"),
     locale: text().notNull().default("ko"),
     createdAt: createdAt(),
   },
-  (t) => [check("account_max_dept_depth_range", sql`${t.maxDeptDepth} between 1 and 5`)],
+  (t) => [
+    check("account_max_dept_depth_range", sql`${t.maxDeptDepth} between 1 and 5`),
+    check("account_approval_line_max_cells_range", sql`${t.approvalLineMaxCells} between 2 and 30`),
+  ],
 );
 
 export const MEMBERSHIP_ROLES = ["owner", "admin", "member"] as const;
@@ -113,4 +118,32 @@ export const invitation = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index().on(t.accountId)],
+);
+
+/**
+ * passkey 등록 토큰 (1회용). 관리자가 사전 등록한 사용자가 처음 passkey를 등록할 때 쓴다.
+ * 토큰 원문은 저장하지 않고 해시만 둔다. 재발급하면 이전 토큰은 revokedAt으로 폐기한다.
+ *
+ * @owner account
+ */
+export const enrollmentToken = pgTable(
+  "enrollment_token",
+  {
+    id: primaryId(),
+    accountId: uuid()
+      .notNull()
+      .references(() => account.id, { onDelete: "cascade" }),
+    userId: uuid()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    tokenHash: text().notNull().unique(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    usedAt: timestamp({ withTimezone: true }),
+    revokedAt: timestamp({ withTimezone: true }),
+    createdBy: uuid()
+      .notNull()
+      .references(() => user.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.accountId), index().on(t.userId)],
 );

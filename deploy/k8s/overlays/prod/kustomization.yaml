@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: prod
+resources:
+  - ../../base
+  - deps
+configMapGenerator:
+  - name: fmerp-app-config
+    literals:
+      - NODE_ENV=production
+      # DEV_TEST_LOGIN·APP_ENV 는 두지 않는다 (운영에서 테스트 로그인 금지)
+      - BETTER_AUTH_URL=https://fmerp.taila2ee07.ts.net
+      - PUBLIC_BASE_URL=https://fmerp.taila2ee07.ts.net
+      - S3_ENDPOINT=http://s3:8333                                  # 서버 간 통신(클러스터 내부)
+      - S3_PUBLIC_ENDPOINT=https://fmerp.taila2ee07.ts.net:8443     # 브라우저용 서명 URL (tailscale-gateway 8443 → s3:8333)
+      - S3_REGION=us-east-1
+      - S3_BUCKET=fmerp-prod
+      - S3_FORCE_PATH_STYLE=true
+      - WORKER_PORT=3001
+generatorOptions:
+  disableNameSuffixHash: true
+patches:
+  - target: {kind: Ingress, name: web}
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: fmerp.prod.localhost
+  - target: {kind: StatefulSet, name: postgres}
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        value: 20Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 4Gi
+  - target: {kind: Deployment, name: worker}
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 2Gi
+  # base 밖의 prod 전용 Deployment(s3)도 서비스 링크 환경변수를 끈다 (S3_PORT 가 weed 인자로 해석되어 기동 실패)
+  - target: {kind: Deployment, name: s3}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/enableServiceLinks
+        value: false
+images:
+  - {name: fmerp-web, newTag: prod}
+  - {name: fmerp-worker, newTag: prod}
+  - {name: fmerp-web-builder, newTag: prod}

@@ -3,15 +3,19 @@
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import { useBusinesses } from "@fmerp/shared/lib/queries";
 import type { Business } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { BusinessForm } from "@fmerp/shared/ui/business-form";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
+import { ConfirmDialog } from "@fmerp/shared/ui/confirm-dialog";
 import { DataTable, type DataTableColumn } from "@fmerp/shared/ui/data-table";
 import { EmptyState } from "@fmerp/shared/ui/empty-state";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import { PageHeader } from "@fmerp/shared/ui/page-header";
+import { QueryErrorState } from "@fmerp/shared/ui/query-error-state";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@fmerp/shared/ui/sheet";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
@@ -83,9 +87,9 @@ function SealField({ business }: { business: Business }) {
 function BusinessCard({ business }: { business: Business }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const [confirmingDeactivate, setConfirmingDeactivate] = useState(false);
 
   async function toggle() {
-    if (business.active && !window.confirm(`${business.name} 사업자를 비활성화할까요?`)) return;
     try {
       await api(`/api/businesses/${business.id}/${business.active ? "deactivate" : "activate"}`, {
         method: "POST",
@@ -128,20 +132,28 @@ function BusinessCard({ business }: { business: Business }) {
               ))}
             </dl>
             <SealField business={business} />
-            <div className="flex gap-2">
+            <ActionBar>
               <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
                 수정
               </Button>
               <Button
                 size="sm"
                 variant={business.active ? "destructive" : "outline"}
-                onClick={toggle}
+                onClick={() => (business.active ? setConfirmingDeactivate(true) : toggle())}
               >
                 {business.active ? "비활성화" : "다시 사용"}
               </Button>
-            </div>
+            </ActionBar>
           </>
         )}
+        <ConfirmDialog
+          open={confirmingDeactivate}
+          title={`${business.name} 사업자를 비활성화할까요?`}
+          description="비활성화하면 새 발령·부서 배정에 쓸 수 없습니다. 언제든 다시 사용할 수 있습니다."
+          confirmLabel="비활성화"
+          onConfirm={() => toggle()}
+          onClose={() => setConfirmingDeactivate(false)}
+        />
       </CardContent>
     </Card>
   );
@@ -149,10 +161,11 @@ function BusinessCard({ business }: { business: Business }) {
 
 /** 사업자 관리: 등록·수정·비활성화 (PRD ORG-002~005, ADM-002) */
 export default function BusinessesPage() {
-  const { data: businesses } = useBusinesses();
+  const { data: businesses, isLoading, isError, refetch } = useBusinesses();
   const [adding, setAdding] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  if (!businesses) return null;
+  if (isError) return <QueryErrorState onRetry={() => void refetch()} />;
+  if (isLoading || !businesses) return <LoadingState />;
   const selected = businesses.find((b) => b.id === selectedId);
 
   const columns: DataTableColumn<Business>[] = [

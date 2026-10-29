@@ -178,6 +178,8 @@ export interface ValidationOptions {
    * 생략하면 감사 단계 대상을 검사하지 않는다.
    */
   auditors?: Set<string>;
+  /** 기안 칸을 포함한 결재란 전체의 최대 칸 수 */
+  maxCells?: number;
 }
 
 export interface LineValidation {
@@ -199,6 +201,12 @@ export function validateLine(
   }
   if (steps.every((s) => s.assigneeIds.every((id) => id === opts.drafterId))) {
     errors.push("기안자 본인만 있는 결재선은 상신할 수 없습니다");
+  }
+  if (
+    opts.maxCells !== undefined &&
+    steps.reduce((total, step) => total + step.assigneeIds.length, 1) > opts.maxCells
+  ) {
+    errors.push(`결재란은 최대 ${opts.maxCells}칸까지입니다`);
   }
   for (const s of steps) {
     if (s.assigneeIds.every((id) => opts.inactive.has(id))) {

@@ -101,6 +101,7 @@ const SettingsPatch = z.object({
     .max(20)
     .optional(),
   maxDeptDepth: z.number().int().min(1).max(5).optional(),
+  approvalLineMaxCells: z.number().int().min(2).max(30).optional(),
   securityPolicy: SecurityPolicyPatch.optional(),
 });
 
@@ -110,6 +111,7 @@ const SettingsSchema = z
     name: z.string(),
     allowedDomains: z.array(z.string()),
     maxDeptDepth: z.number().int(),
+    approvalLineMaxCells: z.number().int().min(2).max(30),
     timezone: z.string(),
     locale: z.string(),
     securityPolicy: z.record(z.string(), z.unknown()),
@@ -148,6 +150,7 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
           name: row.name,
           allowedDomains: row.allowedDomains,
           maxDeptDepth: row.maxDeptDepth,
+          approvalLineMaxCells: row.approvalLineMaxCells,
           timezone: row.timezone,
           locale: row.locale,
           securityPolicy: row.securityPolicy as Record<string, unknown>,
@@ -205,6 +208,7 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
           name: patch.name ?? before.name,
           allowedDomains: patch.allowedDomains ?? before.allowedDomains,
           maxDeptDepth: patch.maxDeptDepth ?? before.maxDeptDepth,
+          approvalLineMaxCells: patch.approvalLineMaxCells ?? before.approvalLineMaxCells,
           securityPolicy: { ...before.securityPolicy, ...patch.securityPolicy },
         };
         await tx.update(schema.account).set(next).where(eq(schema.account.id, tenant.accountId));
@@ -652,6 +656,32 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
     );
   }
 
+  // 결재선 정책 (구성원 누구나 읽는다): 결재란 최대 칸 수. 결재선 편집기가 같은 값으로 미리 막는다
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/account/approval-policy",
+      tags: ["account"],
+      summary: "결재선 정책 조회 (구성원 읽기 가능)",
+      responses: {
+        200: json(z.object({ approvalLineMaxCells: z.number().int() })),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const d = deps();
+      const tenant = c.get("tenant");
+      const row = await withTenant(d.appDb, tenant.accountId, async (tx) => {
+        const [a] = await tx
+          .select({ approvalLineMaxCells: schema.account.approvalLineMaxCells })
+          .from(schema.account);
+        return a;
+      });
+      if (!row) throw new ApiError(404, "not_found", "회사를 찾을 수 없습니다");
+      return c.json({ approvalLineMaxCells: row.approvalLineMaxCells }, 200);
+    },
+  );
+
   // 메뉴 노출용: 내가 어떤 관리 기능을 쓸 수 있는지 (실제 실행은 대상 범위로 서버가 다시 판정한다)
   app.openapi(
     createRoute({
@@ -677,6 +707,8 @@ export function registerOrgRoutes(app: AppRouter, deps: DepsProvider) {
         "form.manage",
         "approval.manage",
         "delegation.manage",
+        "member.passkey_reset",
+        "member.pin_reset",
       ];
       const result = await withTenant(deps().appDb, tenant.accountId, async (tx) => {
         const { actor } = await loadActor(tx, tenant, c.get("session").userId);

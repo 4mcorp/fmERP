@@ -4,6 +4,7 @@ import { useAuditReviews } from "@fmerp/feature-audit/ui/queries";
 import { useCapabilities, useMe } from "@fmerp/shared/lib/queries";
 import { cn } from "@fmerp/shared/lib/utils";
 import { Badge } from "@fmerp/shared/ui/badge";
+import { LoadingState } from "@fmerp/shared/ui/loading-state";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -28,10 +29,11 @@ const NAV = [
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: me } = useMe();
-  const { data: caps } = useCapabilities(Boolean(me?.activeAccountId));
+  const { data: caps, isLoading, isError } = useCapabilities(Boolean(me?.activeAccountId));
   // 지난달 접속 기록 점검을 아직 안 했으면 메뉴에 표시한다 (AUD-026)
   const { data: reviews } = useAuditReviews(Boolean(caps?.["audit.log"]));
-  if (!caps) return null;
+  if (isError) return <p className="text-muted-foreground">관리 권한을 확인하지 못했습니다.</p>;
+  if (isLoading || !caps) return <LoadingState />;
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const items = NAV.filter((n) => n.any.some((a) => caps[a]));
   if (items.length === 0) {

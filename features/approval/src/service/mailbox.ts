@@ -8,7 +8,7 @@ import { can } from "@fmerp/shared/domain/permissions";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { decodeCursor, encodeCursor } from "@fmerp/shared/server/cursor";
 import { ServiceError } from "@fmerp/shared/server/errors";
-import { and, eq, or, type SQL, sql } from "drizzle-orm";
+import { and, eq, inArray, or, type SQL, sql } from "drizzle-orm";
 
 export const MAILBOXES = [
   "mine",
@@ -143,6 +143,16 @@ export interface MailboxItem {
 export interface MailboxPage {
   items: MailboxItem[];
   /** 다음 쪽이 있으면 그 시작 위치. 없으면 null */
+  nextCursor: string | null;
+}
+
+/** 문서함 목록 한 줄: 내가 열어 봤는지 (R8) */
+interface MailboxListItem extends MailboxItem {
+  read: boolean;
+}
+
+export interface MailboxListPage {
+  items: MailboxListItem[];
   nextCursor: string | null;
 }
 
@@ -287,7 +297,7 @@ export async function listMailbox(
   box: Mailbox,
   viewer: Viewer,
   opts: { limit?: number; cursor?: string } = {},
-): Promise<MailboxPage> {
+): Promise<MailboxListPage> {
   let condition: SQL | null;
   if (box === "audit") {
     const businesses = await ctx.tx.select({ id: schema.business.id }).from(schema.business);
@@ -301,9 +311,71 @@ export async function listMailbox(
     condition = boxCondition(box, viewer.membershipId);
   }
   // 초안은 기안자 본인 함에만 나타난다
-  return pageDocuments(
+  const page = await pageDocuments(
     ctx,
     [box === "mine" ? undefined : sql`${D.status} <> 'DRAFT'`, condition],
     opts,
   );
+  const opened = await openedIdsOf(
+    ctx,
+    box,
+    viewer.membershipId,
+    page.items.map((i) => i.id),
+  );
+  return {
+    nextCursor: page.nextCursor,
+    items: page.items.map((i) => ({ ...i, read: opened.has(i.id) })),
+  };
+}
+
+/**
+ * 결재 문서를 상세로 연 기록 (R8 읽음 표시). 감사 로그가 아니다(열람 감사는 기존 경로).
+ * 같은 사람이 다시 열면 첫 열람 일시는 두고 마지막 열람 일시만 갱신한다.
+ */
+export async function recordDocumentView(
+  ctx: ServiceContext,
+  documentId: string,
+  membershipId: string,
+) {
+  await ctx.tx
+    .insert(schema.documentView)
+    .values({
+      accountId: ctx.accountId,
+      documentId,
+      membershipId,
+      firstViewedAt: ctx.now,
+      lastViewedAt: ctx.now,
+    })
+    .onConflictDoUpdate({
+      target: [schema.documentView.documentId, schema.documentView.membershipId],
+      set: { lastViewedAt: ctx.now },
+    });
+}
+
+/**
+ * 이 쪽 문서 가운데 내가 연 문서 id. 참조·공람 함은 수신 대상별 열람 표(document_recipient_read)를,
+ * 그 밖의 결재 함은 문서 열람 표(document_view)를 본다.
+ */
+async function openedIdsOf(
+  ctx: ServiceContext,
+  box: Mailbox,
+  me: string,
+  ids: string[],
+): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  if (box === "cc" || box === "circulate") {
+    const rows = await ctx.tx
+      .selectDistinct({ documentId: R.documentId })
+      .from(schema.documentRecipientRead)
+      .innerJoin(R, eq(R.id, schema.documentRecipientRead.recipientId))
+      .where(and(eq(schema.documentRecipientRead.membershipId, me), inArray(R.documentId, ids)));
+    return new Set(rows.map((r) => r.documentId));
+  }
+  const rows = await ctx.tx
+    .select({ documentId: schema.documentView.documentId })
+    .from(schema.documentView)
+    .where(
+      and(eq(schema.documentView.membershipId, me), inArray(schema.documentView.documentId, ids)),
+    );
+  return new Set(rows.map((r) => r.documentId));
 }

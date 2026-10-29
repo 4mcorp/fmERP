@@ -1,0 +1,89 @@
+# project 이름은 deploy/e2e/run.py가 실행마다 UUID로 지정한다. host 포트/운영 볼륨은 없다.
+services:
+  prepare-runner:
+    image: fmerp-worker:dev
+    user: '0:0'
+    network_mode: none
+    # 이미지의 pwuser(1001) 계약. source 디렉터리는 PostgreSQL UID 999도 읽을 수 있게 한다.
+    entrypoint: [bash, -ec, 'chown 1001:1001 /source /work /artifacts /pnpm-store /cache; chmod 755 /source; chmod 700 /work /artifacts /pnpm-store /cache']
+    volumes:
+      - source:/source
+      - work:/work
+      - artifacts:/artifacts
+      - store:/pnpm-store
+      - cache:/cache
+    cpus: 0.1
+    mem_limit: 67108864
+  source-loader:
+    profiles: [source-transfer]
+    image: fmerp-worker:dev
+    user: '1001:1001'
+    network_mode: none
+    entrypoint: [python3]
+    command: [-c, 'import os, sys, tarfile; os.makedirs("/source", exist_ok=True); archive=tarfile.open(fileobj=sys.stdin.buffer, mode="r|*"); archive.extractall("/source", filter="data"); os.chmod("/source", 0o755)']
+    volumes:
+      - source:/source
+    cpus: 0.1
+    mem_limit: 67108864
+  postgres:
+    image: postgres:18-bookworm
+    environment:
+      PGPORT: "55433"
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fmerp
+    volumes:
+      - type: volume
+        source: source
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        volume:
+          subpath: docker/postgres/initdb
+      - postgres-data:/var/lib/postgresql
+    cpus: 1
+    mem_limit: 1073741824
+  s3:
+    image: chrislusf/seaweedfs:4.47
+    # k3s pod와 같이 localhost를 공유하여 DB 안전 가드를 변경하지 않는다.
+    network_mode: service:postgres
+    command: [server, -s3, -s3.port=58333, -s3.port.grpc=18333, -dir=/data, -ip.bind=0.0.0.0]
+    volumes:
+      - s3-data:/data
+    cpus: 1
+    mem_limit: 1073741824
+  runner:
+    image: fmerp-worker:dev
+    user: '1001:1001'
+    network_mode: service:postgres
+    depends_on:
+      prepare-runner:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+      s3:
+        condition: service_started
+    working_dir: /work
+    entrypoint: [bash, -c, "cp /src/deploy/k8s/test/run-in-container.sh /tmp/fmerp-e2e-runner.sh && exec bash /tmp/fmerp-e2e-runner.sh"]
+    environment:
+      CI: "true"
+      NODE_ENV: development
+      HOME: /tmp
+      E2E_SERVER_MODE: ${E2E_SERVER_MODE:-dev}
+      TEST_CMD: ${E2E_TEST_CMD:-pnpm test:e2e}
+      COLLECT_WAIT_SECONDS: "0"
+    volumes:
+      - source:/src:ro
+      - work:/work
+      - artifacts:/artifacts
+      - cache:/cache
+      - store:/pnpm-store
+    cpus: 3
+    mem_limit: 6442450944
+    shm_size: 536870912
+volumes:
+  source:
+  postgres-data:
+  s3-data:
+  work:
+  artifacts:
+  cache:
+  store:

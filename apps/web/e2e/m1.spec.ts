@@ -1,6 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
 async function loginAs(page: Page, name: string) {
+  // 시드 계정은 PIN이 없어 로그인 직후 PIN 설정 안내 모달이 뜨고 이후 클릭을 가로챈다 — 안내는 닫은 상태로 시작한다
+  await page.addInitScript(() => window.sessionStorage.setItem("pin-setup-remind-dismissed", "1"));
   await page.goto("/dev-login");
   await page.getByRole("button", { name: `${name}(으)로 로그인` }).click();
   await expect(page).not.toHaveURL(/\/dev-login/);
@@ -9,7 +11,7 @@ async function loginAs(page: Page, name: string) {
 async function signOut(page: Page) {
   await page.getByRole("button", { name: "사용자 메뉴" }).click();
   await page.getByRole("menuitem", { name: "로그아웃" }).click();
-  await expect(page).toHaveURL(/\/dev-login/);
+  await expect(page).toHaveURL(/\/login/);
 }
 
 test("테스트 계정으로 로그인하면 소속 회사 홈이 열린다", async ({ page }) => {
@@ -69,9 +71,11 @@ test.describe("관리자 초대 → 신규 사용자 합류 → 계정 전환·P
     await loginAs(page, "최대리");
     await page.goto("/me");
     await page.getByRole("tab", { name: "결재 PIN" }).click();
-    await page.getByLabel("PIN", { exact: true }).fill("482915");
+    await page.getByLabel("새 PIN (숫자 6~12자리)").fill("482915");
+    await page.getByLabel("PIN 다시 입력").fill("482915");
     await page.getByRole("button", { name: "설정" }).click();
-    await expect(page.getByText("PIN을 설정했습니다")).toBeVisible();
+    // 설정 토스트는 폼과 섹션에서 각각 한 번씩 떠 2건이 된다(strict mode 충돌) → 첫 건으로 본다
+    await expect(page.getByText("PIN을 설정했습니다").first()).toBeVisible();
 
     await page.getByRole("tab", { name: "세션" }).click();
     await expect(page.getByText("현재")).toBeVisible();

@@ -4,6 +4,7 @@ import type { OpsAlertRules } from "@fmerp/shared/contracts/ops-alerts";
 import type { PgBoss } from "pg-boss";
 import { createAuditReviewAlerts, createBackupAlerts } from "../service/alerts";
 import { consumeEvents } from "../service/consume";
+import { type PushDeps, PushSendError, sendPushNotification } from "../service/push";
 import { type Logger, ReceiverManager } from "../service/receiver";
 import { safeErrorText } from "../service/safe-error";
 import { pendingTelegram, type SendDeps, sendTelegramNotification } from "../service/send";
@@ -13,6 +14,9 @@ import type { TelegramClient } from "../service/telegram-api";
 export { TelegramClient } from "../service/telegram-api";
 
 export const NOTIFY_TELEGRAM = "notify.telegram";
+export const NOTIFY_PUSH = "notify.push";
+/** 웹 푸시 일시 오류 재시도 횟수 (텔레그램과 같은 정책) */
+export const PUSH_RETRY_LIMIT = 3;
 /** 일시 오류 재시도 횟수. 마지막 시도에서 실패하면 FAILED로 남긴다 */
 export const TELEGRAM_RETRY_LIMIT = 3;
 
@@ -23,6 +27,10 @@ interface TelegramJob {
 
 export interface NotificationJobDeps extends Omit<SendDeps, "client"> {
   client: TelegramClient | null;
+  /** 웹 푸시 키 세 값이 모두 있을 때만 준다. 없으면 푸시 채널이 꺼진다 */
+  vapid: PushDeps["vapid"] | null;
+  /** 푸시 서버 호출 함수. 시험에서만 바꾼다 (기본: 전역 fetch) */
+  pushFetch?: typeof fetch;
   webhook: { url: string; secret: string } | null;
   /** 감사·백업 기능의 판정 규칙 (운영 알림이 쓴다) */
   rules: OpsAlertRules;
@@ -47,6 +55,16 @@ const enqueue = (boss: PgBoss, job: TelegramJob) =>
     expireInSeconds: 60,
   });
 
+/** 웹 푸시 큐. 텔레그램 큐와 같은 알림을 따로 보내므로 singletonKey도 채널마다 다르다 */
+const enqueuePush = (boss: PgBoss, job: TelegramJob) =>
+  boss.send(NOTIFY_PUSH, job, {
+    singletonKey: `push:${job.notificationId}`,
+    retryLimit: PUSH_RETRY_LIMIT,
+    retryDelay: 10,
+    retryBackoff: true,
+    expireInSeconds: 60,
+  });
+
 export async function registerNotificationJobs(
   boss: PgBoss,
   deps: NotificationJobDeps,
@@ -55,6 +73,28 @@ export async function registerNotificationJobs(
   const client = deps.client;
   const timers: NodeJS.Timeout[] = [];
   let manager: ReceiverManager | null = null;
+
+  const vapid = deps.vapid;
+  if (vapid) {
+    await boss.createQueue(NOTIFY_PUSH);
+    await boss.work<TelegramJob>(NOTIFY_PUSH, async ([job]) => {
+      if (!job) return;
+      try {
+        await sendPushNotification(
+          { appDb, vapid, ...(deps.pushFetch ? { fetch: deps.pushFetch } : {}) },
+          job.data,
+        );
+      } catch (error) {
+        // 일시 오류(429·5xx)만 여기로 온다. 메시지만 남기고 pg-boss가 재시도한다
+        if (error instanceof PushSendError) {
+          logger.error(`[worker] 웹 푸시 발송 실패(${job.retryCount}회째): ${errorText(error)}`);
+        }
+        throw error;
+      }
+    });
+  } else {
+    logger.info("[worker] VAPID 키가 없어 웹 푸시 알림이 꺼져 있습니다 (텔레그램·인앱만)");
+  }
 
   if (client) {
     await boss.createQueue(NOTIFY_TELEGRAM);
@@ -90,7 +130,8 @@ export async function registerNotificationJobs(
         telegram: client !== null,
         onCreated: async (created) => {
           for (const n of created) {
-            await enqueue(boss, { accountId: n.accountId, notificationId: n.id });
+            if (client) await enqueue(boss, { accountId: n.accountId, notificationId: n.id });
+            if (vapid) await enqueuePush(boss, { accountId: n.accountId, notificationId: n.id });
           }
         },
         onError: (event, error) =>
