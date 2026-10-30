@@ -92,6 +92,33 @@ test.describe("결재 PIN 안내·설정", () => {
     });
   }
 
+  for (const vp of VIEWPORTS) {
+    test(`재로그인 [${vp.label}px] 같은 탭에서 같은 사용자와 다른 사용자에게 다시 안내한다`, async ({
+      page,
+    }, testInfo) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      const dialog = page.getByRole("dialog", { name: "결재 PIN을 설정해 주세요" });
+      await loginWithReminder(page, "감사인");
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole("button", { name: "취소" }).click();
+      await page.reload();
+      await expect(page.getByRole("button", { name: "사용자 메뉴" })).toBeVisible();
+      await expect(dialog).toHaveCount(0);
+
+      for (const name of ["감사인", "한겸직"]) {
+        await signOut(page);
+        await loginWithReminder(page, name);
+        await expect(dialog).toBeVisible();
+        await testInfo.attach(`pin-relogin-${name}-${vp.label}`, {
+          body: await page.screenshot({ fullPage: false }),
+          contentType: "image/png",
+        });
+        await dialog.getByRole("button", { name: "취소" }).click();
+        await expect(dialog).toHaveCount(0);
+      }
+    });
+  }
+
   test.describe("시나리오 2 결재 상세에서 PIN을 설정하고 승인", { tag: "@stateful" }, () => {
     for (const vp of VIEWPORTS) {
       test(`[${vp.label}px] 승인자가 인라인 PIN 설정 후 승인한다`, async ({ page }, testInfo) => {
