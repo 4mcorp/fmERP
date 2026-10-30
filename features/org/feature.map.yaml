@@ -32,6 +32,7 @@ tests:
   int: tests/org.int.test.ts, tests/org-db.int.test.ts
   e2e: apps/web/e2e/m2.spec.ts
 invariants:
+  - 조직·직위·직책 관리의 주 동작은 우측 ActionBar에 두고 CSV 가져오기·내보내기는 같은 높이로 배치한다
   - 부서 뎁스는 계정 설정(maxDeptDepth)을 넘지 못한다
   - 소유자는 항상 한 명 이상 남는다 (동시 비활성화도 한 명은 남음)
   - 진행 중 결재가 있는 구성원은 비활성화 전에 이관해야 한다

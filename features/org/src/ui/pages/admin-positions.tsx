@@ -2,6 +2,7 @@
 
 import { api, errorMessage } from "@fmerp/shared/lib/api";
 import type { MasterItem } from "@fmerp/shared/lib/types";
+import { ActionBar } from "@fmerp/shared/ui/action-bar";
 import { Badge } from "@fmerp/shared/ui/badge";
 import { Button } from "@fmerp/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fmerp/shared/ui/card";
@@ -157,7 +158,9 @@ function MasterTab({
                 />
               </div>
             )}
-            <Button type="submit">추가</Button>
+            <ActionBar className="ml-auto flex-1 basis-full sm:basis-auto">
+              <Button type="submit">추가</Button>
+            </ActionBar>
           </form>
         </CardContent>
       </Card>

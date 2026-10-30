@@ -55,7 +55,9 @@ export function CollapsibleCard({
               open && "rotate-180",
             )}
           />
-          <span className="font-heading text-base leading-snug font-medium">{title}</span>
+          <span className="shrink-0 font-heading text-base leading-snug font-medium whitespace-nowrap">
+            {title}
+          </span>
           {count !== undefined && <Badge variant="secondary">{count}</Badge>}
           {description && (
             <span className="min-w-0 truncate text-sm text-muted-foreground">{description}</span>
