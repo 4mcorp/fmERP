@@ -103,6 +103,45 @@ test.describe("출력 미리보기 모달 (계획 2.3, AUD-020)", () => {
     await expect(frame.getByText("결재 진행 중 (미완료)")).toBeVisible();
   });
 
+  test("용지는 넓은 화면에서 중앙 정렬되고 리사이즈해도 본문 폭은 유지된다 @stateful", async ({
+    page,
+  }, testInfo) => {
+    await loginAs(page, "박사원");
+    const id = await submitDoc(page, unique("E2E A4 중앙 정렬"));
+    await page.goto(`/approval/${id}`);
+    await page.getByRole("button", { name: "인쇄", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "출력 미리보기" });
+    const preview = dialog.locator('[data-slot="a4-preview-frame"]');
+    const iframe = preview.locator("iframe");
+    await expect(iframe).toBeVisible();
+    const originalHtml = await iframe.getAttribute("srcdoc");
+    const originalSandbox = await iframe.getAttribute("sandbox");
+    const originalWidth = await iframe.evaluate((element) => element.clientWidth);
+    for (const [width, height] of [
+      [1280, 900],
+      [360, 780],
+      [390, 844],
+      [844, 390],
+      [1280, 900],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      await expect
+        .poll(() =>
+          preview.evaluate((element) => {
+            const container = element.getBoundingClientRect();
+            const paper = element.firstElementChild?.getBoundingClientRect();
+            if (!paper) return Number.POSITIVE_INFINITY;
+            return Math.abs(paper.left - container.left - (container.width - paper.width) / 2);
+          }),
+        )
+        .toBeLessThan(1);
+      expect(await iframe.evaluate((element) => element.clientWidth)).toBe(originalWidth);
+      await expect(iframe).toHaveAttribute("srcdoc", originalHtml ?? "");
+      await expect(iframe).toHaveAttribute("sandbox", originalSandbox ?? "");
+      await page.screenshot({ path: testInfo.outputPath(`a4-center-${width}x${height}.png`) });
+    }
+  });
+
   test("Esc로 미리보기를 닫고, 미리보기만 연 것은 인쇄 기록을 남기지 않는다 @stateful", async ({
     page,
   }) => {
