@@ -120,7 +120,7 @@
       "tests": {
         "unit": "tests/*.test.ts",
         "int": "tests/account.int.test.ts",
-        "e2e": "apps/web/e2e/m1.spec.ts"
+        "e2e": "apps/web/e2e/m1.spec.ts, apps/web/e2e/pin-setup.spec.ts"
       },
       "invariants": [
         "세션은 유휴·절대 만료 정책을 적용하고 만료된 세션은 지운다",
