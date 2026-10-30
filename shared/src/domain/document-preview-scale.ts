@@ -73,3 +73,13 @@ export function computePreviewScale(input: PreviewScaleInput): PreviewScaleResul
     pageHeightPx,
   };
 }
+
+/**
+ * 컨테이너가 축소된 용지보다 넓을 때 용지를 가운데 두기 위한 왼쪽 오프셋(px).
+ * 컨테이너가 같거나 좁으면 0이다(좁은 화면은 왼쪽 기준 유지).
+ */
+export function computePreviewOffsetX(input: PreviewScaleInput): number {
+  const { scale, pageWidthPx } = computePreviewScale(input);
+  const free = input.containerWidthPx - pageWidthPx * scale;
+  return Number.isFinite(free) && free > 0 ? free / 2 : 0;
+}

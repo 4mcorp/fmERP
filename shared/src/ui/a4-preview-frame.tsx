@@ -1,5 +1,6 @@
 import { type CSSProperties, type Ref, useLayoutEffect, useRef, useState } from "react";
 import {
+  computePreviewOffsetX,
   computePreviewScale,
   MM_TO_CSS_PX,
   PRINT_MARGIN_MM,
@@ -57,6 +58,8 @@ export function A4PreviewFrame({
     orientation,
   });
 
+  const offsetXPx = computePreviewOffsetX({ containerWidthPx, orientation });
+
   const outerStyle: CSSProperties = {
     width: "100%",
     height: heightPx,
@@ -76,6 +79,7 @@ export function A4PreviewFrame({
     transform: `scale(${scale})`,
     transformOrigin: "top left",
     position: "relative",
+    marginLeft: offsetXPx,
     background: "#fff",
   };
 
