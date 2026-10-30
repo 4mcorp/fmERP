@@ -48,7 +48,7 @@ contracts:
 tests:
   unit: tests/*.test.ts
   int: tests/*.int.test.ts
-  e2e: apps/web/e2e/m4.spec.ts, apps/web/e2e/m5.spec.ts       # E2E는 합성 루트(apps/web/e2e)에 둔다 — 12장 S8 결정
+  e2e: apps/web/e2e/m4.spec.ts, apps/web/e2e/m5.spec.ts, apps/web/e2e/print-preview.spec.ts       # E2E는 합성 루트(apps/web/e2e)에 둔다 — 12장 S8 결정
 invariants:
   - 상신 이후 본문·첨부가 바뀌면 거부한다 (content_changed)
   - 열람할 수 없는 문서는 존재도 알리지 않는다 (404)
