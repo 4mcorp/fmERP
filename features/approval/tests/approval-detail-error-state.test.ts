@@ -201,9 +201,17 @@ describe("ApprovalDetailPage query error component tree", () => {
   });
 });
 
+function renderFormBuilder() {
+  const boundary = FormBuilderPage();
+  expect(boundary.key).toBe(mocks.params.id);
+  expect(boundary.props.id).toBe(mocks.params.id);
+  // id 변경 시 초기화되는 실제 자식 경계까지 실행하고 기존 대기·오류·refetch 단언을 유지한다.
+  return boundary.type(boundary.props);
+}
+
 // 결재 기능의 실제 진입점을 호출한다. 오류 UI의 콜백을 실행해 쿼리 연결도 검증한다.
 const screenCases = [
-  { name: "admin-form-edit", page: FormBuilderPage, query: mocks.formDetail, args: ["doc-1"] },
+  { name: "admin-form-edit", page: renderFormBuilder, query: mocks.formDetail, args: ["doc-1"] },
   { name: "admin-forms", page: AdminFormsPage, query: mocks.forms, args: [true] },
   { name: "absence", page: AbsencePage, query: mocks.members, args: [] },
   { name: "mine", page: MyDocumentsPage, query: mocks.mine, args: [] },
@@ -284,11 +292,28 @@ describe("원본 열 화면의 대기·오류·refetch 연결", () => {
     if (formError) expect(refetchForm).toHaveBeenCalledWith();
   });
 
+  it("초안 조회 실패는 실제 오류 UI에서 초안만 재시도한다", () => {
+    const retryDraft = vi.fn();
+    const retryDetail = vi.fn();
+    mocks.formDetail.mockReturnValue({ data: undefined, isError: false, refetch: retryDetail });
+    mocks.query.mockReturnValue({ data: undefined, isError: true, refetch: retryDraft });
+    const tree = renderFormBuilder();
+    expect(mocks.query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ["form-draft", "doc-1"],
+        enabled: true,
+        refetchOnMount: "always",
+      }),
+    );
+    retry(tree);
+    expect(retryDraft).toHaveBeenCalledTimes(1);
+    expect(retryDetail).not.toHaveBeenCalled();
+  });
   it("새 양식은 detail 대기·오류로 편집 화면을 막지 않는다", () => {
     mocks.params.id = "new";
     const refetch = vi.fn();
     mocks.formDetail.mockReturnValue({ data: undefined, isError: true, refetch });
-    const tree = FormBuilderPage();
+    const tree = renderFormBuilder();
     expect(mocks.formDetail).toHaveBeenCalledWith(undefined);
     expect(tree.type).toBe("form");
     expect(refetch).not.toHaveBeenCalled();

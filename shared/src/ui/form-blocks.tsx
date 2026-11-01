@@ -10,6 +10,8 @@ export function FormBlocks(props: {
   layout: FormLayout;
   mode: BlockMode;
   renderField(field: FormField, context: BlockContext): ReactNode;
+  renderText?(text: string): ReactNode;
+  includeStyles?: boolean;
 }) {
   const body = renderBlocks<ReactNode>({
     fields: props.schema.fields,
@@ -17,7 +19,7 @@ export function FormBlocks(props: {
     legacy: props.layout.blocks === undefined,
     mode: props.mode,
     adapter: {
-      text: (text) => text,
+      text: props.renderText ?? ((text) => text),
       element: (tag, { class: className, ...attrs }, children) =>
         createElement(tag, { className, ...attrs }, ...children),
       field: props.renderField,
@@ -25,7 +27,7 @@ export function FormBlocks(props: {
   });
   return (
     <>
-      <style>{FORM_BLOCK_FONT_CSS + FORM_BLOCK_CSS}</style>
+      {props.includeStyles === false ? null : <style>{FORM_BLOCK_FONT_CSS + FORM_BLOCK_CSS}</style>}
       {body}
     </>
   );

@@ -26,6 +26,244 @@ async function expandCard(page: Page, name: RegExp) {
 
 const EMPTY_DOC = { type: "doc", content: [] };
 
+async function createBlockForm(page: Page) {
+  const response = await page.request.post("/api/forms", {
+    data: {
+      code: `BLOCK${Date.now().toString(36)}`,
+      name: "블록 시험",
+      category: "일반",
+      version: {
+        schema: { fields: [{ key: "subject", label: "항목", type: "text" }] },
+        defaultLine: [],
+        numbering: null,
+        retentionYears: 3,
+        securityDefault: "normal",
+        allowLineEdit: true,
+        policy: { disagree: "reject", rejectTo: "drafter", auditCanReject: false },
+      },
+    },
+  });
+  expect(response.status()).toBe(201);
+  return (await response.json()).formId as string;
+}
+
+test.describe("블록 편집기", { tag: "@stateful" }, () => {
+  test("3.31.4 드래그 핸들 이동과 한글 조합 중 Enter 보호를 확인한다", async ({
+    page,
+    context,
+  }) => {
+    // 첫 진입의 개발 번들 컴파일을 포함한다. 요소별 기대 시간(15초)은 유지한다.
+    test.setTimeout(60_000);
+    await loginAs(page, "김대표");
+    const id = await createBlockForm(page);
+    await page.goto(`/admin/forms/${id}`);
+    const editor = page.getByRole("textbox", { name: "양식 블록 편집기", exact: true });
+    await expect(editor).toBeVisible();
+    await page.getByLabel("추가할 블록").selectOption("text");
+    await page.getByRole("button", { name: "블록 추가", exact: true }).click();
+    await expect(editor.locator("[data-field-key]")).toHaveCount(2);
+    await editor.locator('[data-field-key="subject"] .field').hover();
+    const handle = page.getByRole("button", { name: "블록 드래그 이동", exact: true });
+    await expect(handle).toBeVisible();
+    await handle.dragTo(editor.locator(".node-paragraph").last());
+    await expect
+      .poll(async () =>
+        editor
+          .locator("[data-field-key]")
+          .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-field-key"))),
+      )
+      .toEqual(["field1", "subject"]);
+    await editor.locator(".node-paragraph").last().click();
+    await page.keyboard.type("/");
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Input.imeSetComposition", { text: "쪽", selectionStart: 1, selectionEnd: 1 });
+    await expect(page.getByRole("menuitem", { name: "쪽나눔", exact: true })).toBeVisible();
+    await editor.dispatchEvent("keydown", { key: "Enter", isComposing: true, bubbles: true });
+    await expect(editor.locator(".block-pagebreak")).toHaveCount(0);
+    await cdp.send("Input.insertText", { text: "쪽" });
+    await page.keyboard.press("Enter");
+    await expect(editor.locator(".block-pagebreak")).toHaveCount(1);
+    await expect(page.getByRole("status").filter({ hasText: "초안 저장 완료" })).toBeVisible();
+    const draft = (await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft;
+    expect(draft.schema.fields.map((field: { key: string }) => field.key)).toEqual([
+      "field1",
+      "subject",
+    ]);
+    await cdp.detach();
+  });
+  test("슬래시·인라인 설정·초안 복구 후 명시적으로 새 버전을 저장한다", async ({ page }) => {
+    await loginAs(page, "김대표");
+    const id = await createBlockForm(page);
+    await page.goto(`/admin/forms/${id}`);
+    const editor = page.getByRole("textbox", { name: "양식 블록 편집기", exact: true });
+    await expect(editor).toBeVisible();
+    await expect(editor.locator(".node-paragraph").last()).toBeVisible();
+    expect((await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft).toBeNull();
+    await editor.locator(".node-paragraph").last().click();
+    await page.keyboard.type("/");
+    await page.getByRole("menuitem", { name: "단일 선택", exact: true }).click();
+    await editor.getByRole("button", { name: "항목 1 설정", exact: true }).click();
+    const settings = editor.locator(".block-settings");
+    await settings.getByLabel("라벨", { exact: true }).fill("출장 구분");
+    await settings.getByLabel("도움말", { exact: true }).fill("해당 항목을 선택하세요");
+    await settings.getByText("필수 항목", { exact: true }).check();
+    await settings.getByLabel("선택지 1 라벨", { exact: true }).fill("국내");
+    await expect(page.getByRole("status").filter({ hasText: "초안 저장 완료" })).toBeVisible();
+    const draft = (await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft;
+    expect(draft.schema.fields).toEqual([
+      { key: "subject", label: "항목", type: "text" },
+      {
+        key: "field1",
+        label: "출장 구분",
+        type: "select",
+        help: "해당 항목을 선택하세요",
+        required: true,
+        options: [{ value: "a", label: "국내" }],
+      },
+    ]);
+    expect((await (await page.request.get(`/api/forms/${id}`)).json()).version).toBe(1);
+    await page.reload();
+    await expect(editor.getByRole("button", { name: "출장 구분 설정", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "새 버전으로 저장", exact: true }).click();
+    await expect(page.getByText(/새 버전\(v2\)으로 저장했습니다/)).toBeVisible();
+    expect((await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft.revision).toBe(
+      draft.revision,
+    );
+    expect((await (await page.request.get(`/api/forms/${id}`)).json()).definition.schema).toEqual(
+      draft.schema,
+    );
+    const code = (await (await page.request.get(`/api/forms/${id}`)).json()).code;
+    await page.getByRole("button", { name: "목록", exact: true }).click();
+    await page.getByPlaceholder("양식 이름·코드 검색").fill(code);
+    await page.locator(`a[href="/admin/forms/${id}"]`).click();
+    await editor.getByRole("button", { name: "출장 구분 설정", exact: true }).click();
+    await editor
+      .locator(".block-settings")
+      .getByLabel("도움말", { exact: true })
+      .fill("다시 연 초안");
+    await expect(page.getByRole("status").filter({ hasText: "초안 저장 완료" })).toBeVisible();
+    expect((await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft.revision).toBe(
+      draft.revision + 1,
+    );
+  });
+
+  test("열 안 삽입·쪽나눔·라이트 고정과 360px 내부 스크롤을 보장한다", async ({ page }) => {
+    await loginAs(page, "김대표");
+    const id = await createBlockForm(page);
+    await page.goto(`/admin/forms/${id}`);
+    const editor = page.getByRole("textbox", { name: "양식 블록 편집기", exact: true });
+    await expect(editor).toBeVisible();
+    await editor.locator(".node-paragraph").last().click();
+    await page.keyboard.type("/2");
+    await page.getByRole("menuitem", { name: "2열", exact: true }).click();
+    const columns = editor.locator(".node-formColumns");
+    await expect(columns.locator(".node-formColumn")).toHaveCount(2);
+    await columns.locator(".node-paragraph").first().click();
+    await page.keyboard.type("/표");
+    await page.getByRole("menuitem", { name: "표", exact: true }).click();
+    await expect(columns.locator("[data-field-key]")).toHaveCount(1);
+    await editor.locator(".node-paragraph").last().click();
+    await page.keyboard.type("/쪽");
+    await page.getByRole("menuitem", { name: "쪽나눔", exact: true }).click();
+    await expect(editor.locator(".block-pagebreak")).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "초안 저장 완료" })).toBeVisible();
+    const saved = (await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft;
+    expect(saved.layout.blocks).toContainEqual({ kind: "pagebreak" });
+    expect(
+      saved.layout.blocks.find((b: { kind: string }) => b.kind === "columns").cols[0],
+    ).toContainEqual({ kind: "field", key: "field1" });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.evaluate(() => document.documentElement.classList.add("dark"));
+    expect(
+      await page
+        .locator(".form-editor-paper")
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+    ).toBe("rgb(255, 255, 255)");
+    expect(
+      await page
+        .locator(".form-editor-chrome")
+        .first()
+        .evaluate((el) => (el as HTMLElement).isContentEditable),
+    ).toBe(false);
+    await page.setViewportSize({ width: 360, height: 780 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
+    expect(
+      await columns
+        .locator(".block-columns-scroll")
+        .evaluate((el) => el.scrollWidth > el.clientWidth),
+    ).toBe(true);
+    await page.screenshot({
+      path: test.info().outputPath("block-editor-mobile.png"),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(page.locator(".page-guide")).toHaveCount(1);
+    const guideY = (await page.locator(".page-guide").boundingBox())?.y;
+    const headerY = (await page.locator(".form-editor-chrome").first().boundingBox())?.y;
+    expect(guideY).toBeDefined();
+    expect(headerY).toBeDefined();
+    expect(Math.abs((guideY ?? 0) - (headerY ?? 0) - (266 * 96) / 25.4)).toBeLessThan(1);
+    await page.screenshot({
+      path: test.info().outputPath("block-editor-desktop.png"),
+      fullPage: true,
+    });
+    await page.reload();
+    await columns.locator(".node-formColumn").last().locator(".node-paragraph").last().click();
+    await page.keyboard.type("/날짜");
+    await page.getByRole("menuitem", { name: "날짜", exact: true }).click();
+    await expect(
+      columns.locator(".node-formColumn").last().locator("[data-field-key]"),
+    ).toHaveCount(1);
+    await expect(page.getByRole("status").filter({ hasText: "초안 저장 완료" })).toBeVisible();
+  });
+
+  test("같은 초안의 탭 충돌은 내용을 보존하고 자동 덮어쓰기·공개를 막는다", async ({
+    page,
+    context,
+  }) => {
+    await loginAs(page, "김대표");
+    const id = await createBlockForm(page);
+    await page.goto(`/admin/forms/${id}`);
+    await expect(
+      page.getByRole("textbox", { name: "양식 블록 편집기", exact: true }),
+    ).toBeVisible();
+    const other = await context.newPage();
+    await other.addInitScript(() => {
+      try {
+        sessionStorage.setItem("pin-setup-remind-dismissed", "1");
+      } catch {}
+    });
+    await other.goto(`/admin/forms/${id}`);
+    await expect(
+      other.getByRole("textbox", { name: "양식 블록 편집기", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "항목 설정", exact: true }).click();
+    await page.locator(".block-settings").getByLabel("라벨", { exact: true }).fill("먼저 저장");
+    await expect(page.getByRole("status").filter({ hasText: "초안 저장 완료" })).toBeVisible();
+    await other.getByRole("button", { name: "항목 설정", exact: true }).click();
+    await other
+      .locator(".block-settings")
+      .getByLabel("라벨", { exact: true })
+      .fill("충돌한 내 내용");
+    await expect(
+      other.getByRole("alert").filter({ hasText: "초안을 저장하지 못했습니다" }),
+    ).toBeVisible();
+    await expect(other.getByLabel("현재 초안 사본")).toContainText("충돌한 내 내용");
+    await expect(
+      other.getByRole("button", { name: "새 버전으로 저장", exact: true }),
+    ).toBeDisabled();
+    expect(
+      (await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft.schema.fields[0]
+        .label,
+    ).toBe("먼저 저장");
+    await other.close();
+  });
+});
+
 /** 로그인한 사용자의 PIN을 확인 상태로 만든다. 이미 PIN이 있으면(M1 테스트 등) 알려진 값으로 확인한다 */
 async function verifyPin(page: Page) {
   const set = await page.request.put("/api/me/pin", { data: { pin: "135790" } });
@@ -249,18 +487,22 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
       .getByRole("link", { name: "양식" })
       .click();
     await expect(page.getByRole("heading", { level: 1, name: "양식 관리" })).toBeVisible();
-    await expect(page.getByText("지출결의서")).toBeVisible();
+    await page.getByPlaceholder("양식 이름·코드 검색").fill("지출결의서");
+    await expect(page.getByText("지출결의서", { exact: true })).toBeVisible();
 
     await page.getByRole("link", { name: "새 양식" }).click();
     // 양식 코드는 계정 안에서 유일해야 한다. 이전 실행이 남긴 양식과 겹치지 않게 실행마다 다르게 쓴다
     const code = `MINUTES${Date.now().toString(36).toUpperCase()}`;
-    // 하이드레이션 전 입력은 컴포넌트 초기값("")으로 되돌아가므로, 페이지 데이터 로딩이 끝난 뒤 채우고 값이 유지될 때까지 확인한다
-    await page.waitForLoadState("networkidle");
+    // 실제 Tiptap 마운트는 hydration·권한 조회 뒤에 끝난다. HMR WebSocket이 유지되는 networkidle은 기다리지 않는다.
+    await expect(
+      page.getByRole("textbox", { name: "양식 블록 편집기", exact: true }),
+    ).toBeVisible();
     await expect(async () => {
       await page.getByLabel("양식 이름").fill("회의록");
       await expect(page.getByLabel("양식 이름")).toHaveValue("회의록");
     }).toPass();
     await page.getByLabel(/^양식 코드/).fill(code);
+    await page.getByText("기존 필드 목록 (블록 배치 후에는 참고용)", { exact: true }).click();
     await page.getByRole("button", { name: "필드 추가" }).click();
     await expect(page.getByText("2. 텍스트")).toBeVisible();
     await expect(page.getByLabel("양식 이름")).toHaveValue("회의록");

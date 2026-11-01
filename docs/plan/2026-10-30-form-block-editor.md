@@ -116,7 +116,7 @@ type Block =
 - [x] 2. 도메인: `Block` 타입, `validateFormLayout`, 평면→블록 파생(`deriveBlocks`), 단위 테스트(누락·중복·열 제한·텍스트 상한). PR #99 병합
 - [x] 3. 공통 렌더러 `renderBlocks()`(edit/fill/view/print) + 쪽 나눔 CSS 규칙 + Pretendard 고정(웹폰트·PDF 동일 파일). `buildPdfHtml` 교체, 기존 PDF 배치 재현 테스트. 구현 경계·검증은 아래 기록 참조
 - [x] 4. DB·API: `form_draft` 테이블(RLS, `revision`), 초안 저장/조회 API, 버전 생성은 "저장"만, 서버 layout 검증 연결. 구현 계약·검증은 아래 기록 참조
-- [ ] 5. 편집기(+의존성 추가: `@tiptap/core`·`suggestion`·`extension-drag-handle(-react)`·`node-range`와 drag-handle 필수 peer `extension-collaboration`·`@tiptap/y-tiptap` 모두 `~3.31.4` 계열, 공급망 대기 통과 버전만): 슬래시·드래그 핸들·인라인 설정·columns 노드·쪽나눔 블록·페이지 경계(보수 마진)·문서 크롬(편집 불가)·라이트 고정·모바일 reflow, 자동 저장
+- [x] 5. 편집기(+의존성 추가: `@tiptap/core`·`suggestion`·`extension-drag-handle(-react)`·`node-range`와 drag-handle 필수 peer `extension-collaboration`은 `~3.31.4`, `@tiptap/y-tiptap`은 `~3.0.12`, `yjs`는 `~13.6.33`, `y-protocols`는 `~1.0.7`. 공급망 대기 통과 버전만): 슬래시·드래그 핸들·인라인 설정·columns 노드·쪽나눔 블록·페이지 경계(보수 마진)·문서 크롬(편집 불가)·라이트 고정·모바일 reflow, 자동 저장
 - [ ] 6. 작성(fill)·조회(view) 화면 통합(구조 편집 불가, 표 행 추가·삭제 허용)
 - [ ] 7. 검증: 쪽 경계 하네스 자동화(마진 재확정), 잘림 시나리오 PDF 테스트, 실제 한글 IME 수동 확인, E2E, `pnpm verify`
 - [ ] 8. 구 편집 UI 제거, `feature.map.yaml`·INDEX·ADR 갱신
@@ -141,6 +141,18 @@ type Block =
 - 자동 저장은 `schema`·`layout`만 저장하고 `form_version`은 생성하지 않는다. 결재선·번호·보존연한 등은 기존 공개 버전 설정을 사용한다. 명시적 저장은 기존 `POST /api/forms/{id}/versions`에 완전한 version 입력을 보낸다. 공개 후 초안은 지우거나 revision을 리셋하지 않는다. 지우면 오래된 탭의 revision이 다시 유효해질 수 있으므로 편집기는 응답 revision을 유지해야 한다. 초안을 불러온 뒤 바로 자동 공개하지 않는다.
 - `validateFormLayout`은 초안뿐 아니라 양식 생성·새 버전·가져오기·복제의 공통 검증에 연결한다. 기존 blocks 없는 배치는 허용한다. 좁은 열은 초안 저장 응답의 warnings로 안내하되 저장을 막지 않는다. 감사 로그에는 저장 행위만 기록하고 필드 내용은 넣지 않는다.
 - UI·Tiptap 연결·debounce·충돌 안내 화면은 5단계 범위다. 이 단계는 API/실제 PostgreSQL 통합 테스트로 검증한다. 최초 조회 404의 RED와 구현 후 GREEN, 동시 최초 저장/갱신, 작성자 분리, 권한, RLS·복합 FK·유일성·revision CHECK를 시험한다. 최종 명령/종료코드와 exact-head CI는 카드와 PR에 기록한다.
+
+## 5단계 구현 기록 (2026-11-02)
+
+- `form-block-editor.tsx`는 Tiptap 3.31.4의 React NodeView로 13종 필드·제목·설명·구분선·쪽나눔과 2~4열을 편집한다. `doc → leaf | columns`, `columns → column{2,4}`, `column → leaf` 스키마로 열 중첩을 금지한다. 필드 키의 중복·알 수 없는 참조는 편집기 transaction에서도 거부한다.
+- 문서 JSON에는 필드 key만 둔다. 상세 설정은 `schema.fields`에 있고, 저장 시 문서가 참조한 필드만 배치 순서로 직렬화한다. 삭제한 정의는 세션 안에서만 유지해 구조 실행 취소로 복구할 수 있다. 기존 key는 블록 설정에서 바꾸지 않는다. 새 key는 같은 세션의 삭제/추가 후에도 재사용하지 않는다.
+- Field/Text/Static NodeView는 3단계 `FormBlocks`를 사용하며, columns는 같은 `renderBlocks`의 틀에 ProseMirror contentDOM을 연결한다. 필드 값은 편집 중 샘플이며 실제 작성·조회 입력 연결은 6단계다. 공용 CSS는 편집기에서 한 번만 주입한다.
+- 문서번호·제목·결재란 샘플 표·회사/해시 푸터는 contentEditable 밖에 둔다. 생성 시 A4 세로/가로를 정하고 결재란 위치를 보존한다. 캔버스는 라이트/Pretendard 고정이다. 모바일은 용지 폭 제한을 풀고 열·표만 내부 스크롤한다. 실제 터치 드래그는 검증하지 않았으며 필드의 위/아래 버튼을 제공한다.
+- 쪽 경계는 본문 높이에서 3mm를 뺀 세로266/가로179mm의 CSS 픽셀 근사다. 첫 경계는 측정한 문서 크롬 높이만큼 앞당긴다. 이는 실측 재확정된 PDF 페이지 예측기가 아니다. 수동 쪽나눔은 별도 점선으로 표시한다. 긴 블록·다중 열의 PDF 잘림/마진 하네스는 7단계다.
+- 기존 양식은 공개 버전과 내 초안을 모두 읽은 뒤 연다. 최초 초안이 없으면 공개 정의를 사용하되 즉시 저장하지 않는다. 800ms debounce와 직렬 PUT으로 응답 revision을 유지한다. 저장 중 추가 입력은 후속 revision으로 보낸다. 409는 자동 저장과 공개를 막고 현재 내용 복사/명시적 다시 불러오기를 제공한다. 일반 실패는 명시적 재시도를 제공한다. 공개는 초안 저장 완료 후 기존 versions API를 사용하며 초안을 지우지 않는다. 생성 전 양식은 서버 id가 없으므로 자동 저장하지 않는다고 표시한다.
+- 구 필드 목록·작성 미리보기·출력 미리보기는 제거하지 않았다. 구 목록은 접힌 영역에 남기고 명시적 blocks가 생긴 뒤에는 참고용으로 잠근다. 기존 blocks 없는 양식의 구 목록 변경은 새 편집기를 다시 마운트해 맞춘다. 이 임시 호환 UI 제거는 8단계다.
+- 공급망 검사는 실제 설치 버전 9종으로 재수집했다. 모두 MIT·최근12개월 배포·24시간 대기·install hook 없음, peers check 통과다. yjs/y-protocols는 단일 npm publisher와 provenance 부재가 확인되므로 버전/lock을 유지한다. 전체 pnpm audit의 기존 저장소 취약점과 신규 의존성 판정은 카드/PR에 분리해 남긴다. 협업 엔진·Y.Doc·provider는 활성화하지 않는다.
+- 검증 seam은 저장 모델 왕복(13종 상세 설정·키·열·텍스트), 직렬 저장/실패/409 세션, 실제 Chrome 슬래시→인라인 설정→초안 복구/SPA 재진입→명시적 버전 저장, 드래그 후 저장 순서, CDP 한글 조합과 Enter 보호, 열 안 삽입·쪽나눔·360px 내부 스크롤·라이트 고정이다. 실제 OS 한글 IME는 **사용자 확인 필요**다. 초기 참조·좌표·캐시·E2E 대기 문제는 [트러블슈팅](../ts/2026-11-02-form-block-editor-runtime.md)에 기록한다. 최종 명령/종료코드·CI는 카드와 PR에 남긴다.
 
 ## 완료 기준
 - 모든 기존 양식이 새 편집기에서 열리고, 저장 결과가 `validateFormSchema`를 통과한다.
@@ -182,4 +194,5 @@ type Block =
   - 한계: 단일 문서·단일 엔진(Chromium)·시스템 글꼴 사용(Pretendard 미적용)·n=70이므로 통계적 근거는 약함. 가로 용지·다중 열 안의 큰 블록·긴 표 머리글 반복·Pretendard 적용 후 재측정 필요. 본 구현 때 같은 하네스를 자동 테스트로 승격하고 마진을 재확정한다.
   - 확인된 동작: `break-inside: avoid` 블록은 쪽 경계에서 잘리지 않고 통째로 다음 쪽으로 이동, 표는 행 단위로만 분할되고 머리글 반복, 수동 쪽 나눔(`break-after: page`) 정상.
 - 2026-10-30: 저장 모델 3건 확정 — 초안 별도 테이블(`form_draft`), 동시 편집은 `revision` 거절, 기존 PDF 필드 배치 완전 재현. 설계 단계 종료, 구현 단계(1~8)는 별도 착수 승인 후 진행.
+- 2026-11-02: 사용자 승인으로 5단계 필수 peer `yjs`(^13)·`y-protocols`(^1.0.1)를 허용한다. 공급망·24시간 배포 대기를 통과한 패치 버전을 `~`로 고정하고 strictPeerDependencies를 유지한다. 실시간 협업 기능은 구현하지 않는다.
 - 2026-10-31: **버전 정정** — PoC는 스크래치라 최신 3.32.2를 썼지만, 저장소는 pnpm `minimumReleaseAge`(배포 24h 경과) 정책이 있어 3.32.2(10-30 배포)를 설치할 수 없었다. **3.31.4 유지**로 결정(사용자 승인). 신규 패키지는 Knip 미사용 의존성 게이트 때문에 소비 코드와 함께 5단계에서 추가. drag-handle 필수 peer `extension-collaboration`·`@tiptap/y-tiptap` 추가를 승인 범위에 포함. y-tiptap은 `^3.0.7` 범위에서 대기 통과 버전을 선택(최신 3.0.12는 10-30 배포라 부적합). PoC 검증(3.32.2)은 3.31.4에서 5단계 시작 시 재확인.
