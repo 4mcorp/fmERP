@@ -115,7 +115,7 @@ type Block =
 - [x] 1. 문서 등록: 계획 문서·INDEX 반영. **Tiptap은 3.31.4 유지**(3.32.x 정렬은 하지 않음). 신규 패키지는 실제로 쓰는 5단계에서 추가(Knip 미사용 의존성 게이트)
 - [x] 2. 도메인: `Block` 타입, `validateFormLayout`, 평면→블록 파생(`deriveBlocks`), 단위 테스트(누락·중복·열 제한·텍스트 상한). PR #99 병합
 - [x] 3. 공통 렌더러 `renderBlocks()`(edit/fill/view/print) + 쪽 나눔 CSS 규칙 + Pretendard 고정(웹폰트·PDF 동일 파일). `buildPdfHtml` 교체, 기존 PDF 배치 재현 테스트. 구현 경계·검증은 아래 기록 참조
-- [ ] 4. DB·API: `form_draft` 테이블(RLS, `revision`), 초안 저장/조회 API, 버전 생성은 "저장"만, 서버 layout 검증 연결
+- [x] 4. DB·API: `form_draft` 테이블(RLS, `revision`), 초안 저장/조회 API, 버전 생성은 "저장"만, 서버 layout 검증 연결. 구현 계약·검증은 아래 기록 참조
 - [ ] 5. 편집기(+의존성 추가: `@tiptap/core`·`suggestion`·`extension-drag-handle(-react)`·`node-range`와 drag-handle 필수 peer `extension-collaboration`·`@tiptap/y-tiptap` 모두 `~3.31.4` 계열, 공급망 대기 통과 버전만): 슬래시·드래그 핸들·인라인 설정·columns 노드·쪽나눔 블록·페이지 경계(보수 마진)·문서 크롬(편집 불가)·라이트 고정·모바일 reflow, 자동 저장
 - [ ] 6. 작성(fill)·조회(view) 화면 통합(구조 편집 불가, 표 행 추가·삭제 허용)
 - [ ] 7. 검증: 쪽 경계 하네스 자동화(마진 재확정), 잘림 시나리오 PDF 테스트, 실제 한글 IME 수동 확인, E2E, `pnpm verify`
@@ -132,6 +132,15 @@ type Block =
 - 글꼴은 기존 승인된 Pretendard v1.3.9 Regular/Bold(SIL OFL 1.1)의 **동일 바이트**를 `apps/web/public/fonts/`에 제공한다. 기존 worker 파일은 유지한다. 각각 약 748/776KiB이며 OFL 원문도 복제하고 동일성을 시험한다. opaque srcdoc용 CORS는 공개 `/fonts/*`에만 연다. 앱/API CORS는 변경하지 않는다.
 - 검증: 순수 모드 계약·React 어댑터·XSS/잘못된 배치 거부·Chromium 배치/웹폰트/쪽나눔 시험. 실제 PDF는 세로 6쪽·가로 8쪽 샘플에서 80행+30문단의 순서·중복/누락 없음, 표 머리글 반복, 양쪽 열과 문서 끝을 PDFKit으로 추출해 확인했다. 선택 페이지를 이미지로도 확인했다. 샘플의 가로 마지막 쪽은 푸터만 남는 여백이 있으므로 페이지 수 최적화는 주장하지 않는다.
 - 한계: 신규 편집기 실화면, 실제 OS IME, 쪽 경계 보수 마진 재확정, 거대 단일 행·모든 다중 열 조합의 잘림 검증은 5~7단계에 남는다. 전체 단위의 기본 5초 타임아웃과 mac13 브라우저 검증 경로는 [트러블슈팅](../ts/2026-11-01-form-block-renderer-verification.md)에 기록한다. 최종 명령·종료코드·PR exact-head CI는 카드/PR에 남긴다.
+
+## 4단계 구현 기록 (2026-11-01)
+
+- `0028_form_draft.sql`은 `form_draft`와 명시적 앱 CRUD 권한·인증 역할 접근 거부·테넌트 RLS를 추가한다. `(form_id, author_membership_id)` 유일성, 양식/작성자의 `account_id` 복합 FK, 양수 `revision` CHECK를 DB에서 강제한다. 배포 시 **`pnpm db:migrate`가 필요**하다. 기존 버전은 수정하지 않는다.
+- `GET /api/forms/{id}/draft`는 로그인 구성원의 초안만 `{ draft }`로 반환한다. 없으면 `draft: null`이다. `PUT`은 `{ schema, layout, revision }`을 받고 `{ draft, warnings }`를 반환한다. `draft.updatedAt`은 ISO UTC 문자열이다. 작성자·테넌트는 서버가 세션에서 정하고 양식 관리 권한(사업자 범위 포함)을 검사한다.
+- 최초 저장은 `revision: 0`이며 저장 결과는 1이다. 이후 응답의 revision으로 저장하면 1씩 증가한다. 최초 INSERT의 유일성 충돌과 조건부 UPDATE의 revision 불일치는 모두 `409 revision_conflict`다. Problem의 `title`에 내용 복사 후 다시 불러오기 안내가 있다. 0부터 덮어쓰거나 충돌 응답을 성공으로 처리하면 안 된다.
+- 자동 저장은 `schema`·`layout`만 저장하고 `form_version`은 생성하지 않는다. 결재선·번호·보존연한 등은 기존 공개 버전 설정을 사용한다. 명시적 저장은 기존 `POST /api/forms/{id}/versions`에 완전한 version 입력을 보낸다. 공개 후 초안은 지우거나 revision을 리셋하지 않는다. 지우면 오래된 탭의 revision이 다시 유효해질 수 있으므로 편집기는 응답 revision을 유지해야 한다. 초안을 불러온 뒤 바로 자동 공개하지 않는다.
+- `validateFormLayout`은 초안뿐 아니라 양식 생성·새 버전·가져오기·복제의 공통 검증에 연결한다. 기존 blocks 없는 배치는 허용한다. 좁은 열은 초안 저장 응답의 warnings로 안내하되 저장을 막지 않는다. 감사 로그에는 저장 행위만 기록하고 필드 내용은 넣지 않는다.
+- UI·Tiptap 연결·debounce·충돌 안내 화면은 5단계 범위다. 이 단계는 API/실제 PostgreSQL 통합 테스트로 검증한다. 최초 조회 404의 RED와 구현 후 GREEN, 동시 최초 저장/갱신, 작성자 분리, 권한, RLS·복합 FK·유일성·revision CHECK를 시험한다. 최종 명령/종료코드와 exact-head CI는 카드와 PR에 기록한다.
 
 ## 완료 기준
 - 모든 기존 양식이 새 편집기에서 열리고, 저장 결과가 `validateFormSchema`를 통과한다.

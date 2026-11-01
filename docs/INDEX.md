@@ -155,7 +155,7 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
-| [2026-10-30-form-block-editor.md](plan/2026-10-30-form-block-editor.md) | in-progress | 2단계 도메인·3단계 공통 렌더러/공유 CSS/Pretendard·기존 PDF 배치 회귀 구현. 편집기·초안 API·기존 화면 연결은 후속 단계 |
+| [2026-10-30-form-block-editor.md](plan/2026-10-30-form-block-editor.md) | in-progress | 2단계 도메인·3단계 공통 렌더러/공유 CSS/Pretendard·기존 PDF 배치 회귀·4단계 작성자별 초안 API/CAS·RLS(0028)·서버 배치 검증. 편집기·기존 화면 연결은 후속 단계 |
 | [2026-10-26-e2e-pipeline.md](plan/2026-10-26-e2e-pipeline.md) | done | E2E 러너 계측·캐시·산출물, dev 변경 관련/main 전체 필수 CI, production·Compose 동일조건 비교 |
 | [2026-10-12-feature-scoped-ci.md](plan/2026-10-12-feature-scoped-ci.md) | done | 기능별 단위 선택·전체 통합 병렬 실행, main E2E를 필수 check에 연결. 로컬 검증 완료, 원격 실행 미검증 |
 | [2026-10-15-ui-ux-refactor-round2.md](plan/2026-10-15-ui-ux-refactor-round2.md) | draft | UI/UX 2차: 결재 상세 토글·다열 카드, 출력물 결재란 자동 맞춤(최대 15칸·2줄)·테두리·줄바꿈, 진행 중 문서 A4 미리보기, 목록 화면 통일·읽음 표시, 양식 선택·편집 미리보기, 관리콘솔 정리, action 버튼·탭 표준 (카드 U0~U10) |
@@ -228,6 +228,7 @@
 | 결재 — **`features/approval/`** (엔진) | `src/domain/`(`approval-engine·state·line·line-edit·types`, `delegation`, `document-access`, `step-transfer`, `form-defaults`) — 순수 함수, 시험 `tests/` |
 | 결재 서비스·API·화면 | `src/service/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `drafts·attachments·comments·mailbox·search·transfer·recipients·forms·export` 등), `src/api/`(`routes.ts` 진입점, `*-routes.ts`, `guards.ts`), `src/provisioning.ts`(기본 양식 설치), `src/ui/{pages,components,queries.ts,local-drafts.ts}`, `feature.map.yaml`. 검사 `pnpm feature:check approval`. 어댑터 페이지는 `apps/web/app/(app)/{approval,mailbox,search,me/absence,admin/{approvals,forms}}` |
 | 결재 스키마·트리거 | `packages/db/src/schema/approval.ts`, `migrations/0005_approval_engine.sql`, `0006_approval_rls_triggers.sql` |
+| 양식 초안·자동 저장 API | `packages/db/src/schema/form.ts`(`form_draft`), `migrations/0028_form_draft.sql`(RLS·권한), `features/approval/src/{api/forms-routes,service/forms}.ts`, `features/approval/tests/form-draft.int.test.ts` |
 | 조직·권한 — **`features/org/`** | API `src/api/`(`routes.ts` 진입점, `org-routes.ts` 설정·사업자·직위·직책, `departments-routes.ts` 부서·조직도·CSV, `members-routes.ts` 구성원·소속·발령·역할), `src/domain/`(`assignment`·`department-csv`·`department-tree`), `src/service/in-flight.ts`, 화면 `src/ui/{pages,components,queries.ts}`, 테스트 `tests/`. 검사 `pnpm feature:check org` |
 | 조직 화면 어댑터 | `apps/web/app/(app)/org`, `admin/{settings,businesses,org,members,positions}`는 `features/org/src/ui/pages/`를 내보내는 한 줄 어댑터 |
 | 조직 스키마·트리거 | `packages/db/src/schema/org.ts`, `migrations/0003_org_permission.sql`, `0004_org_rls_triggers.sql`, 시드 `features/account/src/seed/seed-org.ts` |

@@ -2,6 +2,7 @@
 import { recordAudit } from "@fmerp/audit";
 import { schema, type Tx } from "@fmerp/db";
 import { validateDocNumberRule } from "@fmerp/shared/domain/doc-number";
+import { validateFormLayout } from "@fmerp/shared/domain/form-layout";
 import { type FormSchema, validateFormSchema } from "@fmerp/shared/domain/form-schema";
 import type { ServiceContext } from "@fmerp/shared/server/context";
 import { ServiceError } from "@fmerp/shared/server/errors";
@@ -39,12 +40,22 @@ const RETENTION_YEARS = [0, 1, 3, 5, 10] as const;
 type FormRow = typeof schema.form.$inferSelect;
 type VersionRow = typeof schema.formVersion.$inferSelect;
 
-function validateVersion(input: FormVersionInput) {
+function validateDefinition(input: Pick<FormVersionInput, "schema" | "layout">) {
   const check = validateFormSchema(input.schema);
   if (!check.ok)
     throw new ServiceError("form_invalid", "양식 필드가 올바르지 않습니다", {
       errors: check.errors,
     });
+  const layout = validateFormLayout(input.schema, input.layout ?? {});
+  if (!layout.ok)
+    throw new ServiceError("form_invalid", "양식 배치가 올바르지 않습니다", {
+      errors: layout.errors,
+    });
+  return layout.warnings;
+}
+
+function validateVersion(input: FormVersionInput) {
+  validateDefinition(input);
   if (input.numbering) {
     const n = validateDocNumberRule(input.numbering.rule);
     if (!n.ok) throw new ServiceError("form_invalid", n.reason);
@@ -111,6 +122,69 @@ export async function getForm(tx: Tx, formId: string): Promise<FormRow> {
   const [row] = await tx.select().from(schema.form).where(eq(schema.form.id, formId));
   if (!row) throw new ServiceError("not_found", "양식을 찾을 수 없습니다");
   return row;
+}
+
+export async function getFormDraft(tx: Tx, formId: string, authorMembershipId: string) {
+  const [draft] = await tx
+    .select()
+    .from(schema.formDraft)
+    .where(
+      and(
+        eq(schema.formDraft.formId, formId),
+        eq(schema.formDraft.authorMembershipId, authorMembershipId),
+      ),
+    );
+  return draft ?? null;
+}
+
+export async function saveFormDraft(
+  ctx: ServiceContext,
+  formId: string,
+  authorMembershipId: string,
+  input: Pick<FormVersionInput, "schema" | "layout"> & { revision: number },
+) {
+  const warnings = validateDefinition(input);
+  const values = {
+    schema: input.schema as unknown as Record<string, unknown>,
+    layout: input.layout ?? {},
+    revision: input.revision + 1,
+    updatedAt: ctx.now,
+  };
+  const rows =
+    input.revision === 0
+      ? await ctx.tx
+          .insert(schema.formDraft)
+          .values({ ...values, accountId: ctx.accountId, formId, authorMembershipId })
+          .onConflictDoNothing({
+            target: [schema.formDraft.formId, schema.formDraft.authorMembershipId],
+          })
+          .returning()
+      : await ctx.tx
+          .update(schema.formDraft)
+          .set(values)
+          .where(
+            and(
+              eq(schema.formDraft.formId, formId),
+              eq(schema.formDraft.authorMembershipId, authorMembershipId),
+              eq(schema.formDraft.revision, input.revision),
+            ),
+          )
+          .returning();
+  const [draft] = rows;
+  if (!draft)
+    throw new ServiceError(
+      "revision_conflict",
+      "다른 탭에서 양식 초안이 저장되었습니다. 내용을 복사한 뒤 초안을 다시 불러와 주세요.",
+    );
+  await recordAudit(ctx.tx, {
+    accountId: ctx.accountId,
+    actorUserId: ctx.userId,
+    action: "form.save_draft",
+    target: { type: "form", id: formId },
+    result: "success",
+    request: ctx.request,
+  });
+  return { draft, warnings };
 }
 
 /** 양식과 첫 버전을 만든다 (APV-004). 같은 코드가 있으면 중복 오류 */

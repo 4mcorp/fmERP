@@ -1,7 +1,9 @@
 // 양식·결재선 템플릿·문서 리비전·첨부·의견 (PRD 5.4.2~5.4.3, ADR 0008). 모든 테이블은 account_id + RLS.
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  check,
   foreignKey,
   index,
   integer,
@@ -82,6 +84,39 @@ export const formVersion = pgTable(
     unique().on(t.formId, t.version),
     unique("form_version_id_account_unique").on(t.id, t.accountId),
     foreignKey({ columns: [t.formId, t.accountId], foreignColumns: [form.id, form.accountId] }),
+  ],
+);
+
+/**
+ * 작성자별 양식 자동 저장. 공개 버전과 분리하고 revision으로 동시 덮어쓰기를 막는다.
+ *
+ * @owner approval
+ */
+export const formDraft = pgTable(
+  "form_draft",
+  {
+    id: primaryId(),
+    accountId: accountRef(),
+    formId: uuid().notNull(),
+    authorMembershipId: uuid().notNull(),
+    schema: jsonb().$type<Record<string, unknown>>().notNull(),
+    layout: jsonb().$type<Record<string, unknown>>().notNull(),
+    revision: integer().notNull().default(1),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique().on(t.formId, t.authorMembershipId),
+    check("form_draft_revision_positive", sql`${t.revision} > 0`),
+    index().on(t.accountId),
+    index().on(t.authorMembershipId),
+    foreignKey({
+      columns: [t.formId, t.accountId],
+      foreignColumns: [form.id, form.accountId],
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [t.authorMembershipId, t.accountId],
+      foreignColumns: [membership.id, membership.accountId],
+    }).onDelete("cascade"),
   ],
 );
 
