@@ -2,6 +2,9 @@
 // 실제 PDF 변환(Playwright)은 worker가 이 HTML을 받아 한다.
 
 import type { PersonCard } from "./completion-package";
+import { FORM_BLOCK_CSS, FORM_BLOCK_FONT_CSS } from "./form-block-style";
+import { renderBlocks } from "./form-blocks";
+import { type FormLayout, resolveBlocks, validateFormLayout } from "./form-layout";
 import { type FormField, type FormSchema, formatPerson, type PersonInfo } from "./form-schema";
 import { tableSums } from "./form-values";
 
@@ -220,13 +223,13 @@ function renderTable(
   return `<table class="grid"><thead><tr>${head}</tr></thead><tbody>${body}${foot}</tbody></table>`;
 }
 
-function renderField(
+function renderFieldValue(
   field: FormField,
   input: PdfInput,
   sums: Record<string, Record<string, number>>,
-): string {
+): string | undefined {
   const value = input.values[field.key];
-  if (field.type === "attachment" || isBlank(value)) return "";
+  if (field.type === "attachment" || isBlank(value)) return undefined;
   let html: string;
   switch (field.type) {
     case "text":
@@ -267,13 +270,13 @@ function renderField(
       html = esc(refNames(value, input.names));
       break;
     case "table":
-      return `<div class="field wide"><div class="label">${esc(field.label)}</div>${renderTable(field, value, sums[field.key])}</div>`;
+      return renderTable(field, value, sums[field.key]);
     case "richtext":
-      return `<div class="field wide"><div class="label">${esc(field.label)}</div><div class="rich">${renderRich(value as RichNode)}</div></div>`;
+      return renderRich(value as RichNode);
     default:
-      return "";
+      return undefined;
   }
-  return `<div class="field"><div class="label">${esc(field.label)}</div><div class="value">${html}</div></div>`;
+  return html;
 }
 
 // ===== 결재란 =====
@@ -360,21 +363,6 @@ const CSS = `
   .cell .who { font-size: 8.5pt; border-top: 1px solid #ccc; padding: 0.5mm; }
   .cell .when { font-size: 7.5pt; color: #444; padding-bottom: 0.5mm; min-height: 4mm; }
   .sub { font-size: 7.5pt; color: #555; font-weight: 400; }
-  .fields { display: flex; flex-wrap: wrap; border-top: 1px solid #333; width: 100%; box-sizing: border-box; }
-  .field { width: 50%; display: flex; border-bottom: 1px solid #ccc; }
-  .field:not(.wide) { border-right: 1px solid #ccc; }
-  .field.wide { width: 100%; display: block; }
-  .field .label { width: 30mm; background: #f6f6f6; padding: 1.5mm 2mm; font-weight: 600; font-size: 9.5pt; border-right: 1px solid #ddd; flex-shrink: 0; }
-  .field.wide .label { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
-  .field .value { padding: 1.5mm 2mm; flex: 1; word-break: break-word; white-space: pre-wrap; }
-  .rich { padding: 2mm; }
-  .rich p { margin: 0 0 2mm; } .rich h1, .rich h2, .rich h3 { margin: 3mm 0 2mm; }
-  .rich ul, .rich ol { margin: 0 0 2mm 5mm; padding: 0; } .rich blockquote { border-left: 2px solid #bbb; margin: 0 0 2mm; padding-left: 3mm; color: #444; }
-  .rich pre, .rich code { font-family: monospace; background: #f3f3f3; }
-  table.grid { width: 100%; box-sizing: border-box; border-collapse: collapse; }
-  table.grid th, table.grid td { border: 1px solid #bbb; padding: 1mm 2mm; font-size: 9.5pt; }
-  table.grid th { background: #f1f1f1; } table.grid td.num { text-align: right; }
-  table.grid tr.sum td { font-weight: 700; background: #fafafa; }
   .attach { margin-top: 5mm; font-size: 9.5pt; } .attach h3 { font-size: 10pt; margin: 0 0 1mm; }
   .attach ul { margin: 0; padding-left: 5mm; }
   .footer { margin-top: 8mm; font-size: 8pt; color: #555; border-top: 1px solid #ccc; padding-top: 2mm; word-break: break-all; }
@@ -400,7 +388,27 @@ export function buildPdfHtml(input: PdfInput): string {
         ? "approval-bottom"
         : "approval-right";
   const sums = tableSums(input.form.schema, input.values);
-  const fields = input.form.schema.fields.map((f) => renderField(f, input, sums)).join("");
+  // 기존 orientation/position 폴백은 보존한다. 외부 JSON의 새 블록 트리만 검사한다.
+  const checked = validateFormLayout(input.form.schema, { blocks: layout.blocks });
+  if (!checked.ok) throw new Error(`잘못된 양식 배치: ${checked.errors.join(", ")}`);
+  const fields = renderBlocks({
+    fields: input.form.schema.fields,
+    blocks: resolveBlocks(input.form.schema, layout as FormLayout),
+    mode: "print",
+    legacy: layout.blocks === undefined,
+    adapter: {
+      text: esc,
+      element: (tag, attrs, children) => {
+        const attributes = Object.entries(attrs)
+          .map(([key, value]) => ` ${key}="${esc(value)}"`)
+          .join("");
+        return tag === "hr"
+          ? `<hr${attributes}>`
+          : `<${tag}${attributes}>${children.join("")}</${tag}>`;
+      },
+      field: (field) => renderFieldValue(field, input, sums),
+    },
+  });
   const seal = safeImage(input.sealUri);
   const attachments =
     input.attachments.length > 0
@@ -412,16 +420,16 @@ export function buildPdfHtml(input: PdfInput): string {
   const completed = input.completedAt !== null;
   return `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>${esc(input.title)}</title>
-<style>${input.fontCss ?? ""}
+<style>${input.fontCss ?? FORM_BLOCK_FONT_CSS}
 @page { size: A4 ${orientation}; }
-${CSS}${completed ? "" : DRAFT_WATERMARK_CSS}</style></head>
+${CSS}${FORM_BLOCK_CSS}${completed ? "" : DRAFT_WATERMARK_CSS}</style></head>
 <body>
 ${completed ? "" : `<div class="draft-watermark">결재 진행 중 (미완료)</div>`}
 ${seal ? `<img class="seal" src="${seal}" alt="">` : ""}
 <h1 class="title">${esc(input.title)}</h1>
 <div class="meta"><span>${esc(input.businessName)} · ${esc(input.form.name)}</span><span>문서번호 ${esc(input.docNo ?? "-")}</span></div>
 <div class="top ${topClass}">${box}</div>
-<div class="fields">${fields}</div>
+${fields}
 ${attachments}
 <div class="bottom-box ${position === "bottom" ? "show" : ""}">${position === "bottom" ? box : ""}</div>
 <div class="footer">상신 ${esc(kstFull(input.submittedAt))} · 완료 ${completed ? esc(kstFull(input.completedAt)) : "결재 진행 중"}<br>상신 시점 내용 해시(SHA-256): ${esc(input.contentHash ?? "-")}</div>

@@ -107,6 +107,42 @@ const base = (): PdfInput => ({
   attachments: [{ filename: "영수증.pdf", size: 2048 }],
 });
 
+describe("buildPdfHtml 블록 배치", () => {
+  it("블록 순서·설명·제목·구분선을 출력하며 필드 정의 순서를 강제하지 않는다", () => {
+    const input = base();
+    input.form.layout = {
+      blocks: [
+        { kind: "heading", level: 2, text: "안내 & 주의" },
+        { kind: "text", text: '"설명"\n둘째 줄' },
+        { kind: "divider" },
+        ...input.form.schema.fields.toReversed().map(({ key }) => ({ kind: "field", key })),
+      ],
+    };
+    const html = buildPdfHtml(input);
+    expect(html).toContain('<h2 class="block-heading">안내 &amp; 주의</h2>');
+    expect(html).toContain("&quot;설명&quot;\n둘째 줄");
+    expect(html).toContain('<hr class="block-divider">');
+    expect(html.indexOf('class="grid"')).toBeLessThan(html.indexOf("서울 출장"));
+    expect(html).not.toContain('class="form-blocks fields legacy-fields"');
+  });
+
+  it("외부 JSON의 중복·누락·중첩·주입 블록을 출력 전에 거부한다", () => {
+    for (const blocks of [
+      [
+        { kind: "field", key: "memo" },
+        { kind: "field", key: "memo" },
+      ],
+      [{ kind: "heading", level: 1, text: "<img src=x onerror=alert(1)>" }],
+      [{ kind: "columns", cols: [[{ kind: "columns", cols: [[], []] }], []] }],
+      [{ kind: "mystery" }],
+    ]) {
+      const input = base();
+      input.form.layout = { blocks };
+      expect(() => buildPdfHtml(input)).toThrow("잘못된 양식 배치");
+    }
+  });
+});
+
 describe("buildPdfHtml (APV-063)", () => {
   it("결재란은 쪽 경계에서 갈라지지 않는다", () => {
     const html = buildPdfHtml(base());

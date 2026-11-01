@@ -113,13 +113,25 @@ type Block =
 ## 단계
 - [x] 0. 요구사항 확정, 패키지 조사, PoC(슬래시·열·왕복 변환·IME 시뮬레이션·쪽 경계 마진)
 - [x] 1. 문서 등록: 계획 문서·INDEX 반영. **Tiptap은 3.31.4 유지**(3.32.x 정렬은 하지 않음). 신규 패키지는 실제로 쓰는 5단계에서 추가(Knip 미사용 의존성 게이트)
-- [ ] 2. 도메인: `Block` 타입, `validateFormLayout`, 평면→블록 파생(`deriveBlocks`), 단위 테스트(누락·중복·열 제한·텍스트 상한)
-- [ ] 3. 공통 렌더러 `renderBlocks()`(edit/fill/view/print) + 쪽 나눔 CSS 규칙 + Pretendard 고정(웹폰트·PDF 동일 파일). `buildPdfHtml` 교체, 기존 PDF 배치 재현 테스트
+- [x] 2. 도메인: `Block` 타입, `validateFormLayout`, 평면→블록 파생(`deriveBlocks`), 단위 테스트(누락·중복·열 제한·텍스트 상한). PR #99 병합
+- [x] 3. 공통 렌더러 `renderBlocks()`(edit/fill/view/print) + 쪽 나눔 CSS 규칙 + Pretendard 고정(웹폰트·PDF 동일 파일). `buildPdfHtml` 교체, 기존 PDF 배치 재현 테스트. 구현 경계·검증은 아래 기록 참조
 - [ ] 4. DB·API: `form_draft` 테이블(RLS, `revision`), 초안 저장/조회 API, 버전 생성은 "저장"만, 서버 layout 검증 연결
 - [ ] 5. 편집기(+의존성 추가: `@tiptap/core`·`suggestion`·`extension-drag-handle(-react)`·`node-range`와 drag-handle 필수 peer `extension-collaboration`·`@tiptap/y-tiptap` 모두 `~3.31.4` 계열, 공급망 대기 통과 버전만): 슬래시·드래그 핸들·인라인 설정·columns 노드·쪽나눔 블록·페이지 경계(보수 마진)·문서 크롬(편집 불가)·라이트 고정·모바일 reflow, 자동 저장
 - [ ] 6. 작성(fill)·조회(view) 화면 통합(구조 편집 불가, 표 행 추가·삭제 허용)
 - [ ] 7. 검증: 쪽 경계 하네스 자동화(마진 재확정), 잘림 시나리오 PDF 테스트, 실제 한글 IME 수동 확인, E2E, `pnpm verify`
 - [ ] 8. 구 편집 UI 제거, `feature.map.yaml`·INDEX·ADR 갱신
+
+## 3단계 구현 기록 (2026-11-01)
+
+- `shared/src/domain/form-blocks.ts`의 `renderBlocks<T>`가 블록 순회와 필드 라벨·값 틀(`field`, `wide`, `label`, `value`, `rich`)을 소유한다. 어댑터는 `text`·`element`와 필드 **값/위젯만** 제공한다. `undefined` 값은 필드 전체를 숨긴다.
+- `edit`는 구조 편집 가능, `fill`은 값 편집 가능, `view`·`print`는 모두 읽기 전용인 컨텍스트를 필드 어댑터에 전달한다. 이는 UI 계약이며 서버 권한 검사를 대체하지 않는다. `shared/src/ui/form-blocks.tsx`는 React 어댑터다. 실제 Tiptap 위젯은 5단계, 기존 작성·조회 화면 연결은 6단계에서 한다.
+- `buildPdfHtml`은 외부 JSON의 blocks를 검증한 뒤 같은 렌더러를 쓴다. 기존 방향·결재란 위치 폴백, 빈 값·첨부 필드 생략, 금액·표 합계·구성원 표시와 문서 크롬은 유지한다.
+- **기존 배치 설명 정정:** dev `99b0c2f`의 실제 CSS는 일반 필드 **50% 폭**(한 행에 두 필드), 라벨/값 가로형이고 표·리치텍스트는 `.wide` 전폭이다. blocks가 없는 기존 버전에는 `legacy-fields`로 이를 그대로 보존한다. 명시적 blocks는 단일 열이 기본이고 columns로 다중 열을 만든다. 평면→블록 파생 함수는 바꾸지 않는다.
+- 기존 출력 fixture `features/completion/tests/fixtures/block-print-legacy.html`은 dev `99b0c2f`의 `buildPdfHtml`에 같은 폴더 `block-print.json`을 넣어 생성했다. 13종+빈 값의 필드 마크업, 본문 186/273mm × screen/print의 실제 Chromium 좌표·크기·라벨 배경을 비교한다. 새 코드로 기준 fixture를 다시 생성하지 않는다.
+- `form-block-style.ts`를 웹/PDF가 공유한다. 일반 필드·표 행·리치텍스트 문단은 `break-inside: avoid`, 긴 표·리치텍스트 전체는 분할 허용, 머리글은 반복, 제목/라벨은 다음 내용과 묶는다. 수동 쪽 나눔은 화면 점선과 print `break-after: page`이며 열 안에서도 실제 2쪽 PDF로 검증했다. 모바일 columns/표의 넘침은 블록 내부 스크롤로 처리한다.
+- 글꼴은 기존 승인된 Pretendard v1.3.9 Regular/Bold(SIL OFL 1.1)의 **동일 바이트**를 `apps/web/public/fonts/`에 제공한다. 기존 worker 파일은 유지한다. 각각 약 748/776KiB이며 OFL 원문도 복제하고 동일성을 시험한다. opaque srcdoc용 CORS는 공개 `/fonts/*`에만 연다. 앱/API CORS는 변경하지 않는다.
+- 검증: 순수 모드 계약·React 어댑터·XSS/잘못된 배치 거부·Chromium 배치/웹폰트/쪽나눔 시험. 실제 PDF는 세로 6쪽·가로 8쪽 샘플에서 80행+30문단의 순서·중복/누락 없음, 표 머리글 반복, 양쪽 열과 문서 끝을 PDFKit으로 추출해 확인했다. 선택 페이지를 이미지로도 확인했다. 샘플의 가로 마지막 쪽은 푸터만 남는 여백이 있으므로 페이지 수 최적화는 주장하지 않는다.
+- 한계: 신규 편집기 실화면, 실제 OS IME, 쪽 경계 보수 마진 재확정, 거대 단일 행·모든 다중 열 조합의 잘림 검증은 5~7단계에 남는다. 전체 단위의 기본 5초 타임아웃과 mac13 브라우저 검증 경로는 [트러블슈팅](../ts/2026-11-01-form-block-renderer-verification.md)에 기록한다. 최종 명령·종료코드·PR exact-head CI는 카드/PR에 남긴다.
 
 ## 완료 기준
 - 모든 기존 양식이 새 편집기에서 열리고, 저장 결과가 `validateFormSchema`를 통과한다.

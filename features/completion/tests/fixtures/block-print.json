@@ -1,0 +1,70 @@
+{
+  "title": "블록 배치 회귀",
+  "docNo": "TEST-2026-0001",
+  "businessName": "시험 사업자",
+  "form": {
+    "name": "전체 필드 양식",
+    "layout": {},
+    "schema": {
+      "fields": [
+        { "key": "text", "label": "제목", "type": "text" },
+        { "key": "textarea", "label": "설명", "type": "textarea" },
+        { "key": "number", "label": "수량", "type": "number" },
+        { "key": "money", "label": "금액", "type": "money" },
+        { "key": "date", "label": "날짜", "type": "date" },
+        { "key": "daterange", "label": "기간", "type": "daterange" },
+        {
+          "key": "select",
+          "label": "선택",
+          "type": "select",
+          "options": [{ "value": "a", "label": "가" }]
+        },
+        {
+          "key": "multiselect",
+          "label": "복수",
+          "type": "multiselect",
+          "options": [{ "value": "b", "label": "나" }]
+        },
+        { "key": "user", "label": "담당자", "type": "user" },
+        { "key": "dept", "label": "부서", "type": "dept" },
+        {
+          "key": "table",
+          "label": "내역",
+          "type": "table",
+          "columns": [
+            { "key": "item", "label": "항목", "type": "text" },
+            { "key": "amount", "label": "금액", "type": "money", "sum": true }
+          ]
+        },
+        { "key": "richtext", "label": "본문", "type": "richtext" },
+        { "key": "attachment", "label": "첨부", "type": "attachment" },
+        { "key": "blank", "label": "빈 필드", "type": "text" }
+      ]
+    }
+  },
+  "values": {
+    "text": "첫째 줄",
+    "textarea": "둘째 줄\n설명",
+    "number": 12,
+    "money": 12000,
+    "date": "2026-10-31",
+    "daterange": { "from": "2026-10-30", "to": "2026-10-31" },
+    "select": "a",
+    "multiselect": ["b"],
+    "user": "m1",
+    "dept": "d1",
+    "table": [{ "item": "교통비", "amount": 12000 }],
+    "richtext": {
+      "type": "doc",
+      "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "결재 본문" }] }]
+    },
+    "blank": ""
+  },
+  "names": { "m1": "홍길동", "d1": "기획팀" },
+  "drafter": { "membershipId": "m1", "name": "홍길동", "department": "기획팀", "position": "사원" },
+  "approvers": [],
+  "submittedAt": "2026-10-30T00:00:00Z",
+  "completedAt": "2026-10-31T00:00:00Z",
+  "contentHash": "test-only",
+  "attachments": []
+}
