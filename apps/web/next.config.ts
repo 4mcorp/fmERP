@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: repoRoot,
   turbopack: { root: repoRoot },
+  // sandbox=""인 양식 srcdoc도 공개 글꼴을 읽는다. 앱/API에는 CORS를 열지 않는다.
+  headers: () => [
+    {
+      source: "/fonts/:file*",
+      headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
+    },
+  ],
   transpilePackages: [
     "@fmerp/audit",
     "@fmerp/db",

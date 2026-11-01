@@ -27,7 +27,7 @@
 - 시험: tests/*.test.ts · tests/*.int.test.ts · apps/web/e2e/m7.spec.ts
 
 ## completion — 완료된 결재 문서의 PDF·패키지(final/)를 한 번만 만들어 S3에 쓰고, 열람 권한자에게 내려받게 한다
-- 키워드: 완료, PDF, 패키지, 내려받기, ZIP, 인쇄, final, 해시, manifest
+- 키워드: 완료, PDF, 패키지, 내려받기, ZIP, 인쇄, final, 해시, manifest, 블록, Pretendard
 - 화면: (없음) · API 3개 · 폴더 `features/completion/`
 - 표: 소유 document_package / 읽기 10개
 - 시험: tests/*.test.ts · tests/*.int.test.ts · apps/web/e2e (m5.spec.ts가 완료 파일을 거친다)

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>블록 배치 회귀</title>
+<style>
+@page { size: A4 portrait; }
+
+  @page { margin: 14mm 12mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Pretendard", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; font-size: 10.5pt; color: #111; line-height: 1.5; margin: 0; padding: 0 0.6mm; }
+  h1.title { font-size: 20pt; text-align: center; margin: 4mm 0 6mm; }
+  .meta { display: flex; justify-content: space-between; font-size: 9.5pt; color: #333; margin-bottom: 4mm; }
+  .top { display: flex; margin-bottom: 4mm; }
+  .top.approval-right { justify-content: flex-end; }
+  .top.approval-left { justify-content: flex-start; }
+  .top.approval-bottom { display: none; }
+  .bottom-box { display: none; margin-top: 8mm; break-inside: avoid; }
+  .bottom-box.show { display: flex; justify-content: flex-end; }
+  table.approval { border-collapse: collapse; break-inside: avoid; table-layout: fixed; }
+  table.approval tr, table.approval td.cell { break-inside: avoid; }
+  table.approval td.cell { border: 1px solid #333; width: var(--cell-width); text-align: center; vertical-align: top; padding: 0; font-size: var(--cell-font); }
+  .cell .head { background: #f1f1f1; border-bottom: 1px solid #333; font-size: inherit; padding: 1mm; min-height: 9mm; }
+  .cell .body { height: 15mm; position: relative; display: flex; align-items: center; justify-content: center; }
+  .cell .body img.sig, .cell .body img.stamp { max-height: 13mm; max-width: var(--cell-image-width); }
+  .cell .body img.stamp { position: absolute; right: 1mm; top: 1mm; max-height: 11mm; opacity: 0.9; }
+  .cell .signed-name { font-weight: 600; }
+  .cell .pending { color: #999; font-size: inherit; }
+  .cell .behalf { position: absolute; left: 1mm; top: 1mm; border: 1px solid #c00; color: #c00; font-size: 7pt; padding: 0 1mm; border-radius: 1mm; }
+  .cell .who { font-size: 8.5pt; border-top: 1px solid #ccc; padding: 0.5mm; }
+  .cell .when { font-size: 7.5pt; color: #444; padding-bottom: 0.5mm; min-height: 4mm; }
+  .sub { font-size: 7.5pt; color: #555; font-weight: 400; }
+  .fields { display: flex; flex-wrap: wrap; border-top: 1px solid #333; width: 100%; box-sizing: border-box; }
+  .field { width: 50%; display: flex; border-bottom: 1px solid #ccc; }
+  .field:not(.wide) { border-right: 1px solid #ccc; }
+  .field.wide { width: 100%; display: block; }
+  .field .label { width: 30mm; background: #f6f6f6; padding: 1.5mm 2mm; font-weight: 600; font-size: 9.5pt; border-right: 1px solid #ddd; flex-shrink: 0; }
+  .field.wide .label { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
+  .field .value { padding: 1.5mm 2mm; flex: 1; word-break: break-word; white-space: pre-wrap; }
+  .rich { padding: 2mm; }
+  .rich p { margin: 0 0 2mm; } .rich h1, .rich h2, .rich h3 { margin: 3mm 0 2mm; }
+  .rich ul, .rich ol { margin: 0 0 2mm 5mm; padding: 0; } .rich blockquote { border-left: 2px solid #bbb; margin: 0 0 2mm; padding-left: 3mm; color: #444; }
+  .rich pre, .rich code { font-family: monospace; background: #f3f3f3; }
+  table.grid { width: 100%; box-sizing: border-box; border-collapse: collapse; }
+  table.grid th, table.grid td { border: 1px solid #bbb; padding: 1mm 2mm; font-size: 9.5pt; }
+  table.grid th { background: #f1f1f1; } table.grid td.num { text-align: right; }
+  table.grid tr.sum td { font-weight: 700; background: #fafafa; }
+  .attach { margin-top: 5mm; font-size: 9.5pt; } .attach h3 { font-size: 10pt; margin: 0 0 1mm; }
+  .attach ul { margin: 0; padding-left: 5mm; }
+  .footer { margin-top: 8mm; font-size: 8pt; color: #555; border-top: 1px solid #ccc; padding-top: 2mm; word-break: break-all; }
+  .seal { position: absolute; right: 12mm; top: 6mm; max-height: 20mm; opacity: 0.85; }
+</style></head>
+<body>
+
+
+<h1 class="title">블록 배치 회귀</h1>
+<div class="meta"><span>시험 사업자 · 전체 필드 양식</span><span>문서번호 TEST-2026-0001</span></div>
+<div class="top approval-right"><table class="approval" style="--cell-width:20mm;--cell-font:7.083333333333333pt;--cell-image-width:17mm"><tr><td class="cell"><div class="head">기안<br><span class="sub">사원</span></div><div class="body"><div class="signed-name">홍길동</div></div><div class="who">홍길동</div><div class="when">10-30 09:00</div></td></tr></table></div>
+<div class="fields"><div class="field"><div class="label">제목</div><div class="value">첫째 줄</div></div><div class="field"><div class="label">설명</div><div class="value">둘째 줄<br>설명</div></div><div class="field"><div class="label">수량</div><div class="value">12</div></div><div class="field"><div class="label">금액</div><div class="value">12,000원</div></div><div class="field"><div class="label">날짜</div><div class="value">2026-10-31</div></div><div class="field"><div class="label">기간</div><div class="value">2026-10-30 ~ 2026-10-31</div></div><div class="field"><div class="label">선택</div><div class="value">가</div></div><div class="field"><div class="label">복수</div><div class="value">나</div></div><div class="field"><div class="label">담당자</div><div class="value">홍길동</div></div><div class="field"><div class="label">부서</div><div class="value">기획팀</div></div><div class="field wide"><div class="label">내역</div><table class="grid"><thead><tr><th>항목</th><th>금액</th></tr></thead><tbody><tr><td class="">교통비</td><td class="num">12,000원</td></tr><tr class="sum"><td>합계</td><td class="num">12,000원</td></tr></tbody></table></div><div class="field wide"><div class="label">본문</div><div class="rich"><p>결재 본문</p></div></div></div>
+
+<div class="bottom-box "></div>
+<div class="footer">상신 2026-10-30 09:00 · 완료 2026-10-31 09:00<br>상신 시점 내용 해시(SHA-256): test-only</div>
+</body></html>
