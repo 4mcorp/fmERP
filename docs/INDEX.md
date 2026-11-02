@@ -158,6 +158,7 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
+| [2026-11-02-config-export-import.md](plan/2026-11-02-config-export-import.md) | accepted | Q1~Q5 확정·열린 질문 0건. JSON v1·upsert/diff·UI/CLI·시스템 사번/memberKey·RBAC 이행·회사 기본 채번/양식 예외. Q5=A 다른 key의 기존 구성원 연결 미지원·충돌 차단, 명시 매핑/alias는 후속. 문서함·구성 repo/장기 보관 제외 |
 | [2026-10-30-form-block-editor.md](plan/2026-10-30-form-block-editor.md) | in-progress | 2~4단계 도메인·공통 렌더러/Pretendard·초안 API/CAS·RLS(0028), 5단계 Tiptap 편집·자동 저장, 6단계 작성/조회 연결·값/표 행 편집·버전 배치 보존, 7단계 실제 PDF 하네스·12mm 보수 여유·기존 양식 왕복. 실제 OS IME는 사용자 확인, 구 UI 제거는 8단계 |
 | [2026-10-26-e2e-pipeline.md](plan/2026-10-26-e2e-pipeline.md) | done | E2E 러너 계측·캐시·산출물, dev 변경 관련/main 전체 필수 CI, production·Compose 동일조건 비교 |
 | [2026-10-12-feature-scoped-ci.md](plan/2026-10-12-feature-scoped-ci.md) | done | 기능별 단위 선택·전체 통합 병렬 실행, main E2E를 필수 check에 연결. 로컬 검증 완료, 원격 실행 미검증 |
