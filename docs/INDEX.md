@@ -125,7 +125,7 @@
 |---|---|---|
 | [2026-11-02-form-block-page-boundary-harness.md](ts/2026-11-02-form-block-page-boundary-harness.md) | ui, pdf, test, playwright, forms | 고정 가이드와 packing 모델을 구분해 두 엔진의 실제 PDF로 12mm 보수 여유를 측정. 페이지별 마커·거대 행 분할·PDFKit 독립 대조 |
 | [2026-11-02-form-block-fill-view-overflow.md](ts/2026-11-02-form-block-fill-view-overflow.md) | ui, forms, accessibility, playwright, test | 표 sr-only 절대 위치가 내부 스크롤을 벗어나면 wrapper를 relative로 만든다. 모든 태그·숨김 컨트롤의 rect를 확인하고 페이지/내부 스크롤을 따로 검증 |
-| [2026-11-02-form-block-editor-runtime.md](ts/2026-11-02-form-block-editor-runtime.md) | ui, tiptap, test, playwright, deps | 초기 editorRef·선택 뒤 삽입·드래그 viewport 좌표·초안 재진입 revision·HMR 대기/전용 DB 재초기화·정확 설치 버전 공급망 검사 |
+| [2026-11-02-form-block-editor-runtime.md](ts/2026-11-02-form-block-editor-runtime.md) | ui, tiptap, test, playwright, deps | 초기 editorRef·선택 뒤 삽입·실제 contentDOM/caret·드래그 viewport 좌표·초안 재진입 revision·HMR 대기/전용 DB 재초기화·정확 설치 버전 공급망 검사 |
 | [2026-10-30-card-grid-breakpoint-units.md](ts/2026-10-30-card-grid-breakpoint-units.md) | ui, tailwind, responsive, test | breakpoint 단위를 rem으로 통일하고 실제 브라우저에서 1920px 경계 전후 열 수와 전체 폭 카드를 검증한다 |
 | [2026-11-01-form-block-renderer-verification.md](ts/2026-11-01-form-block-renderer-verification.md) | ui, pdf, fonts, test, playwright, k3s | opaque srcdoc 웹폰트 CORS·실제 HTTP 검사, mac13 Chrome/Linux PDF 검증, 러너 argv·VM 공유 경로·5초 timeout·production Compose 단위의 E2E_SERVER_MODE 분리 |
 | [2026-10-20-discord-pr-events-emit-failures.md](ts/2026-10-20-discord-pr-events-emit-failures.md) | ci, discord, workflow, concurrency, notifier, flaky | discord-pr-events 실패 로그는 stage·status·exc·retry_after만 남기고 원문·URL을 출력하지 않는다. `cancel-in-progress: false`만으로는 무손실이 아니므로 `queue: max`를 쓴다. 알림 스텝은 `continue-on-error`로 PR 체크와 분리한다. 원인은 미확정 |

@@ -286,12 +286,21 @@ test.describe("블록 편집기", { tag: "@stateful" }, () => {
       fullPage: true,
     });
     await page.reload();
-    await columns.locator(".node-formColumn").last().locator(".node-paragraph").last().click();
+    const rightColumn = columns.locator(".node-formColumn").last();
+    await rightColumn.locator(".node-paragraph [data-node-view-content-react]").last().click();
+    await expect
+      .poll(() =>
+        rightColumn.evaluate((el) => {
+          const anchor = window.getSelection()?.anchorNode;
+          return anchor !== null && anchor !== undefined && el.contains(anchor);
+        }),
+      )
+      .toBe(true);
     await page.keyboard.type("/날짜");
+    await expect(rightColumn).toContainText("/날짜");
     await page.getByRole("menuitem", { name: "날짜", exact: true }).click();
-    await expect(
-      columns.locator(".node-formColumn").last().locator("[data-field-key]"),
-    ).toHaveCount(1);
+    await expect(rightColumn.locator("[data-field-key]")).toHaveCount(1);
+    await expect(editor.locator('[data-field-key="subject"]')).toHaveCount(1);
     await expect(page.getByRole("status").filter({ hasText: "초안 저장 완료" })).toBeVisible();
   });
 
