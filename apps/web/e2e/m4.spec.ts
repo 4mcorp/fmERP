@@ -1,3 +1,5 @@
+import { validateFormLayout } from "@fmerp/shared/domain/form-layout";
+import { validateFormSchema } from "@fmerp/shared/domain/form-schema";
 import { expect, type Page, test } from "@playwright/test";
 
 async function loginAs(page: Page, name: string) {
@@ -48,6 +50,63 @@ async function createBlockForm(page: Page) {
 }
 
 test.describe("블록 편집기", { tag: "@stateful" }, () => {
+  test("기존 양식 전체를 새 편집기에서 열고 필드 정의를 보존하여 저장한다", async ({ page }) => {
+    test.setTimeout(180_000);
+    await loginAs(page, "김대표");
+    const response = await page.request.get("/api/forms?all=true");
+    expect(response.ok()).toBe(true);
+    const forms: { id: string; code: string; name: string }[] = await response.json();
+    const checked: string[] = [];
+    expect(forms.length).toBeGreaterThanOrEqual(7);
+    expect(new Set(forms.map((form) => form.id)).size).toBe(forms.length);
+    for (const form of forms) {
+      const before = await (await page.request.get(`/api/forms/${form.id}`)).json();
+      await page.goto(`/admin/forms/${form.id}`);
+      const editor = page.getByRole("textbox", { name: "양식 블록 편집기", exact: true });
+      await expect(editor).toBeVisible();
+      await expect(editor.locator("[data-field-key]")).toHaveCount(
+        before.definition.schema.fields.length,
+      );
+      const first = before.definition.schema.fields[0];
+      if (first) {
+        await editor
+          .getByRole("button", { name: `${first.label} 설정`, exact: true })
+          .first()
+          .click();
+        const label = editor.locator(".block-settings").getByLabel("라벨", { exact: true });
+        await label.fill(`${first.label} 확인`);
+        await label.fill(first.label);
+      }
+      await page.getByRole("button", { name: "새 버전으로 저장", exact: true }).click();
+      await expect(
+        page.getByText(new RegExp(`새 버전\\(v${before.version + 1}\\)으로 저장했습니다`)),
+      ).toBeVisible();
+      const saved = await (await page.request.get(`/api/forms/${form.id}`)).json();
+      expect(saved.definition.schema, form.code).toEqual(before.definition.schema);
+      expect(validateFormSchema(saved.definition.schema), form.code).toEqual({ ok: true });
+      expect(
+        validateFormLayout(saved.definition.schema, saved.definition.layout).ok,
+        form.code,
+      ).toBe(true);
+      checked.push(form.code);
+    }
+    expect(checked).toHaveLength(forms.length);
+    expect(checked).toEqual(
+      expect.arrayContaining([
+        "GENERAL",
+        "PROPOSAL",
+        "EXPENSE",
+        "LEAVE",
+        "TRIP",
+        "COOP",
+        "PURCHASE",
+      ]),
+    );
+    await test.info().attach("legacy-forms.json", {
+      body: JSON.stringify(checked),
+      contentType: "application/json",
+    });
+  });
   test("3.31.4 드래그 핸들 이동과 한글 조합 중 Enter 보호를 확인한다", async ({
     page,
     context,
@@ -97,6 +156,10 @@ test.describe("블록 편집기", { tag: "@stateful" }, () => {
     await page.goto(`/admin/forms/${id}`);
     const editor = page.getByRole("textbox", { name: "양식 블록 편집기", exact: true });
     await expect(editor).toBeVisible();
+    await expect(page.locator("details").filter({ hasText: "기존 필드 목록" })).not.toHaveAttribute(
+      "open",
+      "",
+    );
     await expect(editor.locator(".node-paragraph").last()).toBeVisible();
     expect((await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft).toBeNull();
     await editor.locator(".node-paragraph").last().click();
@@ -132,7 +195,16 @@ test.describe("블록 편집기", { tag: "@stateful" }, () => {
     expect((await (await page.request.get(`/api/forms/${id}`)).json()).definition.schema).toEqual(
       draft.schema,
     );
-    const code = (await (await page.request.get(`/api/forms/${id}`)).json()).code;
+    const published = await (await page.request.get(`/api/forms/${id}`)).json();
+    expect(validateFormSchema(published.definition.schema)).toEqual({ ok: true });
+    expect(validateFormLayout(published.definition.schema, published.definition.layout).ok).toBe(
+      true,
+    );
+    await expect(page.locator("details").filter({ hasText: "기존 필드 목록" })).not.toHaveAttribute(
+      "open",
+      "",
+    );
+    const code = published.code;
     await page.getByRole("button", { name: "목록", exact: true }).click();
     await page.getByPlaceholder("양식 이름·코드 검색").fill(code);
     await page.locator(`a[href="/admin/forms/${id}"]`).click();
@@ -206,7 +278,7 @@ test.describe("블록 편집기", { tag: "@stateful" }, () => {
     const headerY = (await page.locator(".form-editor-chrome").first().boundingBox())?.y;
     expect(guideY).toBeDefined();
     expect(headerY).toBeDefined();
-    expect(Math.abs((guideY ?? 0) - (headerY ?? 0) - (266 * 96) / 25.4)).toBeLessThan(1);
+    expect(Math.abs((guideY ?? 0) - (headerY ?? 0) - (257 * 96) / 25.4)).toBeLessThan(1);
     await page.screenshot({
       path: test.info().outputPath("block-editor-desktop.png"),
       fullPage: true,
@@ -530,7 +602,7 @@ test("임시저장한 입력은 새로고침해도 이 브라우저에서 복구
   // 양식은 분류 카드(일반) 안에 있고 기본으로 접혀 있다
   await expandCard(page, /^일반/);
   await page
-    .getByRole("button", { name: /^일반 기안v1$/ })
+    .getByRole("button", { name: /^일반 기안v\d+$/ })
     .first()
     .click();
   await page.getByRole("textbox", { name: "제목" }).fill("복구 확인 문서");
@@ -572,7 +644,7 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
     await page.getByRole("link", { name: "새 결재" }).first().click();
     await expandCard(page, /^일반/);
     await page
-      .getByRole("button", { name: /^일반 기안v1$/ })
+      .getByRole("button", { name: /^일반 기안v\d+$/ })
       .first()
       .click();
     await page.getByRole("textbox", { name: "제목" }).fill("출장비 정산 안내");
