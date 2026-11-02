@@ -123,6 +123,7 @@
 ## 5. 트러블슈팅 (`docs/ts/`) — 작업 전 태그가 겹치는 항목을 읽을 것
 | 파일 | 태그 | 요약 (재발 방지 핵심) |
 |---|---|---|
+| [2026-11-02-form-block-fill-view-overflow.md](ts/2026-11-02-form-block-fill-view-overflow.md) | ui, forms, accessibility, playwright, test | 표 sr-only 절대 위치가 내부 스크롤을 벗어나면 wrapper를 relative로 만든다. 모든 태그·숨김 컨트롤의 rect를 확인하고 페이지/내부 스크롤을 따로 검증 |
 | [2026-11-02-form-block-editor-runtime.md](ts/2026-11-02-form-block-editor-runtime.md) | ui, tiptap, test, playwright, deps | 초기 editorRef·선택 뒤 삽입·드래그 viewport 좌표·초안 재진입 revision·HMR 대기/전용 DB 재초기화·정확 설치 버전 공급망 검사 |
 | [2026-10-30-card-grid-breakpoint-units.md](ts/2026-10-30-card-grid-breakpoint-units.md) | ui, tailwind, responsive, test | breakpoint 단위를 rem으로 통일하고 실제 브라우저에서 1920px 경계 전후 열 수와 전체 폭 카드를 검증한다 |
 | [2026-11-01-form-block-renderer-verification.md](ts/2026-11-01-form-block-renderer-verification.md) | ui, pdf, fonts, test, playwright, k3s | opaque srcdoc 웹폰트 CORS·실제 HTTP 검사, mac13 Chrome/Linux PDF 검증, 러너 argv·VM 공유 경로·5초 timeout 구분 |
@@ -156,7 +157,7 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
-| [2026-10-30-form-block-editor.md](plan/2026-10-30-form-block-editor.md) | in-progress | 2~4단계 도메인·공통 렌더러/Pretendard·초안 API/CAS·RLS(0028), 5단계 Tiptap 3.31.4 블록 편집·직렬 자동 저장·충돌 복구. fill/view 연결·PDF 마진 재확정·구 UI 제거는 후속 단계 |
+| [2026-10-30-form-block-editor.md](plan/2026-10-30-form-block-editor.md) | in-progress | 2~4단계 도메인·공통 렌더러/Pretendard·초안 API/CAS·RLS(0028), 5단계 Tiptap 편집·자동 저장, 6단계 작성/조회 연결·값/표 행 편집·버전 배치 보존. PDF 마진 재확정·구 UI 제거는 후속 단계 |
 | [2026-10-26-e2e-pipeline.md](plan/2026-10-26-e2e-pipeline.md) | done | E2E 러너 계측·캐시·산출물, dev 변경 관련/main 전체 필수 CI, production·Compose 동일조건 비교 |
 | [2026-10-12-feature-scoped-ci.md](plan/2026-10-12-feature-scoped-ci.md) | done | 기능별 단위 선택·전체 통합 병렬 실행, main E2E를 필수 check에 연결. 로컬 검증 완료, 원격 실행 미검증 |
 | [2026-10-15-ui-ux-refactor-round2.md](plan/2026-10-15-ui-ux-refactor-round2.md) | draft | UI/UX 2차: 결재 상세 토글·다열 카드, 출력물 결재란 자동 맞춤(최대 15칸·2줄)·테두리·줄바꿈, 진행 중 문서 A4 미리보기, 목록 화면 통일·읽음 표시, 양식 선택·편집 미리보기, 관리콘솔 정리, action 버튼·탭 표준 (카드 U0~U10) |

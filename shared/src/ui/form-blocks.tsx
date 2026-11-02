@@ -10,6 +10,7 @@ export function FormBlocks(props: {
   layout: FormLayout;
   mode: BlockMode;
   renderField(field: FormField, context: BlockContext): ReactNode;
+  renderLabel?(field: FormField, context: BlockContext): ReactNode;
   renderText?(text: string): ReactNode;
   includeStyles?: boolean;
 }) {
@@ -23,6 +24,7 @@ export function FormBlocks(props: {
       element: (tag, { class: className, ...attrs }, children) =>
         createElement(tag, { className, ...attrs }, ...children),
       field: props.renderField,
+      label: props.renderLabel,
     },
   });
   return (

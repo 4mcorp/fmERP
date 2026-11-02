@@ -583,6 +583,7 @@ export function ApprovalDetailPage({
               {docForm && serverBody ? (
                 <FormValuesView
                   schema={docForm.definition.schema as FormSchema}
+                  layout={docForm.definition.layout}
                   values={serverBody.body}
                   ctx={ctx}
                 />

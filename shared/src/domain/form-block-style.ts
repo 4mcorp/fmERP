@@ -30,6 +30,10 @@ export const FORM_BLOCK_CSS = `
   .form-blocks table.grid tr.sum td { font-weight: 700; background: #fafafa; }
 
   .form-blocks { font-family: "Pretendard", sans-serif; color: #111; background: #fff; color-scheme: light; font-size: 10.5pt; font-weight: 400; line-height: 1.5; }
+  .form-blocks, .form-block-options { --background:#fff; --foreground:#111; --muted:#f6f6f6; --muted-foreground:#555; --input:#ccc; --border:#ccc; --popover:#fff; --popover-foreground:#111; --accent:#eee; --accent-foreground:#111; color-scheme:light; }
+  .form-blocks .value { min-width: 0; }
+  .form-blocks .label > label { font: inherit; }
+  .form-blocks[data-mode="fill"] [data-slot="select-trigger"] { width: 100%; max-width: 16rem; }
   .form-blocks, .form-blocks * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .form-blocks:not(.legacy-fields) { display: block; }
   .form-blocks:not(.legacy-fields) .field { width: 100%; }
@@ -44,7 +48,7 @@ export const FORM_BLOCK_CSS = `
   .form-blocks h2.block-heading { font-size: 13pt; }
   .form-blocks .block-text { margin: 2mm 0; white-space: pre-wrap; overflow-wrap: anywhere; orphans: 2; widows: 2; }
   .form-blocks .block-divider { border: 0; border-top: 1px solid #ccc; margin: 3mm 0; }
-  .form-blocks .block-columns-scroll { overflow-x: auto; }
+  .form-blocks .block-columns-scroll { position: relative; overflow-x: auto; }
   .form-blocks .block-columns { display: grid; gap: 3mm; min-width: 160mm; }
   .form-blocks .block-columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .form-blocks .block-columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -53,6 +57,9 @@ export const FORM_BLOCK_CSS = `
   .form-blocks .block-column .field { width: 100%; }
   .form-blocks .field.wide { overflow-x: auto; }
   .form-blocks .block-pagebreak { border-bottom: 1px dashed #999; color: #666; font-size: 9pt; text-align: center; margin: 3mm 0; }
+  @media screen and (max-width: 640px) {
+    .form-blocks.legacy-fields > .field { width: 100%; }
+  }
   @media print {
     .form-blocks .block-columns-scroll, .form-blocks .field.wide { overflow: visible; }
     .form-blocks .block-columns { min-width: 0; }

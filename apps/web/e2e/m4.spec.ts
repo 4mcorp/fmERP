@@ -264,6 +264,224 @@ test.describe("블록 편집기", { tag: "@stateful" }, () => {
   });
 });
 
+test.describe("블록 작성·조회 통합", { tag: "@stateful" }, () => {
+  test("13종 값·행 편집을 저장하고 버전 고정 배치를 읽기 전용으로 조회한다", async ({ page }) => {
+    test.setTimeout(90_000);
+    await loginAs(page, "김대표");
+    const members = await (await page.request.get("/api/account/members")).json();
+    const departments = await (await page.request.get("/api/departments")).json();
+    const businesses = await (await page.request.get("/api/businesses")).json();
+    const approver = members.find((m: { email: string }) => m.email === "member2@example.com");
+    const fields = [
+      { key: "subject", type: "text", label: "신청 내용", required: true, help: "값만 수정하세요" },
+      { key: "memo", type: "textarea", label: "긴 메모" },
+      { key: "count", type: "number", label: "수량" },
+      { key: "amount", type: "money", label: "청구 금액" },
+      { key: "day", type: "date", label: "신청일" },
+      { key: "period", type: "daterange", label: "출장 기간" },
+      {
+        key: "choice",
+        type: "select",
+        label: "출장 구분",
+        options: [{ value: "a", label: "국내" }],
+      },
+      {
+        key: "choices",
+        type: "multiselect",
+        label: "복수 선택",
+        options: [{ value: "a", label: "선택 항목" }],
+      },
+      { key: "person", type: "user", label: "담당자" },
+      { key: "dept", type: "dept", label: "담당 부서" },
+      {
+        key: "rows",
+        type: "table",
+        label: "비용 표",
+        maxRows: 2,
+        columns: [
+          { key: "item", type: "text", label: "품목", required: true },
+          { key: "cost", type: "money", label: "비용", sum: true },
+          { key: "quantity", type: "number", label: "횟수" },
+          { key: "used", type: "date", label: "사용일" },
+        ],
+      },
+      { key: "body", type: "richtext", label: "상세 설명" },
+      { key: "files", type: "attachment", label: "증빙 첨부" },
+    ];
+    const blocks = [
+      { kind: "heading", level: 2, text: "출장 신청 안내" },
+      { kind: "text", text: "구조는 관리자만 변경할 수 있습니다." },
+      {
+        kind: "columns",
+        cols: [[{ kind: "field", key: "choice" }], [{ kind: "field", key: "day" }]],
+      },
+      { kind: "divider" },
+      ...fields
+        .filter((f) => f.key !== "choice" && f.key !== "day")
+        .map((f) => ({ kind: "field", key: f.key })),
+      { kind: "pagebreak" },
+    ];
+    const version = {
+      schema: { fields },
+      layout: { orientation: "landscape", blocks },
+      defaultLine: [],
+      numbering: null,
+      retentionYears: 3,
+      securityDefault: "normal",
+      allowLineEdit: true,
+      policy: { disagree: "reject", rejectTo: "drafter", auditCanReject: false },
+    };
+    const created = await page.request.post("/api/forms", {
+      data: {
+        code: `FILL${Date.now().toString(36)}`,
+        name: "작성 조회 블록",
+        category: "일반",
+        version,
+      },
+    });
+    expect(created.status()).toBe(201);
+    const { formId } = await created.json();
+    const body = {
+      subject: "초기 신청",
+      memo: "긴 메모 값",
+      count: 3,
+      amount: 12000,
+      day: "2026-11-02",
+      period: { from: "2026-11-02", to: "2026-11-03" },
+      choice: "a",
+      choices: ["a"],
+      person: approver.membershipId,
+      dept: departments[0].id,
+      rows: [{ item: "교통비", cost: 1000 }],
+      body: {
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text: "상세 본문" }] }],
+      },
+    };
+    const draft = await page.request.post("/api/approvals", {
+      data: {
+        businessId: businesses.find((b: { code: string }) => b.code === "FM").id,
+        formId,
+        title: "블록 작성 검증",
+        body,
+        line: [
+          {
+            type: "approve",
+            seq: 1,
+            target: { kind: "user", membershipId: approver.membershipId },
+          },
+        ],
+        submit: false,
+      },
+    });
+    expect(draft.status()).toBe(201);
+    const { documentId } = await draft.json();
+    await page.goto(`/approval/draft/${documentId}`);
+    const fill = page.locator('.form-blocks[data-mode="fill"]');
+    await expect(fill.getByRole("heading", { name: "출장 신청 안내" })).toBeVisible();
+    await expect(fill.getByRole("textbox", { name: "신청 내용", exact: true })).toHaveValue(
+      "초기 신청",
+    );
+    await expect(fill.locator(".field")).toHaveCount(13);
+    await expect(fill.locator(".block-columns .label")).toHaveText(["출장 구분", "신청일"]);
+    await expect(fill.getByRole("button", { name: /블록 추가|설정|열 추가/ })).toHaveCount(0);
+    await fill.getByRole("textbox", { name: "신청 내용", exact: true }).fill("수정한 신청");
+    await fill.getByRole("button", { name: "행 추가", exact: true }).click();
+    await fill.getByRole("textbox", { name: "품목", exact: true }).nth(1).fill("숙박비");
+    await fill.locator("#f-rows-1-cost").fill("2500");
+    await expect(fill.getByRole("button", { name: "행 추가", exact: true })).toHaveCount(0);
+    await expect(fill.getByText("3,500원", { exact: true })).toBeVisible();
+    await fill.getByRole("button", { name: "1행 삭제", exact: true }).click();
+    await expect(fill.getByRole("textbox", { name: "품목", exact: true })).toHaveValue("숙박비");
+    await expect(fill.getByText("2,500원", { exact: true })).toBeVisible();
+    await page.locator("#attachment-input").setInputFiles({
+      name: "증빙.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj\n"),
+    });
+    await expect(page.getByText("증빙.pdf을(를) 올렸습니다")).toBeVisible();
+    await page.getByRole("button", { name: "임시저장", exact: true }).click();
+    await expect(page.getByText(/저장됨/)).toBeVisible();
+    await page.reload();
+    await expect(fill.getByRole("textbox", { name: "신청 내용", exact: true })).toHaveValue(
+      "수정한 신청",
+    );
+    await expect(fill.getByRole("textbox", { name: "품목", exact: true })).toHaveValue("숙박비");
+    const saved = await (await page.request.get(`/api/approvals/${documentId}/body`)).json();
+    expect(saved.body).toEqual({
+      ...body,
+      subject: "수정한 신청",
+      rows: [{ item: "숙박비", cost: 2500 }],
+    });
+    const republished = await page.request.post(`/api/forms/${formId}/versions`, {
+      data: {
+        version: {
+          ...version,
+          layout: { blocks: fields.map((f) => ({ kind: "field", key: f.key })) },
+        },
+      },
+    });
+    expect(republished.ok()).toBe(true);
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.evaluate(() => document.documentElement.classList.add("dark"));
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await fill.getByRole("combobox", { name: "출장 구분", exact: true }).click();
+    await expect(page.getByRole("option", { name: "국내", exact: true })).toBeVisible();
+    expect(
+      await page
+        .locator('[data-slot="select-content"]')
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+    ).toBe("rgb(255, 255, 255)");
+    await page.keyboard.press("Escape");
+    await expect(page.locator('[data-slot="select-content"]')).toHaveCount(0);
+    await page.screenshot({ path: test.info().outputPath("fill-desktop.png"), fullPage: true });
+    await page.setViewportSize({ width: 360, height: 780 });
+    const mobileLayout = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      width: document.documentElement.scrollWidth,
+    }));
+    expect(mobileLayout.width, JSON.stringify(mobileLayout)).toBeLessThanOrEqual(
+      mobileLayout.viewport,
+    );
+    const scroll = fill.locator(".block-columns-scroll");
+    expect(await scroll.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    expect(
+      await fill
+        .locator(".field.wide table")
+        .evaluate(
+          (el) => el.parentElement !== null && el.scrollWidth > el.parentElement.clientWidth,
+        ),
+    ).toBe(true);
+    await scroll.evaluate((el) => {
+      el.scrollLeft = el.scrollWidth;
+    });
+    await expect(fill.getByLabel("신청일", { exact: true })).toHaveValue("2026-11-02");
+    expect(await fill.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+      "rgb(255, 255, 255)",
+    );
+    await page.screenshot({ path: test.info().outputPath("fill-mobile.png"), fullPage: true });
+    await verifyPin(page);
+    await page.getByRole("button", { name: "상신", exact: true }).click();
+    await expect(page).toHaveURL(`/approval/${documentId}`);
+    const view = page.locator('.form-blocks[data-mode="view"]');
+    await expect(view.getByRole("heading", { name: "출장 신청 안내" })).toBeVisible();
+    await expect(view.getByText("수정한 신청", { exact: true })).toBeVisible();
+    await expect(view.getByText("숙박비", { exact: true })).toBeVisible();
+    await expect(view.getByText("2,500원", { exact: true })).toHaveCount(2);
+    await expect(view.locator(".field")).toHaveCount(12);
+    await expect(view.locator("input,textarea,button,[contenteditable=true]")).toHaveCount(0);
+    await expect(view.locator(".block-columns .label")).toHaveText(["출장 구분", "신청일"]);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({ path: test.info().outputPath("view-mobile.png"), fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: test.info().outputPath("view-desktop.png"), fullPage: true });
+  });
+});
+
 /** 로그인한 사용자의 PIN을 확인 상태로 만든다. 이미 PIN이 있으면(M1 테스트 등) 알려진 값으로 확인한다 */
 async function verifyPin(page: Page) {
   const set = await page.request.put("/api/me/pin", { data: { pin: "135790" } });

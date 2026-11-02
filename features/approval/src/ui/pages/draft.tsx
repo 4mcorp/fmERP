@@ -426,6 +426,7 @@ export default function DraftEditorPage() {
         <CardContent>
           <FormFields
             schema={schema}
+            layout={docForm.definition.layout}
             form={form}
             errors={errors}
             ctx={ctx}

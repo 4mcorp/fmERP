@@ -14,6 +14,7 @@ export interface BlockAdapter<T> {
   element(tag: "div" | "h1" | "h2" | "p" | "hr", attrs: Record<string, string>, children: T[]): T;
   /** 필드 값/위젯만 반환한다. undefined는 해당 필드를 숨긴다. 라벨·틀은 공통 렌더러 소유다. */
   field(field: FormField, context: BlockContext): T | undefined;
+  label?(field: FormField, context: BlockContext): T;
 }
 
 /** 검증된 fields/blocks를 받는다. DOM·React·PDF가 같은 순회와 배치 클래스를 사용한다. */
@@ -52,7 +53,9 @@ export function renderBlocks<T>(input: {
                   ? value
                   : element("div", "value", [value]);
             return element("div", wide ? "field wide" : "field", [
-              element("div", "label", [adapter.text(field.label)]),
+              element("div", "label", [
+                adapter.label?.(field, context) ?? adapter.text(field.label),
+              ]),
               content,
             ]);
           }
