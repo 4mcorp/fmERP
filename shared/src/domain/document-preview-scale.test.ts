@@ -3,6 +3,7 @@ import {
   A4_PORTRAIT_MM,
   computePreviewOffsetX,
   computePreviewScale,
+  formPageGuideHeightMm,
   MM_TO_CSS_PX,
 } from "./document-preview-scale";
 
@@ -10,6 +11,10 @@ const A4_PORTRAIT_PX = A4_PORTRAIT_MM.width * MM_TO_CSS_PX;
 const A4_LANDSCAPE_PX = A4_PORTRAIT_MM.height * MM_TO_CSS_PX;
 
 describe("computePreviewScale (UX-2 A4 미리보기)", () => {
+  it("쪽 경계의 12mm 보수 여유는 PDF 여백과 별개로 세로257/가로170mm이다", () => {
+    expect(formPageGuideHeightMm("portrait")).toBe(257);
+    expect(formPageGuideHeightMm("landscape")).toBe(170);
+  });
   it("mm→px 변환은 1in=25.4mm=96px 기준이다", () => {
     expect(MM_TO_CSS_PX).toBeCloseTo(96 / 25.4, 10);
     expect(A4_PORTRAIT_PX).toBeCloseTo(793.7, 1);

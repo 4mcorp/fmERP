@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  FORM_PAGE_GUIDE_MARGIN_MM,
+  formPageGuideHeightMm,
+} from "@fmerp/shared/domain/document-preview-scale";
 import { FORM_BLOCK_CSS, FORM_BLOCK_FONT_CSS } from "@fmerp/shared/domain/form-block-style";
 import { renderBlocks } from "@fmerp/shared/domain/form-blocks";
 import { type Block, type FormLayout, resolveBlocks } from "@fmerp/shared/domain/form-layout";
@@ -383,7 +387,7 @@ export function FormBlockEditor({
       body = bodyRef.current;
     if (!header || !body) return;
     const measure = () => {
-      const height = ((layout.orientation === "landscape" ? 179 : 266) * 96) / 25.4;
+      const height = (formPageGuideHeightMm(layout.orientation ?? "portrait") * 96) / 25.4;
       const headerHeight = header.getBoundingClientRect().height;
       setPageGuide({
         header: headerHeight,
@@ -559,18 +563,14 @@ export function FormBlockEditor({
         </Button>
       </div>
       <p>
-        빈 줄에 /를 입력하세요. 열 안에서도 추가할 수 있습니다. 쪽 경계는 3mm 여유를 둔 근사이며
-        공식 출력은 서버 PDF입니다.
+        빈 줄에 /를 입력하세요. 열 안에서도 추가할 수 있습니다. 쪽 경계는{" "}
+        {FORM_PAGE_GUIDE_MARGIN_MM}mm 여유를 둔 근사이며 공식 출력은 서버 PDF입니다.
       </p>
       <div
         className="form-editor-paper"
         style={
           {
-            "--page-height": layout.orientation === "landscape" ? "179mm" : "266mm",
-            "--guide-px":
-              layout.orientation === "landscape"
-                ? String((179 * 96) / 25.4)
-                : String((266 * 96) / 25.4),
+            "--page-height": `${formPageGuideHeightMm(layout.orientation ?? "portrait")}mm`,
             "--chrome-height": `${pageGuide.header}px`,
             "--page-width": layout.orientation === "landscape" ? "297mm" : "210mm",
           } as React.CSSProperties
@@ -584,7 +584,10 @@ export function FormBlockEditor({
           ) : null}
         </header>
         <div ref={bodyRef} className="form-editor-body">
-          <aside className="page-guides" aria-label="페이지 경계 (3mm 보수 근사)">
+          <aside
+            className="page-guides"
+            aria-label={`페이지 경계 (${FORM_PAGE_GUIDE_MARGIN_MM}mm 보수 근사)`}
+          >
             {Array.from({ length: pageGuide.count }, (_, index) => index + 1).map((page) => (
               <div
                 key={page}

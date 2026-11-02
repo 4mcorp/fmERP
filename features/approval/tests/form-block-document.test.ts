@@ -1,9 +1,30 @@
 import type { Block } from "@fmerp/shared/domain/form-layout";
+import { resolveBlocks, validateFormLayout } from "@fmerp/shared/domain/form-layout";
 import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
+import { validateFormSchema } from "@fmerp/shared/domain/form-schema";
 import { describe, expect, it } from "vitest";
+import { DEFAULT_FORMS } from "../src/domain/form-defaults";
 import { blocksToDocument, documentToLayout } from "../src/ui/components/form-block-document";
 
 describe("편집기 저장 모델 왕복", () => {
+  it.each(DEFAULT_FORMS)(
+    "기존 $name 양식은 자동 변환·직렬화 뒤 정의와 검증 계약을 보존한다",
+    (form) => {
+      const source = structuredClone(form.schema);
+      const saved = documentToLayout(blocksToDocument(resolveBlocks(source, {})), source, {});
+      expect(saved.schema).toEqual(form.schema);
+      expect(validateFormSchema(saved.schema)).toEqual({ ok: true });
+      expect(validateFormLayout(saved.schema, saved.layout)).toEqual({ ok: true, warnings: [] });
+      expect(source).toEqual(form.schema);
+      expect(
+        documentToLayout(
+          blocksToDocument(resolveBlocks(saved.schema, saved.layout)),
+          saved.schema,
+          saved.layout,
+        ),
+      ).toEqual(saved);
+    },
+  );
   it("빈 열은 슬래시 입력 문단을 갖되 저장 시 빈 열로 왕복한다", () => {
     const blocks: Block[] = [{ kind: "columns", cols: [[], []] }];
     const doc = blocksToDocument(blocks);
