@@ -392,10 +392,6 @@
         {
           "route": "/admin/forms/[id]",
           "file": "src/ui/components/form-block-editor.tsx"
-        },
-        {
-          "route": "/admin/forms/[id]",
-          "file": "src/ui/components/form-print-preview.tsx"
         }
       ],
       "adapters": [
@@ -455,6 +451,7 @@
         "e2e": "apps/web/e2e/m4.spec.ts, apps/web/e2e/m5.spec.ts, apps/web/e2e/print-preview.spec.ts"
       },
       "invariants": [
+        "양식 구조는 블록 편집기 하나로만 편집한다. 구 필드 목록과 관리자 입력·출력 미리보기는 제공하지 않는다",
         "편집기 쪽 경계는 실측 12mm 보수 여유의 CSS 근사다. 실제 출력의 쪽 나눔은 서버 PDF가 결정한다",
         "작성·조회는 참조 양식 버전의 blocks를 공유 렌더러로 표시한다. 기존 양식은 읽을 때 자동 파생하며 작성자는 값과 표 행만 편집한다",
         "양식 초안은 양식·작성자별 1건이며 revision 불일치는 409로 거부한다. 초안 자동 저장은 공개 버전을 생성하지 않는다",

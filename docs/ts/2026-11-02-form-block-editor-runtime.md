@@ -31,6 +31,7 @@ related: [docs/plan/2026-10-30-form-block-editor.md, features/approval/src/ui/co
 
 - 비동기 초기화된 editor를 플러그인 closure로 고정하지 않는다. 같은 버전의 실제 브라우저에서 메뉴 클릭 후 저장 모델을 확인한다.
 - 블록 추가와 선택 대체를 구분한다. 기존 필드 키의 잔존과 추가 뒤 순서를 시험한다.
+- 비어 있는 NodeView에 입력하는 E2E는 wrapper 중앙이 아니라 실제 `[data-node-view-content-react]`를 클릭한다. 입력 전에 DOM Selection의 anchor가 대상 열 안인지, 슬래시 검색어도 그 열에 들어갔는지 확인하고 기존 key의 잔존을 단언한다. 8단계 첫 CI는 재로드 뒤 날짜가 오른쪽 열이 아닌 맨 앞에 삽입됐다. 로컬 production 전체 성공으로 CI 실패를 덮지 않고 trace·DOM snapshot과 새 exact-head 실행을 함께 남긴다. cold dev 단독 실행의 전체30초 timeout은 이 선택 위치 실패와 별도로 기록한다.
 - 드래그 위치는 실제 NodeView rect와 비교한다. viewport 변경 뒤 document.scrollWidth도 확인한다. 패키지 업데이트·전역 overflow 숨김으로 문제를 가리지 않는다.
 - 초안 캐시와 편집 세션 revision을 분리한다. SPA 이탈·재진입 후 다시 저장하는 E2E를 남긴다.
 - networkidle timeout은 trace로 미완료 요청을 확인하고, hydration 뒤 실제 편집기 DOM을 기다린다. 입력값 단언은 그대로 유지한다.

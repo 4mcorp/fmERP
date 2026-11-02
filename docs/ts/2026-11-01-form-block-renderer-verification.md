@@ -28,4 +28,5 @@ related: [docs/plan/2026-10-30-form-block-editor.md, features/completion/tests/b
 - k3s source worktree와 산출물 snapshot은 VM이 공유하는 프로젝트 경로에 둔다. `-w`가 프로젝트 안이어도 `-a`를 Hermes cache에 두면 그 아래 `source-snapshot`이 FailedMount로 막힌다. `-a <worktree>/artifacts/<실행명>`을 사용하고 완료 뒤 필요한 증거만 cache로 복사한다. hostPath FailedMount는 CPU/메모리 쿼터 문제로 오인하지 않는다.
 - 브라우저 API·DNS·CORS 문제를 구분하려면 console/request 실패와 글꼴 상태를 먼저 읽는다. 가상 route가 opaque iframe을 놓치면 실제 loopback HTTP 서버로 검증한다.
 - 전체 단위 실패를 기존 실패라고 부르기 전에 깨끗한 같은 dev 커밋을 같은 러너에서 대조한다. timeout 옵션과 원래 실패를 함께 보고한다.
+- production Compose에서 단위를 함께 실행할 때는 단위 프로세스에만 `env -u E2E_SERVER_MODE pnpm test:unit`을 사용한다. `test-env.test.ts`는 기본 dev 서버 명령을 검사하므로 production 모드 상속은 기대값 2건을 바꾼다. 이후 E2E 프로세스의 production 모드는 유지한다. 8단계 첫 실행에서 실제 실패를 확인했으며 시험/게이트는 수정하지 않았다.
 - 웹폰트는 출처가 다른 opaque srcdoc에서도 검사한다. 글꼴만을 위해 iframe의 sandbox 권한을 확대하지 않는다.

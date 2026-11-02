@@ -105,7 +105,6 @@ function FieldView({ node, deleteNode, editor, getPos }: NodeViewProps) {
             field={field}
             index={index}
             total={total}
-            immutableKey
             onChange={session.changeField}
             onMove={(to) => {
               if (pos === undefined || !resolved) return;

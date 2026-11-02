@@ -55,7 +55,6 @@ export function FieldEditor({
   onChange,
   onMove,
   onRemove,
-  immutableKey = false,
 }: {
   field: FormField;
   index: number;
@@ -63,7 +62,6 @@ export function FieldEditor({
   onChange: (f: FormField) => void;
   onMove: (to: number) => void;
   onRemove: () => void;
-  immutableKey?: boolean;
 }) {
   const id = useId();
   const [optionIds, setOptionIds] = useState(() =>
@@ -125,14 +123,7 @@ export function FieldEditor({
         </div>
         <div className="space-y-1">
           <Label htmlFor={`${id}-key`}>키 (영문)</Label>
-          <Input
-            id={`${id}-key`}
-            value={field.key}
-            disabled={immutableKey}
-            onChange={(e) => set({ key: e.target.value })}
-            maxLength={40}
-            autoComplete="off"
-          />
+          <Input id={`${id}-key`} value={field.key} disabled maxLength={40} autoComplete="off" />
         </div>
         <div className="space-y-1">
           <Label htmlFor={`${id}-help`}>도움말</Label>
