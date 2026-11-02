@@ -1,7 +1,9 @@
 "use client";
 
+import type { FormLayout } from "@fmerp/shared/domain/form-layout";
 import { type FormField, type FormSchema, formatPerson } from "@fmerp/shared/domain/form-schema";
 import { tableSums } from "@fmerp/shared/domain/form-values";
+import { FormBlocks } from "@fmerp/shared/ui/form-blocks";
 import type { ReactNode } from "react";
 import { type FieldContext, formatWon } from "./form-fields";
 import { RichTextView } from "./rich-text";
@@ -98,31 +100,23 @@ function display(field: FormField, value: unknown, ctx: FieldContext): ReactNode
 /** 문서 본문(양식 입력값)을 읽기 전용으로 보여 준다. 첨부는 호출 쪽이 따로 보여 준다 */
 export function FormValuesView({
   schema,
+  layout = {},
   values,
   ctx,
 }: {
   schema: FormSchema;
+  layout?: FormLayout;
   values: Record<string, unknown>;
   ctx: FieldContext;
 }) {
-  const wide = (t: FormField["type"]) => t === "table" || t === "richtext" || t === "textarea";
   return (
-    <dl className="grid grid-cols-1 border-y border-l print:[print-color-adjust:exact] sm:grid-cols-2">
-      {schema.fields
-        .filter((f) => f.type !== "attachment")
-        .map((f) => (
-          <div
-            key={f.key}
-            className={`flex border-r border-b ${wide(f.type) ? "flex-col sm:col-span-2" : ""}`}
-          >
-            <dt
-              className={`bg-muted px-3 py-2 text-sm font-medium ${wide(f.type) ? "border-b" : "w-32 shrink-0 border-r"}`}
-            >
-              {f.label}
-            </dt>
-            <dd className="min-w-0 flex-1 px-3 py-2 text-sm">{display(f, values[f.key], ctx)}</dd>
-          </div>
-        ))}
-    </dl>
+    <FormBlocks
+      schema={schema}
+      layout={layout}
+      mode="view"
+      renderField={(field) =>
+        field.type === "attachment" ? undefined : display(field, values[field.key], ctx)
+      }
+    />
   );
 }

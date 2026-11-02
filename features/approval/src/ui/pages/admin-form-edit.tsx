@@ -653,6 +653,7 @@ function FormBuilder({ id }: { id: string }) {
                 {schemaCheck.ok ? (
                   <FormFields
                     schema={def.schema}
+                    layout={def.layout}
                     form={previewForm}
                     errors={{}}
                     ctx={ctx}
