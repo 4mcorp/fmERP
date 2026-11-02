@@ -1,11 +1,7 @@
 "use client";
 
 import { type FormLayout, validateFormLayout } from "@fmerp/shared/domain/form-layout";
-import {
-  type FormField,
-  type FormSchema,
-  validateFormSchema,
-} from "@fmerp/shared/domain/form-schema";
+import { validateFormSchema } from "@fmerp/shared/domain/form-schema";
 import { ApiProblem, api, errorMessage } from "@fmerp/shared/lib/api";
 import { useBusinesses, useDepartments, useMembers } from "@fmerp/shared/lib/queries";
 import type { FormDefinition, SecurityLevel } from "@fmerp/shared/lib/types";
@@ -26,16 +22,11 @@ import {
   SelectValue,
 } from "@fmerp/shared/ui/select";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ApprovalPageLayout } from "../components/approval-page-layout";
 import { FormBlockEditor } from "../components/form-block-editor";
-import { blankField, FIELD_TYPE_LABEL, FieldEditor } from "../components/form-field-editor";
-import { FormFields, type Values } from "../components/form-fields";
-import { FormPrintPreview } from "../components/form-print-preview";
 import { itemsToRows, LineEditor, type LineRow, rowsToItems } from "../components/line-editor";
 import { type FormDraft, useFormDraftAutosave } from "../form-draft-autosave";
 import { useApprovalPolicy, useFormDetail } from "../queries";
@@ -50,7 +41,7 @@ const DEFAULT_DEF: FormDefinition = {
   policy: { disagree: "reject", rejectTo: "drafter", auditCanReject: true },
 };
 
-/** 양식 빌더: 필드 나열 + 표 + 리치 텍스트 (D8), 속성·결재선·문서번호·보존연한, 미리보기. 저장하면 새 버전이 된다 (APV-001·004~007, ADM-004) */
+/** 양식 블록 편집·속성·결재선·문서번호·보존연한. 저장하면 새 버전이 된다 (APV-001·004~007, ADM-004) */
 export default function FormBuilderPage() {
   const { id } = useParams<{ id: string }>();
   return <FormBuilder key={id} id={id} />;
@@ -86,9 +77,7 @@ function FormBuilder({ id }: { id: string }) {
   const [rows, setRows] = useState<LineRow[]>(() => itemsToRows(DEFAULT_DEF.defaultLine));
   const [errors, setErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
-  const [addType, setAddType] = useState<FormField["type"]>("text");
   const [loaded, setLoaded] = useState(isNew);
-  const [editorGeneration, setEditorGeneration] = useState(0);
 
   useEffect(() => {
     if (!detail || loaded || !draftQuery.data || draftQuery.isFetching) return;
@@ -113,12 +102,7 @@ function FormBuilder({ id }: { id: string }) {
     }),
     [members, departments, businesses],
   );
-  const fields = def.schema.fields;
-  const setFields = (next: FormField[]) => {
-    setDef((d) => ({ ...d, schema: { fields: next } as FormSchema }));
-    setEditorGeneration((n) => n + 1);
-  };
-  const previewForm = useForm<Values>({ defaultValues: {} });
+
   const schemaCheck = validateFormSchema(def.schema);
   const layoutCheck = validateFormLayout(def.schema, def.layout ?? {});
   const draftValue = useMemo(
@@ -170,12 +154,6 @@ function FormBuilder({ id }: { id: string }) {
     return <QueryErrorState onRetry={() => draftQuery.refetch()} />;
   if (detailError && !loaded) return <QueryErrorState onRetry={() => refetchDetail()} />;
   if (!loaded) return <LoadingState />;
-  const moveField = (from: number, to: number) => {
-    const next = [...fields];
-    const [item] = next.splice(from, 1);
-    if (item) next.splice(to, 0, item);
-    setFields(next);
-  };
 
   return (
     <form onSubmit={save} className="space-y-4">
@@ -250,7 +228,6 @@ function FormBuilder({ id }: { id: string }) {
           ) : null}
           <fieldset disabled={saving} className="min-w-0">
             <FormBlockEditor
-              key={editorGeneration}
               schema={def.schema}
               layout={(def.layout ?? {}) as FormLayout}
               name={name}
@@ -261,7 +238,7 @@ function FormBuilder({ id }: { id: string }) {
             />
           </fieldset>
         </section>
-        <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:items-start">
+        <div className="min-w-0">
           <div className="min-w-0 space-y-4">
             <Card>
               <CardHeader>
@@ -345,80 +322,6 @@ function FormBuilder({ id }: { id: string }) {
               </CardContent>
             </Card>
 
-            <details>
-              <summary>기존 필드 목록 (블록 배치 후에는 참고용)</summary>
-              <fieldset disabled={def.layout?.blocks !== undefined}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">필드</CardTitle>
-                    <CardDescription>
-                      입력 항목을 위에서 아래로 나열합니다. 표는 행 추가와 열 합계를, 리치 텍스트는
-                      서식 있는 본문을 지원합니다.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <ol className="space-y-2">
-                      {fields.map((f, i) => (
-                        <FieldEditor
-                          // biome-ignore lint/suspicious/noArrayIndexKey: 키를 편집할 수 있어 순서로 식별한다
-                          key={i}
-                          field={f}
-                          index={i}
-                          total={fields.length}
-                          onChange={(next) =>
-                            setFields(fields.map((x, xi) => (xi === i ? next : x)))
-                          }
-                          onMove={(to) => moveField(i, to)}
-                          onRemove={() => setFields(fields.filter((_, xi) => xi !== i))}
-                        />
-                      ))}
-                    </ol>
-                    <div className="flex flex-wrap items-end gap-2">
-                      <div className="space-y-1">
-                        <Label htmlFor="add-type">필드 유형</Label>
-                        <Select
-                          value={addType}
-                          onValueChange={(v) => setAddType(v as FormField["type"])}
-                        >
-                          <SelectTrigger id="add-type" className="w-44">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(Object.keys(FIELD_TYPE_LABEL) as FormField["type"][]).map((t) => (
-                              <SelectItem key={t} value={t}>
-                                {FIELD_TYPE_LABEL[t]}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() =>
-                          setFields([...fields, blankField(addType, fields.length + 1)])
-                        }
-                      >
-                        <Plus aria-hidden />
-                        필드 추가
-                      </Button>
-                    </div>
-                    {!schemaCheck.ok && (
-                      <Alert variant="destructive">
-                        <AlertTitle>필드 정의를 확인하세요</AlertTitle>
-                        <AlertDescription>
-                          <ul className="list-disc pl-5">
-                            {schemaCheck.errors.map((m) => (
-                              <li key={m}>{m}</li>
-                            ))}
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </CardContent>
-                </Card>
-              </fieldset>
-            </details>
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">속성</CardTitle>
@@ -642,33 +545,6 @@ function FormBuilder({ id }: { id: string }) {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">미리보기</CardTitle>
-                <CardDescription>
-                  기안자가 보게 될 입력 화면입니다. 입력값은 저장되지 않습니다.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {schemaCheck.ok ? (
-                  <FormFields
-                    schema={def.schema}
-                    layout={def.layout}
-                    form={previewForm}
-                    errors={{}}
-                    ctx={ctx}
-                    attachmentSlot={
-                      <p className="text-sm text-muted-foreground">(첨부 올리기 영역)</p>
-                    }
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    필드 정의 오류를 고치면 미리보기가 표시됩니다.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
             {errors.length > 0 && (
               <Alert variant="destructive">
                 <AlertTitle>저장할 수 없습니다</AlertTitle>
@@ -681,9 +557,6 @@ function FormBuilder({ id }: { id: string }) {
                 </AlertDescription>
               </Alert>
             )}
-          </div>
-          <div className="order-last min-w-0 lg:sticky lg:top-4 lg:order-first lg:self-start">
-            <FormPrintPreview def={def} name={name} />
           </div>
         </div>
         <ActionBar className="sticky bottom-0 border-t bg-background py-3">

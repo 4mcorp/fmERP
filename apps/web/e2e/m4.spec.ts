@@ -156,9 +156,10 @@ test.describe("블록 편집기", { tag: "@stateful" }, () => {
     await page.goto(`/admin/forms/${id}`);
     const editor = page.getByRole("textbox", { name: "양식 블록 편집기", exact: true });
     await expect(editor).toBeVisible();
-    await expect(page.locator("details").filter({ hasText: "기존 필드 목록" })).not.toHaveAttribute(
-      "open",
-      "",
+    await expect(page.getByText(/기존 필드 목록/)).toHaveCount(0);
+    await expect(page.locator('iframe[title="양식 출력 미리보기"]')).toHaveCount(0);
+    await expect(page.getByText("기안자가 보게 될 입력 화면입니다.", { exact: false })).toHaveCount(
+      0,
     );
     await expect(editor.locator(".node-paragraph").last()).toBeVisible();
     expect((await (await page.request.get(`/api/forms/${id}/draft`)).json()).draft).toBeNull();
@@ -200,9 +201,10 @@ test.describe("블록 편집기", { tag: "@stateful" }, () => {
     expect(validateFormLayout(published.definition.schema, published.definition.layout).ok).toBe(
       true,
     );
-    await expect(page.locator("details").filter({ hasText: "기존 필드 목록" })).not.toHaveAttribute(
-      "open",
-      "",
+    await expect(page.getByText(/기존 필드 목록/)).toHaveCount(0);
+    await expect(page.locator('iframe[title="양식 출력 미리보기"]')).toHaveCount(0);
+    await expect(page.getByText("기안자가 보게 될 입력 화면입니다.", { exact: false })).toHaveCount(
+      0,
     );
     const code = published.code;
     await page.getByRole("button", { name: "목록", exact: true }).click();
@@ -792,9 +794,12 @@ test.describe("양식 기안 → 결재 → 완료 (S3 UI 흐름)", { tag: "@sta
       await expect(page.getByLabel("양식 이름")).toHaveValue("회의록");
     }).toPass();
     await page.getByLabel(/^양식 코드/).fill(code);
-    await page.getByText("기존 필드 목록 (블록 배치 후에는 참고용)", { exact: true }).click();
-    await page.getByRole("button", { name: "필드 추가" }).click();
-    await expect(page.getByText("2. 텍스트")).toBeVisible();
+    const editor = page.getByRole("textbox", { name: "양식 블록 편집기", exact: true });
+    await expect(page.getByText(/기존 필드 목록/)).toHaveCount(0);
+    await editor.locator(".node-paragraph").last().click();
+    await page.keyboard.type("/");
+    await page.getByRole("menuitem", { name: "텍스트", exact: true }).click();
+    await expect(editor.locator("[data-field-key]")).toHaveCount(2);
     await expect(page.getByLabel("양식 이름")).toHaveValue("회의록");
     await page.getByRole("button", { name: "양식 만들기" }).click();
     await expect(page).toHaveURL(/\/admin\/forms\/[0-9a-f-]{36}$/);
