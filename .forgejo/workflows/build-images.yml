@@ -50,6 +50,15 @@ jobs:
         run: |
           case "$GITHUB_REF_NAME" in dev|main) ;; *) echo "dev·main 에서만 빌드한다"; exit 1 ;; esac
           echo "tag=${GITHUB_REF_NAME}-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      # job 컨테이너(node:22)는 DinD 데몬 안에서 돈다. docker CLI를 받고 브리지 게이트웨이의 2375 로 데몬에 연결한다.
+      - name: docker CLI 준비
+        if: steps.decide.outputs.build == 'true'
+        run: |
+          set -eu
+          curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | tar -xz --strip-components=1 -C /usr/local/bin docker/docker
+          gw=$(ip route | awk '/default/{print $3}')
+          echo "DOCKER_HOST=tcp://$gw:2375" >> "$GITHUB_ENV"
+          DOCKER_HOST=tcp://$gw:2375 docker version --format '{{.Server.Version}}'
       - name: 레지스트리 로그인
         if: steps.decide.outputs.build == 'true'
         env:
