@@ -42,6 +42,9 @@ jobs:
         with:
           node-version-file: .nvmrc
       - run: npm i -g pnpm@11.28.3 && pnpm install --frozen-lockfile
+      # PDF 변환 시험(features/completion)이 Chromium을 쓴다
+      - name: 브라우저 설치 (Playwright Chromium)
+        run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
       - name: 단위 테스트 전체
         run: pnpm exec vitest run --project unit
 
