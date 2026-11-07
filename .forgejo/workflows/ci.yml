@@ -46,7 +46,8 @@ jobs:
       - name: 브라우저 설치 (Playwright Chromium)
         run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
       - name: 단위 테스트 전체
-        run: pnpm exec vitest run --project unit
+        # 러너 CPU를 잡들이 나눠 써서 하위 프로세스 시험이 5초 기본값을 넘긴다. 단언은 그대로 두고 시간만 늘린다
+        run: pnpm exec vitest run --project unit --testTimeout=30000
 
   check:
     needs: [static, unit]
