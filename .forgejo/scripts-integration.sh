@@ -11,17 +11,18 @@ me=$(hostname)
 docker rm -f "ci-pg-$me" "ci-s3-$me" >/dev/null 2>&1 || true
 # initdb 스크립트는 DinD 호스트 경로가 아니라 job 컨테이너 파일이므로 cp 로 넣는다
 docker create --name "ci-pg-$me" --network "container:$me" --tmpfs /var/lib/postgresql \
-  -e PGPORT=55433 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=fmerp postgres:18-bookworm >/dev/null
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=fmerp postgres:18-bookworm >/dev/null
 docker cp docker/postgres/initdb/. "ci-pg-$me:/docker-entrypoint-initdb.d/"
 docker start "ci-pg-$me" >/dev/null
 docker run -d --name "ci-s3-$me" --network "container:$me" chrislusf/seaweedfs:4.47 server -s3 -dir=/data -ip.bind=0.0.0.0 >/dev/null
 # SeaweedFS 는 기본 8333 만 유효(gRPC=포트+10000)하므로 58333 → 8333 을 job 컨테이너 안에서 포워딩한다
 node -e "require('net').createServer(c=>{const u=require('net').connect(8333,'127.0.0.1');c.pipe(u).pipe(c);c.on('error',()=>u.destroy());u.on('error',()=>c.destroy())}).listen(58333,'127.0.0.1')" >/tmp/s3fwd.log 2>&1 &
+node -e "require('net').createServer(c=>{const u=require('net').connect(5432,'127.0.0.1');c.pipe(u).pipe(c);c.on('error',()=>u.destroy());u.on('error',()=>c.destroy())}).listen(55433,'127.0.0.1')" >/tmp/pgfwd.log 2>&1 &
 disown
-for i in $(seq 1 60); do docker exec "ci-pg-$me" pg_isready -p 55433 -U postgres -d fmerp >/dev/null 2>&1 && break; sleep 2; done
-docker exec "ci-pg-$me" pg_isready -p 55433 -U postgres -d fmerp >&2
+for i in $(seq 1 60); do docker exec "ci-pg-$me" pg_isready -p 5432 -U postgres -d fmerp >/dev/null 2>&1 && break; sleep 2; done
+docker exec "ci-pg-$me" pg_isready -p 5432 -U postgres -d fmerp >&2
 for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:58333/ && break; sleep 2; done
 code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:58333/ || true)
 echo "s3 http $code" >&2
 if [ "$code" = "000" ]; then docker ps -a --filter "name=ci-s3-$me" --format '{{.Status}}' >&2; docker logs "ci-s3-$me" 2>&1 | tail -20 >&2; exit 1; fi
-echo "export DOCKER_HOST=$DOCKER_HOST"
+echo "export DOCKER_HOST=$DOCKER_HOST TEST_DB_CONTAINER=ci-pg-$me"

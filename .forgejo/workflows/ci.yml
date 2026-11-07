@@ -61,7 +61,9 @@ jobs:
       - name: 테스트 서비스 기동 (PostgreSQL 18, SeaweedFS; DinD)
         run: bash .forgejo/scripts-integration.sh > /tmp/dockerenv
       - name: 전체 통합 테스트
-        run: pnpm exec vitest run --project integration
+        run: |
+          . /tmp/dockerenv
+          pnpm exec vitest run --project integration
       - name: 테스트 서비스 정리
         if: always()
         run: |
