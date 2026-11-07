@@ -1,0 +1,62 @@
+name: CI
+
+# Forgejo 러너(DinD, node:22 컨테이너)용. GitHub ci.yml 에서 정적 게이트·단위 테스트를 먼저 이식했다.
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm i -g pnpm@11.28.3 && pnpm install --frozen-lockfile
+      - name: 린트 (Biome)
+        run: pnpm exec biome ci .
+      - name: 타입 검사
+        run: pnpm typecheck
+      - name: 구조 검사 (arch:check)
+        run: pnpm arch:check
+      - name: 규칙 약화 감지 (arch:guard)
+        env:
+          GUARD_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: pnpm arch:guard
+
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm i -g pnpm@11.28.3 && pnpm install --frozen-lockfile
+      # PDF 변환 시험(features/completion)이 Chromium을 쓴다
+      - name: 브라우저 설치 (Playwright Chromium)
+        run: pnpm --filter @fmerp/web exec playwright install --with-deps chromium
+      - name: 단위 테스트 전체
+        # 러너 CPU를 잡들이 나눠 써서 하위 프로세스 시험이 5초 기본값을 넘긴다. 단언은 그대로 두고 시간만 늘린다
+        run: pnpm exec vitest run --project unit --testTimeout=30000
+
+  check:
+    needs: [static, unit]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 결과 집계
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | grep -q '"result": "failure"\|"result": "cancelled"' && exit 1
+          echo ok
