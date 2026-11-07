@@ -17,4 +17,6 @@ docker start "ci-pg-$me" >/dev/null
 docker run -d --name "ci-s3-$me" --network "container:$me" chrislusf/seaweedfs:4.47 server -s3 -s3.port=58333 -dir=/data -ip.bind=0.0.0.0 >/dev/null
 for i in $(seq 1 60); do docker exec "ci-pg-$me" pg_isready -p 55433 -U postgres -d fmerp >/dev/null 2>&1 && break; sleep 2; done
 docker exec "ci-pg-$me" pg_isready -p 55433 -U postgres -d fmerp >&2
+for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:58333/ && break; sleep 2; done
+curl -s -o /dev/null -w "s3 http %{http_code}\n" http://127.0.0.1:58333/ >&2
 echo "export DOCKER_HOST=$DOCKER_HOST"
