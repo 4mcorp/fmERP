@@ -14,7 +14,10 @@ docker create --name "ci-pg-$me" --network "container:$me" --tmpfs /var/lib/post
   -e PGPORT=55433 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=fmerp postgres:18-bookworm >/dev/null
 docker cp docker/postgres/initdb/. "ci-pg-$me:/docker-entrypoint-initdb.d/"
 docker start "ci-pg-$me" >/dev/null
-docker run -d --name "ci-s3-$me" --network "container:$me" chrislusf/seaweedfs:4.47 server -s3 -s3.port=58333 -dir=/data -ip.bind=0.0.0.0 >/dev/null
+docker run -d --name "ci-s3-$me" --network "container:$me" chrislusf/seaweedfs:4.47 server -s3 -dir=/data -ip.bind=0.0.0.0 >/dev/null
+# SeaweedFS 는 기본 8333 만 유효(gRPC=포트+10000)하므로 58333 → 8333 을 job 컨테이너 안에서 포워딩한다
+node -e "require('net').createServer(c=>{const u=require('net').connect(8333,'127.0.0.1');c.pipe(u).pipe(c);c.on('error',()=>u.destroy());u.on('error',()=>c.destroy())}).listen(58333,'127.0.0.1')" >/tmp/s3fwd.log 2>&1 &
+disown
 for i in $(seq 1 60); do docker exec "ci-pg-$me" pg_isready -p 55433 -U postgres -d fmerp >/dev/null 2>&1 && break; sleep 2; done
 docker exec "ci-pg-$me" pg_isready -p 55433 -U postgres -d fmerp >&2
 for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:58333/ && break; sleep 2; done
