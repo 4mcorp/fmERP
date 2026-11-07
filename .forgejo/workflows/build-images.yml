@@ -56,7 +56,8 @@ jobs:
         run: |
           set -eu
           curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | tar -xz --strip-components=1 -C /usr/local/bin docker/docker
-          gw=$(ip route | awk '/default/{print $3}')
+          gw=$(node -e "const l=require('fs').readFileSync('/proc/net/route','utf8').split('\n').slice(1).find(x=>x.split('\t')[1]==='00000000');const h=l.split('\t')[2];console.log([6,4,2,0].map(i=>parseInt(h.substr(i,2),16)).join('.'))")
+          echo "게이트웨이: $gw"
           echo "DOCKER_HOST=tcp://$gw:2375" >> "$GITHUB_ENV"
           DOCKER_HOST=tcp://$gw:2375 docker version --format '{{.Server.Version}}'
       - name: 레지스트리 로그인
