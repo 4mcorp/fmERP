@@ -1,0 +1,80 @@
+name: Build images
+
+# dev·main 푸시 때 web·worker·web-builder 이미지를 빌드해 Forgejo 레지스트리(forgejo.taile82113.ts.net/dyoun)에 올린다.
+# 태그: <브랜치>-<run_number>-<sha7>. Flux ImagePolicy(numerical)가 최신 태그를 고른다.
+# 이미지에 들어가지 않는 파일(문서·CI·배포 매니페스트·테스트)만 바뀌면 빌드를 건너뛰어 새 태그를 만들지 않는다.
+# web을 마지막에 올린다: Flux는 web 저장소 태그를 보고 세 이미지에 같은 태그를 쓴다.
+# 배포는 이 워크플로가 하지 않는다. infra의 Flux image automation이 새 태그를 감지해 적용한다.
+on:
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "변경 판정과 무관하게 빌드한다 (true/false)"
+        default: "false"
+
+concurrency:
+  group: build-images-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY_HOST: forgejo.taile82113.ts.net
+  REGISTRY: forgejo.taile82113.ts.net/dyoun
+
+jobs:
+  build:
+    name: 이미지 빌드·푸시
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 변경 판정
+        id: decide
+        env:
+          FORCE: ${{ inputs.force }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -eu
+          emit() { echo "build=$1" >> "$GITHUB_OUTPUT"; echo "판정: build=$1 ($2)"; }
+          [ "$FORCE" = "true" ] && { emit true force; exit 0; }
+          if [ -z "$BEFORE" ] || echo "$BEFORE" | grep -qE '^0+$' || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then emit true "비교 기준 없음"; exit 0; fi
+          ignore='^(docs/|\.github/|\.forgejo/|\.claude/|deploy/|tools/|docker/|\.worktrees/)|(^|/)(tests?|e2e)/|\.test\.tsx?$|\.md$|^docker-compose[^/]*\.yml$|^(lefthook\.yml|commitlint\.config\.mjs|biome[^/]*\.json|knip\.json|vitest\.config\.ts|tsconfig\.depcruise\.json|\.dependency-cruiser\.cjs|skills-lock\.json|GLOSSARY\.md)$'
+          changed=$(git diff --name-only "$BEFORE" "$GITHUB_SHA" | grep -Ev "$ignore" || true)
+          if [ -n "$changed" ]; then echo "$changed" | head -20; emit true "이미지 입력 변경"; else emit false "이미지 입력 변경 없음"; fi
+      - name: 태그 계산
+        if: steps.decide.outputs.build == 'true'
+        id: meta
+        run: |
+          case "$GITHUB_REF_NAME" in dev|main) ;; *) echo "dev·main 에서만 빌드한다"; exit 1 ;; esac
+          echo "tag=${GITHUB_REF_NAME}-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      # job 컨테이너(node:22)는 DinD 데몬 안에서 돈다. docker CLI를 받고 브리지 게이트웨이의 2375 로 데몬에 연결한다.
+      - name: docker CLI 준비
+        if: steps.decide.outputs.build == 'true'
+        run: |
+          set -eu
+          curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | tar -xz --strip-components=1 -C /usr/local/bin docker/docker
+          gw=$(node -e "const l=require('fs').readFileSync('/proc/net/route','utf8').split('\n').slice(1).find(x=>x.split('\t')[1]==='00000000');const h=l.split('\t')[2];console.log([6,4,2,0].map(i=>parseInt(h.substr(i,2),16)).join('.'))")
+          echo "게이트웨이: $gw"
+          echo "DOCKER_HOST=tcp://$gw:2375" >> "$GITHUB_ENV"
+          DOCKER_HOST=tcp://$gw:2375 docker version --format '{{.Server.Version}}'
+      - name: 레지스트리 로그인
+        if: steps.decide.outputs.build == 'true'
+        env:
+          TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: echo "$TOKEN" | docker login "$REGISTRY_HOST" -u dyoun --password-stdin
+      - name: 빌드·푸시 (web-builder → worker → web)
+        if: steps.decide.outputs.build == 'true'
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -eu
+          L="--label org.opencontainers.image.revision=$GITHUB_SHA"
+          docker build $L -f apps/web/Dockerfile --target builder -t "$REGISTRY/fmerp-web-builder:$TAG" .
+          docker push "$REGISTRY/fmerp-web-builder:$TAG"
+          docker build $L -f apps/worker/Dockerfile -t "$REGISTRY/fmerp-worker:$TAG" .
+          docker push "$REGISTRY/fmerp-worker:$TAG"
+          docker build $L -f apps/web/Dockerfile --target runner -t "$REGISTRY/fmerp-web:$TAG" .
+          docker push "$REGISTRY/fmerp-web:$TAG"

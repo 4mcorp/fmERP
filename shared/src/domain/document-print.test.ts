@@ -144,6 +144,102 @@ describe("buildPdfHtml 블록 배치", () => {
 });
 
 describe("buildPdfHtml (APV-063)", () => {
+  it("리치 텍스트 표의 머리글, 행과 안전한 병합 속성을 PDF HTML에 보존한다", () => {
+    const input = base();
+    input.values.body = {
+      type: "doc",
+      content: [
+        {
+          type: "table",
+          content: [
+            {
+              type: "tableRow",
+              content: [
+                {
+                  type: "tableHeader",
+                  attrs: { colspan: 2 },
+                  content: [{ type: "paragraph", content: [{ type: "text", text: "<제목>" }] }],
+                },
+              ],
+            },
+            {
+              type: "tableRow",
+              content: [
+                {
+                  type: "tableCell",
+                  attrs: { rowspan: 2, colspan: '1" onclick="alert(1)' },
+                  content: [{ type: "paragraph", content: [{ type: "text", text: "내용" }] }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const html = buildPdfHtml(input);
+    expect(html).toContain(
+      '<table class="rich-table"><tbody><tr><th colspan="2"><p>&lt;제목&gt;</p></th></tr>',
+    );
+    expect(html).toContain('<td rowspan="2"><p>내용</p></td>');
+    expect(html).not.toContain("onclick=");
+  });
+  it("PDF 표에 병합 셀의 검증된 열 너비를 보존한다", () => {
+    const input = base();
+    input.values.body = {
+      type: "doc",
+      content: [
+        {
+          type: "table",
+          content: [
+            {
+              type: "tableRow",
+              content: [
+                {
+                  type: "tableCell",
+                  attrs: { colspan: 2, colwidth: [120, 240] },
+                  content: [{ type: "paragraph" }],
+                },
+                {
+                  type: "tableCell",
+                  attrs: { colwidth: ["1; color:red"] },
+                  content: [{ type: "paragraph" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const html = buildPdfHtml(input);
+    expect(html).toContain(
+      '<colgroup><col style="width:120px"><col style="width:240px"><col></colgroup>',
+    );
+    expect(html).not.toContain("color:red");
+  });
+  it("PDF에서 허용 상한의 병합 셀을 유지한다", () => {
+    const input = base();
+    input.values.body = {
+      type: "doc",
+      content: [
+        {
+          type: "table",
+          content: [
+            {
+              type: "tableRow",
+              content: [
+                {
+                  type: "tableCell",
+                  attrs: { colspan: 100, rowspan: 100 },
+                  content: [{ type: "paragraph" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    expect(buildPdfHtml(input)).toContain('<td colspan="100" rowspan="100"><p></p></td>');
+  });
   it("결재란은 쪽 경계에서 갈라지지 않는다", () => {
     const html = buildPdfHtml(base());
     expect(html).toMatch(/table\.approval \{[^}]*break-inside: avoid/);
@@ -366,4 +462,43 @@ describe("buildPdfHtml (APV-063)", () => {
     expect(html).toMatch(/table\.grid \{[^}]*width: 100%[^}]*box-sizing: border-box/);
     expect(html).toMatch(/\.field \.value \{[^}]*white-space: pre-wrap/);
   });
+});
+
+it("preserves deeply nested legacy text in PDF", () => {
+  const input = base();
+  let node: { type: string; content: unknown[] } = {
+    type: "paragraph",
+    content: [{ type: "text", text: "깊은 원문" }],
+  };
+  for (let i = 0; i < 600; i++) node = { type: "blockquote", content: [node] };
+  input.values.body = { type: "doc", content: [node] };
+  expect(buildPdfHtml(input)).toContain("깊은 원문");
+});
+
+it("preserves wide legacy content under the original size limit", () => {
+  const input = base();
+  input.values.body = {
+    type: "doc",
+    content: [...Array.from({ length: 10001 }, () => ({})), { type: "text", text: "끝" }],
+  };
+  expect(buildPdfHtml(input)).toContain("끝");
+});
+
+it("fails explicitly rather than truncating excessive or cyclic PDF content", () => {
+  const input = base();
+  const node: { type: string; content: unknown[] } = { type: "doc", content: [] };
+  node.content.push(node);
+  input.values.body = node;
+  expect(() => buildPdfHtml(input)).toThrow(/PDF 리치텍스트/);
+  input.values.body = {
+    type: "doc",
+    content: Array.from({ length: 100001 }, () => ({ type: "text", text: "x" })),
+  };
+  expect(() => buildPdfHtml(input)).toThrow(/PDF 리치텍스트/);
+});
+
+it("prints text attached to unsupported legacy nodes", () => {
+  const input = base();
+  input.values.body = { type: "doc", content: [{ type: "legacyWidget", text: "과거 위젯 원문" }] };
+  expect(buildPdfHtml(input)).toContain("과거 위젯 원문");
 });

@@ -7,6 +7,7 @@ import { renderBlocks } from "./form-blocks";
 import { type FormLayout, resolveBlocks, validateFormLayout } from "./form-layout";
 import { type FormField, type FormSchema, formatPerson, type PersonInfo } from "./form-schema";
 import { tableSums } from "./form-values";
+import { MAX_RICH_TABLE_SPAN } from "./rich-text-safety";
 
 export interface PdfApprover {
   stepId: string;
@@ -127,14 +128,102 @@ function renderMarks(text: string, marks: RichNode["marks"]): string {
   return out;
 }
 
-function renderRich(node: RichNode | undefined): string {
-  if (!node || typeof node !== "object") return "";
-  const children = (node.content ?? []).map(renderRich).join("");
+function renderRich(root: RichNode | undefined): string {
+  if (!root || typeof root !== "object") return "";
+  const stack: { node: RichNode; exit: boolean; depth: number }[] = [
+    { node: root, exit: false, depth: 0 },
+  ];
+  const ancestors = new Set<RichNode>();
+  const rendered: string[] = [];
+  let count = 0;
+  let textLength = 0;
+  while (stack.length) {
+    const item = stack.pop();
+    if (!item) break;
+    const { node, depth } = item;
+    if (item.exit) {
+      ancestors.delete(node);
+      const length = Array.isArray(node.content) ? node.content.length : 0;
+      const children = length ? rendered.splice(rendered.length - length, length).join("") : "";
+      rendered.push(renderRichNode(node, children, depth));
+      continue;
+    }
+    if (!node || typeof node !== "object" || ancestors.has(node) || ++count > 100000) {
+      throw new Error("PDF 리치텍스트 본문이 너무 크거나 올바르지 않아 출력할 수 없습니다.");
+    }
+    if (typeof node.text === "string") textLength += node.text.length;
+    if (
+      textLength > 100_000 ||
+      (node.marks !== undefined && (!Array.isArray(node.marks) || node.marks.length > 1000))
+    ) {
+      throw new Error("PDF 리치텍스트 본문이 너무 크거나 올바르지 않습니다.");
+    }
+    if (node.content !== undefined && !Array.isArray(node.content)) {
+      throw new Error("PDF 리치텍스트 본문 형식이 올바르지 않습니다.");
+    }
+    ancestors.add(node);
+    stack.push({ node, depth, exit: true });
+    if (node.content) {
+      if (node.content.length > 100000 - count)
+        throw new Error("PDF 리치텍스트 본문이 너무 큽니다.");
+      for (let i = node.content.length - 1; i >= 0; i--) {
+        stack.push({ node: node.content[i] as RichNode, depth: depth + 1, exit: false });
+      }
+    }
+  }
+  return rendered[0] ?? "";
+}
+
+function renderRichNode(node: RichNode, children: string, depth: number): string {
   switch (node.type) {
     case "doc":
       return children;
     case "text":
       return renderMarks(node.text ?? "", node.marks);
+    case "table": {
+      const firstRow = Array.isArray(node.content) ? node.content[0] : undefined;
+      const cells = Array.isArray(firstRow?.content) ? firstRow.content : [];
+      const cols: string[] = [];
+      let hasWidth = false;
+      for (const cell of cells.slice(0, MAX_RICH_TABLE_SPAN)) {
+        const span = cell?.attrs?.colspan;
+        const count =
+          typeof span === "number" &&
+          Number.isInteger(span) &&
+          span > 0 &&
+          span <= MAX_RICH_TABLE_SPAN
+            ? span
+            : 1;
+        const widths = Array.isArray(cell?.attrs?.colwidth) ? cell.attrs.colwidth : [];
+        for (let i = 0; i < count && cols.length < MAX_RICH_TABLE_SPAN; i++) {
+          const width = widths[i];
+          if (typeof width === "number" && Number.isInteger(width) && width > 0 && width <= 10000) {
+            cols.push(`<col style="width:${width}px">`);
+            hasWidth = true;
+          } else cols.push("<col>");
+        }
+      }
+      const colgroup = hasWidth ? `<colgroup>${cols.join("")}</colgroup>` : "";
+      return `<table class="rich-table">${colgroup}<tbody>${children}</tbody></table>`;
+    }
+    case "tableRow":
+      return `<tr>${children}</tr>`;
+    case "tableHeader":
+    case "tableCell": {
+      const tag = node.type === "tableHeader" ? "th" : "td";
+      const spans = (["colspan", "rowspan"] as const)
+        .map((name) => {
+          const value = node.attrs?.[name];
+          return typeof value === "number" &&
+            Number.isInteger(value) &&
+            value > 1 &&
+            value <= MAX_RICH_TABLE_SPAN
+            ? ` ${name}="${value}"`
+            : "";
+        })
+        .join("");
+      return `<${tag}${spans}>${children}</${tag}>`;
+    }
     case "paragraph":
       return `<p>${children}</p>`;
     case "heading": {
@@ -148,7 +237,7 @@ function renderRich(node: RichNode | undefined): string {
     case "listItem":
       return `<li>${children}</li>`;
     case "blockquote":
-      return `<blockquote>${children}</blockquote>`;
+      return depth > 10 ? children : `<blockquote>${children}</blockquote>`;
     case "codeBlock":
       return `<pre>${children}</pre>`;
     case "hardBreak":
@@ -157,7 +246,7 @@ function renderRich(node: RichNode | undefined): string {
       return "<hr>";
     default:
       // 알 수 없는 노드는 태그 없이 안의 글자만 남긴다
-      return children;
+      return (typeof node.text === "string" ? esc(node.text) : "") + children;
   }
 }
 
@@ -367,6 +456,10 @@ const CSS = `
   .attach ul { margin: 0; padding-left: 5mm; }
   .footer { margin-top: 8mm; font-size: 8pt; color: #555; border-top: 1px solid #ccc; padding-top: 2mm; word-break: break-all; }
   .seal { position: absolute; right: 12mm; top: 6mm; max-height: 20mm; opacity: 0.85; }
+  .form-blocks .rich table.rich-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .form-blocks .rich table.rich-table th, .form-blocks .rich table.rich-table td { border: 1px solid #bbb; padding: 1mm 2mm; overflow-wrap: anywhere; vertical-align: top; }
+  .form-blocks .rich table.rich-table th { background: #f1f1f1; font-weight: 700; }
+  .form-blocks .rich table.rich-table tr { break-inside: avoid; }
 `;
 
 /** 결재가 끝나지 않은 문서의 출력 미리보기에만 넣는 워터마크·스타일 (계획 2.3) */

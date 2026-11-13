@@ -1,4 +1,5 @@
 import type { FormField, FormSchema, TableColumn, TableField } from "./form-schema";
+import { isSafeRichText } from "./rich-text-safety";
 
 /** 양식 입력값 검증과 정규화 (PRD APV-001·015). 서버와 화면이 같은 함수를 쓴다. */
 
@@ -15,13 +16,40 @@ export type ValuesResult =
 export interface ValidateOptions {
   /** 초안 저장: 필수 검사를 건너뛰고 형식 오류만 거부한다 */
   draft?: boolean;
+  /** 서버에서 확인한 기존 리비전 (화면에서는 사전 검증용). */
+  previousValues?: Record<string, unknown>;
   /** 첨부 필드의 필수·최대 개수 확인용 (첨부는 별도 테이블에 저장된다) */
   attachmentCount?: number;
 }
 
-const MAX_RICHTEXT_BYTES = 100_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+// Compare stored JSON without recursion; the subsequent safety check rejects cycles
+// and enforces the original serialized size and the table limits.
+function sameStoredJson(a: unknown, b: unknown): boolean {
+  const pending: [unknown, unknown][] = [[a, b]];
+  let count = 0;
+  while (pending.length) {
+    if (++count > 100_000) return false;
+    const [left, right] = pending.pop() as [unknown, unknown];
+    if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+      if (left !== right) return false;
+      continue;
+    }
+    if (Array.isArray(left) !== Array.isArray(right)) return false;
+    const l = left as Record<string, unknown>;
+    const r = right as Record<string, unknown>;
+    const keys = Object.keys(l);
+    if (keys.length !== Object.keys(r).length || pending.length + keys.length > 100_000)
+      return false;
+    for (const key of keys) {
+      if (!Object.hasOwn(r, key)) return false;
+      pending.push([l[key], r[key]]);
+    }
+  }
+  return true;
+}
 
 const isBlank = (v: unknown) =>
   v === undefined ||
@@ -190,7 +218,13 @@ function validateField(f: FormField, value: unknown, errors: FieldError[], opts:
       ) {
         return fail("본문 형식이 올바르지 않습니다");
       }
-      if (JSON.stringify(value).length > MAX_RICHTEXT_BYTES) fail("본문이 너무 깁니다");
+      if (!isSafeRichText(value)) {
+        const previous = opts.previousValues?.[f.key];
+        const unchanged = previous !== undefined && sameStoredJson(previous, value);
+        // 기존 본문도 표 격자·크기 제한은 그대로 적용한다.
+        if (!unchanged || !isSafeRichText(value, Number.POSITIVE_INFINITY, 100_000))
+          fail("본문 형식이 올바르지 않거나 너무 큽니다");
+      }
       return;
     }
   }
