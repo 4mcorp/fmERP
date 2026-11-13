@@ -1107,3 +1107,73 @@ describe("초안 결재선 지정 (APV-036)", () => {
     expect(steps[0]?.assigneeIds).toEqual([ids["bizadmin@example.com"]]);
   });
 });
+
+it("legacy real DB S3 unchanged body save submit and mutation rejected", async () => {
+  const { writeRevision } = await import("../src/service/drafts");
+  const form = await post(admin, "/api/forms", {
+    code: "LEGACYRT",
+    name: "legacy rich",
+    version: version({
+      schema: {
+        fields: [
+          { key: "body", label: "본문", type: "richtext", required: true },
+          { key: "memo", label: "메모", type: "text", required: true },
+        ],
+      },
+    }),
+  });
+  expect(form.status, await form.clone().text()).toBe(201);
+  const { formId } = await json<{ formId: string }>(form);
+  const doc = await createDoc(member1, { formId, body: { body: DOC, memo: "before" } });
+  let node: unknown = { type: "paragraph", content: [{ type: "text", text: "legacy" }] };
+  for (let i = 0; i < 600; i++) node = { type: "blockquote", content: [node] };
+  const unsafe = { type: "doc", content: [node] };
+  await withTenant(appDb.db, accountId, async (tx) => {
+    const [row] = await tx
+      .select()
+      .from(schema.document)
+      .where(eq(schema.document.id, doc.documentId));
+    if (!row) throw Error("missing test document");
+    await writeRevision(
+      { tx, accountId, storage } as never,
+      row,
+      { body: unsafe, memo: "before" },
+      ids["member1@example.com"] as string,
+    );
+  });
+  const original = await json<{ body: Record<string, unknown>; revision: number }>(
+    await member1.request(`/api/approvals/${doc.documentId}/body`),
+  );
+  expect(original.body).toEqual({ body: unsafe, memo: "before" });
+  const bad = await put(member1, `/api/approvals/${doc.documentId}/draft`, {
+    body: {
+      body: { ...unsafe, content: [...unsafe.content, { type: "paragraph" }] },
+      memo: "changed",
+    },
+    expectedRevision: original.revision,
+  });
+  expect(bad.status, await bad.clone().text()).toBe(400);
+  const saved = await put(member1, `/api/approvals/${doc.documentId}/draft`, {
+    body: { body: unsafe, memo: "changed" },
+    expectedRevision: original.revision,
+  });
+  expect(saved.status, await saved.clone().text()).toBe(200);
+  const reloaded = await json<{ body: Record<string, unknown>; revision: number }>(
+    await member1.request(`/api/approvals/${doc.documentId}/body`),
+  );
+  expect(reloaded.body).toEqual({ body: unsafe, memo: "changed" });
+  const revisions = await withTenant(appDb.db, accountId, (tx) =>
+    tx
+      .select()
+      .from(schema.documentRevision)
+      .where(eq(schema.documentRevision.documentId, doc.documentId)),
+  );
+  const latest = revisions.find((r) => r.n === reloaded.revision);
+  if (!latest) throw new Error("저장된 리비전이 없습니다");
+  expect(JSON.parse(new TextDecoder().decode(await storage.getBytes(latest.storageKey)))).toEqual(
+    reloaded.body,
+  );
+  const submitted = await post(member1, `/api/approvals/${doc.documentId}/submit`);
+  expect(submitted.status, await submitted.clone().text()).toBe(200);
+  expect((await view(member1, doc.documentId)).status).not.toBe("DRAFT");
+});

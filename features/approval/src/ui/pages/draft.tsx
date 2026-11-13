@@ -259,6 +259,7 @@ export default function DraftEditorPage() {
     if (!ok) return;
     const result = validateFormValues(schema, form.getValues(), {
       attachmentCount: attachments?.length ?? 0,
+      previousValues: serverBody?.body,
     });
     if (!result.ok) {
       setErrors(Object.fromEntries(result.errors.map((e) => [e.field, e.message])));

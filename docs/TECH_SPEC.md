@@ -64,7 +64,7 @@
 | 서버 상태 | @tanstack/react-query | ~5.104.1 |
 | 표 | @tanstack/react-table | ~9.2.4 (tablecn 기준) |
 | 폼 | react-hook-form / @hookform/resolvers | ~7.89.0 / ~5.9.1 |
-| 에디터 | @tiptap/react, @tiptap/pm, @tiptap/starter-kit | ~3.31.4 |
+| 에디터 | @tiptap/react, @tiptap/pm, @tiptap/starter-kit, @tiptap/extension-table | ~3.31.4 (표 확장 MIT, 사용자 승인) |
 | 블록 편집 | @tiptap/core, @tiptap/suggestion, @tiptap/extension-drag-handle, @tiptap/extension-drag-handle-react, @tiptap/extension-node-range, @tiptap/extension-collaboration | ~3.31.4 (MIT, 5단계 승인. collaboration은 drag-handle 필수 peer이며 협업 기능은 활성화하지 않음) |
 | 블록 편집 peer | @tiptap/y-tiptap / yjs / y-protocols | ~3.0.12 / ~13.6.33 / ~1.0.7 (MIT, 2026-11-02 추가 peer 승인. 배포 24시간 대기·strict peer 검사 통과) |
 | 클라이언트 저장 | dexie | ~4.4.6 |

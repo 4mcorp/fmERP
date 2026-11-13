@@ -49,7 +49,16 @@ async function addEvent(type: string, payload: Record<string, unknown>) {
 beforeAll(async () => {
   boss.on("error", () => {});
   await boss.start();
-  await boss.deleteAllJobs();
+  // start() 직후 pg-boss 유지보수 작업과 TRUNCATE가 잠금을 두고 교착(40P01)할 수 있어 그때만 다시 시도한다
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await boss.deleteAllJobs();
+      break;
+    } catch (error) {
+      if ((error as { code?: string }).code !== "40P01" || attempt >= 5) throw error;
+      await new Promise((r) => setTimeout(r, 200 * attempt));
+    }
+  }
 
   const a = await owner.pool.query<{ id: string }>(
     "select id from account where slug = 'fourm-test'",
