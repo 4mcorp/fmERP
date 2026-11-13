@@ -158,6 +158,7 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
+| [2026-11-13-agent-access.md](plan/2026-11-13-agent-access.md) | proposed | 개인 토큰·MCP의 B~G 구현 순서·인수 기준, 전체 API 노출 분류와 동적 라우트 누락·PIN 경로·초대 위험 보정 |
 | [2026-11-02-config-export-import.md](plan/2026-11-02-config-export-import.md) | accepted | Q1~Q5 확정·열린 질문 0건. JSON v1·upsert/diff·UI/CLI·시스템 사번/memberKey·RBAC 이행·회사 기본 채번/양식 예외. Q5=A 다른 key의 기존 구성원 연결 미지원·충돌 차단, 명시 매핑/alias는 후속. 문서함·구성 repo/장기 보관 제외 |
 | [2026-10-30-form-block-editor.md](plan/2026-10-30-form-block-editor.md) | in-progress | 2~4단계 도메인·공통 렌더러/Pretendard·초안 API/CAS·RLS(0028), 5단계 Tiptap 편집·자동 저장, 6단계 작성/조회 연결·값/표 행 편집·버전 배치 보존, 7단계 실제 PDF 하네스·12mm 보수 여유·기존 양식 왕복. 실제 OS IME는 사용자 확인, 구 UI 제거는 8단계 |
 | [2026-10-26-e2e-pipeline.md](plan/2026-10-26-e2e-pipeline.md) | done | E2E 러너 계측·캐시·산출물, dev 변경 관련/main 전체 필수 CI, production·Compose 동일조건 비교 |
@@ -197,6 +198,7 @@
 ## 8. 설계 결정 (`docs/adr/`)
 | 파일 | 요약 |
 |---|---|
+| [0013-agent-access-model.md](adr/0013-agent-access-model.md) | proposed. 사용자·계정 고정 개인 토큰, scope와 현재 권한 교집합, 웹 전용 사람 확인·INSERT-only 감사, 독립 apps/mcp의 Streamable HTTP |
 | [0001-uuid-v7-primary-keys.md](adr/0001-uuid-v7-primary-keys.md) | 기본 키는 PostgreSQL 18 내장 `uuidv7()` |
 | [0002-money-as-bigint-won.md](adr/0002-money-as-bigint-won.md) | 금액은 DB `bigint`(원), 앱 `number` + `toWon()` 검증 |
 | [0003-rfc9457-problem-details.md](adr/0003-rfc9457-problem-details.md) | API 에러는 RFC 9457 Problem Details + `code` |
