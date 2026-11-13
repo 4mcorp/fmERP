@@ -17,6 +17,9 @@ export interface AuditEntry {
   accountId: string | null;
   /** 행위자. 시스템 작업이면 null */
   actorUserId: string | null;
+  actorKind?: "human" | "agent";
+  agentTokenId?: string;
+  agentPendingActionId?: string;
   onBehalfOfUserId?: string | null;
   /** 수행 업무 (예: auth.login, member.deactivate) */
   action: string;
@@ -34,6 +37,9 @@ export async function recordAudit(db: Executor, entry: AuditEntry): Promise<void
   await db.insert(schema.auditLog).values({
     accountId: entry.accountId,
     actorUserId: entry.actorUserId,
+    actorKind: entry.actorKind ?? null,
+    agentTokenId: entry.agentTokenId ?? null,
+    agentPendingActionId: entry.agentPendingActionId ?? null,
     onBehalfOfUserId: entry.onBehalfOfUserId ?? null,
     action: entry.action,
     targetType: entry.target?.type,

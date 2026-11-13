@@ -3,6 +3,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -88,6 +89,7 @@ export const membership = pgTable(
   (t) => [
     uniqueIndex().on(t.accountId, t.userId),
     unique("membership_id_account_unique").on(t.id, t.accountId),
+    unique("membership_id_account_user_unique").on(t.id, t.accountId, t.userId),
     unique().on(t.accountId, t.employeeNo),
     index().on(t.userId),
   ],
@@ -149,4 +151,37 @@ export const enrollmentToken = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index().on(t.accountId), index().on(t.userId)],
+);
+
+/** @owner account */
+export const agentToken = pgTable(
+  "agent_token",
+  {
+    id: primaryId(),
+    accountId: uuid()
+      .notNull()
+      .references(() => account.id, { onDelete: "cascade" }),
+    membershipId: uuid().notNull(),
+    userId: uuid().notNull(),
+    name: text().notNull(),
+    secretHash: text().notNull(),
+    scopes: text().array().notNull(),
+    createdAt: createdAt(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    revokedAt: timestamp({ withTimezone: true }),
+    lastUsedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.membershipId, t.accountId, t.userId],
+      foreignColumns: [membership.id, membership.accountId, membership.userId],
+    }).onDelete("cascade"),
+    index().on(t.accountId, t.userId),
+    index().on(t.membershipId, t.accountId, t.userId),
+    check("agent_token_hash", sql`${t.secretHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "agent_token_expiry",
+      sql`${t.expiresAt} > ${t.createdAt} and ${t.expiresAt} <= ${t.createdAt} + interval '30 days'`,
+    ),
+  ],
 );

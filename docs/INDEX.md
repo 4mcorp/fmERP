@@ -123,6 +123,7 @@
 ## 5. 트러블슈팅 (`docs/ts/`) — 작업 전 태그가 겹치는 항목을 읽을 것
 | 파일 | 태그 | 요약 (재발 방지 핵심) |
 |---|---|---|
+| [2026-11-14-agent-token-trace-scope.md](ts/2026-11-14-agent-token-trace-scope.md) | test, playwright, auth, security | trace 옵션은 spec 최상위에 둔다. 토큰 screenshot 마스킹·실패 snapshot 정리·실제 --list 검증 |
 | [2026-11-02-form-block-page-boundary-harness.md](ts/2026-11-02-form-block-page-boundary-harness.md) | ui, pdf, test, playwright, forms | 고정 가이드와 packing 모델을 구분해 두 엔진의 실제 PDF로 12mm 보수 여유를 측정. 페이지별 마커·거대 행 분할·PDFKit 독립 대조 |
 | [2026-11-02-form-block-fill-view-overflow.md](ts/2026-11-02-form-block-fill-view-overflow.md) | ui, forms, accessibility, playwright, test | 표 sr-only 절대 위치가 내부 스크롤을 벗어나면 wrapper를 relative로 만든다. 모든 태그·숨김 컨트롤의 rect를 확인하고 페이지/내부 스크롤을 따로 검증 |
 | [2026-11-02-form-block-editor-runtime.md](ts/2026-11-02-form-block-editor-runtime.md) | ui, tiptap, test, playwright, deps | 초기 editorRef·선택 뒤 삽입·드래그 viewport 좌표·초안 재진입 revision·HMR 대기/전용 DB 재초기화·정확 설치 버전 공급망 검사 |
@@ -158,6 +159,7 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
+| [2026-11-14-agent-token-b1.md](plan/2026-11-14-agent-token-b1.md) | in-progress | 개인 토큰 단건 인증 경계·발급/폐기·B2 동일 tx 계약과 검증 |
 | [2026-11-13-agent-access.md](plan/2026-11-13-agent-access.md) | proposed | 개인 토큰·MCP의 B~G 구현 순서·인수 기준, 전체 API 노출 분류와 동적 라우트 누락·PIN 경로·초대 위험 보정 |
 | [2026-11-02-config-export-import.md](plan/2026-11-02-config-export-import.md) | accepted | Q1~Q5 확정·열린 질문 0건. JSON v1·upsert/diff·UI/CLI·시스템 사번/memberKey·RBAC 이행·회사 기본 채번/양식 예외. Q5=A 다른 key의 기존 구성원 연결 미지원·충돌 차단, 명시 매핑/alias는 후속. 문서함·구성 repo/장기 보관 제외 |
 | [2026-10-30-form-block-editor.md](plan/2026-10-30-form-block-editor.md) | in-progress | 2~4단계 도메인·공통 렌더러/Pretendard·초안 API/CAS·RLS(0028), 5단계 Tiptap 편집·자동 저장, 6단계 작성/조회 연결·값/표 행 편집·버전 배치 보존, 7단계 실제 PDF 하네스·12mm 보수 여유·기존 양식 왕복. 실제 OS IME는 사용자 확인, 구 UI 제거는 8단계 |
