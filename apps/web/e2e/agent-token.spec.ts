@@ -2,6 +2,9 @@ import { expect, test } from "@playwright/test";
 
 // trace는 describe가 아니라 파일 단위 옵션이다. 토큰·PIN을 산출물에 기록하지 않는다.
 test.use({ trace: "off" });
+test.afterEach(async ({ page }) => {
+  await page.close();
+});
 
 test(
   "1280·360px 에이전트 토큰 발급·한 번 표시·폐기",
@@ -17,7 +20,7 @@ test(
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/me?tab=agents");
       await expect(page.getByRole("heading", { level: 1, name: "내 정보" })).toBeVisible();
-      await page.waitForLoadState("networkidle");
+      await expect(page.getByRole("region", { name: "내 에이전트 토큰" })).toBeVisible();
       const me = await page.request.get("/api/me").then((response) => response.json());
       const name = `연결 시험 ${width} ${testInfo.retry}`;
       await page.getByLabel("연결 이름", { exact: true }).fill(name);
@@ -36,7 +39,7 @@ test(
       const dialog = page.getByRole("dialog", { name: "결재 PIN 확인" });
       await expect(dialog).toBeVisible();
       await dialog.getByLabel("결재 PIN", { exact: true }).fill("246810");
-      await dialog.getByRole("button", { name: "확인", exact: true }).click();
+      await dialog.getByRole("button", { name: "확인하고 계속", exact: true }).click();
       const secret = page.getByRole("textbox", { name: "발급된 토큰", exact: true });
       try {
         await expect(secret).toBeVisible();
