@@ -78,6 +78,7 @@ const base = (): PdfInput => ({
     ],
   },
   names: { "m-9": "구담당" },
+  people: { "m-9": { name: "구담당", email: "gu@example.com", employeeNo: "P0009" } },
   drafter: { membershipId: "m-1", name: "박사원", department: "재무팀", position: "사원" },
   approvers: [
     {
@@ -246,5 +247,21 @@ describe("buildPdfHtml (APV-063)", () => {
     const input = base();
     input.fontCss = "@font-face{font-family:Pretendard;src:url(data:font/woff2;base64,AA)}";
     expect(buildPdfHtml(input)).toContain("font-family:Pretendard");
+  });
+});
+
+describe("user 필드 표시 방식", () => {
+  const withDisplay = (display?: "name" | "name_email" | "employee_no") => {
+    const schema = {
+      fields: [{ key: "who", label: "담당", type: "user" as const, display }],
+    };
+    const b = base();
+    return buildPdfHtml({ ...b, form: { ...b.form, schema }, values: { who: "m-9" } });
+  };
+  it("사번·이름+메일로 표시한다", () => {
+    expect(withDisplay("employee_no")).toContain("P0009");
+    expect(withDisplay("name_email")).toContain("구담당 (gu@example.com)");
+    expect(withDisplay()).toContain("구담당");
+    expect(withDisplay()).not.toContain("gu@example.com");
   });
 });

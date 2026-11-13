@@ -56,6 +56,47 @@ test("360px 화면에서도 조직도·조직 관리가 가로 스크롤 없이 
   }
 });
 
+test("관리 화면 주 동작은 우측이고 CSV 버튼은 같은 줄에 정렬된다", async ({ page }, testInfo) => {
+  await loginAs(page, "이관리");
+  for (const width of [360, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const [path, name] of [
+      ["/admin/org", "최상위 부서 추가"],
+      ["/admin/positions", "추가"],
+    ] as const) {
+      await page.goto(path);
+      const button = page.getByRole("button", { name, exact: true });
+      await expect(button).toBeVisible();
+      const bar = page.locator('[data-slot="action-bar"]').filter({ has: button });
+      await expect
+        .poll(async () => {
+          const outer = await bar.boundingBox();
+          const inner = await button.boundingBox();
+          return Math.abs(
+            (outer?.x ?? 0) + (outer?.width ?? 0) - (inner?.x ?? 0) - (inner?.width ?? 0),
+          );
+        })
+        .toBeLessThan(1);
+      if (path === "/admin/org") {
+        const exportButton = page.getByRole("link", { name: "CSV 내보내기" });
+        const importButton = page
+          .locator('label[for="org-import"]')
+          .filter({ hasText: "CSV 가져오기" })
+          .last();
+        const exported = await exportButton.boundingBox();
+        const imported = await importButton.boundingBox();
+        expect(exported).not.toBeNull();
+        expect(imported).not.toBeNull();
+        expect(Math.abs((exported?.y ?? 0) - (imported?.y ?? 0))).toBeLessThan(1);
+      }
+      await page.screenshot({
+        path: testInfo.outputPath(`actions-${path.split("/").at(-1)}-${width}.png`),
+        fullPage: true,
+      });
+    }
+  }
+});
+
 // 아래는 DB 상태를 바꾸므로 @stateful 태그를 달아 데스크톱 프로젝트에서만 한 번 실행한다 (playwright.config.ts)
 test.describe("조직 구성 흐름 (M2)", { tag: "@stateful" }, () => {
   test("사업자 등록 검증, 부서 생성·뎁스 제한·이동", async ({ page }) => {

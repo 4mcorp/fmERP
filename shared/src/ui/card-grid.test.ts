@@ -8,7 +8,7 @@ describe("CardGrid", () => {
     expect(cls).toContain("md:grid-cols-2");
     expect(cls).toContain("xl:grid-cols-3");
     expect(cls).toContain("2xl:grid-cols-4");
-    expect(cls).toContain("min-[1920px]:grid-cols-5");
+    expect(cls).toContain("min-[120rem]:grid-cols-5");
     expect(cls.some((c) => c.includes("grid-cols-6"))).toBe(false);
   });
   it("Full 래퍼는 한 행 전체를 차지한다", () => {

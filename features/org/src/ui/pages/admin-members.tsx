@@ -82,7 +82,9 @@ function MembersTab({ caps }: { caps: Capabilities }) {
       cell: (m) => (
         <>
           <div className="font-medium">{m.name}</div>
-          <div className="text-xs text-muted-foreground">{m.email}</div>
+          <div className="text-xs text-muted-foreground">
+            {m.employeeNo} · {m.email}
+          </div>
         </>
       ),
     },
@@ -157,9 +159,9 @@ function MembersTab({ caps }: { caps: Capabilities }) {
         rowKey={(m) => m.userId}
         caption="구성원 목록"
         search={{
-          placeholder: "이름·이메일·부서 검색",
+          placeholder: "이름·사번·이메일·부서 검색 (이전 이름 포함)",
           text: (m) =>
-            `${m.name} ${m.email} ${m.assignments.map((a) => a.departmentName).join(" ")}`,
+            `${m.name} ${m.formerNames.join(" ")} ${m.employeeNo ?? ""} ${m.email} ${m.formerEmails.join(" ")} ${m.assignments.map((a) => a.departmentName).join(" ")}`,
         }}
         filters={[
           {

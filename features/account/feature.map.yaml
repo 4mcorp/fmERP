@@ -39,7 +39,7 @@ contracts:
 tests:
   unit: tests/*.test.ts
   int: tests/account.int.test.ts
-  e2e: apps/web/e2e/m1.spec.ts
+  e2e: apps/web/e2e/m1.spec.ts, apps/web/e2e/pin-setup.spec.ts   # PIN 안내와 결재 상세 인라인 PIN 설정→승인 (360px·1280px)
 invariants:
   - 세션은 유휴·절대 만료 정책을 적용하고 만료된 세션은 지운다
   - PIN은 해시로만 저장하고 5회 실패 시 15분 잠근다

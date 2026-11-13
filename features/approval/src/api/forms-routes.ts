@@ -27,11 +27,13 @@ import {
   type FormVersionInput,
   formUsableBy,
   getForm,
+  getFormDraft,
   importForm,
   latestVersion,
   listForms,
   loadPrefs,
   publishVersion,
+  saveFormDraft,
   setFormActive,
   touchFormPref,
   versionToInput,
@@ -80,7 +82,12 @@ const FieldSchema = z.discriminatedUnion("type", [
     options: z.array(Option).max(100),
     default: z.union([z.string(), z.array(z.string())]).optional(),
   }),
-  z.object({ ...base, type: z.enum(["user", "dept"]), multiple: z.boolean().optional() }),
+  z.object({
+    ...base,
+    type: z.enum(["user", "dept"]),
+    multiple: z.boolean().optional(),
+    display: z.enum(["name", "name_email", "employee_no"]).optional(),
+  }),
   z.object({
     ...base,
     type: z.literal("table"),
@@ -141,6 +148,21 @@ const Meta = z.object({
 
 const toInput = (v: z.infer<typeof VersionInput>) => v as unknown as FormVersionInput;
 
+const DraftInput = VersionInput.pick({ schema: true, layout: true }).extend({
+  layout: z.record(z.string(), z.unknown()),
+  revision: z.number().int().min(0).max(2_147_483_646),
+});
+const DraftSchema = z.object({
+  id: z.uuid(),
+  accountId: z.uuid(),
+  formId: z.uuid(),
+  authorMembershipId: z.uuid(),
+  schema: z.record(z.string(), z.unknown()),
+  layout: z.record(z.string(), z.unknown()),
+  revision: z.number().int(),
+  updatedAt: z.string(),
+});
+
 /** 양식 관리와 사용 (PRD APV-001·003~006·010, ADM-004) */
 export function registerFormRoutes(app: AppRouter, deps: DepsProvider) {
   for (const prefix of ["/forms", "/approval-line-templates"]) {
@@ -159,6 +181,64 @@ export function registerFormRoutes(app: AppRouter, deps: DepsProvider) {
       throw new ApiError(403, "forbidden", "권한이 없습니다");
     }
   };
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/forms/{id}/draft",
+      tags: ["forms"],
+      summary: "내 양식 초안 조회 (없으면 null, 양식 관리 권한 필요)",
+      request: { params: z.object({ id: z.uuid() }) },
+      responses: { 200: json(z.object({ draft: DraftSchema.nullable() })), ...errorResponses },
+    }),
+    async (c) => {
+      const tenant = c.get("tenant");
+      const { id } = c.req.valid("param");
+      const draft = await withTenant(deps().appDb, tenant.accountId, async (tx) => {
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        authorizeForm(actor, (await getForm(tx, id)).scope);
+        return getFormDraft(tx, id, membershipId);
+      });
+      return c.json(
+        { draft: draft ? { ...draft, updatedAt: draft.updatedAt.toISOString() } : null },
+        200,
+      );
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/forms/{id}/draft",
+      tags: ["forms"],
+      summary: "내 양식 초안 자동 저장 (최초 revision=0, 충돌 시 409)",
+      request: {
+        params: z.object({ id: z.uuid() }),
+        body: { content: { "application/json": { schema: DraftInput } } },
+      },
+      responses: {
+        200: json(z.object({ draft: DraftSchema, warnings: z.array(z.string()) })),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const tenant = c.get("tenant");
+      const { id } = c.req.valid("param");
+      const input = c.req.valid("json");
+      const result = await withTenant(deps().appDb, tenant.accountId, async (tx) => {
+        const { actor, membershipId } = await loadActor(tx, tenant, c.get("session").userId);
+        authorizeForm(actor, (await getForm(tx, id)).scope);
+        return saveFormDraft(serviceContext(c, deps(), tx), id, membershipId, input);
+      });
+      return c.json(
+        {
+          draft: { ...result.draft, updatedAt: result.draft.updatedAt.toISOString() },
+          warnings: result.warnings,
+        },
+        200,
+      );
+    },
+  );
 
   const FormSummary = z.object({
     id: z.string(),

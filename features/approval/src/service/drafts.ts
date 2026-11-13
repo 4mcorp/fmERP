@@ -45,6 +45,7 @@ export async function validateBody(
   const version = await getFormVersion(ctx.tx, doc.formVersionId);
   const result = validateFormValues(version.schema as unknown as FormSchema, body, {
     draft: mode === "draft",
+    previousValues: doc.latestRevision > 0 ? (await loadBody(ctx, doc.id))?.body : undefined,
     attachmentCount: await attachmentCount(ctx, doc.id),
   });
   if (!result.ok) {

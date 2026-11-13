@@ -2,7 +2,7 @@ features/account/src/ui/components/profile-section.tsx:biome-ignore:1
 features/approval/src/domain/file-sniff.ts:biome-ignore:1
 features/approval/src/ui/components/form-fields.tsx:biome-ignore:4
 features/approval/src/ui/components/form-view.tsx:biome-ignore:1
-features/approval/src/ui/pages/admin-form-edit.tsx:biome-ignore:3
+features/approval/src/ui/pages/admin-form-edit.tsx:biome-ignore:1
 features/audit/src/ui/components/audit-trail.tsx:biome-ignore:1
 features/backup/src/domain/backup.ts:biome-ignore:1
 features/org/src/ui/pages/admin-businesses.tsx:biome-ignore:1

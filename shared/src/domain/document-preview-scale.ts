@@ -41,6 +41,14 @@ export const A4_PORTRAIT_MM = { width: 210, height: 297 } as const;
 /** 인쇄 여백 (mm): 상하 14, 좌우 12 — document-print.ts의 `@page { margin: 14mm 12mm; }` */
 export const PRINT_MARGIN_MM = { vertical: 14, horizontal: 12 } as const;
 
+/** 고정 간격 가이드의 실측 보수 여유. 서버 PDF의 실제 여백은 바꾸지 않는다. */
+export const FORM_PAGE_GUIDE_MARGIN_MM = 12;
+
+export function formPageGuideHeightMm(orientation: PreviewOrientation): number {
+  const height = orientation === "landscape" ? A4_PORTRAIT_MM.width : A4_PORTRAIT_MM.height;
+  return height - PRINT_MARGIN_MM.vertical * 2 - FORM_PAGE_GUIDE_MARGIN_MM;
+}
+
 /**
  * 컨테이너 폭에 맞춘 A4 미리보기 축소 비율과 높이를 계산한다.
  * 입력이 컨테이너보다 넓어도 scale은 1을 넘기지 않는다(확대하지 않는다).
@@ -72,4 +80,14 @@ export function computePreviewScale(input: PreviewScaleInput): PreviewScaleResul
     pageWidthPx,
     pageHeightPx,
   };
+}
+
+/**
+ * 컨테이너가 축소된 용지보다 넓을 때 용지를 가운데 두기 위한 왼쪽 오프셋(px).
+ * 컨테이너가 같거나 좁으면 0이다(좁은 화면은 왼쪽 기준 유지).
+ */
+export function computePreviewOffsetX(input: PreviewScaleInput): number {
+  const { scale, pageWidthPx } = computePreviewScale(input);
+  const free = input.containerWidthPx - pageWidthPx * scale;
+  return Number.isFinite(free) && free > 0 ? free / 2 : 0;
 }

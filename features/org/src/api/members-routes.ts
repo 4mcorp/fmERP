@@ -21,6 +21,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { type AssignmentInput, assignmentChanges, validateAssignments } from "../domain/assignment";
 import { countInFlightForMember } from "../service/in-flight";
+import { changeIdentity } from "../service/member-identity";
 
 const MemberSchema = z
   .object({
@@ -31,6 +32,9 @@ const MemberSchema = z
     role: z.string(),
     status: z.string(),
     employeeNo: z.string().nullable(),
+    /** 이름·메일이 바뀐 적이 있으면 이전 값들 (과거 이름으로도 같은 사람을 알아보기 위함) */
+    formerNames: z.array(z.string()),
+    formerEmails: z.array(z.string()),
     joinedAt: z.string(),
     assignments: z.array(
       z.object({
@@ -72,7 +76,6 @@ async function memberByUserId(tx: Tx, userId: string) {
       id: schema.membership.id,
       role: schema.membership.role,
       status: schema.membership.status,
-      employeeNo: schema.membership.employeeNo,
     })
     .from(schema.membership)
     .where(eq(schema.membership.userId, userId));
@@ -127,6 +130,22 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
           .leftJoin(schema.duty, eq(schema.duty.id, schema.assignment.dutyId))
           .where(isNull(schema.assignment.validTo));
         const grants = await tx.select().from(schema.roleGrant);
+        const history = await tx
+          .select({
+            membershipId: schema.memberIdentityHistory.membershipId,
+            field: schema.memberIdentityHistory.field,
+            oldValue: schema.memberIdentityHistory.oldValue,
+          })
+          .from(schema.memberIdentityHistory)
+          .orderBy(asc(schema.memberIdentityHistory.createdAt));
+        const former = (membershipId: string, field: "name" | "email", current: string) => [
+          ...new Set(
+            history
+              .filter((h) => h.membershipId === membershipId && h.field === field)
+              .map((h) => h.oldValue)
+              .filter((v) => v !== current),
+          ),
+        ];
         const businesses = await tx
           .select({ id: schema.business.id, name: schema.business.name })
           .from(schema.business);
@@ -142,6 +161,8 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
         return members.map((m) => ({
           ...m,
           joinedAt: m.joinedAt.toISOString(),
+          formerNames: former(m.membershipId, "name", m.name),
+          formerEmails: former(m.membershipId, "email", m.email),
           assignments: assignments.filter((a) => a.membershipId === m.membershipId),
           grants: grants
             .filter((g) => g.membershipId === m.membershipId)
@@ -164,7 +185,8 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
       method: "patch",
       path: "/account/members/{userId}",
       tags: ["account"],
-      summary: "구성원 상태(재직·휴직·퇴사)·사번 변경 (퇴사·휴직이면 그 회사의 세션 즉시 종료)",
+      summary:
+        "구성원 상태(재직·휴직·퇴사)·이름·메일 변경 (퇴사·휴직이면 그 회사의 세션 즉시 종료). 사번은 자동 부여되며 바꿀 수 없다",
       request: {
         params: z.object({ userId: z.uuid() }),
         body: {
@@ -172,7 +194,8 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
             "application/json": {
               schema: z.object({
                 status: z.enum(["active", "leave", "left"]).optional(),
-                employeeNo: z.string().trim().min(1).max(30).nullable().optional(),
+                name: z.string().trim().min(1).max(100).optional(),
+                email: z.string().trim().toLowerCase().pipe(z.email()).optional(),
               }),
             },
           },
@@ -186,13 +209,14 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
       const actorId = c.get("session").userId;
       const { userId } = c.req.valid("param");
       const patch = c.req.valid("json");
-      if (patch.status === undefined && patch.employeeNo === undefined) {
+      if (patch.status === undefined && patch.name === undefined && patch.email === undefined) {
         throw new ApiError(400, "validation_error", "변경할 값이 없습니다");
       }
       if (userId === actorId && patch.status !== undefined) {
         throw new ApiError(400, "validation_error", "본인 상태는 바꿀 수 없습니다");
       }
 
+      let membershipId = "";
       await withTenant(d.appDb, tenant.accountId, async (tx) => {
         const { actor } = await loadActor(tx, tenant, actorId);
         // 소유자 동시 변경 경쟁 조건을 막기 위해 소유자 행을 id 순서로 잠근다 (M1 후속 FU-3)
@@ -230,13 +254,11 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
             }
           }
         }
-        if (patch.employeeNo !== undefined) {
+        const identityChange = patch.name !== undefined || patch.email !== undefined;
+        if (identityChange) {
           await authorizeForMember(tx, actor, "assignment.manage", target.id);
         }
-        const next = {
-          status: patch.status ?? target.status,
-          employeeNo: patch.employeeNo === undefined ? target.employeeNo : patch.employeeNo,
-        };
+        const next = { status: patch.status ?? target.status };
         await tx
           .update(schema.membership)
           .set({
@@ -245,17 +267,32 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
               next.status === "active" ? null : target.status === "active" ? d.now() : undefined,
           })
           .where(eq(schema.membership.id, target.id));
-        await recordAudit(tx, {
+        if (patch.status !== undefined) {
+          await recordAudit(tx, {
+            accountId: tenant.accountId,
+            actorUserId: actorId,
+            action: "member.status_change",
+            target: { type: "membership", id: userId },
+            subjectUserId: userId,
+            diff: computeAuditDiff({ status: target.status }, next),
+            result: "success",
+            request: c.get("request"),
+          });
+        }
+        membershipId = target.id;
+      });
+
+      if (patch.name !== undefined || patch.email !== undefined) {
+        await changeIdentity(d.authDb, {
           accountId: tenant.accountId,
-          actorUserId: actorId,
-          action: patch.status !== undefined ? "member.status_change" : "member.update",
-          target: { type: "membership", id: userId },
-          subjectUserId: userId,
-          diff: computeAuditDiff({ status: target.status, employeeNo: target.employeeNo }, next),
-          result: "success",
+          membershipId,
+          userId,
+          actorId,
+          name: patch.name,
+          email: patch.email,
           request: c.get("request"),
         });
-      });
+      }
 
       if (patch.status === "left" || patch.status === "leave") {
         await revokeSessionsInAccount(d.authDb, userId, tenant.accountId);
@@ -475,6 +512,58 @@ export function registerMemberRoutes(app: AppRouter, deps: DepsProvider) {
           .orderBy(desc(schema.assignmentHistory.createdAt));
       });
       return c.json(rows, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/account/members/{userId}/identity-history",
+      tags: ["account"],
+      summary: "이름·메일 변경 이력 (관리자)",
+      request: { params: z.object({ userId: z.uuid() }) },
+      responses: {
+        200: json(
+          z.array(
+            z.object({
+              id: z.string(),
+              field: z.string(),
+              oldValue: z.string(),
+              newValue: z.string(),
+              actorName: z.string().nullable(),
+              createdAt: z.string(),
+            }),
+          ),
+        ),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const tenant = c.get("tenant");
+      const actorId = c.get("session").userId;
+      const { userId } = c.req.valid("param");
+      const rows = await withTenant(deps().appDb, tenant.accountId, async (tx) => {
+        const { actor } = await loadActor(tx, tenant, actorId);
+        const target = await memberByUserId(tx, userId);
+        await authorizeForMember(tx, actor, "assignment.manage", target.id);
+        return tx
+          .select({
+            id: schema.memberIdentityHistory.id,
+            field: schema.memberIdentityHistory.field,
+            oldValue: schema.memberIdentityHistory.oldValue,
+            newValue: schema.memberIdentityHistory.newValue,
+            actorName: schema.user.name,
+            createdAt: schema.memberIdentityHistory.createdAt,
+          })
+          .from(schema.memberIdentityHistory)
+          .leftJoin(schema.user, eq(schema.user.id, schema.memberIdentityHistory.actorUserId))
+          .where(eq(schema.memberIdentityHistory.membershipId, target.id))
+          .orderBy(desc(schema.memberIdentityHistory.createdAt));
+      });
+      return c.json(
+        rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
+        200,
+      );
     },
   );
 

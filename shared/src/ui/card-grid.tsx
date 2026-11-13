@@ -3,7 +3,7 @@ import type * as React from "react";
 
 /** 열 수: 기본 1, md 2, xl 3, 2xl 4, 1920px 이상 5(최대) */
 export const CARD_GRID_CLASS =
-  "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[1920px]:grid-cols-5";
+  "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[120rem]:grid-cols-5";
 /** 한 행 전체(1열)를 차지하는 카드 래퍼 */
 export const CARD_GRID_FULL_CLASS = "col-span-full";
 

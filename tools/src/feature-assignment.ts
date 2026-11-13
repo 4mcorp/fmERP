@@ -88,6 +88,7 @@ const RULES: readonly Rule[] = [
 
   // ── 계정(로그인·세션·PIN·초대·내 정보) ── (코드는 features/account/로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m1\.spec\.ts$/, "account"],
+  [/^apps\/web\/e2e\/pin-setup\.spec\.ts$/, "account"],
 
   // ── 조직·권한 ── (코드는 features/org/로 이동 완료. E2E만 남아 있다)
   [/^apps\/web\/e2e\/m2\.spec\.ts$/, "org"],

@@ -96,6 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       headers: { "content-type": "application/json" },
       body: "{}",
     });
+    window.sessionStorage.removeItem(PIN_REMIND_DISMISSED_KEY);
     window.location.href = "/login";
   }
 

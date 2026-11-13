@@ -123,6 +123,11 @@
 ## 5. 트러블슈팅 (`docs/ts/`) — 작업 전 태그가 겹치는 항목을 읽을 것
 | 파일 | 태그 | 요약 (재발 방지 핵심) |
 |---|---|---|
+| [2026-11-02-form-block-page-boundary-harness.md](ts/2026-11-02-form-block-page-boundary-harness.md) | ui, pdf, test, playwright, forms | 고정 가이드와 packing 모델을 구분해 두 엔진의 실제 PDF로 12mm 보수 여유를 측정. 페이지별 마커·거대 행 분할·PDFKit 독립 대조 |
+| [2026-11-02-form-block-fill-view-overflow.md](ts/2026-11-02-form-block-fill-view-overflow.md) | ui, forms, accessibility, playwright, test | 표 sr-only 절대 위치가 내부 스크롤을 벗어나면 wrapper를 relative로 만든다. 모든 태그·숨김 컨트롤의 rect를 확인하고 페이지/내부 스크롤을 따로 검증 |
+| [2026-11-02-form-block-editor-runtime.md](ts/2026-11-02-form-block-editor-runtime.md) | ui, tiptap, test, playwright, deps | 초기 editorRef·선택 뒤 삽입·드래그 viewport 좌표·초안 재진입 revision·HMR 대기/전용 DB 재초기화·정확 설치 버전 공급망 검사 |
+| [2026-10-30-card-grid-breakpoint-units.md](ts/2026-10-30-card-grid-breakpoint-units.md) | ui, tailwind, responsive, test | breakpoint 단위를 rem으로 통일하고 실제 브라우저에서 1920px 경계 전후 열 수와 전체 폭 카드를 검증한다 |
+| [2026-11-01-form-block-renderer-verification.md](ts/2026-11-01-form-block-renderer-verification.md) | ui, pdf, fonts, test, playwright, k3s | opaque srcdoc 웹폰트 CORS·실제 HTTP 검사, mac13 Chrome/Linux PDF 검증, 러너 argv·VM 공유 경로·5초 timeout 구분 |
 | [2026-10-20-discord-pr-events-emit-failures.md](ts/2026-10-20-discord-pr-events-emit-failures.md) | ci, discord, workflow, concurrency, notifier, flaky | discord-pr-events 실패 로그는 stage·status·exc·retry_after만 남기고 원문·URL을 출력하지 않는다. `cancel-in-progress: false`만으로는 무손실이 아니므로 `queue: max`를 쓴다. 알림 스텝은 `continue-on-error`로 PR 체크와 분리한다. 원인은 미확정 |
 | [2026-10-12-ci-isolated-backup-test-db.md](ts/2026-10-12-ci-isolated-backup-test-db.md) | ci, test, db, backup | 격리 DB의 조회·pg_dump DB 이름 일치, 55433 reset 안전 검사 유지 |
 | [2026-10-12-ci-db-readiness-analysis.md](ts/2026-10-12-ci-db-readiness-analysis.md) | ci, e2e, playwright, db, test, flaky | CI 실패는 `gh run view --log-failed`로 확인한다. "connection refused"는 의도된 시험 출력이므로 원인으로 보지 않는다. E2E는 locator를 좁히고 webServer/globalSetup 순서는 실행 로그로 확인 후 바꾼다 |
@@ -153,6 +158,8 @@
 ## 6. 계획 (`docs/plan/`)
 | 파일 | 상태 | 요약 |
 |---|---|---|
+| [2026-11-02-config-export-import.md](plan/2026-11-02-config-export-import.md) | accepted | Q1~Q5 확정·열린 질문 0건. JSON v1·upsert/diff·UI/CLI·시스템 사번/memberKey·RBAC 이행·회사 기본 채번/양식 예외. Q5=A 다른 key의 기존 구성원 연결 미지원·충돌 차단, 명시 매핑/alias는 후속. 문서함·구성 repo/장기 보관 제외 |
+| [2026-10-30-form-block-editor.md](plan/2026-10-30-form-block-editor.md) | in-progress | 2~4단계 도메인·공통 렌더러/Pretendard·초안 API/CAS·RLS(0028), 5단계 Tiptap 편집·자동 저장, 6단계 작성/조회 연결·값/표 행 편집·버전 배치 보존, 7단계 실제 PDF 하네스·12mm 보수 여유·기존 양식 왕복. 실제 OS IME는 사용자 확인, 구 UI 제거는 8단계 |
 | [2026-10-26-e2e-pipeline.md](plan/2026-10-26-e2e-pipeline.md) | done | E2E 러너 계측·캐시·산출물, dev 변경 관련/main 전체 필수 CI, production·Compose 동일조건 비교 |
 | [2026-10-12-feature-scoped-ci.md](plan/2026-10-12-feature-scoped-ci.md) | done | 기능별 단위 선택·전체 통합 병렬 실행, main E2E를 필수 check에 연결. 로컬 검증 완료, 원격 실행 미검증 |
 | [2026-10-15-ui-ux-refactor-round2.md](plan/2026-10-15-ui-ux-refactor-round2.md) | draft | UI/UX 2차: 결재 상세 토글·다열 카드, 출력물 결재란 자동 맞춤(최대 15칸·2줄)·테두리·줄바꿈, 진행 중 문서 A4 미리보기, 목록 화면 통일·읽음 표시, 양식 선택·편집 미리보기, 관리콘솔 정리, action 버튼·탭 표준 (카드 U0~U10) |
@@ -175,6 +182,7 @@
 | [2026-10-06-m8-security-review.md](plan/2026-10-06-m8-security-review.md) | done | M8 보안 리뷰: 계정 교차 조회의 이벤트 내용 노출(S1)·연결 완료 미감사(S2)·오류 문구의 매개변수(S3) 수정, 후속 FU-M8-1~5 |
 | [2026-10-06-feature-architecture-refactor.md](plan/2026-10-06-feature-architecture-refactor.md) | done | 기능(feature) 단위 구조 전환 + 정적 분석 강제 체계(경계 4겹, Knip, feature map, 우회 방지) 계획과 도구 지정. **사용자 승인 대기** |
 | [2026-10-09-ui-redesign-erpnext-reference.md](plan/2026-10-09-ui-redesign-erpnext-reference.md) | accepted | UI 재설계 스펙: ERPNext(frappe-ui) 패턴 추출, 색상 토큰(확정 oklch/hex·대비), 레이아웃 셸·`DataTable`·`StatusBadge` 컴포넌트 이름·props, 하위 작업 3건 파일 소유 |
+| [2026-10-30-member-identity-history.md](plan/2026-10-30-member-identity-history.md) | in-progress | 구성원 사번 자동 채번(`P0000`부터, 불변), 관리자 이름·메일 변경 + 변경 이력, 양식 `user` 필드 표시 옵션 |
 
 ---
 
@@ -224,6 +232,8 @@
 | 결재 — **`features/approval/`** (엔진) | `src/domain/`(`approval-engine·state·line·line-edit·types`, `delegation`, `document-access`, `step-transfer`, `form-defaults`) — 순수 함수, 시험 `tests/` |
 | 결재 서비스·API·화면 | `src/service/`(`service.ts` 상신·처리·채번, `store.ts` 잠금·저장, `drafts·attachments·comments·mailbox·search·transfer·recipients·forms·export` 등), `src/api/`(`routes.ts` 진입점, `*-routes.ts`, `guards.ts`), `src/provisioning.ts`(기본 양식 설치), `src/ui/{pages,components,queries.ts,local-drafts.ts}`, `feature.map.yaml`. 검사 `pnpm feature:check approval`. 어댑터 페이지는 `apps/web/app/(app)/{approval,mailbox,search,me/absence,admin/{approvals,forms}}` |
 | 결재 스키마·트리거 | `packages/db/src/schema/approval.ts`, `migrations/0005_approval_engine.sql`, `0006_approval_rls_triggers.sql` |
+| 양식 블록 편집기·초안 UI | `features/approval/src/ui/components/form-block-editor.tsx`(NodeView·슬래시·columns), `form-block-document.ts`(저장 변환), `form-field-editor.tsx`(인라인 설정), `features/approval/src/ui/form-draft-autosave.ts`(직렬 PUT/CAS), `apps/web/e2e/m4.spec.ts` |
+| 양식 초안·자동 저장 API | `packages/db/src/schema/form.ts`(`form_draft`), `migrations/0028_form_draft.sql`(RLS·권한), `features/approval/src/{api/forms-routes,service/forms}.ts`, `features/approval/tests/form-draft.int.test.ts` |
 | 조직·권한 — **`features/org/`** | API `src/api/`(`routes.ts` 진입점, `org-routes.ts` 설정·사업자·직위·직책, `departments-routes.ts` 부서·조직도·CSV, `members-routes.ts` 구성원·소속·발령·역할), `src/domain/`(`assignment`·`department-csv`·`department-tree`), `src/service/in-flight.ts`, 화면 `src/ui/{pages,components,queries.ts}`, 테스트 `tests/`. 검사 `pnpm feature:check org` |
 | 조직 화면 어댑터 | `apps/web/app/(app)/org`, `admin/{settings,businesses,org,members,positions}`는 `features/org/src/ui/pages/`를 내보내는 한 줄 어댑터 |
 | 조직 스키마·트리거 | `packages/db/src/schema/org.ts`, `migrations/0003_org_permission.sql`, `0004_org_rls_triggers.sql`, 시드 `features/account/src/seed/seed-org.ts` |

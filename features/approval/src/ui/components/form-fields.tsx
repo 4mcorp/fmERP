@@ -1,9 +1,11 @@
 "use client";
 
-import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
+import type { FormLayout } from "@fmerp/shared/domain/form-layout";
+import { type FormField, type FormSchema, formatPerson } from "@fmerp/shared/domain/form-schema";
 import { tableSums } from "@fmerp/shared/domain/form-values";
 import type { Department, Member } from "@fmerp/shared/lib/types";
 import { Button } from "@fmerp/shared/ui/button";
+import { FormBlocks } from "@fmerp/shared/ui/form-blocks";
 import { Input } from "@fmerp/shared/ui/input";
 import { Label } from "@fmerp/shared/ui/label";
 import {
@@ -37,6 +39,7 @@ function MoneyInput({
   invalid,
   describedBy,
   disabled,
+  label,
 }: {
   id: string;
   value: unknown;
@@ -44,6 +47,7 @@ function MoneyInput({
   invalid: boolean;
   describedBy?: string;
   disabled?: boolean;
+  label?: string;
 }) {
   const n = typeof value === "number" ? value : undefined;
   return (
@@ -51,6 +55,7 @@ function MoneyInput({
       <Input
         id={id}
         inputMode="numeric"
+        aria-label={label}
         autoComplete="off"
         disabled={disabled}
         aria-invalid={invalid}
@@ -79,7 +84,14 @@ function cellInput(
 ) {
   if (col.type === "money") {
     return (
-      <MoneyInput id={id} value={value} onChange={onChange} invalid={invalid} disabled={disabled} />
+      <MoneyInput
+        id={id}
+        label={col.label}
+        value={value}
+        onChange={onChange}
+        invalid={invalid}
+        disabled={disabled}
+      />
     );
   }
   return (
@@ -126,7 +138,7 @@ function TableField({
           f.onChange(rows.map((r, idx) => (idx === i ? { ...r, [key]: v } : r)));
         return (
           <div className="space-y-2">
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="relative overflow-x-auto rounded-lg border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-left">
                   <tr>
@@ -245,7 +257,9 @@ function FieldBody({
 }) {
   const id = `f-${field.key}`;
   const invalid = Boolean(error);
-  const describedBy = invalid ? `${id}-error` : undefined;
+  const describedBy =
+    [field.help ? `${id}-help` : "", invalid ? `${id}-error` : ""].filter(Boolean).join(" ") ||
+    undefined;
   const { control } = form;
 
   switch (field.type) {
@@ -406,7 +420,7 @@ function FieldBody({
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="form-block-options">
                 {!field.required && <SelectItem value={NONE}>(선택 안 함)</SelectItem>}
                 {field.required && f.value === undefined && (
                   <SelectItem value={NONE}>선택하세요</SelectItem>
@@ -463,7 +477,7 @@ function FieldBody({
         field.type === "user"
           ? ctx.members
               .filter((m) => m.status === "active")
-              .map((m) => ({ value: m.membershipId, label: m.name }))
+              .map((m) => ({ value: m.membershipId, label: formatPerson(field.display, m) }))
           : ctx.departments
               .filter((d) => d.active)
               .map((d) => ({ value: d.id, label: `${"　".repeat(d.depth - 1)}${d.name}` }));
@@ -514,7 +528,7 @@ function FieldBody({
                 >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="form-block-options">
                   <SelectItem value={NONE}>(선택 안 함)</SelectItem>
                   {options.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
@@ -565,9 +579,10 @@ function FieldBody({
   }
 }
 
-/** 양식 스키마로 입력 폼을 그린다 (react-hook-form). 검증은 서버와 같은 core 함수(validateFormValues)로 호출 쪽이 한다 */
+/** 값만 RHF에 연결한다. 블록·열·라벨 배치는 공통 렌더러가 소유한다. */
 export function FormFields({
   schema,
+  layout = {},
   form,
   errors,
   ctx,
@@ -575,6 +590,7 @@ export function FormFields({
   disabled,
 }: {
   schema: FormSchema;
+  layout?: FormLayout;
   form: UseFormReturn<Values>;
   errors: Record<string, string>;
   ctx: FieldContext;
@@ -582,40 +598,43 @@ export function FormFields({
   disabled?: boolean;
 }) {
   return (
-    <div className="space-y-5">
-      {schema.fields.map((field) => {
+    <FormBlocks
+      schema={schema}
+      layout={layout}
+      mode="fill"
+      renderLabel={(field) => {
         const id = `f-${field.key}`;
-        const error = errors[field.key];
+        const label = (
+          <>
+            {field.label}
+            {field.required && <span aria-hidden> *</span>}
+          </>
+        );
         const isGroup =
           field.type === "multiselect" ||
           field.type === "richtext" ||
           field.type === "daterange" ||
-          (field.type === "user" && field.multiple) ||
-          (field.type === "dept" && field.multiple);
+          field.type === "table" ||
+          field.type === "attachment" ||
+          ((field.type === "user" || field.type === "dept") && field.multiple);
+        return isGroup ? (
+          <span id={`${id}-label`}>{label}</span>
+        ) : (
+          <Label id={`${id}-label`} htmlFor={id}>
+            {label}
+          </Label>
+        );
+      }}
+      renderField={(field, context) => {
+        const id = `f-${field.key}`;
+        const error = errors[field.key];
         return (
-          <div key={field.key} className="space-y-1.5">
-            {isGroup || field.type === "table" || field.type === "attachment" ? (
-              <p id={`${id}-label`} className="text-sm leading-none font-medium">
-                {field.label}
-                {field.required && (
-                  <span aria-hidden className="text-destructive">
-                    {" "}
-                    *
-                  </span>
-                )}
+          <div className="min-w-0 flex flex-col gap-1.5 p-1">
+            {field.help && (
+              <p id={`${id}-help`} className="text-xs text-muted-foreground">
+                {field.help}
               </p>
-            ) : (
-              <Label htmlFor={id}>
-                {field.label}
-                {field.required && (
-                  <span aria-hidden className="text-destructive">
-                    {" "}
-                    *
-                  </span>
-                )}
-              </Label>
             )}
-            {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
             <FieldBody
               field={field}
               form={form}
@@ -623,7 +642,7 @@ export function FormFields({
               ctx={ctx}
               error={error}
               attachmentSlot={attachmentSlot}
-              disabled={disabled}
+              disabled={disabled || !context.canEditValues}
               errors={errors}
             />
             {error && (
@@ -633,7 +652,7 @@ export function FormFields({
             )}
           </div>
         );
-      })}
-    </div>
+      }}
+    />
   );
 }

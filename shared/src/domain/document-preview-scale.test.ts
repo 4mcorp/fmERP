@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { A4_PORTRAIT_MM, computePreviewScale, MM_TO_CSS_PX } from "./document-preview-scale";
+import {
+  A4_PORTRAIT_MM,
+  computePreviewOffsetX,
+  computePreviewScale,
+  formPageGuideHeightMm,
+  MM_TO_CSS_PX,
+} from "./document-preview-scale";
 
 const A4_PORTRAIT_PX = A4_PORTRAIT_MM.width * MM_TO_CSS_PX;
 const A4_LANDSCAPE_PX = A4_PORTRAIT_MM.height * MM_TO_CSS_PX;
 
 describe("computePreviewScale (UX-2 A4 미리보기)", () => {
+  it("쪽 경계의 12mm 보수 여유는 PDF 여백과 별개로 세로257/가로170mm이다", () => {
+    expect(formPageGuideHeightMm("portrait")).toBe(257);
+    expect(formPageGuideHeightMm("landscape")).toBe(170);
+  });
   it("mm→px 변환은 1in=25.4mm=96px 기준이다", () => {
     expect(MM_TO_CSS_PX).toBeCloseTo(96 / 25.4, 10);
     expect(A4_PORTRAIT_PX).toBeCloseTo(793.7, 1);
@@ -60,4 +70,33 @@ describe("computePreviewScale (UX-2 A4 미리보기)", () => {
     const r = computePreviewScale({ containerWidthPx: 500, orientation: "portrait" });
     expect(r.heightPx).toBeCloseTo(r.pageHeightPx * (500 / r.pageWidthPx), 6);
   });
+});
+
+describe("computePreviewOffsetX", () => {
+  it("컨테이너가 용지보다 넓으면 남는 폭의 절반을 돌려준다", () => {
+    const { pageWidthPx } = computePreviewScale({
+      containerWidthPx: 1000,
+      orientation: "portrait",
+    });
+    expect(computePreviewOffsetX({ containerWidthPx: 1000, orientation: "portrait" })).toBeCloseTo(
+      (1000 - pageWidthPx) / 2,
+    );
+  });
+  it.each(["portrait", "landscape"] as const)("%s 용지도 양쪽 여백이 같다", (orientation) => {
+    const input = { containerWidthPx: 1280, orientation };
+    const { pageWidthPx } = computePreviewScale(input);
+    const offset = computePreviewOffsetX(input);
+    expect(offset).toBeGreaterThan(0);
+    expect(offset + pageWidthPx + offset).toBeCloseTo(input.containerWidthPx);
+    expect(computePreviewOffsetX({ ...input, containerWidthPx: pageWidthPx })).toBe(0);
+  });
+
+  it.each(["portrait", "landscape"] as const)(
+    "%s의 좁거나 유효하지 않은 폭은 0이다",
+    (orientation) => {
+      for (const containerWidthPx of [330, 0, -10, Number.NaN, Number.POSITIVE_INFINITY]) {
+        expect(computePreviewOffsetX({ containerWidthPx, orientation })).toBeCloseTo(0);
+      }
+    },
+  );
 });

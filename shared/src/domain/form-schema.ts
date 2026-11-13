@@ -42,9 +42,32 @@ interface SelectField extends Base {
   options: SelectOption[];
   default?: string | string[];
 }
+export const USER_DISPLAYS = ["name", "name_email", "employee_no"] as const;
+export type UserDisplay = (typeof USER_DISPLAYS)[number];
+export const USER_DISPLAY_LABEL: Record<UserDisplay, string> = {
+  name: "이름",
+  name_email: "이름 + 메일",
+  employee_no: "사번",
+};
+
 interface RefField extends Base {
   type: "user" | "dept";
   multiple?: boolean;
+  /** user 필드의 표시 방식. 기본은 이름. 값은 구성원 id만 저장하므로 표시만 달라진다 */
+  display?: UserDisplay;
+}
+
+export interface PersonInfo {
+  name: string;
+  email: string;
+  employeeNo: string | null;
+}
+
+/** 구성원을 필드 설정에 맞게 한 줄로 표시한다 */
+export function formatPerson(display: UserDisplay | undefined, p: PersonInfo): string {
+  if (display === "employee_no") return p.employeeNo ?? p.name;
+  if (display === "name_email") return `${p.name} (${p.email})`;
+  return p.name;
 }
 export interface TableColumn {
   key: string;

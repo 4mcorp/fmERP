@@ -1,5 +1,6 @@
 "use client";
 
+import { type FormLayout, validateFormLayout } from "@fmerp/shared/domain/form-layout";
 import {
   type FormField,
   type FormSchema,
@@ -24,438 +25,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@fmerp/shared/ui/select";
-import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ApprovalPageLayout } from "../components/approval-page-layout";
+import { FormBlockEditor } from "../components/form-block-editor";
+import { blankField, FIELD_TYPE_LABEL, FieldEditor } from "../components/form-field-editor";
 import { FormFields, type Values } from "../components/form-fields";
 import { FormPrintPreview } from "../components/form-print-preview";
 import { itemsToRows, LineEditor, type LineRow, rowsToItems } from "../components/line-editor";
+import { type FormDraft, useFormDraftAutosave } from "../form-draft-autosave";
 import { useApprovalPolicy, useFormDetail } from "../queries";
-
-const FIELD_TYPE_LABEL: Record<FormField["type"], string> = {
-  text: "텍스트",
-  textarea: "여러 줄 텍스트",
-  number: "숫자",
-  money: "금액(원)",
-  date: "날짜",
-  daterange: "기간",
-  select: "단일 선택",
-  multiselect: "다중 선택",
-  user: "사용자 선택",
-  dept: "부서 선택",
-  table: "표",
-  richtext: "리치 텍스트",
-  attachment: "첨부",
-};
-
-function blankField(type: FormField["type"], n: number): FormField {
-  const base = { key: `field${n}`, label: `항목 ${n}`, type } as const;
-  switch (type) {
-    case "select":
-    case "multiselect":
-      return { ...base, type, options: [{ value: "a", label: "선택지 1" }] };
-    case "table":
-      return { ...base, type, columns: [{ key: "name", label: "항목", type: "text" }] };
-    default:
-      return { ...base, type } as FormField;
-  }
-}
-
-const numOrUndef = (v: string) => (v === "" ? undefined : Number(v));
-
-function FieldEditor({
-  field,
-  index,
-  total,
-  onChange,
-  onMove,
-  onRemove,
-}: {
-  field: FormField;
-  index: number;
-  total: number;
-  onChange: (f: FormField) => void;
-  onMove: (to: number) => void;
-  onRemove: () => void;
-}) {
-  const id = `fe-${index}`;
-  const set = (patch: Record<string, unknown>) => onChange({ ...field, ...patch } as FormField);
-  return (
-    <li className="space-y-3 rounded-lg border bg-card p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium">
-          {index + 1}. {FIELD_TYPE_LABEL[field.type]}
-        </span>
-        <div className="ml-auto flex gap-1">
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label={`${index + 1}번째 필드 위로`}
-            disabled={index === 0}
-            onClick={() => onMove(index - 1)}
-          >
-            <ArrowUp aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label={`${index + 1}번째 필드 아래로`}
-            disabled={index === total - 1}
-            onClick={() => onMove(index + 1)}
-          >
-            <ArrowDown aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label={`${index + 1}번째 필드 삭제`}
-            onClick={onRemove}
-          >
-            <Trash2 aria-hidden />
-          </Button>
-        </div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-1">
-          <Label htmlFor={`${id}-label`}>라벨</Label>
-          <Input
-            id={`${id}-label`}
-            value={field.label}
-            onChange={(e) => set({ label: e.target.value })}
-            maxLength={100}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor={`${id}-key`}>키 (영문)</Label>
-          <Input
-            id={`${id}-key`}
-            value={field.key}
-            onChange={(e) => set({ key: e.target.value })}
-            maxLength={40}
-            autoComplete="off"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor={`${id}-help`}>도움말</Label>
-          <Input
-            id={`${id}-help`}
-            value={field.help ?? ""}
-            onChange={(e) => set({ help: e.target.value || undefined })}
-            maxLength={300}
-          />
-        </div>
-      </div>
-      {field.type !== "attachment" && (
-        <label className="flex items-center gap-1.5 text-sm">
-          <input
-            type="checkbox"
-            className="size-4"
-            checked={field.required ?? false}
-            onChange={(e) => set({ required: e.target.checked })}
-          />
-          필수 항목
-        </label>
-      )}
-      {(field.type === "text" || field.type === "textarea") && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-1">
-            <Label htmlFor={`${id}-minl`}>최소 길이</Label>
-            <Input
-              id={`${id}-minl`}
-              type="number"
-              min={0}
-              value={field.minLength ?? ""}
-              onChange={(e) => set({ minLength: numOrUndef(e.target.value) })}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`${id}-maxl`}>최대 길이</Label>
-            <Input
-              id={`${id}-maxl`}
-              type="number"
-              min={0}
-              value={field.maxLength ?? ""}
-              onChange={(e) => set({ maxLength: numOrUndef(e.target.value) })}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`${id}-pattern`}>정규식 검증</Label>
-            <Input
-              id={`${id}-pattern`}
-              value={field.pattern ?? ""}
-              onChange={(e) => set({ pattern: e.target.value || undefined })}
-              placeholder="예: ^[0-9]{3}-[0-9]{4}$"
-              autoComplete="off"
-            />
-          </div>
-        </div>
-      )}
-      {(field.type === "number" || field.type === "money") && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-1">
-            <Label htmlFor={`${id}-min`}>최솟값</Label>
-            <Input
-              id={`${id}-min`}
-              type="number"
-              value={field.min ?? ""}
-              onChange={(e) => set({ min: numOrUndef(e.target.value) })}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`${id}-max`}>최댓값</Label>
-            <Input
-              id={`${id}-max`}
-              type="number"
-              value={field.max ?? ""}
-              onChange={(e) => set({ max: numOrUndef(e.target.value) })}
-            />
-          </div>
-          {field.type === "number" && (
-            <label className="flex items-center gap-1.5 self-end pb-2 text-sm">
-              <input
-                type="checkbox"
-                className="size-4"
-                checked={field.integer ?? false}
-                onChange={(e) => set({ integer: e.target.checked })}
-              />
-              정수만
-            </label>
-          )}
-        </div>
-      )}
-      {(field.type === "user" || field.type === "dept") && (
-        <label className="flex items-center gap-1.5 text-sm">
-          <input
-            type="checkbox"
-            className="size-4"
-            checked={field.multiple ?? false}
-            onChange={(e) => set({ multiple: e.target.checked })}
-          />
-          여러 명(개) 선택
-        </label>
-      )}
-      {field.type === "attachment" && (
-        <div className="max-w-40 space-y-1">
-          <Label htmlFor={`${id}-files`}>최대 개수</Label>
-          <Input
-            id={`${id}-files`}
-            type="number"
-            min={0}
-            value={field.maxFiles ?? ""}
-            onChange={(e) => set({ maxFiles: numOrUndef(e.target.value) })}
-          />
-        </div>
-      )}
-      {(field.type === "select" || field.type === "multiselect") && (
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">선택지</legend>
-          {field.options.map((o, oi) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: 선택지는 순서가 곧 식별자다
-            <div key={oi} className="flex min-w-0 flex-wrap gap-2">
-              <Input
-                aria-label={`선택지 ${oi + 1} 값`}
-                className="w-32 max-w-full"
-                value={o.value}
-                onChange={(e) =>
-                  set({
-                    options: field.options.map((x, xi) =>
-                      xi === oi ? { ...x, value: e.target.value } : x,
-                    ),
-                  })
-                }
-              />
-              <Input
-                aria-label={`선택지 ${oi + 1} 라벨`}
-                className="min-w-40 flex-1"
-                value={o.label}
-                onChange={(e) =>
-                  set({
-                    options: field.options.map((x, xi) =>
-                      xi === oi ? { ...x, label: e.target.value } : x,
-                    ),
-                  })
-                }
-              />
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                aria-label={`선택지 ${oi + 1} 삭제`}
-                onClick={() => set({ options: field.options.filter((_, xi) => xi !== oi) })}
-              >
-                <Trash2 aria-hidden />
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              set({
-                options: [
-                  ...field.options,
-                  {
-                    value: `v${field.options.length + 1}`,
-                    label: `선택지 ${field.options.length + 1}`,
-                  },
-                ],
-              })
-            }
-          >
-            <Plus aria-hidden />
-            선택지 추가
-          </Button>
-        </fieldset>
-      )}
-      {field.type === "table" && (
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">열</legend>
-          {field.columns.map((c, ci) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: 열은 순서가 곧 식별자다
-            <div key={ci} className="flex flex-wrap items-center gap-2">
-              <Input
-                aria-label={`열 ${ci + 1} 키`}
-                className="w-28"
-                value={c.key}
-                onChange={(e) =>
-                  set({
-                    columns: field.columns.map((x, xi) =>
-                      xi === ci ? { ...x, key: e.target.value } : x,
-                    ),
-                  })
-                }
-              />
-              <Input
-                aria-label={`열 ${ci + 1} 라벨`}
-                className="min-w-32 flex-1"
-                value={c.label}
-                onChange={(e) =>
-                  set({
-                    columns: field.columns.map((x, xi) =>
-                      xi === ci ? { ...x, label: e.target.value } : x,
-                    ),
-                  })
-                }
-              />
-              <Select
-                value={c.type}
-                onValueChange={(v) =>
-                  set({
-                    columns: field.columns.map((x, xi) =>
-                      xi === ci
-                        ? { ...x, type: v, sum: v === "number" || v === "money" ? x.sum : false }
-                        : x,
-                    ),
-                  })
-                }
-              >
-                <SelectTrigger aria-label={`열 ${ci + 1} 유형`} className="w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="text">텍스트</SelectItem>
-                  <SelectItem value="number">숫자</SelectItem>
-                  <SelectItem value="money">금액</SelectItem>
-                  <SelectItem value="date">날짜</SelectItem>
-                </SelectContent>
-              </Select>
-              <label className="flex items-center gap-1 text-sm">
-                <input
-                  type="checkbox"
-                  className="size-4"
-                  checked={c.required ?? false}
-                  onChange={(e) =>
-                    set({
-                      columns: field.columns.map((x, xi) =>
-                        xi === ci ? { ...x, required: e.target.checked } : x,
-                      ),
-                    })
-                  }
-                />
-                필수
-              </label>
-              {(c.type === "number" || c.type === "money") && (
-                <label className="flex items-center gap-1 text-sm">
-                  <input
-                    type="checkbox"
-                    className="size-4"
-                    checked={c.sum ?? false}
-                    onChange={(e) =>
-                      set({
-                        columns: field.columns.map((x, xi) =>
-                          xi === ci ? { ...x, sum: e.target.checked } : x,
-                        ),
-                      })
-                    }
-                  />
-                  합계
-                </label>
-              )}
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                aria-label={`열 ${ci + 1} 삭제`}
-                onClick={() => set({ columns: field.columns.filter((_, xi) => xi !== ci) })}
-              >
-                <Trash2 aria-hidden />
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              set({
-                columns: [
-                  ...field.columns,
-                  {
-                    key: `col${field.columns.length + 1}`,
-                    label: `열 ${field.columns.length + 1}`,
-                    type: "text",
-                  },
-                ],
-              })
-            }
-          >
-            <Plus aria-hidden />열 추가
-          </Button>
-          <div className="grid max-w-sm gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor={`${id}-minr`}>최소 행</Label>
-              <Input
-                id={`${id}-minr`}
-                type="number"
-                min={0}
-                value={field.minRows ?? ""}
-                onChange={(e) => set({ minRows: numOrUndef(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor={`${id}-maxr`}>최대 행</Label>
-              <Input
-                id={`${id}-maxr`}
-                type="number"
-                min={0}
-                value={field.maxRows ?? ""}
-                onChange={(e) => set({ maxRows: numOrUndef(e.target.value) })}
-              />
-            </div>
-          </div>
-        </fieldset>
-      )}
-    </li>
-  );
-}
 
 const DEFAULT_DEF: FormDefinition = {
   schema: { fields: [{ key: "body", label: "내용", type: "richtext", required: true }] },
@@ -470,6 +53,10 @@ const DEFAULT_DEF: FormDefinition = {
 /** 양식 빌더: 필드 나열 + 표 + 리치 텍스트 (D8), 속성·결재선·문서번호·보존연한, 미리보기. 저장하면 새 버전이 된다 (APV-001·004~007, ADM-004) */
 export default function FormBuilderPage() {
   const { id } = useParams<{ id: string }>();
+  return <FormBuilder key={id} id={id} />;
+}
+
+function FormBuilder({ id }: { id: string }) {
   const isNew = id === "new";
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -478,6 +65,15 @@ export default function FormBuilderPage() {
     isError: detailError,
     refetch: refetchDetail,
   } = useFormDetail(isNew ? undefined : id);
+  const draftQuery = useQuery({
+    queryKey: ["form-draft", id],
+    queryFn: () => api<{ draft: FormDraft | null }>(`/api/forms/${id}/draft`),
+    enabled: !isNew,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: "always",
+    staleTime: 0,
+  });
   const { data: policy } = useApprovalPolicy();
   const { data: members } = useMembers();
   const { data: departments } = useDepartments();
@@ -492,16 +88,22 @@ export default function FormBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [addType, setAddType] = useState<FormField["type"]>("text");
   const [loaded, setLoaded] = useState(isNew);
+  const [editorGeneration, setEditorGeneration] = useState(0);
 
   useEffect(() => {
-    if (!detail || loaded) return;
+    if (!detail || loaded || !draftQuery.data || draftQuery.isFetching) return;
     setCode(detail.code);
     setName(detail.name);
     setCategory(detail.category);
-    setDef(detail.definition);
+    const draft = draftQuery.data.draft;
+    setDef(
+      draft
+        ? { ...detail.definition, schema: draft.schema, layout: { ...draft.layout } }
+        : detail.definition,
+    );
     setRows(itemsToRows(detail.definition.defaultLine));
     setLoaded(true);
-  }, [detail, loaded]);
+  }, [detail, loaded, draftQuery.data, draftQuery.isFetching]);
 
   const ctx = useMemo(
     () => ({
@@ -512,16 +114,30 @@ export default function FormBuilderPage() {
     [members, departments, businesses],
   );
   const fields = def.schema.fields;
-  const setFields = (next: FormField[]) =>
+  const setFields = (next: FormField[]) => {
     setDef((d) => ({ ...d, schema: { fields: next } as FormSchema }));
+    setEditorGeneration((n) => n + 1);
+  };
   const previewForm = useForm<Values>({ defaultValues: {} });
   const schemaCheck = validateFormSchema(def.schema);
+  const layoutCheck = validateFormLayout(def.schema, def.layout ?? {});
+  const draftValue = useMemo(
+    () => (loaded ? { schema: def.schema, layout: (def.layout ?? {}) as FormLayout } : null),
+    [loaded, def.schema, def.layout],
+  );
+  const autosave = useFormDraftAutosave(
+    isNew ? undefined : id,
+    draftValue,
+    draftQuery.data?.draft?.revision ?? 0,
+    schemaCheck.ok && layoutCheck.ok,
+  );
 
   async function save(e: FormEvent) {
     e.preventDefault();
     setErrors([]);
     setSaving(true);
     try {
+      await autosave.flush();
       const version = { ...def, defaultLine: rowsToItems(rows) };
       if (isNew) {
         const created = await api<{ formId: string }>("/api/forms", {
@@ -550,6 +166,8 @@ export default function FormBuilderPage() {
     }
   }
 
+  if (draftQuery.isError && !loaded)
+    return <QueryErrorState onRetry={() => draftQuery.refetch()} />;
   if (detailError && !loaded) return <QueryErrorState onRetry={() => refetchDetail()} />;
   if (!loaded) return <LoadingState />;
   const moveField = (from: number, to: number) => {
@@ -564,6 +182,85 @@ export default function FormBuilderPage() {
       <ApprovalPageLayout
         title={isNew ? "새 양식" : `${name} 편집${detail ? ` (현재 v${detail.version})` : ""}`}
       >
+        <section className="flex min-w-0 flex-col gap-3" aria-label="블록 양식 편집">
+          <p role="status">
+            {isNew
+              ? "양식을 만든 뒤부터 구조 초안을 자동 저장합니다"
+              : autosave.status.kind === "saved"
+                ? "초안 저장 완료"
+                : autosave.status.kind === "saving"
+                  ? "초안 저장 중…"
+                  : autosave.status.kind === "pending"
+                    ? "초안 저장 대기"
+                    : "message" in autosave.status
+                      ? autosave.status.message
+                      : "초안 저장 완료"}
+          </p>
+          <p>
+            자동 저장은 본문 구조만 보관합니다. 이름·결재선·속성은 새 버전으로 저장해야 반영됩니다.
+          </p>
+          {autosave.status.kind === "conflict" || autosave.status.kind === "error" ? (
+            <Alert variant="destructive">
+              <AlertTitle>초안을 저장하지 못했습니다</AlertTitle>
+              <AlertDescription>
+                {autosave.status.message} 현재 내용은 아래 JSON에서 복사할 수 있습니다.
+                <textarea
+                  aria-label="현재 초안 사본"
+                  readOnly
+                  value={JSON.stringify(draftValue, null, 2)}
+                  className="h-32 w-full"
+                />
+                {autosave.status.kind === "error" ? (
+                  <Button type="button" onClick={autosave.retry}>
+                    초안 저장 재시도
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "현재 내용을 복사했나요? 다시 불러오면 저장되지 않은 변경을 잃습니다.",
+                      )
+                    )
+                      window.location.reload();
+                  }}
+                >
+                  초안 다시 불러오기
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {[...new Set([...layoutCheck.warnings, ...autosave.status.warnings])].map((warning) => (
+            <p key={warning} role="note">
+              {warning}
+            </p>
+          ))}
+          {!schemaCheck.ok || !layoutCheck.ok ? (
+            <Alert variant="destructive">
+              <AlertTitle>구조를 확인하세요</AlertTitle>
+              <AlertDescription>
+                {[
+                  ...(!schemaCheck.ok ? schemaCheck.errors : []),
+                  ...(!layoutCheck.ok ? layoutCheck.errors : []),
+                ].join(" / ")}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          <fieldset disabled={saving} className="min-w-0">
+            <FormBlockEditor
+              key={editorGeneration}
+              schema={def.schema}
+              layout={(def.layout ?? {}) as FormLayout}
+              name={name}
+              disabled={saving}
+              onChange={(value) =>
+                setDef((d) => ({ ...d, schema: value.schema, layout: { ...value.layout } }))
+              }
+            />
+          </fieldset>
+        </section>
         <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:items-start">
           <div className="min-w-0 space-y-4">
             <Card>
@@ -604,75 +301,124 @@ export default function FormBuilderPage() {
                     maxLength={50}
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">필드</CardTitle>
-                <CardDescription>
-                  입력 항목을 위에서 아래로 나열합니다. 표는 행 추가와 열 합계를, 리치 텍스트는 서식
-                  있는 본문을 지원합니다.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <ol className="space-y-2">
-                  {fields.map((f, i) => (
-                    <FieldEditor
-                      // biome-ignore lint/suspicious/noArrayIndexKey: 키를 편집할 수 있어 순서로 식별한다
-                      key={i}
-                      field={f}
-                      index={i}
-                      total={fields.length}
-                      onChange={(next) => setFields(fields.map((x, xi) => (xi === i ? next : x)))}
-                      onMove={(to) => moveField(i, to)}
-                      onRemove={() => setFields(fields.filter((_, xi) => xi !== i))}
-                    />
-                  ))}
-                </ol>
-                <div className="flex flex-wrap items-end gap-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="add-type">필드 유형</Label>
+                {isNew ? (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="form-orientation">용지 방향</Label>
                     <Select
-                      value={addType}
-                      onValueChange={(v) => setAddType(v as FormField["type"])}
+                      value={def.layout?.orientation === "landscape" ? "landscape" : "portrait"}
+                      onValueChange={(orientation) =>
+                        setDef((d) => ({ ...d, layout: { ...d.layout, orientation } }))
+                      }
                     >
-                      <SelectTrigger id="add-type" className="w-44">
+                      <SelectTrigger id="form-orientation">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {(Object.keys(FIELD_TYPE_LABEL) as FormField["type"][]).map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {FIELD_TYPE_LABEL[t]}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="portrait">A4 세로</SelectItem>
+                        <SelectItem value="landscape">A4 가로</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setFields([...fields, blankField(addType, fields.length + 1)])}
+                ) : null}
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="form-approval-position">결재란 위치</Label>
+                  <Select
+                    value={
+                      typeof def.layout?.approvalBoxPosition === "string"
+                        ? def.layout.approvalBoxPosition
+                        : "top-right"
+                    }
+                    onValueChange={(approvalBoxPosition) =>
+                      setDef((d) => ({ ...d, layout: { ...d.layout, approvalBoxPosition } }))
+                    }
                   >
-                    <Plus aria-hidden />
-                    필드 추가
-                  </Button>
+                    <SelectTrigger id="form-approval-position">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="top-right">오른쪽 위</SelectItem>
+                      <SelectItem value="top-left">왼쪽 위</SelectItem>
+                      <SelectItem value="bottom">본문 아래</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {!schemaCheck.ok && (
-                  <Alert variant="destructive">
-                    <AlertTitle>필드 정의를 확인하세요</AlertTitle>
-                    <AlertDescription>
-                      <ul className="list-disc pl-5">
-                        {schemaCheck.errors.map((m) => (
-                          <li key={m}>{m}</li>
-                        ))}
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-                )}
               </CardContent>
             </Card>
 
+            <details>
+              <summary>기존 필드 목록 (블록 배치 후에는 참고용)</summary>
+              <fieldset disabled={def.layout?.blocks !== undefined}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">필드</CardTitle>
+                    <CardDescription>
+                      입력 항목을 위에서 아래로 나열합니다. 표는 행 추가와 열 합계를, 리치 텍스트는
+                      서식 있는 본문을 지원합니다.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <ol className="space-y-2">
+                      {fields.map((f, i) => (
+                        <FieldEditor
+                          // biome-ignore lint/suspicious/noArrayIndexKey: 키를 편집할 수 있어 순서로 식별한다
+                          key={i}
+                          field={f}
+                          index={i}
+                          total={fields.length}
+                          onChange={(next) =>
+                            setFields(fields.map((x, xi) => (xi === i ? next : x)))
+                          }
+                          onMove={(to) => moveField(i, to)}
+                          onRemove={() => setFields(fields.filter((_, xi) => xi !== i))}
+                        />
+                      ))}
+                    </ol>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="add-type">필드 유형</Label>
+                        <Select
+                          value={addType}
+                          onValueChange={(v) => setAddType(v as FormField["type"])}
+                        >
+                          <SelectTrigger id="add-type" className="w-44">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(Object.keys(FIELD_TYPE_LABEL) as FormField["type"][]).map((t) => (
+                              <SelectItem key={t} value={t}>
+                                {FIELD_TYPE_LABEL[t]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          setFields([...fields, blankField(addType, fields.length + 1)])
+                        }
+                      >
+                        <Plus aria-hidden />
+                        필드 추가
+                      </Button>
+                    </div>
+                    {!schemaCheck.ok && (
+                      <Alert variant="destructive">
+                        <AlertTitle>필드 정의를 확인하세요</AlertTitle>
+                        <AlertDescription>
+                          <ul className="list-disc pl-5">
+                            {schemaCheck.errors.map((m) => (
+                              <li key={m}>{m}</li>
+                            ))}
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+              </fieldset>
+            </details>
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">속성</CardTitle>
@@ -907,6 +653,7 @@ export default function FormBuilderPage() {
                 {schemaCheck.ok ? (
                   <FormFields
                     schema={def.schema}
+                    layout={def.layout}
                     form={previewForm}
                     errors={{}}
                     ctx={ctx}
@@ -940,10 +687,31 @@ export default function FormBuilderPage() {
           </div>
         </div>
         <ActionBar className="sticky bottom-0 border-t bg-background py-3">
-          <Button type="button" variant="outline" onClick={() => router.push("/admin/forms")}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={async () => {
+              try {
+                await autosave.flush();
+                router.push("/admin/forms");
+              } catch (error) {
+                setErrors([errorMessage(error)]);
+              }
+            }}
+          >
             목록
           </Button>
-          <Button type="submit" variant="default" disabled={saving || !schemaCheck.ok}>
+          <Button
+            type="submit"
+            variant="default"
+            disabled={
+              saving ||
+              !schemaCheck.ok ||
+              !layoutCheck.ok ||
+              autosave.status.kind === "conflict" ||
+              autosave.status.kind === "error"
+            }
+          >
             {saving ? "저장 중…" : isNew ? "양식 만들기" : "새 버전으로 저장"}
           </Button>
         </ActionBar>

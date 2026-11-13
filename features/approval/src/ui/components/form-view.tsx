@@ -1,7 +1,9 @@
 "use client";
 
-import type { FormField, FormSchema } from "@fmerp/shared/domain/form-schema";
+import type { FormLayout } from "@fmerp/shared/domain/form-layout";
+import { type FormField, type FormSchema, formatPerson } from "@fmerp/shared/domain/form-schema";
 import { tableSums } from "@fmerp/shared/domain/form-values";
+import { FormBlocks } from "@fmerp/shared/ui/form-blocks";
 import type { ReactNode } from "react";
 import { type FieldContext, formatWon } from "./form-fields";
 import { RichTextView } from "./rich-text";
@@ -27,7 +29,10 @@ function display(field: FormField, value: unknown, ctx: FieldContext): ReactNode
     case "user": {
       const ids = field.multiple ? (value as string[]) : [value as string];
       return ids
-        .map((id) => ctx.members.find((m) => m.membershipId === id)?.name ?? "(알 수 없음)")
+        .map((id) => {
+          const m = ctx.members.find((x) => x.membershipId === id);
+          return m ? formatPerson(field.display, m) : "(알 수 없음)";
+        })
         .join(", ");
     }
     case "dept": {
@@ -95,23 +100,23 @@ function display(field: FormField, value: unknown, ctx: FieldContext): ReactNode
 /** 문서 본문(양식 입력값)을 읽기 전용으로 보여 준다. 첨부는 호출 쪽이 따로 보여 준다 */
 export function FormValuesView({
   schema,
+  layout = {},
   values,
   ctx,
 }: {
   schema: FormSchema;
+  layout?: FormLayout;
   values: Record<string, unknown>;
   ctx: FieldContext;
 }) {
   return (
-    <dl className="space-y-4">
-      {schema.fields
-        .filter((f) => f.type !== "attachment")
-        .map((f) => (
-          <div key={f.key} className="space-y-1">
-            <dt className="text-sm font-medium text-muted-foreground">{f.label}</dt>
-            <dd className="min-w-0 text-sm">{display(f, values[f.key], ctx)}</dd>
-          </div>
-        ))}
-    </dl>
+    <FormBlocks
+      schema={schema}
+      layout={layout}
+      mode="view"
+      renderField={(field) =>
+        field.type === "attachment" ? undefined : display(field, values[field.key], ctx)
+      }
+    />
   );
 }

@@ -60,6 +60,9 @@ export interface Member {
   role: Role;
   status: MemberStatus;
   employeeNo: string | null;
+  /** 바뀌기 전 이름·메일 (없으면 빈 배열) */
+  formerNames: string[];
+  formerEmails: string[];
   joinedAt: string;
   assignments: MemberAssignment[];
   grants: MemberGrant[];

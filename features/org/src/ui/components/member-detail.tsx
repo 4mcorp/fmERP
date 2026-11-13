@@ -62,16 +62,17 @@ const ACTION_LABEL: Record<string, string> = { create: "발령", update: "변경
 function BasicSection({
   member,
   canStatus,
-  canEmpNo,
+  canIdentity,
 }: {
   member: Member;
   canStatus: boolean;
-  canEmpNo: boolean;
+  canIdentity: boolean;
 }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [status, setStatus] = useState<MemberStatus>(member.status);
-  const [employeeNo, setEmployeeNo] = useState(member.employeeNo ?? "");
+  const [name, setName] = useState(member.name);
+  const [email, setEmail] = useState(member.email);
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -80,9 +81,8 @@ function BasicSection({
         method: "PATCH",
         body: {
           ...(canStatus && status !== member.status ? { status } : {}),
-          ...(canEmpNo && employeeNo !== (member.employeeNo ?? "")
-            ? { employeeNo: employeeNo.trim() || null }
-            : {}),
+          ...(canIdentity && name.trim() !== member.name ? { name: name.trim() } : {}),
+          ...(canIdentity && email.trim() !== member.email ? { email: email.trim() } : {}),
         },
       });
       await queryClient.invalidateQueries({ queryKey: ["members"] });
@@ -103,7 +103,11 @@ function BasicSection({
   }
 
   return (
-    <form onSubmit={save} className="grid gap-3 sm:grid-cols-[12rem_12rem_auto] sm:items-end">
+    <form onSubmit={save} className="grid gap-3 sm:grid-cols-2 sm:items-end">
+      <div className="space-y-2">
+        <Label htmlFor="m-empno">사번</Label>
+        <Input id="m-empno" value={member.employeeNo ?? ""} readOnly disabled />
+      </div>
       <div className="space-y-2">
         <Label htmlFor="m-status">상태</Label>
         <Select
@@ -124,16 +128,30 @@ function BasicSection({
         </Select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="m-empno">사번</Label>
+        <Label htmlFor="m-name">이름</Label>
         <Input
-          id="m-empno"
-          value={employeeNo}
-          onChange={(e) => setEmployeeNo(e.target.value)}
-          disabled={!canEmpNo}
-          maxLength={30}
+          id="m-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          disabled={!canIdentity}
+          maxLength={100}
         />
       </div>
-      <Button type="submit" disabled={!canStatus && !canEmpNo}>
+      <div className="space-y-2">
+        <Label htmlFor="m-email">메일</Label>
+        <Input
+          id="m-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={!canIdentity}
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={!canStatus && !canIdentity}
+        className="sm:col-span-2 sm:justify-self-start"
+      >
         저장
       </Button>
     </form>
@@ -568,6 +586,52 @@ function HistorySection({ member }: { member: Member }) {
   );
 }
 
+interface IdentityHistoryItem {
+  id: string;
+  field: string;
+  oldValue: string;
+  newValue: string;
+  actorName: string | null;
+  createdAt: string;
+}
+
+function IdentityHistorySection({ member }: { member: Member }) {
+  const { data } = useQuery({
+    queryKey: ["identity-history", member.userId, member.name, member.email],
+    queryFn: () =>
+      api<IdentityHistoryItem[]>(`/api/account/members/${member.userId}/identity-history`),
+  });
+  if (!data) return null;
+  if (data.length === 0)
+    return <p className="text-sm text-muted-foreground">변경 이력이 없습니다.</p>;
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>변경일시</TableHead>
+            <TableHead>항목</TableHead>
+            <TableHead>이전</TableHead>
+            <TableHead>변경</TableHead>
+            <TableHead>처리자</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((h) => (
+            <TableRow key={h.id}>
+              <TableCell>{new Date(h.createdAt).toLocaleString("ko-KR")}</TableCell>
+              <TableCell>{h.field === "name" ? "이름" : "메일"}</TableCell>
+              <TableCell>{h.oldValue}</TableCell>
+              <TableCell>{h.newValue}</TableCell>
+              <TableCell>{h.actorName ?? "-"}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
 /** 구성원 한 명의 상태·사번, 소속(겸직)·발령, 역할, 발령 이력 편집 (PRD ORG-032~035, PERM-001). 권한이 없는 부분은 숨긴다 */
 export function MemberDetail({
   member,
@@ -590,7 +654,9 @@ export function MemberDetail({
             닫기
           </Button>
         </CardTitle>
-        <CardDescription>상태·사번, 소속과 발령, 역할을 관리합니다.</CardDescription>
+        <CardDescription>
+          상태·이름·메일, 소속과 발령, 역할을 관리합니다. 사번은 자동으로 부여되며 바꿀 수 없습니다.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <section aria-labelledby="md-basic" className="space-y-2">
@@ -598,10 +664,10 @@ export function MemberDetail({
             기본 정보
           </h2>
           <BasicSection
-            key={`${member.userId}-${member.status}-${member.employeeNo}`}
+            key={`${member.userId}-${member.status}-${member.name}-${member.email}`}
             member={member}
             canStatus={Boolean(caps["member.deactivate"])}
-            canEmpNo={Boolean(caps["assignment.manage"])}
+            canIdentity={Boolean(caps["assignment.manage"])}
           />
         </section>
         {caps["assignment.manage"] && (
@@ -620,6 +686,12 @@ export function MemberDetail({
                 발령 이력
               </h2>
               <HistorySection member={member} />
+            </section>
+            <section aria-labelledby="md-identity-history" className="space-y-2">
+              <h2 id="md-identity-history" className="text-sm font-semibold">
+                사용자 정보 변경 이력
+              </h2>
+              <IdentityHistorySection member={member} />
             </section>
           </>
         )}

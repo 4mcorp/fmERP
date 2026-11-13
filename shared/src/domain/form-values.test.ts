@@ -151,6 +151,55 @@ describe("양식 입력값 검증 (APV-001, APV-015)", () => {
     expect(fieldsWithError({ ...valid, body: huge })).toContain("body");
   });
 
+  it("리치 표의 위험한 span과 과도한 깊이는 저장하지 않는다", () => {
+    for (const name of ["colspan", "rowspan"]) {
+      for (const span of [0, -1, 1.5, "2", 1_000_000]) {
+        const body = { type: "doc", content: [{ type: "tableCell", attrs: { [name]: span } }] };
+        expect(fieldsWithError({ ...valid, body })).toContain("body");
+      }
+    }
+    let body: unknown = { type: "paragraph" };
+    for (let i = 0; i < 200; i++) body = { type: "paragraph", content: [body] };
+    expect(fieldsWithError({ ...valid, body: { type: "doc", content: [body] } })).toContain("body");
+    const many = { type: "doc", content: Array.from({ length: 11_000 }, () => ({})) };
+    expect(fieldsWithError({ ...valid, body: many })).toContain("body");
+    const cycle: { type: string; content?: unknown[] } = { type: "doc" };
+    cycle.content = [cycle];
+    expect(fieldsWithError({ ...valid, body: cycle })).toContain("body");
+  });
+
+  it("리치 표의 행과 열 수, 열 너비를 제한하면서 정상 문서는 그대로 둔다", () => {
+    const cell = (attrs: Record<string, unknown>) => ({
+      type: "tableCell",
+      attrs,
+      content: [{ type: "paragraph" }],
+    });
+    const table = (rows: unknown[]) => ({
+      type: "doc",
+      content: [{ type: "table", content: rows }],
+    });
+    const row = (cells: unknown[]) => ({ type: "tableRow", content: cells });
+    const good = table([row([cell({ colspan: 2, rowspan: 1, colwidth: [120, 240] })])]);
+    expect(validateFormValues(schema, { ...valid, body: good })).toMatchObject({
+      ok: true,
+      values: { body: good },
+    });
+    expect(
+      fieldsWithError({ ...valid, body: table([row([cell({ colspan: 100 }), cell({})])]) }),
+    ).toContain("body");
+    expect(
+      fieldsWithError({
+        ...valid,
+        body: table(Array.from({ length: 101 }, () => row([cell({})]))),
+      }),
+    ).toContain("body");
+    for (const width of [["10; color:red"], [Infinity], [-1], [1000000000]]) {
+      expect(
+        fieldsWithError({ ...valid, body: table([row([cell({ colwidth: width })])]) }),
+      ).toContain("body");
+    }
+  });
+
   it("첨부 필드는 값 없이 통과하고, 필수이면 첨부 수로 확인한다", () => {
     const withAttach: FormSchema = {
       fields: [{ key: "files", label: "첨부", type: "attachment", required: true, maxFiles: 2 }],
@@ -165,4 +214,75 @@ describe("양식 입력값 검증 (APV-001, APV-015)", () => {
     expect(draft.ok).toBe(true);
     expect(validateFormValues(schema, { amount: 1.5 }, { draft: true }).ok).toBe(false);
   });
+});
+
+it("accepts legacy nested blockquotes within the original size limit", () => {
+  let node: { type: string; content: unknown[] } = {
+    type: "paragraph",
+    content: [{ type: "text", text: "원문" }],
+  };
+  for (let i = 0; i < 35; i++) node = { type: "blockquote", content: [node] };
+  expect(fieldsWithError({ ...valid, body: { type: "doc", content: [node] } })).not.toContain(
+    "body",
+  );
+});
+
+it("저장된 깊은 본문은 그대로 두고 다른 필드를 저장·상신하지만 수정본은 검증한다", () => {
+  let node: unknown = { type: "paragraph", content: [{ type: "text", text: "기존" }] };
+  for (let i = 0; i < 600; i++) node = { type: "blockquote", content: [node] };
+  const body = { type: "doc", content: [node] };
+  const previousValues = { ...valid, body: JSON.parse(JSON.stringify(body)) };
+  for (const draft of [true, false]) {
+    expect(
+      validateFormValues(schema, { ...valid, title: "수정 제목", body }, { draft, previousValues })
+        .ok,
+    ).toBe(true);
+    expect(validateFormValues(schema, { ...valid, body }, { draft }).ok).toBe(false);
+    const changed = { type: "doc", content: [node, { type: "text", text: "변경" }] };
+    expect(
+      validateFormValues(schema, { ...valid, body: changed }, { draft, previousValues }).ok,
+    ).toBe(false);
+  }
+});
+
+it("저장된 넓은 이전 본문도 원래 크기 제한 안에서 보존한다", () => {
+  const body = { type: "doc", content: Array.from({ length: 10001 }, () => ({})) };
+  expect(JSON.stringify(body).length).toBeLessThan(100_000);
+  expect(validateFormValues(schema, { ...valid, body }, { previousValues: { body } }).ok).toBe(
+    true,
+  );
+  expect(validateFormValues(schema, { ...valid, body }).ok).toBe(false);
+});
+
+it("깊은 저장 본문에 숨긴 위험한 표도 허용하지 않는다", () => {
+  let node: unknown = { type: "tableCell", attrs: { colspan: 1_000_000 } };
+  for (let i = 0; i < 260; i++) node = { type: "blockquote", content: [node] };
+  const body = { type: "doc", content: [node] };
+  for (const draft of [true, false]) {
+    expect(
+      validateFormValues(schema, { ...valid, body }, { draft, previousValues: { body } }).ok,
+    ).toBe(false);
+  }
+});
+
+it("저장된 값이라도 위험한 표는 허용하지 않는다", () => {
+  const body = {
+    type: "doc",
+    content: [
+      {
+        type: "table",
+        content: [
+          {
+            type: "tableRow",
+            content: [
+              { type: "tableCell", attrs: { colspan: 1000000 }, content: [{ type: "paragraph" }] },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  expect(validateFormValues(schema, { ...valid, body }, { previousValues: { body } }).ok).toBe(
+    false,
+  );
 });

@@ -2,8 +2,12 @@
 // 실제 PDF 변환(Playwright)은 worker가 이 HTML을 받아 한다.
 
 import type { PersonCard } from "./completion-package";
-import type { FormField, FormSchema } from "./form-schema";
+import { FORM_BLOCK_CSS, FORM_BLOCK_FONT_CSS } from "./form-block-style";
+import { renderBlocks } from "./form-blocks";
+import { type FormLayout, resolveBlocks, validateFormLayout } from "./form-layout";
+import { type FormField, type FormSchema, formatPerson, type PersonInfo } from "./form-schema";
 import { tableSums } from "./form-values";
+import { MAX_RICH_TABLE_SPAN } from "./rich-text-safety";
 
 export interface PdfApprover {
   stepId: string;
@@ -32,6 +36,8 @@ export interface PdfInput {
   values: Record<string, unknown>;
   /** 구성원·부서 id → 이름 (user·dept 필드 표시용) */
   names: Record<string, string>;
+  /** 구성원 id → 완료 시점의 이름·메일·사번 (user 필드 표시 방식용). 없으면 names의 이름을 쓴다 */
+  people?: Record<string, PersonInfo>;
   drafter: PersonCard & { signatureUri?: string | null; stampUri?: string | null };
   approvers: PdfApprover[];
   submittedAt: string | null;
@@ -122,14 +128,102 @@ function renderMarks(text: string, marks: RichNode["marks"]): string {
   return out;
 }
 
-function renderRich(node: RichNode | undefined): string {
-  if (!node || typeof node !== "object") return "";
-  const children = (node.content ?? []).map(renderRich).join("");
+function renderRich(root: RichNode | undefined): string {
+  if (!root || typeof root !== "object") return "";
+  const stack: { node: RichNode; exit: boolean; depth: number }[] = [
+    { node: root, exit: false, depth: 0 },
+  ];
+  const ancestors = new Set<RichNode>();
+  const rendered: string[] = [];
+  let count = 0;
+  let textLength = 0;
+  while (stack.length) {
+    const item = stack.pop();
+    if (!item) break;
+    const { node, depth } = item;
+    if (item.exit) {
+      ancestors.delete(node);
+      const length = Array.isArray(node.content) ? node.content.length : 0;
+      const children = length ? rendered.splice(rendered.length - length, length).join("") : "";
+      rendered.push(renderRichNode(node, children, depth));
+      continue;
+    }
+    if (!node || typeof node !== "object" || ancestors.has(node) || ++count > 100000) {
+      throw new Error("PDF 리치텍스트 본문이 너무 크거나 올바르지 않아 출력할 수 없습니다.");
+    }
+    if (typeof node.text === "string") textLength += node.text.length;
+    if (
+      textLength > 100_000 ||
+      (node.marks !== undefined && (!Array.isArray(node.marks) || node.marks.length > 1000))
+    ) {
+      throw new Error("PDF 리치텍스트 본문이 너무 크거나 올바르지 않습니다.");
+    }
+    if (node.content !== undefined && !Array.isArray(node.content)) {
+      throw new Error("PDF 리치텍스트 본문 형식이 올바르지 않습니다.");
+    }
+    ancestors.add(node);
+    stack.push({ node, depth, exit: true });
+    if (node.content) {
+      if (node.content.length > 100000 - count)
+        throw new Error("PDF 리치텍스트 본문이 너무 큽니다.");
+      for (let i = node.content.length - 1; i >= 0; i--) {
+        stack.push({ node: node.content[i] as RichNode, depth: depth + 1, exit: false });
+      }
+    }
+  }
+  return rendered[0] ?? "";
+}
+
+function renderRichNode(node: RichNode, children: string, depth: number): string {
   switch (node.type) {
     case "doc":
       return children;
     case "text":
       return renderMarks(node.text ?? "", node.marks);
+    case "table": {
+      const firstRow = Array.isArray(node.content) ? node.content[0] : undefined;
+      const cells = Array.isArray(firstRow?.content) ? firstRow.content : [];
+      const cols: string[] = [];
+      let hasWidth = false;
+      for (const cell of cells.slice(0, MAX_RICH_TABLE_SPAN)) {
+        const span = cell?.attrs?.colspan;
+        const count =
+          typeof span === "number" &&
+          Number.isInteger(span) &&
+          span > 0 &&
+          span <= MAX_RICH_TABLE_SPAN
+            ? span
+            : 1;
+        const widths = Array.isArray(cell?.attrs?.colwidth) ? cell.attrs.colwidth : [];
+        for (let i = 0; i < count && cols.length < MAX_RICH_TABLE_SPAN; i++) {
+          const width = widths[i];
+          if (typeof width === "number" && Number.isInteger(width) && width > 0 && width <= 10000) {
+            cols.push(`<col style="width:${width}px">`);
+            hasWidth = true;
+          } else cols.push("<col>");
+        }
+      }
+      const colgroup = hasWidth ? `<colgroup>${cols.join("")}</colgroup>` : "";
+      return `<table class="rich-table">${colgroup}<tbody>${children}</tbody></table>`;
+    }
+    case "tableRow":
+      return `<tr>${children}</tr>`;
+    case "tableHeader":
+    case "tableCell": {
+      const tag = node.type === "tableHeader" ? "th" : "td";
+      const spans = (["colspan", "rowspan"] as const)
+        .map((name) => {
+          const value = node.attrs?.[name];
+          return typeof value === "number" &&
+            Number.isInteger(value) &&
+            value > 1 &&
+            value <= MAX_RICH_TABLE_SPAN
+            ? ` ${name}="${value}"`
+            : "";
+        })
+        .join("");
+      return `<${tag}${spans}>${children}</${tag}>`;
+    }
     case "paragraph":
       return `<p>${children}</p>`;
     case "heading": {
@@ -143,7 +237,7 @@ function renderRich(node: RichNode | undefined): string {
     case "listItem":
       return `<li>${children}</li>`;
     case "blockquote":
-      return `<blockquote>${children}</blockquote>`;
+      return depth > 10 ? children : `<blockquote>${children}</blockquote>`;
     case "codeBlock":
       return `<pre>${children}</pre>`;
     case "hardBreak":
@@ -152,7 +246,7 @@ function renderRich(node: RichNode | undefined): string {
       return "<hr>";
     default:
       // 알 수 없는 노드는 태그 없이 안의 글자만 남긴다
-      return children;
+      return (typeof node.text === "string" ? esc(node.text) : "") + children;
   }
 }
 
@@ -168,6 +262,17 @@ function refNames(value: unknown, names: Record<string, string>): string {
   return ids
     .filter((v): v is string => typeof v === "string")
     .map((id) => names[id] ?? "(알 수 없음)")
+    .join(", ");
+}
+
+function userNames(value: unknown, display: Parameters<typeof formatPerson>[0], input: PdfInput) {
+  const ids = Array.isArray(value) ? value : [value];
+  return ids
+    .filter((v): v is string => typeof v === "string")
+    .map((id) => {
+      const person = input.people?.[id];
+      return person ? formatPerson(display, person) : (input.names[id] ?? "(알 수 없음)");
+    })
     .join(", ");
 }
 
@@ -207,13 +312,13 @@ function renderTable(
   return `<table class="grid"><thead><tr>${head}</tr></thead><tbody>${body}${foot}</tbody></table>`;
 }
 
-function renderField(
+function renderFieldValue(
   field: FormField,
   input: PdfInput,
   sums: Record<string, Record<string, number>>,
-): string {
+): string | undefined {
   const value = input.values[field.key];
-  if (field.type === "attachment" || isBlank(value)) return "";
+  if (field.type === "attachment" || isBlank(value)) return undefined;
   let html: string;
   switch (field.type) {
     case "text":
@@ -248,17 +353,19 @@ function renderField(
       );
       break;
     case "user":
+      html = esc(userNames(value, field.display, input));
+      break;
     case "dept":
       html = esc(refNames(value, input.names));
       break;
     case "table":
-      return `<div class="field wide"><div class="label">${esc(field.label)}</div>${renderTable(field, value, sums[field.key])}</div>`;
+      return renderTable(field, value, sums[field.key]);
     case "richtext":
-      return `<div class="field wide"><div class="label">${esc(field.label)}</div><div class="rich">${renderRich(value as RichNode)}</div></div>`;
+      return renderRich(value as RichNode);
     default:
-      return "";
+      return undefined;
   }
-  return `<div class="field"><div class="label">${esc(field.label)}</div><div class="value">${html}</div></div>`;
+  return html;
 }
 
 // ===== 결재란 =====
@@ -322,7 +429,7 @@ function approvalBox(input: PdfInput): string {
 
 const CSS = `
   @page { margin: 14mm 12mm; }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-family: "Pretendard", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; font-size: 10.5pt; color: #111; line-height: 1.5; margin: 0; padding: 0 0.6mm; }
   h1.title { font-size: 20pt; text-align: center; margin: 4mm 0 6mm; }
   .meta { display: flex; justify-content: space-between; font-size: 9.5pt; color: #333; margin-bottom: 4mm; }
@@ -345,24 +452,14 @@ const CSS = `
   .cell .who { font-size: 8.5pt; border-top: 1px solid #ccc; padding: 0.5mm; }
   .cell .when { font-size: 7.5pt; color: #444; padding-bottom: 0.5mm; min-height: 4mm; }
   .sub { font-size: 7.5pt; color: #555; font-weight: 400; }
-  .fields { display: flex; flex-wrap: wrap; border-top: 1px solid #333; width: 100%; box-sizing: border-box; }
-  .field { width: 50%; display: flex; border-bottom: 1px solid #ccc; }
-  .field.wide { width: 100%; display: block; }
-  .field .label { width: 30mm; background: #f6f6f6; padding: 1.5mm 2mm; font-weight: 600; font-size: 9.5pt; border-right: 1px solid #ddd; flex-shrink: 0; }
-  .field.wide .label { width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
-  .field .value { padding: 1.5mm 2mm; flex: 1; word-break: break-word; white-space: pre-wrap; }
-  .rich { padding: 2mm; }
-  .rich p { margin: 0 0 2mm; } .rich h1, .rich h2, .rich h3 { margin: 3mm 0 2mm; }
-  .rich ul, .rich ol { margin: 0 0 2mm 5mm; padding: 0; } .rich blockquote { border-left: 2px solid #bbb; margin: 0 0 2mm; padding-left: 3mm; color: #444; }
-  .rich pre, .rich code { font-family: monospace; background: #f3f3f3; }
-  table.grid { width: 100%; box-sizing: border-box; border-collapse: collapse; }
-  table.grid th, table.grid td { border: 1px solid #bbb; padding: 1mm 2mm; font-size: 9.5pt; }
-  table.grid th { background: #f1f1f1; } table.grid td.num { text-align: right; }
-  table.grid tr.sum td { font-weight: 700; background: #fafafa; }
   .attach { margin-top: 5mm; font-size: 9.5pt; } .attach h3 { font-size: 10pt; margin: 0 0 1mm; }
   .attach ul { margin: 0; padding-left: 5mm; }
   .footer { margin-top: 8mm; font-size: 8pt; color: #555; border-top: 1px solid #ccc; padding-top: 2mm; word-break: break-all; }
   .seal { position: absolute; right: 12mm; top: 6mm; max-height: 20mm; opacity: 0.85; }
+  .form-blocks .rich table.rich-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .form-blocks .rich table.rich-table th, .form-blocks .rich table.rich-table td { border: 1px solid #bbb; padding: 1mm 2mm; overflow-wrap: anywhere; vertical-align: top; }
+  .form-blocks .rich table.rich-table th { background: #f1f1f1; font-weight: 700; }
+  .form-blocks .rich table.rich-table tr { break-inside: avoid; }
 `;
 
 /** 결재가 끝나지 않은 문서의 출력 미리보기에만 넣는 워터마크·스타일 (계획 2.3) */
@@ -384,7 +481,27 @@ export function buildPdfHtml(input: PdfInput): string {
         ? "approval-bottom"
         : "approval-right";
   const sums = tableSums(input.form.schema, input.values);
-  const fields = input.form.schema.fields.map((f) => renderField(f, input, sums)).join("");
+  // 기존 orientation/position 폴백은 보존한다. 외부 JSON의 새 블록 트리만 검사한다.
+  const checked = validateFormLayout(input.form.schema, { blocks: layout.blocks });
+  if (!checked.ok) throw new Error(`잘못된 양식 배치: ${checked.errors.join(", ")}`);
+  const fields = renderBlocks({
+    fields: input.form.schema.fields,
+    blocks: resolveBlocks(input.form.schema, layout as FormLayout),
+    mode: "print",
+    legacy: layout.blocks === undefined,
+    adapter: {
+      text: esc,
+      element: (tag, attrs, children) => {
+        const attributes = Object.entries(attrs)
+          .map(([key, value]) => ` ${key}="${esc(value)}"`)
+          .join("");
+        return tag === "hr"
+          ? `<hr${attributes}>`
+          : `<${tag}${attributes}>${children.join("")}</${tag}>`;
+      },
+      field: (field) => renderFieldValue(field, input, sums),
+    },
+  });
   const seal = safeImage(input.sealUri);
   const attachments =
     input.attachments.length > 0
@@ -396,16 +513,16 @@ export function buildPdfHtml(input: PdfInput): string {
   const completed = input.completedAt !== null;
   return `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>${esc(input.title)}</title>
-<style>${input.fontCss ?? ""}
+<style>${input.fontCss ?? FORM_BLOCK_FONT_CSS}
 @page { size: A4 ${orientation}; }
-${CSS}${completed ? "" : DRAFT_WATERMARK_CSS}</style></head>
+${CSS}${FORM_BLOCK_CSS}${completed ? "" : DRAFT_WATERMARK_CSS}</style></head>
 <body>
 ${completed ? "" : `<div class="draft-watermark">결재 진행 중 (미완료)</div>`}
 ${seal ? `<img class="seal" src="${seal}" alt="">` : ""}
 <h1 class="title">${esc(input.title)}</h1>
 <div class="meta"><span>${esc(input.businessName)} · ${esc(input.form.name)}</span><span>문서번호 ${esc(input.docNo ?? "-")}</span></div>
 <div class="top ${topClass}">${box}</div>
-<div class="fields">${fields}</div>
+${fields}
 ${attachments}
 <div class="bottom-box ${position === "bottom" ? "show" : ""}">${position === "bottom" ? box : ""}</div>
 <div class="footer">상신 ${esc(kstFull(input.submittedAt))} · 완료 ${completed ? esc(kstFull(input.completedAt)) : "결재 진행 중"}<br>상신 시점 내용 해시(SHA-256): ${esc(input.contentHash ?? "-")}</div>
