@@ -27,6 +27,9 @@ export const auditLog = pgTable(
     occurredAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     /** 행위자. 시스템 작업이면 null */
     actorUserId: uuid(),
+    actorKind: text({ enum: ["human", "agent"] }),
+    agentTokenId: uuid(),
+    agentPendingActionId: uuid(),
     /** 대리 처리(대결 등)일 때 원 권한자 */
     onBehalfOfUserId: uuid(),
     /** 수행 업무 (예: auth.login, member.deactivate) */

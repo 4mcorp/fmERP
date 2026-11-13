@@ -8,6 +8,7 @@
     "./ui/pages/*": "./src/ui/pages/*.tsx",
     "./ui/components/*": "./src/ui/components/*.tsx",
     "./auth-setup": "./src/auth-setup.ts",
+    "./agent": "./src/agent.ts",
     "./test-accounts": "./src/service/test-accounts.ts"
   },
   "scripts": {

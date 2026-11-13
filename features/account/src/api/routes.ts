@@ -1,6 +1,7 @@
 import type { AppRouter, DepsProvider } from "@fmerp/shared/server/http";
 import { registerAccountRoutes } from "./account-routes";
 import { type AccountProvisioning, registerAccountsRoutes } from "./accounts-routes";
+import { registerAgentTokenRoutes } from "./agent-token-routes";
 import { registerAuthRoutes } from "./auth-routes";
 import { registerMeRoutes } from "./me-routes";
 import { registerPasskeyRoutes } from "./passkey-routes";
@@ -16,6 +17,7 @@ export function registerAccountApi(
 ) {
   registerAuthRoutes(app, deps);
   registerMeRoutes(app, deps);
+  registerAgentTokenRoutes(app, deps);
   registerPasskeyRoutes(app, deps);
   registerAccountsRoutes(app, deps, provisioning);
   registerAccountRoutes(app, deps);
